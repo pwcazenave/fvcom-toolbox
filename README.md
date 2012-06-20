@@ -8,4 +8,4 @@ The fvcom-toolbox is a collection of matlab and fortran90 scripts for the purpos
 3. scripts for postprocessing FVCOM data using Matlab
 4. scripts for preparing data for the unstructured SWAN model
 
-Note that html based documentation is generated using m2html and is available with the svn download (see doc/index.html)
+Note that html based documentation is generated using m2html and is available with the download (see doc/index.html)
