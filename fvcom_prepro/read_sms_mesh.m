@@ -25,8 +25,12 @@ function [Mobj] = read_sms_mesh(varargin)
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
+%
+%   2012-06-10 Add support for reading nodestrings from SMS meshes.
+%	2012-06-26 Added more resilient support for reading in SMS files.
 %   
 %==============================================================================
 
@@ -117,21 +121,30 @@ end;
 nElems = 0;
 nVerts = 0;
 nStrings = 0;
-lin = fgetl(fid); %header
+nHeader = 0;
 StillReading = true;
-while StillReading 
+while StillReading
 	lin = fgetl(fid);
-	if(lin(1:2) == 'E3')
-		nElems = nElems + 1;
-	elseif(lin(1:2) == 'ND')
-		nVerts = nVerts + 1;
-    elseif(lin(1:2) == 'NS')
-        nStrings = nStrings +1;
-	else
-		StillReading = false;
-	end;
-end;
-fclose(fid); fid = fopen(sms_2dm,'r');
+    if lin ~= -1 % EOF is -1
+        if(lin(1:2) == 'E3')
+            nElems = nElems + 1;
+        elseif(lin(1:2) == 'ND')
+            nVerts = nVerts + 1;
+        elseif(lin(1:2) == 'NS')
+            nStrings = nStrings + 1;
+        elseif(lin(1:2) == 'ME')
+            % Header values
+            nHeader = nHeader + 1;
+        else
+            StillReading = false;
+        end
+    else
+        % Got to EOF
+        StillReading = false;
+    end
+end
+fclose(fid);
+fid = fopen(sms_2dm,'r');
 
 if(ftbverbose); 
   fprintf('nVerts: %d\n',nVerts); 
@@ -148,20 +161,27 @@ lon = zeros(nVerts,1);
 lat = zeros(nVerts,1);
 ts  = zeros(nVerts,1);
 
-lin=fgetl(fid); %header
-for i=1:nElems
-	C = textscan(fid, '%s %d %d %d %d %d', 1);
-	tri(i,1) = C{3};
-	tri(i,2) = C{4};
-	tri(i,3) = C{5};
-end;
+validObs = 1;
+
+% allow the iterations to go far enough to exclude the header(s)
+for i=1:nElems+nHeader+1
+    C = textscan(fid, '%s %d %d %d %d %d', 1);
+    % Check we have valid data. This approach allows for variable length
+    % headers (i.e. two line headers).
+    if C{3}>0 % can't have a zero value connectivity point
+        tri(validObs,1) = C{3};
+        tri(validObs,2) = C{4};
+        tri(validObs,3) = C{5};
+        validObs = validObs + 1;
+    end
+end
 
 for i=1:nVerts 
 	C = textscan(fid, '%s %d %f %f %f ', 1);
 	x(i) = C{3};
 	y(i) = C{4};
     h(i) = C{5};
-end;
+end
 
 % Build array of all the nodes in the nodestrings
 for i=1:nStrings
@@ -232,6 +252,7 @@ if(have_bath) || bath_range == 0
 	lin=fgetl(fid);
 	lin=fgetl(fid);
 	lin=fgetl(fid);
+    lin=fgetl(fid); % extra one for the new format from SMS 10.1, I think
 	for i=1:nVerts
 	  C = textscan(fid, '%f', 1);
 	  h(i) = C{1}; 
@@ -240,6 +261,10 @@ if(have_bath) || bath_range == 0
 elseif bath_range ~= 0
     have_bath = true;
 end;
+% Make sure we have positive depths
+if sum(h>0) < sum(h<0)
+    h = -h;
+end
 
 %------------------------------------------------------------------------------
 % Project if desired by user
