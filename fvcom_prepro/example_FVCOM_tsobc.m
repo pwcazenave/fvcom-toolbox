@@ -1,4 +1,4 @@
-function example_FVCOM_tsobc()
+function example_FVCOM_tsobc(basename)
 % example file for dumping a file to force temperature and salinity at the open b.
 %
 % function example_FVCOM_tsobc()
@@ -31,9 +31,9 @@ if(ftbverbose);
   fprintf(['begin : ' subname '\n'])
 end;
 
-fvcom_bathy = 'csm_culver_v7_dep.dat';
-fvcom_obc   = 'csm_culver_v7_obc.dat';
-tsOBCFile = 'csm_culver_v7_tsobc.nc';
+fvcom_bathy = [basename, '_dep.dat'];
+fvcom_obc   = [basename, '_obc.dat'];
+tsOBCFile = [basename, '_tsobc.nc'];
 
 %------------------------------------------------------------------------------
 % read in the FVCOM open boundary node data (need node numbers and dimension)
