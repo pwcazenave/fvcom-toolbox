@@ -29,8 +29,10 @@ function [Mobj] = read_sms_mesh(varargin)
 %
 % Revision history
 %
-%   2012-06-10 Add support for reading nodestrings from SMS meshes.
-%	2012-06-26 Added more resilient support for reading in SMS files.
+%   2012-06-20 Add support for reading nodestrings from SMS meshes.
+%   2012-06-26 Added more resilient support for reading in SMS files.
+%   2012-06-29 Further improved ability to read files with variable length
+%   headers.
 %   
 %==============================================================================
 
@@ -163,11 +165,19 @@ ts  = zeros(nVerts,1);
 
 validObs = 1;
 
-% allow the iterations to go far enough to exclude the header(s)
-for i=1:nElems+nHeader+1
+% skip the header
+for i=1:nHeader
+    if i==1
+        C = textscan(fid,'%s',1);
+    else
+        C = textscan(fid,'%s %s',2);
+    end
+end
+clear C
+
+for i=1:nElems
     C = textscan(fid, '%s %d %d %d %d %d', 1);
-    % Check we have valid data. This approach allows for variable length
-    % headers (i.e. two line headers).
+    % Check we have valid data.
     if C{3}>0 % can't have a zero value connectivity point
         tri(validObs,1) = C{3};
         tri(validObs,2) = C{4};
@@ -183,7 +193,7 @@ for i=1:nVerts
     h(i) = C{5};
 end
 
-% Build array of all the nodes in the nodestrings
+% Build array of all the nodes in the nodestrings.
 for i=1:nStrings
     C = textscan(fid, '%s %d %d %d %d %d %d %d %d %d %d', 1);
     C2 = cell2mat(C(2:end));
@@ -219,6 +229,11 @@ if(coordinate(1:5) == 'spher')
 	x = x*0.0;
 	y = y*0.0;
 	have_lonlat = true;
+    % Just do a double check on the coordinates to make sure we don't
+    % actually have cartesian
+    if max(lon)>360
+        warning('You''ve specified spherical coordinates, but your upper longitude value exceeds 360 degrees. Are you sure you have spherical data?')
+    end
 else
 	have_xy = true;
 end;
