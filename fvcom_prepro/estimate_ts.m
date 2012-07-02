@@ -1,4 +1,4 @@
-function [Mobj] = estimate_ts(Mobj)
+function [Mobj] = estimate_ts(Mobj,u,zeta)
 
 % Estimate time step at each node
 %
@@ -35,8 +35,8 @@ end;
 %------------------------------------------------------------------------------
 
 g    = 9.81; %gravitational acceleration
-u    = 3.0;  %u-velocity
-zeta = 3.0;  %tide amp
+%u    = 3.0;  %u-velocity
+%zeta = 11.0;  %tide amp
 
 if(~Mobj.have_bath)
     error('can''t estimate the time step without bathymetry')
