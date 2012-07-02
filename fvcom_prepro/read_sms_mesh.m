@@ -170,7 +170,7 @@ for i=1:nHeader
     if i==1
         C = textscan(fid,'%s',1);
     else
-        C = textscan(fid,'%s %s',2);
+        C = textscan(fid,'%s',2);
     end
 end
 clear C
@@ -178,7 +178,7 @@ clear C
 for i=1:nElems
     C = textscan(fid, '%s %d %d %d %d %d', 1);
     % Check we have valid data.
-    if C{3}>0 % can't have a zero value connectivity point
+    if strcmp(C{1},'E3T')
         tri(validObs,1) = C{3};
         tri(validObs,2) = C{4};
         tri(validObs,3) = C{5};
