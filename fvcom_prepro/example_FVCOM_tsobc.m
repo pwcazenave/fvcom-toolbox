@@ -1,4 +1,4 @@
-function example_FVCOM_tsobc(basename)
+function example_FVCOM_tsobc(basename,time)
 % example file for dumping a file to force temperature and salinity at the open b.
 %
 % function example_FVCOM_tsobc()
@@ -82,7 +82,7 @@ fclose(fid);
 obc_h = h(obc_nodes);
 
 % time
-time = 0:1:31.;
+% time = 0:1:31.;
 nTimes = numel(time);
 
 % set siglev/siglay
@@ -165,7 +165,7 @@ netcdf.putAtt(nc,obc_siglay_varid,'grid','obc_grid');
 
 obc_temp_varid=netcdf.defVar(nc,'obc_temp','NC_FLOAT',[nobc_dimid,siglay_dimid,time_dimid]);
 netcdf.putAtt(nc,obc_temp_varid,'long_name','sea_water_temperature');
-netcdf.putAtt(nc,obc_temp_varid,'units','Celcuis');
+netcdf.putAtt(nc,obc_temp_varid,'units','Celcius');
 netcdf.putAtt(nc,obc_temp_varid,'grid','obc_grid');
 
 obc_salinity_varid=netcdf.defVar(nc,'obc_salinity','NC_FLOAT',[nobc_dimid,siglay_dimid,time_dimid]);
