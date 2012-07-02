@@ -65,7 +65,7 @@ for ob=1:Mobj.nObs
 	nObcs = Mobj.nObcNodes(ob);
 	for j=1:nObcs
 		cnt = cnt + 1;
-		ObcNodes(cnt) = Mobj.obc_nodes(1,j);  % set the open boundary nodes
+		ObcNodes(cnt) = Mobj.obc_nodes(ob,j);  % set the open boundary nodes
 
         Amp(cnt,:) = Mobj.amp_obc{ob}(:,j);
         Phase(cnt,:) = Mobj.phase_obc{ob}(:,j);
