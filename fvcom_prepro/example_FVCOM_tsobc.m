@@ -1,4 +1,4 @@
-function example_FVCOM_tsobc(basename,time)
+function example_FVCOM_tsobc(basename,time,nSiglay,nSiglev)
 % example file for dumping a file to force temperature and salinity at the open b.
 %
 % function example_FVCOM_tsobc()
@@ -7,7 +7,11 @@ function example_FVCOM_tsobc(basename,time)
 %    Setup a sample FVCOM hydrographic open boundary forcing file
 %
 % INPUT
-%   
+%    Model case name
+%    Time
+%    Number of sigma layers
+%    Number of sigma levels
+%
 % OUTPUT:
 %    FVCOM hydrographic open boundary file
 %
@@ -18,6 +22,8 @@ function example_FVCOM_tsobc(basename,time)
 % Revision history
 %    2012-06-15 Added support for native MATLAB NetCDF routines. Requires
 %    MATLAB 2010a or higher.
+%    2012-07-16 Removed hard-coded nSiglay and nSiglev and instead moved to
+%    arguments list.
 % 
 %==============================================================================
 
@@ -86,8 +92,8 @@ obc_h = h(obc_nodes);
 nTimes = numel(time);
 
 % set siglev/siglay
-nSiglay = 10;
-nSiglev = 11;
+% nSiglay = 10;
+% nSiglev = 11;
 inc = 1./real(nSiglay);
 siglev = 0:-inc:-1;
 for i=1:nSiglay
