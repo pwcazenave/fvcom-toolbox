@@ -1,4 +1,4 @@
-function example_FVCOM_tsobc(basename,time,nSiglay,nSiglev)
+function example_FVCOM_tsobc(basename,time,nSiglay)
 % example file for dumping a file to force temperature and salinity at the open b.
 %
 % function example_FVCOM_tsobc()
@@ -94,6 +94,7 @@ nTimes = numel(time);
 % set siglev/siglay
 % nSiglay = 10;
 % nSiglev = 11;
+nSiglev = nSiglay + 1;
 inc = 1./real(nSiglay);
 siglev = 0:-inc:-1;
 for i=1:nSiglay
@@ -194,10 +195,8 @@ netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000);
 % Create 3D array from three 1D arrays
 for i=1:nObc
     for j=1:nSiglay
-        for k=1:nTimes
-            temp(i,j,:) = ones(1,nTimes).*obc_temp;
-            salt(i,j,:) = ones(1,nTimes).*obc_salt;
-        end
+        temp(i,j,:) = obc_temp;
+        salt(i,j,:) = obc_salt;
     end
 end
 netcdf.putVar(nc,obc_temp_varid,temp);
