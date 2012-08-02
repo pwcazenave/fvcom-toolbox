@@ -26,6 +26,7 @@ function set_spectide(Mobj,nComps,SpectralFile,MyTitle)
 %
 % Revision history
 %    2012-06-15 Added support for variables when calling set_spectide.
+%	 2012-08-02 Can now write out equilibrium amplitudes and beta love numbers.
 %   
 %==============================================================================
 subname = 'set_spectide';
@@ -75,6 +76,6 @@ end
 %------------------------------------------------------------------------------
 % Dump a spectral tide file in NetCDF
 %------------------------------------------------------------------------------
-write_FVCOM_spectide(ObcNodes,Mobj.period_obc(1:nComps),Phase,Amp,SpectralFile,MyTitle)
+write_FVCOM_spectide(ObcNodes,Mobj.period_obc(1:nComps),Phase,Amp,Mobj.beta_love,Mobj.equilibrium_amp,SpectralFile,MyTitle)
 
 if(ftbverbose); fprintf(['end   : ' subname '\n']); end
