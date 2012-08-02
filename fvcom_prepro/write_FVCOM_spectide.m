@@ -1,4 +1,4 @@
-function write_FVCOM_spectide(ObcNodes,Period,Phase,Amp,SpectralFile,MyTitle) 
+function write_FVCOM_spectide(ObcNodes,Period,Phase,Amp,BetaLove,EquilibriumAmp,SpectralFile,MyTitle) 
 	
 % Write an FVCOM spectral tidal elevation forcing file 
 %
@@ -28,6 +28,8 @@ function write_FVCOM_spectide(ObcNodes,Period,Phase,Amp,SpectralFile,MyTitle)
 % Revision history
 %    2012-06-14 Ported NetCDF write to use MATLAB's native NetCDF support.
 %    Requires MATLAB v2010a or greater.
+%    2012-08-02 Added beta (Love) number and equilibrium amplitude support
+%	 when writing output.
 %   
 %==============================================================================
 warning off
@@ -124,12 +126,22 @@ netcdf.putVar(nc,tide_period_varid,Period);
 netcdf.putVar(nc,tide_Eref_varid,zeros(1,nObcs));
 netcdf.putVar(nc,tide_Ephase_varid,Phase);
 netcdf.putVar(nc,tide_Eamp_varid,Amp);
-netcdf.putVar(nc,equilibrium_tide_Eamp_varid,zeros(1,nComponents));
-netcdf.putVar(nc,equilibrium_beta_love_varid,zeros(1,nComponents));
+netcdf.putVar(nc,equilibrium_tide_Eamp_varid,EquilibriumAmp);
+netcdf.putVar(nc,equilibrium_beta_love_varid,BetaLove);
 
 nStringOut=char();
 for i=1:nComponents
-    nStringOut = [nStringOut, 'SEMIDIURNAL               '];
+    if Period(i) <= 13*3600 % Be a bit fuzzy to get the M2 in
+        % Semi-diurnal
+        nStringOut = [nStringOut, 'SEMIDIURNAL               '];
+    elseif (Period(i) > 13*3600 && Period(i) < 28*3600)
+        % Diurnal
+        nStringOut = [nStringOut, 'DIURNAL                   '];
+    else
+        % Just call them all 'long period'
+        warning('FVCOM does not (apparently) support long period harmonics. This output may cause the model to crash during initialisation.')
+        nStringOut = [nStringOut, 'LONG PERIOD               '];
+    end
 end
 netcdf.putVar(nc,date_str_len_varid,nStringOut);
 netcdf.putVar(nc,time_origin_varid,0);
