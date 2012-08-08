@@ -47,7 +47,7 @@ nObcs = numel(ObcNodes);
 if(report); fprintf('Number of Open Boundary Nodes %d\n',nObcs); end;
 
 [chk1,chk2] = size(SurfaceElevation);
-if nTimes ~= chk1 || nObcs ~= chk2
+if nObcs ~= chk1 || nTimes ~= chk2
     fprintf('Surface elevation dimensions do not match time series and number of boundary nodes.\n')
     fprintf('Surface elevation nodes and time sizes: (%d, %d)\n', chk1, chk2)
     fprintf('Boundary nodes size: %d\n', nObcs)
@@ -101,7 +101,6 @@ netcdf.putAtt(nc,Times_varid,'time_zone','UTC');
 elevation_varid=netcdf.defVar(nc,'elevation','NC_FLOAT',[nobc_dimid, time_dimid]);
 netcdf.putAtt(nc,elevation_varid,'long_name','Open Boundary Elevation');
 netcdf.putAtt(nc,elevation_varid,'units','meters');
-
 
 % end definitions
 netcdf.endDef(nc);
