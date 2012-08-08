@@ -70,7 +70,7 @@ netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','FILE CREATED using w
 % define dimensions
 nobc_dimid=netcdf.defDim(nc,'nobc',nObcs);
 time_dimid=netcdf.defDim(nc,'time',netcdf.getConstant('NC_UNLIMITED'));
-date_str_len_dimid=netcdf.defDim(nc,'DateStrLen',26);
+date_str_len_dimid=netcdf.defDim(nc,'DateStrLen',[26,1]);
 
 % define variables and attributes
 nobc_varid=netcdf.defVar(nc,'obc_nodes','NC_INT',nobc_dimid);
@@ -116,7 +116,7 @@ nStringOut = char();
 for i=1:nTimes
     nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ',datevec(JulianTime(i)))];
 end
-netcdf.putVar(nc,Times_varid,0,nTimes,nStringOut);
+netcdf.putVar(nc,Times_varid,nStringOut);
 netcdf.putVar(nc,elevation_varid,SurfaceElevation);
 
 % close file
