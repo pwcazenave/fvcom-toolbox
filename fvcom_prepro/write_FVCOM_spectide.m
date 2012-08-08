@@ -2,7 +2,7 @@ function write_FVCOM_spectide(ObcNodes,Period,Phase,Amp,BetaLove,EquilibriumAmp,
 	
 % Write an FVCOM spectral tidal elevation forcing file 
 %
-% function write_FVCOM_spectide(ObcNodes,Period,Phase,Amp,SpectralFile,MyTitle)   
+% function write_FVCOM_spectide(ObcNodes,Period,Phase,Amp,BetaLove,EquilibriumAmp,SpectralFile,MyTitle)
 %
 % DESCRIPTION:
 %    Write an FVCOM NetCDF spectral tidal elevation forcing file
