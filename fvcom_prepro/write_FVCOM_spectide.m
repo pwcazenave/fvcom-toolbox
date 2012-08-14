@@ -81,6 +81,7 @@ netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'components',ComponentsOut)
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','FILE CREATED using write_FVCOM_spectide')
 
 % define dimensions
+one_dimid=netcdf.defDim(nc,'one',1);
 nobc_dimid=netcdf.defDim(nc,'nobc',nObcs);
 tidal_components_dimid=netcdf.defDim(nc,'tidal_components',nComponents);
 date_str_len_dimid=netcdf.defDim(nc,'DateStrLen',[26,nComponents]);
@@ -117,10 +118,12 @@ date_str_len_varid=netcdf.defVar(nc,'equilibrium_tide_type','NC_CHAR',[date_str_
 netcdf.putAtt(nc,date_str_len_varid,'long_name','formula');
 netcdf.putAtt(nc,date_str_len_varid,'units','beta=1+klove-hlove');
 
-time_origin_varid=netcdf.defVar(nc,'time_origin','NC_FLOAT',[]);
+time_origin_varid=netcdf.defVar(nc,'time_origin','NC_FLOAT',one_dimid);
 netcdf.putAtt(nc,time_origin_varid,'long_name','time');
-netcdf.putAtt(nc,time_origin_varid,'units','days since 0.0');
+netcdf.putAtt(nc,time_origin_varid,'units','days since 1858-11-17 00:00:00');
+netcdf.putAtt(nc,time_origin_varid,'format','modified julian day (MJD)');
 netcdf.putAtt(nc,time_origin_varid,'time_zone','none');
+netcdf.putAtt(nc,time_origin_varid,'comments','tidal harmonic origin_date:1899-12-31 12:00:00');
 
 % end definitions
 netcdf.endDef(nc);
@@ -149,7 +152,7 @@ for i=1:nComponents
     end
 end
 netcdf.putVar(nc,date_str_len_varid,nStringOut);
-netcdf.putVar(nc,time_origin_varid,StartDate);
+netcdf.putVar(nc,time_origin_varid,15019.5);
 
 % close file
 netcdf.close(nc);
