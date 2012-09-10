@@ -1,33 +1,33 @@
 function set_spectide(Mobj,nComps,SpectralFile,MyTitle)
 
-% Setup spectral tides on the open boundary and dump a spectral file  
+% Setup spectral tides on the open boundary and dump a spectral file
 %
-% function set_spectide(Mobj,nComps,SpectralFile,MyTitle)  
+% function set_spectide(Mobj,nComps,SpectralFile,MyTitle)
 %
 % DESCRIPTION:
 %    Setup spectral tides on the open boundary and dump a spectral file
 %    This is a USER DEFINED driver program for the FVCOM spectral tide
-%    It requires USER Modification to work 
+%    It requires USER Modification to work
 %
 % INPUT
 %    Mobj         = Matlab mesh object
 %    nComps       = Number of tidal components
 %    SpectralFile = Output file name
 %    MyTitle     = Title in resulting NetCDF file.
-% 
+%
 % OUTPUT:
 %
 % EXAMPLE USAGE
 %    set_spectide(Mobj,nComps,SpectralFile,MyTitle)
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
 %    2012-06-15 Added support for variables when calling set_spectide.
 %	 2012-08-02 Can now write out equilibrium amplitudes and beta love numbers.
-%   
+%
 %==============================================================================
 subname = 'set_spectide';
 global ftbverbose;
@@ -76,6 +76,6 @@ end
 %------------------------------------------------------------------------------
 % Dump a spectral tide file in NetCDF
 %------------------------------------------------------------------------------
-write_FVCOM_spectide(ObcNodes,Mobj.period_obc(1:nComps),Phase,Amp,Mobj.beta_love,Mobj.equilibrium_amp,SpectralFile,MyTitle)
-
+%write_FVCOM_spectide(ObcNodes,Mobj.period_obc(1:nComps),Phase,Amp,Mobj.beta_love,Mobj.equilibrium_amp,SpectralFile,MyTitle)
+write_FVCOM_spectide(ObcNodes,Mobj.Components,Mobj.period_obc(1:nComps),Phase,Amp,Mobj.beta_love,Mobj.equilibrium_amp,SpectralFile,MyTitle)
 if(ftbverbose); fprintf(['end   : ' subname '\n']); end
