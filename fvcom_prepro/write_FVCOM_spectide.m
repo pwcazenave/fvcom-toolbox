@@ -1,6 +1,6 @@
-function write_FVCOM_spectide(ObcNodes,StartDate,Components,Period,Phase,Amp,BetaLove,EquilibriumAmp,SpectralFile,MyTitle)
-	
-% Write an FVCOM spectral tidal elevation forcing file 
+function write_FVCOM_spectide(ObcNodes,Components,Period,Phase,Amp,BetaLove,EquilibriumAmp,SpectralFile,MyTitle)
+
+% Write an FVCOM spectral tidal elevation forcing file
 %
 % function write_FVCOM_spectide(ObcNodes,Components,Period,Phase,Amp,BetaLove,EquilibriumAmp,SpectralFile,MyTitle)
 %
@@ -9,9 +9,12 @@ function write_FVCOM_spectide(ObcNodes,StartDate,Components,Period,Phase,Amp,Bet
 %
 % INPUT:
 %   ObcNodes     = list of open boundary nodes of size [nObcs]
+%   Components   = list of component names (e.g. 'M2', 'N2' etc.) [nComponents]
 %   Period       = list of periods in seconds of size [nComponents]
 %   Phase        = list of phases in degrees of size [nObcs,nComponents]
 %   Amp          = list of amplitudes (m) of size [nObcs,nComponents]
+%   BetaLove     = list of beta Love numbers [nComponents]
+%   EquilibriumAmp = list of equilibrium tidal amplitudes [nComponents]
 %   SpectralFile = name of NetCDF file
 %   MyTitle      = case title, written as global attribute of NetCDF file
 %
@@ -19,22 +22,22 @@ function write_FVCOM_spectide(ObcNodes,StartDate,Components,Period,Phase,Amp,Bet
 %    SpectralFile, A NetCDF FVCOM spectral tide forcing file
 %
 % EXAMPLE USAGE
-%    write_FVCOM_spectide(ObcNodes,Period,Phase,Amp,SpectralFile,MyTitle) 
+%    write_FVCOM_spectide(ObcNodes,Period,Phase,Amp,SpectralFile,MyTitle)
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
-% 
+%
 % Revision history
 %    2012-06-14 Ported NetCDF write to use MATLAB's native NetCDF support.
 %    Requires MATLAB v2010a or greater.
 %    2012-08-02 Added beta (Love) number and equilibrium amplitude support
-%	 when writing output.
-%   
+%    when writing output.
+%
 %==============================================================================
 warning off
 
-global ftbverbose 
+global ftbverbose
 report = false;
 if(ftbverbose); report = true; end;
 subname = 'write_FVCOM_spectide';
@@ -75,7 +78,11 @@ netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM SPECTRAL ELEVATIO
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title',MyTitle)
 ComponentsOut = char();
 for i=1:nComponents
-    ComponentsOut = [ComponentsOut, Components{i}];
+    if i == 1
+        ComponentsOut = Components{i};
+    else
+        ComponentsOut = [ComponentsOut, ' ', Components{i}];
+    end
 end
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'components',ComponentsOut)
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','FILE CREATED using write_FVCOM_spectide')
