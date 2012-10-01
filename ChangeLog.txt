@@ -1,0 +1,66 @@
+Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
+
+fvcom-prepro:
+    set_spectide.m:
+        * Replace hard-coded variables with arguments to function call.
+        * Add support for adding equilibrium amplitudes and beta love numbers.
+
+    write_FVCOM_spectide.m:
+        * Replace use of external NetCDF library with MATLAB native tools.
+        * Add support for writing out equilibrium amplitudes and beta love numbers.
+
+    set_elevtide.m:
+        * New function to write out timeseries of surface elevations to a NetCDF
+        file. Currently writes a broken file (or at least, I didn't manage to get
+        FVCOM to run a model successfully with this input file).
+        * Requires the Tide Model Driver from Oregon State University at
+        http://polaris.esr.org/ptm_index.html.
+
+    write_FVCOM_elevtide.m
+        * New function to accompany set_elevtide.m to output a time series of
+        surface elevations. Note - pretty certain this isn't writing exactly the
+        write format just yet. If you fix it, let me know.
+
+    write_FVCOM_tsobc.m:
+        * Create a new function to output constant temperature and salinity at the
+        open boundaries. Based on the example_FVCOM_tsobc.m file.
+
+    read_sms_mesh.m:
+        * Add the ability to extract open boundaries from the defined nodestrings
+        in the SMS grid file (.2dm).
+        * Note - the SMS grid name must be a single work (no spaces). If the script
+        failes to load your grid, chances are its name is "Default Coverage". If
+        you change it to "mesh" in either the .2dm file or the SMS project, this
+        script should work.
+
+    estimate_ts.m:
+        * Add arguments to the function so that the estimated current velocity and
+        tidal range aren't hard-coded in the function.
+        * Also add a crude conversion from lat/long distances to UTM (metres)
+        using a great circle appoximation.
+
+
+fvcom-postproc:
+    example_surface_plot.m:
+        * Now includes a lot more examples of different types of surface plots
+        (e.g. vectors at specific layers).
+
+utilities:
+    do_residual.m:
+        * Calculate the residual vector for a given 2D time series.
+
+    do_residual_plot.m:
+        * Use the output of do_residual.m to plot residual vectors.
+
+    do_transect_plot.m:
+        * Pick and plot a transect through model output.
+
+    deg2utm.m:
+        * Function to convert from lat/long to UTM.
+        * From http://www.mathworks.com/matlabcentral/fileexchange/10915
+
+    utm2deg.m:
+        * Function to convert from UTM to lat/long.
+        * From http://www.mathworks.com/matlabcentral/fileexchange/10914
+
+
