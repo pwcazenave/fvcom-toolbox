@@ -13,8 +13,9 @@ fvcom-prepro:
         * New function to write out timeseries of surface elevations to a NetCDF
         file. Currently writes a broken file (or at least, I didn't manage to get
         FVCOM to run a model successfully with this input file).
-        * Requires the Tide Model Driver from Oregon State University at
-        http://polaris.esr.org/ptm_index.html.
+
+        * Requires the Tide Model Driver MATLAB Toolbox from Oregon State
+        University at http://polaris.esr.org/ptm_index.html.
 
     write_FVCOM_elevtide.m
         * New function to accompany set_elevtide.m to output a time series of
