@@ -20,6 +20,9 @@ function [Mobj] = estimate_ts(Mobj,u,zeta)
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %
 % Revision history
+%    2012-07-14 Add great circle approximation if only provided with
+%    latitude and longitudes. Also add arguments to the function to define
+%    current velocity and tidal amplitudes.
 %
 %==============================================================================
 
@@ -45,9 +48,9 @@ end;
 %------------------------------------------------------------------------------
 % Compute the time step estimate
 %------------------------------------------------------------------------------
-if Mobj.have_xy                                                                                              
-    x = Mobj.x;                                                                                              
-    y = Mobj.y;                                                                                              
+if Mobj.have_xy
+    x = Mobj.x;
+    y = Mobj.y;
 else
     % Will convert to metres when calculating element edge length
     x = Mobj.lon;
@@ -87,9 +90,9 @@ end
 function [km]=haversine(lat1,lon1,lat2,lon2)
 % Haversine function to calculate first order distance measurement. Assumes
 % spherical Earth surface. Lifted from:
-% 
+%
 % http://www.mathworks.com/matlabcentral/fileexchange/27785
-% 
+%
 R = 6371000;                    % Earth's mean radius in metres
 delta_lat = lat2 - lat1;        % difference in latitude
 delta_lon = lon2 - lon1;        % difference in longitude
