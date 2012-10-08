@@ -65,7 +65,7 @@ netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','Generated using the 
 % dimensions
 time_dimid=netcdf.defDim(nc,'time',netcdf.getConstant('NC_UNLIMITED'));
 nele_dimid=netcdf.defDim(nc,'nele',nElems);
-nvert_dimid=netcdf.defDim(nc,'nele',nNodes);
+nvert_dimid=netcdf.defDim(nc,'node',nNodes);
 
 % time vars
 time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
