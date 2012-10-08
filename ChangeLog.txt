@@ -26,6 +26,10 @@ fvcom-prepro:
         * Create a new function to output constant temperature and salinity at the
         open boundaries. Based on the example_FVCOM_tsobc.m file.
 
+    write_FVCOM_wind_ts_speed.m:
+        * Create a new function to output spatially uniform but temporally
+        varying wind field. Based on example_FVCOM_wind_ts_speed.m.
+
     read_sms_mesh.m:
         * Add the ability to extract open boundaries from the defined nodestrings
         in the SMS grid file (.2dm).
