@@ -10,21 +10,22 @@ function write_FVCOM_tsobc(basename,time,nSiglay)
 %    Model case name
 %    Time
 %    Number of sigma layers
-%    Number of sigma levels
 %
 % OUTPUT:
 %    FVCOM hydrographic open boundary file
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
-% 
+%
 % Revision history
 %    2012-06-15 Added support for native MATLAB NetCDF routines. Requires
 %    MATLAB 2010a or higher.
 %    2012-07-16 Removed hard-coded nSiglay and nSiglev and instead moved to
 %    arguments list.
-% 
+%    2012-10-08 Updated help to reflect the fact nSiglev is calculated as
+%    nSiglay+1.
+%
 %==============================================================================
 
 warning off;
