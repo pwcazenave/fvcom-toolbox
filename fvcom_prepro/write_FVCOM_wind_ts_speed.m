@@ -84,13 +84,13 @@ netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
 netcdf.putAtt(nc,itime2_varid,'time_zone','none');
 
 % Space and time variables
-u10_varid=netcdf.defVar(nc,'U10','NC_FLOAT',[time_dimid,nele_dimid]);
+u10_varid=netcdf.defVar(nc,'U10','NC_FLOAT',[nele_dimid,time_dimid]);
 netcdf.putAtt(nc,u10_varid,'long_name','Eastward Wind Velocity');
 netcdf.putAtt(nc,u10_varid,'standard_name','Wind Velocity');
 netcdf.putAtt(nc,u10_varid,'units','m/s');
 netcdf.putAtt(nc,u10_varid,'type','data');
 
-v10_varid=netcdf.defVar(nc,'V10','NC_FLOAT',[time_dimid,nele_dimid]);
+v10_varid=netcdf.defVar(nc,'V10','NC_FLOAT',[nele_dimid,time_dimid]);
 netcdf.putAtt(nc,v10_varid,'long_name','Northward Wind Velocity');
 netcdf.putAtt(nc,v10_varid,'standard_name','Wind Velocity');
 netcdf.putAtt(nc,v10_varid,'units','m/s');
@@ -104,8 +104,8 @@ netcdf.endDef(nc);
 netcdf.putVar(nc,time_varid,0,numel(time),time);
 netcdf.putVar(nc,itime_varid,floor(time));
 netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000);
-netcdf.putVar(nc,u10_varid,u10);
-netcdf.putVar(nc,v10_varid,v10);
+netcdf.putVar(nc,u10_varid,[0,0],[nElems,numel(time)],u10);
+netcdf.putVar(nc,v10_varid,[0,0],[nElems,numel(time)],v10);
 
 % close file
 netcdf.close(nc);
