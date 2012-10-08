@@ -1,4 +1,4 @@
-function write_FVCOM_wind_ts_speed(WindFile, time, u10, v10)
+function write_FVCOM_wind_ts_speed(Mobj, WindFile, time, u10, v10)
 
 % example file for FVCOM, time-varying/spatially constant wind forcing as speed
 %
@@ -8,6 +8,7 @@ function write_FVCOM_wind_ts_speed(WindFile, time, u10, v10)
 %    Write a time-varying, spatially constant wind file
 %
 % INPUT
+%    Mobj - MATLAB mesh object
 %    WindFile - output NetCDF filename (including path)
 %    time - time in MJD
 %    u10 - vector x component of wind field 10m above the surface. 
@@ -35,7 +36,7 @@ function write_FVCOM_wind_ts_speed(WindFile, time, u10, v10)
 %   MATLAB NetCDF functions for creating the output file, eliminating the
 %   need for the third party NetCDF library. Also added three additional
 %   arguments to the function call (time and u and v vectors). u and v
-%   vectors vary in time but not (yet) in space).
+%   vectors vary in time but not (yet) in space.
 %   
 %==============================================================================
 warning off
@@ -45,6 +46,9 @@ if(ftbverbose);
     fprintf('\n')
     fprintf(['begin : ' subname '\n'])
 end
+
+nElems = Mobj.nElems;
+nNodes = Mobj.nVerts;
 
 %------------------------------------------------------------------------------
 % write output to time and spatially-varying FVCOM wind file 
@@ -60,6 +64,8 @@ netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','Generated using the 
 
 % dimensions
 time_dimid=netcdf.defDim(nc,'time',netcdf.getConstant('NC_UNLIMITED'));
+nele_dimid=netcdf.defDim(nc,'nele',nElems);
+nvert_dimid=netcdf.defDim(nc,'nele',nNodes);
 
 % time vars
 time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
@@ -77,17 +83,19 @@ itime2_varid=netcdf.defVar(nc,'Itime2','NC_INT',time_dimid);
 netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
 netcdf.putAtt(nc,itime2_varid,'time_zone','none');
 
-u10_varid=netcdf.defVar(nc,'U10','NC_FLOAT',time_dimid);
+% Space and time variables
+u10_varid=netcdf.defVar(nc,'U10','NC_FLOAT',[time_dimid,nele_dimid]);
 netcdf.putAtt(nc,u10_varid,'long_name','Eastward Wind Velocity');
 netcdf.putAtt(nc,u10_varid,'standard_name','Wind Velocity');
 netcdf.putAtt(nc,u10_varid,'units','m/s');
 netcdf.putAtt(nc,u10_varid,'type','data');
 
-v10_varid=netcdf.defVar(nc,'V10','NC_FLOAT',time_dimid);
+v10_varid=netcdf.defVar(nc,'V10','NC_FLOAT',[time_dimid,nele_dimid]);
 netcdf.putAtt(nc,v10_varid,'long_name','Northward Wind Velocity');
 netcdf.putAtt(nc,v10_varid,'standard_name','Wind Velocity');
 netcdf.putAtt(nc,v10_varid,'units','m/s');
 netcdf.putAtt(nc,v10_varid,'type','data');
+
 
 % end definitions
 netcdf.endDef(nc);
