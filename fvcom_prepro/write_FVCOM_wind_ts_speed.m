@@ -58,14 +58,15 @@ nc=netcdf.create(WindFile,'clobber');
 
 % define global attributes
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'references','http://fvcom.smast.umassd.edu')
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','single-point time-dependent surface forcing')
+% netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','single-point time-dependent surface forcing')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','fvcom grid (unstructured) surface forcing')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'institution','Plymouth Marine Laboratory')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','Generated using the fvcom-toolbox')
 
 % dimensions
-time_dimid=netcdf.defDim(nc,'time',netcdf.getConstant('NC_UNLIMITED'));
 nele_dimid=netcdf.defDim(nc,'nele',nElems);
 nvert_dimid=netcdf.defDim(nc,'node',nNodes);
+time_dimid=netcdf.defDim(nc,'time',netcdf.getConstant('NC_UNLIMITED'));
 
 % time vars
 time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
