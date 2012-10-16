@@ -47,24 +47,6 @@ if(ftbverbose);
   fprintf(['begin : ' subname '\n'])
 end;
 
-ncep_u10_file = '/tmp/irish_sea/raw_data/uwnd.sig995.2006.nc';
-ncep_v10_file = '/tmp/irish_sea/raw_data/vwnd.sig995.2006.nc';
-fvcom_forcing_file = '/tmp/irish_sea/input/configs/irish_sea_v9/irish_sea_v9_wnd_ncep.nc';
-infos = 'NCEP from ftp://ftp.cdc.noaa.gov/Datasets/ncep.reanalysis/surface/';
-
-% Allocate the arrays for the converted coordinates (lat/long to cartesian)
-% [nlat,nlon] = size(nceplat);
-% ncepx = zeros(nlat,nlon);
-% ncepy = zeros(nlat,nlon);
-% 
-% % Project NCEP grid to cartesian grid for interpolation. Use Zone 30 here
-% % because it's just about the centre of the world -6 to 0 degrees
-% % longitude.
-% for i=1:nlat
-%   [ncepx(i,:),ncepy(i,:)] = cart_project(nceplon(i,:),nceplat(i,:));
-% end
-%     
-
 %--------------------------------------------------------------------------
 % Get the relevant bits from the FVCOM mesh object
 %--------------------------------------------------------------------------
@@ -197,11 +179,3 @@ netcdf.putVar(nc,v10_node_varid,[0,0],[nVerts,ntimes],fvcom_v10_node);
 netcdf.close(nc);
 netcdf.close(ncep_u10_file);
 netcdf.close(ncep_v10_file);
-
-
-% Have a look at the wind field
-% for i=1:ntimes
-%     quiver(Mobj.x, Mobj.y, fvcom_u10_node(:,i), fvcom_v10_node(:,i), 0.5); 
-%     axis([305000, 335000, 5545000, 5585000]) % WaveHub site
-%     pause(0.05)
-% end
