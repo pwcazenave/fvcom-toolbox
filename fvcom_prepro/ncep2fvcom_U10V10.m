@@ -40,13 +40,16 @@ if(ftbverbose);
   fprintf(['begin : ' subname '\n'])
 end;
 
-ncep_file = '/tmp/irish_sea/raw_data/uwnd.sig995.2006.nc';
-fvcom_grid_file = '/data/medusa/pica/models/FVCOM/irish_sea/input/configs/irish_sea_v9/irish_sea_v9_grd.dat';
+ncep_u10_file = '/tmp/irish_sea/raw_data/uwnd.sig995.2006.nc';
+ncep_v10_file = '/tmp/irish_sea/raw_data/vwnd.sig995.2006.nc';
 fvcom_forcing_file = '/tmp/irish_sea/input/configs/irish_sea_v9/irish_sea_v9_wnd_ncep.nc';
 infos = 'NCEP from ftp://ftp.cdc.noaa.gov/Datasets/ncep.reanalysis/surface/';
 
-if exist(ncep_file, 'file') ~= 2
-   error(['file: ' ncep_file ' does not exist']);
+if exist(ncep_u10_file, 'file') ~= 2
+   error(['file: ' ncep_u10_file ' does not exist']);
+end
+if exist(ncep_v10_file, 'file') ~= 2
+    error(['file: ' ncep_v10_file ' does not exist']);
 end
 
 %--------------------------------------------------------------------------
@@ -65,7 +68,7 @@ end
 % We're assuming that since both files are for the same year, we don't have
 % to pull the 'time' variable out from both (they should be identical).
 % Currently uses the U vector.
-nc_u10 = netcdf.open(ncep_file, 'NOWRITE');
+nc_u10 = netcdf.open(ncep_u10_file, 'NOWRITE');
 time_varid = netcdf.inqVarID(nc_u10, 'time');
 nceptimehours = netcdf.getVar(nc_u10, time_varid);
 
@@ -91,7 +94,7 @@ lon_varid = netcdf.inqVarID(nc_u10, 'lon');
 nceplatvector = netcdf.getVar(nc_u10, lat_varid);
 nceplonvector = netcdf.getVar(nc_u10, lon_varid);
 
-[nceplat, nceplon] = meshgrid(nceplonvector, nceplatvector);
+[nceplon, nceplat] = meshgrid(nceplonvector, nceplatvector);
 
 [nlat,nlon] = size(nceplat);
 
@@ -101,140 +104,175 @@ ncepy = zeros(nlat,nlon);
 % project NCEP grid to cartesian grid for interpolation. Use Zone 30 here
 % because it's just about the centre of the world -6 to 0 degrees
 % longitude.
-utmZones=cellfun(@(x) repmat(x,length(Mobj.x),1),'30 U','uni',false);
 for i=1:nlat
-  [nceplon(i,:),nceplat(i,:),ncepx(i,:),ncepy(i,:)] = ...
-      my_project(nceplon(i,:),nceplat(i,:),ncepx(i,:),ncepy(i,:),'forward');
-end;
+  [ncepx(i,:),ncepy(i,:)] = cart_project(nceplon(i,:),nceplat(i,:));
+end
 
-% load FVCOM mesh
-Mobj = read_fvcom_mesh(fvcom_grid_file);
+% Get the relevant bits from the FVCOM mesh object
 tri = Mobj.tri;
 x   = Mobj.x;
 y   = Mobj.y;
 nVerts = Mobj.nVerts;
 nElems = Mobj.nElems;
-nv   = tri;  
-fprintf('info for fvcom domain\n');
-fprintf('number of nodes: %d\n',nVerts);
-fprintf('number of elems: %d\n',nElems);
+nv   = tri;
+if(ftbverbose);
+    fprintf('info for FVCOM domain\n');
+    fprintf('number of nodes: %d\n',nVerts);
+    fprintf('number of elems: %d\n',nElems);
+end
 
 xc = zeros(nElems,1);
 yc = zeros(nElems,1);
 for i=1:nElems
-  xc(i) = sum(x(tri(i,1:3)))/3.;
-  yc(i) = sum(y(tri(i,1:3)))/3.;
-end;
+  xc(i) = mean(x(tri(i,1:3)));
+  yc(i) = mean(y(tri(i,1:3)));
+end
 
 %---------------------------------------------------------------
-% dump header for netcdf FVCOM forcing file
+% Dump header for netcdf FVCOM forcing file
 %---------------------------------------------------------------
-nc = netcdf(fvcom_forcing_file, 'clobber');            
-nc.type = 'FVCOM U10/V10 Forcing File' ;
-nc.source = 'fvcom grid (unstructured) surface forcing';
-nc.references = 'http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu'; 
-nc.institution = 'School for Marine Science and Technology' ;
-nc.history = 'ncep_2_fvcom_U10V10.m';
-nc.infos = infos;
-  
+nc = netcdf.create(fvcom_forcing_file, 'clobber');
+
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM U10/V10 Forcing File')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','fvcom grid (unstructured) surface forcing')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'references','http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'institution','Plymouth Marine Laboratory')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'institution','ncep_2_fvcom_U10V10.m')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'infos',infos)
+
 % dimensions
-nc('three') = 3;
-nc('nele') = int8(nElems);
-nc('node') = nVerts;
-nc('time') = 0;
+three_dimid=netcdf.defDim(nc,'three',3);
+nele_dimid=netcdf.defDim(nc,'nele',nElems);
+node_dimid=netcdf.defDim(nc,'node',nVerts);
+time_dimid=netcdf.defDim(nc,'time',netcdf.getConstant('NC_UNLIMITED'));
 
 % time vars
-nc{'time'} = ncfloat('time');
-nc{'time'}.long_name = 'time';
-nc{'time'}.units = 'days since 1858-11-17 00:00:00';
-nc{'time'}.format = 'modified julian day (MJD)';
-nc{'time'}.time_zone = 'UTC';
-  
-nc{'Itime'} = ncint('time');
-nc{'Itime'}.units = 'days since 1858-11-17 00:00:00';
-nc{'Itime'}.format = 'modified julian day (MJD)';
-nc{'Itime'}.time_zone = 'UTC';
+time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
+netcdf.putAtt(nc,time_varid,'long_name','time');
+netcdf.putAtt(nc,time_varid,'units','days since 1858-11-17 00:00:00');
+netcdf.putAtt(nc,time_varid,'format','modified julian day (MJD)');
+netcdf.putAtt(nc,time_varid,'time_zone','UTC');
 
-nc{'Itime2'} = ncint('time');
-nc{'Itime2'}.units = 'msec since 00:00:00';
-nc{'Itime2'}.time_zone = 'UTC';
+itime_varid=netcdf.defVar(nc,'Itime','NC_INT',time_dimid);
+netcdf.putAtt(nc,itime_varid,'units','days since 1858-11-17 00:00:00');
+netcdf.putAtt(nc,itime_varid,'format','modified julian day (MJD)');
+netcdf.putAtt(nc,itime_varid,'time_zone','UTC');
 
-nc{'x'} = ncint('node');
-nc{'x'}.long_name = 'nodal x-coordinate';
-nc{'x'}.units = 'm';
-  
-nc{'y'} = ncint('node');
-nc{'y'}.long_name = 'nodal y-coordinate';
-nc{'y'}.units = 'm';
+itime2_varid=netcdf.defVar(nc,'Itime2','NC_INT',time_dimid);
+netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
+netcdf.putAtt(nc,itime2_varid,'time_zone','UTC');
 
-nc{'nv'} = ncint('three','nele');
-nc{'nv'}.long_name = 'nodes surrounding element';
-nc{'nv'}(1:3,1:nElems) = tri';
+% space vars
+x_varid=netcdf.defVar(nc,'x','NC_FLOAT',node_dimid);
+netcdf.putAtt(nc,x_varid,'long_name','nodal x-coordinate');
+netcdf.putAtt(nc,x_varid,'units','m');
 
-nc{'U10'} = ncfloat('time','nele');
-nc{'U10'}.long_name = 'Eastward 10-m Velocity';
-nc{'U10'}.standard_name = 'Eastward Wind Speed';
-nc{'U10'}.units = 'm/s';
-nc{'U10'}.grid = 'fvcom_grid';
-nc{'U10'}.type = 'data';
+y_varid=netcdf.defVar(nc,'y','NC_FLOAT',node_dimid);
+netcdf.putAtt(nc,y_varid,'long_name','nodal y-coordinate');
+netcdf.putAtt(nc,y_varid,'units','m');
 
-nc{'V10'} = ncfloat('time','nele');
-nc{'V10'}.long_name = 'Northward 10-m Velocity';
-nc{'V10'}.standard_name = 'Northtward Wind Speed';
-nc{'V10'}.units = 'm/s';
-nc{'V10'}.grid = 'fvcom_grid';
-nc{'V10'}.type = 'data';
+nv_varid=netcdf.defVar(nc,'nv','NC_FLOAT',[nele_dimid, three_dimid]);
+netcdf.putAtt(nc,nv_varid,'long_name','nodes surrounding element');
 
-nc{'U10_node'} = ncfloat('time','node');
-nc{'U10_node'}.long_name = 'Eastward 10-m Velocity';
-nc{'U10_node'}.standard_name = 'Eastward Wind Speed';
-nc{'U10_node'}.units = 'm/s';
-nc{'U10_node'}.grid = 'fvcom_grid';
-nc{'U10_node'}.type = 'data';
+% wind vars
+u10_varid=netcdf.defVar(nc,'U10','NC_FLOAT',[nele_dimid, time_dimid]);
+netcdf.putAtt(nc,u10_varid,'long_name','Eastward 10-m Velocity');
+netcdf.putAtt(nc,u10_varid,'standard_name','Eastward Wind Speed');
+netcdf.putAtt(nc,u10_varid,'units','m/s');
+netcdf.putAtt(nc,u10_varid,'grid','fvcom_grid');
+netcdf.putAtt(nc,u10_varid,'type','data');
 
-nc{'V10_node'} = ncfloat('time','node');
-nc{'V10_node'}.long_name = 'Northward 10-m Velocity';
-nc{'V10_node'}.standard_name = 'Northtward Wind Speed';
-nc{'V10_node'}.units = 'm/s';
-nc{'V10_node'}.grid = 'fvcom_grid';
-nc{'V10_node'}.type = 'data';
+v10_varid=netcdf.defVar(nc,'V10','NC_FLOAT',[nele_dimid, time_dimid]);
+netcdf.putAtt(nc,v10_varid,'long_name','Northward 10-m Velocity');
+netcdf.putAtt(nc,v10_varid,'standard_name','Northward Wind Speed');
+netcdf.putAtt(nc,v10_varid,'units','m/s');
+netcdf.putAtt(nc,v10_varid,'grid','fvcom_grid');
+netcdf.putAtt(nc,v10_varid,'type','data');
 
+u10_node_varid=netcdf.defVar(nc,'U10_node','NC_FLOAT',[node_dimid, time_dimid]);
+netcdf.putAtt(nc,u10_node_varid,'long_name','Eastward 10-m Velocity');
+netcdf.putAtt(nc,u10_node_varid,'standard_name','Eastward Wind Speed');
+netcdf.putAtt(nc,u10_node_varid,'units','m/s');
+netcdf.putAtt(nc,u10_node_varid,'grid','fvcom_grid');
+netcdf.putAtt(nc,u10_node_varid,'type','data');
 
-% dump time
-nc{'time'}(1:ntimes) = nceptime;
-nc{'Itime'}(1:ntimes) = floor(nceptime); 
-nc{'Itime2'}(1:ntimes) = mod(nceptime,1)*24*3600*1000.;
-nc{'x'}(1:nVerts) = x;
-nc{'y'}(1:nVerts) = y;
+v10_node_varid=netcdf.defVar(nc,'V10_node','NC_FLOAT',[node_dimid, time_dimid]);
+netcdf.putAtt(nc,v10_node_varid,'long_name','Northward 10-m Velocity');
+netcdf.putAtt(nc,v10_node_varid,'standard_name','Northward Wind Speed');
+netcdf.putAtt(nc,v10_node_varid,'units','m/s');
+netcdf.putAtt(nc,v10_node_varid,'grid','fvcom_grid');
+netcdf.putAtt(nc,v10_node_varid,'type','data');
+
+% end definitions
+netcdf.endDef(nc);
+
+% write the triangulation data (nv)
+netcdf.putVar(nc, nv_varid, tri');
+
+% write the times
+netcdf.putVar(nc,time_varid,0,ntimes,nceptime);
+netcdf.putVar(nc,itime_varid,0,ntimes,floor(nceptime));
+netcdf.putVar(nc,itime2_varid,0,ntimes,mod(nceptime,1)*24*3600*1000);
+netcdf.putVar(nc,x_varid,x);
+netcdf.putVar(nc,y_varid,y);
+
 
 % read data from NCEP grid, interpolate to FVCOM mesh
-fvcom_u10   = zeros(nElems,1);
-fvcom_v10   = zeros(nElems,1);
-fvcom_u10_node   = zeros(nVerts,1);
-fvcom_v10_node   = zeros(nVerts,1);
+fvcom_u10   = zeros(nElems,ntimes);
+fvcom_v10   = zeros(nElems,ntimes);
+fvcom_u10_node   = zeros(nVerts,ntimes);
+fvcom_v10_node   = zeros(nVerts,ntimes);
 
-nc2 = netcdf(ncep_file);
-icnt = 1;
+% Open the as yet unopened V10 NCEP NetCDF file
+nc_v10 = netcdf.open(ncep_v10_file, 'NOWRITE');
+
+% Find the necessary variables
+u10_varid_NCEP = netcdf.inqVarID(nc_u10, 'uwnd');
+v10_varid_NCEP = netcdf.inqVarID(nc_v10, 'vwnd');
+
+% The NCEP data are packed as integers. The following equation describes
+% how to unpack them
+%     unpacked value = add_offset + ( (packed value) * scale_factor )
+% 
+scale_factor = netcdf.getAtt(nc_u10,u10_varid_NCEP,'scale_factor','single');
+add_offset = netcdf.getAtt(nc_u10,u10_varid_NCEP,'add_offset','single');
+
+% Get the U10 and V10 data
+U10 = netcdf.getVar(nc_u10, u10_varid_NCEP, 'single');
+V10 = netcdf.getVar(nc_v10, v10_varid_NCEP, 'single');
+
+% Scale by the factor
+U10 = double(add_offset + (U10.*scale_factor));
+V10 = double(add_offset + (V10.*scale_factor));
+
 for i=1:ntimes
-  fprintf('interpolating frame %d of %d\n',i,ntimes);
-  U10  = nc2{'U10'}(i,:,:);
-  V10  = nc2{'V10'}(i,:,:);
-  fvcom_u10_node  = griddata(ncepx,ncepy,U10,x,y);
-  fvcom_v10_node  = griddata(ncepx,ncepy,V10,x,y);
-  for j=1:nElems
-     fvcom_u10(j) = sum(fvcom_u10_node(tri(j,1:3)))/3.; 
-     fvcom_v10(j) = sum(fvcom_v10_node(tri(j,1:3)))/3.; 
-  end;
-  nc{'U10'}(icnt,1:nElems) = fvcom_u10;
-  nc{'V10'}(icnt,1:nElems) = fvcom_v10;
-  nc{'U10_node'}(icnt,1:nVerts) = fvcom_u10_node;
-  nc{'V10_node'}(icnt,1:nVerts) = fvcom_v10_node;
-  icnt = icnt + 1;
-end;
+    fprintf('interpolating frame %d of %d\n', i, ntimes);
+
+    fvcom_u10_node(:,i) = griddata(ncepx,ncepy,U10(:,:,i)',x,y);
+    fvcom_v10_node(:,i) = griddata(ncepx,ncepy,V10(:,:,i)',x,y);
+    for j=1:nElems
+     fvcom_u10(j,i) = mean(fvcom_u10_node(tri(j,1:3))); 
+     fvcom_v10(j,i) = mean(fvcom_v10_node(tri(j,1:3))); 
+    end
+%     nc{'U10'}(i,1:nElems) = fvcom_u10;
+%     nc{'V10'}(i,1:nElems) = fvcom_v10;
+%     nc{'U10_node'}(i,1:nVerts) = fvcom_u10_node;
+%     nc{'V10_node'}(i,1:nVerts) = fvcom_v10_node;
+end
 fprintf('interpolation complete\n');
 
-ierr = close(nc);
-ierr = close(nc2);
+% Write the data to the FVCOM NetCDF input file
+netcdf.putVar(nc, u10_varid, [0, i], [nElems, ntimes], fvcom_u10);
+netcdf.putVar(nc, v10_varid, [0, i], [nElems, ntimes], fvcom_v10);
+netcdf.putVar(nc, u10_node_varid, [0, i], [nVerts, ntimes], fvcom_u10_node);
+netcdf.putVar(nc, v10_node_varid, [0, i], [nVerts, ntimes], fvcom_v10_node);
+
+% Close the output file
+netcdf.close(nc);
+% Close the NCEP NetCDF files
+netcdf.close(nc2);
+netcdf.close(ncep_u10_file);
+netcdf.close(ncep_v10_file);
 
 function year = getYear(file)
 % Extract the year from a give NCEP file name (either 'uwnd.sig995.YYYY.nc'
@@ -247,3 +285,12 @@ year = str2double(tmp_year(end));
 if ~isnumeric(tmp_year)
     error('Could not parse the NCEP year from the NCEP file name. Expecting ''uwnd.sig995.YYYY.nc'' and ''vwnd.sig995.YYYY.nc''')
 end
+
+function [out_east,out_north] = cart_project(in_east,in_north)
+% Custom version of the my_project function which is provided with
+% fvcom-toolbox. This one only goes from lat/long to eastings and
+% northings. It also assumes zone 30N for the transformation since it's
+% just about central (-6W to 0).
+m_proj('UTM','longitude',[-180,-180],'latitude',[-90,90],'zone',30,'hemisphere','north','ellipsoid','wgs84')
+[out_east, out_north] = m_ll2xy(in_east, in_north, 'clip', 'off');
+
