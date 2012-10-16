@@ -1,7 +1,7 @@
 function ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U10,V10,nceptime,fvcom_forcing_file,infos)
 % Interpolate NCEP reanalysis wind speed data onto a given FVCOM grid
 %
-% function ncep2fvcom_U10V10()
+% ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U10,V10,nceptime,fvcom_forcing_file,infos)
 % 
 % DESCRIPTION:
 %   Takes a given NCEP reanalysis grid file and interpolates the U10 and
@@ -9,13 +9,13 @@ function ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U10,V10,nceptime,fvcom_forcing_file,
 %   
 % INPUT:
 %   Mobj - MATLAB mesh object
-%   NCEP x data (probably best in cartesian for the interpolation)
-%   NCEP y data (probably best in cartesian for the interpolation)
-%   NCEP NetCDF U10 data
-%   NCEP NetCDF V10 data
-%   NCEP Time vector (in Modified Julian Days)
-%   FVCOM forcing file name
-%   Additional remarks to be written to the "infos" NetCDF variable
+%   ncepx - x data (probably best in cartesian for the interpolation)
+%   ncepy - data (probably best in cartesian for the interpolation)
+%   U10 - u-component wind data
+%   V10 - v-component wind data
+%   nceptime - NCEP Time vector (in Modified Julian Days)
+%   fvcom_forcing_file - FVCOM forcing file name
+%   infos - Additional remarks to be written to the "infos" NetCDF variable
 % 
 % OUTPUT:
 %   FVCOM wind speed forcing file
@@ -75,8 +75,8 @@ fvcom_v10_node   = zeros(nVerts,ntimes);
 for i=1:ntimes
     fprintf('interpolating frame %d of %d\n', i, ntimes);
 
-    fvcom_u10_node(:,i) = griddata(ncepx,ncepy,U10(:,:,i)',x,y);
-    fvcom_v10_node(:,i) = griddata(ncepx,ncepy,V10(:,:,i)',x,y);
+    fvcom_u10_node(:,i) = griddata(ncepx,ncepy,U10(:,:,i),x,y);
+    fvcom_v10_node(:,i) = griddata(ncepx,ncepy,V10(:,:,i),x,y);
     for j=1:nElems
      fvcom_u10(j,i) = mean(fvcom_u10_node(tri(j,1:3))); 
      fvcom_v10(j,i) = mean(fvcom_v10_node(tri(j,1:3))); 
