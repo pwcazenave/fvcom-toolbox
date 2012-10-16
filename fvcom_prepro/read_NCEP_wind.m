@@ -88,7 +88,9 @@ lon_varid = netcdf.inqVarID(nc_u10, 'lon');
 nceplatvector = netcdf.getVar(nc_u10, lat_varid);
 nceplonvector = netcdf.getVar(nc_u10, lon_varid);
 
-[nceplon, nceplat] = meshgrid(nceplonvector', nceplatvector');
+[nceplon, nceplat] = meshgrid(nceplonvector, nceplatvector);
+nceplon = nceplon';
+nceplat = nceplat';
 
 % Find the necessary variables
 u10_varid_NCEP = netcdf.inqVarID(nc_u10, 'uwnd');
