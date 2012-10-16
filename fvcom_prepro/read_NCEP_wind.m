@@ -41,9 +41,6 @@ if(ftbverbose);
   fprintf(['begin : ' subname '\n'])
 end;
 
-ncep_u10_file = '/tmp/irish_sea/raw_data/uwnd.sig995.2006.nc';
-ncep_v10_file = '/tmp/irish_sea/raw_data/vwnd.sig995.2006.nc';
-
 if exist(ncep_u10_file, 'file') ~= 2
    error(['file: ' ncep_u10_file ' does not exist']);
 end
