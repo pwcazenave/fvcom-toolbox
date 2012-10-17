@@ -1,4 +1,4 @@
-function [nceplon, nceplat, ncep_u10, ncep_v10] = read_NCEP_wind(ncep_u10_file, ncep_v10_file)
+function [nceplon, nceplat, ncep_u10, ncep_v10, nceptime] = read_NCEP_wind(ncep_u10_file, ncep_v10_file)
 % Reads in two NCEP wind vector files (U and V) and outputs four arrays of
 % longitude, latitude, u10 and v10 velocity components.
 % 
@@ -89,8 +89,6 @@ nceplatvector = netcdf.getVar(nc_u10, lat_varid);
 nceplonvector = netcdf.getVar(nc_u10, lon_varid);
 
 [nceplon, nceplat] = meshgrid(nceplonvector, nceplatvector);
-nceplon = nceplon';
-nceplat = nceplat';
 
 % Find the necessary variables
 u10_varid_NCEP = netcdf.inqVarID(nc_u10, 'uwnd');
@@ -108,8 +106,10 @@ V10 = netcdf.getVar(nc_v10, v10_varid_NCEP, 'single');
 scale_factor = netcdf.getAtt(nc_u10,u10_varid_NCEP,'scale_factor','single');
 add_offset = netcdf.getAtt(nc_u10,u10_varid_NCEP,'add_offset','single');
 
-% Unpack the values. U10 and V10 must be doubles for griddata to work.
-ncep_u10 = double(add_offset + (U10.*scale_factor));
-ncep_v10 = double(add_offset + (V10.*scale_factor));
+% Unpack the values. U10 and V10 must be doubles for griddata to work. Fix
+% the order of the dimensions to match the coordinates in nceplon and
+% nceplat. 
+ncep_u10 = permute(double(add_offset + (U10.*scale_factor)), [2,1,3]);
+ncep_v10 = permute(double(add_offset + (V10.*scale_factor)), [2,1,3]);
 
 
