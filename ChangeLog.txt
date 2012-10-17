@@ -44,6 +44,16 @@ fvcom-prepro:
         * Also add a crude conversion from lat/long distances to UTM (metres)
         using a great circle appoximation.
 
+    read_NCEP_wind.m:
+        * Extract the wind vectors and time series from a pair of NCEP
+        reanalysis wind files.
+
+    ncep2fvcom_U10V10.m:
+        * Interpolate the output of read_NCEP_wind.m onto a specified
+        unstructured grid.
+        * Although based on the NCEP data, in principle any regularly gridded
+        data can be supplied for the interpolation.
+
 
 fvcom-postproc:
     example_surface_plot.m:
@@ -60,6 +70,9 @@ utilities:
     do_transect_plot.m:
         * Pick and plot a transect through model output.
 
+    get_NCEP_year.m:
+        * Extract the year from an NCEP Reanalysis file name.
+
     deg2utm.m:
         * Function to convert from lat/long to UTM.
         * From http://www.mathworks.com/matlabcentral/fileexchange/10915
@@ -67,5 +80,9 @@ utilities:
     utm2deg.m:
         * Function to convert from UTM to lat/long.
         * From http://www.mathworks.com/matlabcentral/fileexchange/10914
+
+    wgs2utm:
+        * As deg2utm, but the UTM zone can be forced, allowing for UTM
+        coordinates which spread across multiple zones.
 
 
