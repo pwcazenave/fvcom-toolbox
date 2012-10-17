@@ -17,12 +17,13 @@ function [nceplon, nceplat, ncep_u10, ncep_v10, nceptime] = read_NCEP_wind(ncep_
 %   nceplat - latitude data
 %   ncep_u10 - u vector component 10 m above surface
 %   ncep_v10 - v vector component 10 m above surface
+%   nceptime - time in Modified Julian Days
 % 
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 % 
 % Revision history:
-%   2012-10-16 First version based on parts of ncep2fvcom_U10V10.m in the
+%   2012-10-16 First version based on parts of wrf2fvcom_U10V10.m in the
 %   fvcom-toolbox.
 % 
 %==========================================================================
