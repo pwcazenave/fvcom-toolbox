@@ -36,7 +36,7 @@ function write_FVCOM_wind_ts_speed(Mobj, WindFile, time, u10, v10)
 %   MATLAB NetCDF functions for creating the output file, eliminating the
 %   need for the third party NetCDF library. Also added three additional
 %   arguments to the function call (time and u and v vectors). u and v
-%   vectors vary in time but not (yet) in space.
+%   vectors vary in time and space.
 %   
 %==============================================================================
 warning off
