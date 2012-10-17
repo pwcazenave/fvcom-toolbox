@@ -1,4 +1,4 @@
-function ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U10,V10,nceptime,fvcom_forcing_file,infos)
+function [fvcom_u10_node, fvcom_v10_node] = ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U10,V10,nceptime,fvcom_forcing_file,infos)
 % Interpolate NCEP reanalysis wind speed data onto a given FVCOM grid
 %
 % ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U10,V10,nceptime,fvcom_forcing_file,infos)
@@ -28,7 +28,7 @@ function ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U10,V10,nceptime,fvcom_forcing_file,
 %   fvcom-toolbox.
 %   2012-10-16 Removed the code to read the NCEP file. Instead, farmed that
 %   out to a new function (read_NCEP_wind) so that the relevant section can
-%   be more readily extracted (rather than using the entire globe's data,
+%   be more readily extracted (rather than using the entire globe's data:
 %   it's easier to subsample and provide the subsampled data here). 
 % 
 %==========================================================================
