@@ -18,7 +18,9 @@ function [fvcom_u10_node, fvcom_v10_node] = ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U
 %   infos - Additional remarks to be written to the "infos" NetCDF variable
 % 
 % OUTPUT:
-%   FVCOM wind speed forcing file
+%   fvcom_u10_node - interpolated u vector values at the nodes
+%   fvcom_v10_node - interpolated v vector values at the nodes
+%   FVCOM wind speed forcing NetCDF file
 % 
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -30,6 +32,7 @@ function [fvcom_u10_node, fvcom_v10_node] = ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U
 %   out to a new function (read_NCEP_wind) so that the relevant section can
 %   be more readily extracted (rather than using the entire globe's data:
 %   it's easier to subsample and provide the subsampled data here). 
+%   2012-10-17 Add outputs to the function for use in visualisation. 
 % 
 %==========================================================================
 
