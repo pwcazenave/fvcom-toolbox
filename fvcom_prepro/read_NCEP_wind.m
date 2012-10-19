@@ -1,4 +1,4 @@
-function [nceplon, nceplat, ncep_u10, ncep_v10, nceptime] = read_NCEP_wind(ncep_u10_file, ncep_v10_file)
+function ncep = read_NCEP_wind(ncep_u10_file, ncep_v10_file)
 % Reads in two NCEP wind vector files (U and V) and outputs four arrays of
 % longitude, latitude, u10 and v10 velocity components.
 % 
@@ -13,11 +13,8 @@ function [nceplon, nceplat, ncep_u10, ncep_v10, nceptime] = read_NCEP_wind(ncep_
 %   NCEP NetCDF V10 filename (and path)
 % 
 % OUTPUT:
-%   nceplon - longitude data
-%   nceplat - latitude data
-%   ncep_u10 - u vector component 10 m above surface
-%   ncep_v10 - v vector component 10 m above surface
-%   nceptime - time in Modified Julian Days
+%   ncep - struct with the time, latitude, longitude, u10 and v10 arrays in
+%   it. Time is in Modified Julian Days.
 % 
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -72,8 +69,8 @@ nceptimehours = netcdf.getVar(nc_u10, time_varid);
 % NCEP dates are relative to 0001/01/01 00:00:00 and stored in hours.
 % MATLAB's dates are relative to 0000/00/00 00:00:00 and stored in days.
 % Need to add a year and a day to the NCEP time when converting.
-nceptimedays = datevec(nceptimehours/24 + (datenum(1, 0, -1)));
-nceptime = greg2mjulian(nceptimedays(:,1), nceptimedays(:,2),...
+nceptimedays = datevec((nceptimehours/24) + (datenum(1, 0, -1)));
+ncep.time = greg2mjulian(nceptimedays(:,1), nceptimedays(:,2),...
     nceptimedays(:,3), nceptimedays(:,4), nceptimedays(:,5),...
     nceptimedays(:,1));
 
@@ -89,7 +86,7 @@ lon_varid = netcdf.inqVarID(nc_u10, 'lon');
 nceplatvector = netcdf.getVar(nc_u10, lat_varid);
 nceplonvector = netcdf.getVar(nc_u10, lon_varid);
 
-[nceplon, nceplat] = meshgrid(nceplonvector, nceplatvector);
+[ncep.lon, ncep.lat] = meshgrid(nceplonvector, nceplatvector);
 
 % Find the necessary variables
 u10_varid_NCEP = netcdf.inqVarID(nc_u10, 'uwnd');
@@ -110,7 +107,8 @@ add_offset = netcdf.getAtt(nc_u10,u10_varid_NCEP,'add_offset','single');
 % Unpack the values. U10 and V10 must be doubles for griddata to work. Fix
 % the order of the dimensions to match the coordinates in nceplon and
 % nceplat. 
-ncep_u10 = permute(double(add_offset + (U10.*scale_factor)), [2,1,3]);
-ncep_v10 = permute(double(add_offset + (V10.*scale_factor)), [2,1,3]);
+ncep.u10 = permute(double(add_offset + (U10.*scale_factor)), [2,1,3]);
+ncep.v10 = permute(double(add_offset + (V10.*scale_factor)), [2,1,3]);
 
-
+netcdf.close(nc_u10)
+netcdf.close(nc_v10)
