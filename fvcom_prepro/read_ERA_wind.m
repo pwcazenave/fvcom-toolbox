@@ -103,7 +103,7 @@ for var=1:numel(varlist)
         % Unpack the values. In general, the data for U10 and V10 should be
         % doubles for griddata to work. Fix the order of the dimensions to
         % match the coordinates in eralon and eralat.
-        era.([getVar, num2str(2)]) = permute(double(add_offset + (data.*scale_factor)), [2,1,3]);
+        era.(getVar) = permute(double(add_offset + (data.*scale_factor)), [2,1,3]);
     else
         % We're assuming they're not packed and so we just return the data
         % as is (but as doubles).
