@@ -97,7 +97,7 @@ netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM U10/V10 Forcing F
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','fvcom grid (unstructured) surface forcing')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'references','http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'institution','Plymouth Marine Laboratory')
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'institution','ncep_2_fvcom_U10V10.m')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'institution','ncep2fvcom_U10V10.m')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'infos',infos)
 
 % Dimensions
@@ -180,5 +180,4 @@ netcdf.putVar(nc,v10_node_varid,[0,0],[nVerts,ntimes],fvcom_v10_node);
 
 % Close the NetCDF files
 netcdf.close(nc);
-netcdf.close(ncep_u10_file);
-netcdf.close(ncep_v10_file);
+
