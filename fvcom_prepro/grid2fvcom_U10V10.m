@@ -1,7 +1,7 @@
-function [fvcom_u10_node, fvcom_v10_node] = ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U10,V10,nceptime,fvcom_forcing_file,infos)
-% Interpolate NCEP reanalysis wind speed data onto a given FVCOM grid
+function [fvcom_u10_node, fvcom_v10_node] = grid2fvcom_U10V10(Mobj,ncepx,ncepy,U10,V10,nceptime,fvcom_forcing_file,infos)
+% Interpolate regularly gridded wind speed data onto a given FVCOM grid
 %
-% ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U10,V10,nceptime,fvcom_forcing_file,infos)
+% grid2fvcom_U10V10(Mobj,wind,fvcom_forcing_file,infos)
 % 
 % DESCRIPTION:
 %   Takes a given NCEP reanalysis grid file and interpolates the U10 and
@@ -9,11 +9,12 @@ function [fvcom_u10_node, fvcom_v10_node] = ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U
 %   
 % INPUT:
 %   Mobj - MATLAB mesh object
-%   ncepx - x data (probably best in cartesian for the interpolation)
-%   ncepy - data (probably best in cartesian for the interpolation)
-%   U10 - u-component wind data
-%   V10 - v-component wind data
-%   nceptime - NCEP Time vector (in Modified Julian Days)
+%   wind - a struct which contains the following arrays:
+%       x - x data (probably best in cartesian for the interpolation)
+%       y - y data (probably best in cartesian for the interpolation)
+%       u10 - u-component wind data
+%       v10 - v-component wind data
+%       time - time vector (in Modified Julian Days)
 %   fvcom_forcing_file - FVCOM forcing file name
 %   infos - Additional remarks to be written to the "infos" NetCDF variable
 % 
@@ -33,6 +34,8 @@ function [fvcom_u10_node, fvcom_v10_node] = ncep2fvcom_U10V10(Mobj,ncepx,ncepy,U
 %   be more readily extracted (rather than using the entire globe's data:
 %   it's easier to subsample and provide the subsampled data here). 
 %   2012-10-17 Add outputs to the function for use in visualisation. 
+%   2012-10-19 Add wind struct as input rather than separate u, v, time and
+%   lat/long arrays. Makes invocation a bit cleaner. 
 % 
 %==========================================================================
 
