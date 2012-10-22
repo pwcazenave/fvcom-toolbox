@@ -85,7 +85,7 @@ eralonvector = netcdf.getVar(ncERA, lon_varid);
 for var=1:numel(varlist)
 
     getVar = varlist{var};
-    varid_ERA = netcdf.inqVarID(ncERA, 'u10');
+    varid_ERA = netcdf.inqVarID(ncERA, getVar);
 
     % Get the data
     data = netcdf.getVar(ncERA, varid_ERA, 'single');
@@ -97,8 +97,8 @@ for var=1:numel(varlist)
         % (from
         % http://www.ecmwf.int/products/data/archive/data_faq.html#netcdfintegers).
         % Keep them as singles for now to avoid horrible rounding errors.
-        scale_factor = netcdf.getAtt(ncERA,varid_ERA,'scale_factor','single');
-        add_offset = netcdf.getAtt(ncERA,varid_ERA,'add_offset','single');
+        scale_factor = netcdf.getAtt(ncERA,varid_ERA,'scale_factor','double');
+        add_offset = netcdf.getAtt(ncERA,varid_ERA,'add_offset','double');
 
         % Unpack the values. In general, the data for U10 and V10 should be
         % doubles for griddata to work. Fix the order of the dimensions to
