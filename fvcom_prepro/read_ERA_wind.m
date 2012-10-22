@@ -96,7 +96,8 @@ for var=1:numel(varlist)
         %     unpacked value = add_offset + ((packed value)*scale_factor)
         % (from
         % http://www.ecmwf.int/products/data/archive/data_faq.html#netcdfintegers).
-        % Keep them as singles for now to avoid horrible rounding errors.
+        % ERA wind scale_factor and add_offset are doubles (the NCEP ones
+        % are singles).
         scale_factor = netcdf.getAtt(ncERA,varid_ERA,'scale_factor','double');
         add_offset = netcdf.getAtt(ncERA,varid_ERA,'add_offset','double');
 
