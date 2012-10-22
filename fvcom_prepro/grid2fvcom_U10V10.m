@@ -1,4 +1,4 @@
-function [fvcom_u10_node, fvcom_v10_node] = grid2fvcom_U10V10(Mobj,ncepx,ncepy,U10,V10,nceptime,fvcom_forcing_file,infos)
+function [fvcom_u10_node, fvcom_v10_node] = grid2fvcom_U10V10(Mobj,wind,fvcom_forcing_file,infos)
 % Interpolate regularly gridded wind speed data onto a given FVCOM grid
 %
 % grid2fvcom_U10V10(Mobj,wind,fvcom_forcing_file,infos)
@@ -41,7 +41,7 @@ function [fvcom_u10_node, fvcom_v10_node] = grid2fvcom_U10V10(Mobj,ncepx,ncepy,U
 
 warning off
 
-if nargin ~= 8
+if nargin ~= 4
     error('Incorrect number of arguments')
 end
 
@@ -70,7 +70,7 @@ end
 xc = nodes2elems(x, Mobj);
 yc = nodes2elems(y, Mobj);
 
-ntimes = numel(nceptime);
+ntimes = numel(wind.time);
 
 % Interpolate NCEP data to FVCOM mesh
 fvcom_u10   = zeros(nElems,ntimes);
@@ -81,8 +81,8 @@ fvcom_v10_node   = zeros(nVerts,ntimes);
 for i=1:ntimes
     fprintf('interpolating frame %d of %d\n', i, ntimes);
 
-    fvcom_u10_node(:,i) = griddata(ncepx,ncepy,U10(:,:,i),x,y);
-    fvcom_v10_node(:,i) = griddata(ncepx,ncepy,V10(:,:,i),x,y);
+    fvcom_u10_node(:,i) = griddata(wind.x,wind.y,wind.u10(:,:,i),x,y);
+    fvcom_v10_node(:,i) = griddata(wind.x,wind.y,wind.v10(:,:,i),x,y);
     for j=1:nElems
      fvcom_u10(j,i) = mean(fvcom_u10_node(tri(j,1:3))); 
      fvcom_v10(j,i) = mean(fvcom_v10_node(tri(j,1:3))); 
@@ -171,9 +171,9 @@ netcdf.endDef(nc);
 
 % Write data
 netcdf.putVar(nc,nv_varid, tri');
-netcdf.putVar(nc,time_varid,0,ntimes,nceptime);
-netcdf.putVar(nc,itime_varid,0,ntimes,floor(nceptime));
-netcdf.putVar(nc,itime2_varid,0,ntimes,mod(nceptime,1)*24*3600*1000);
+netcdf.putVar(nc,time_varid,0,ntimes,wind.time);
+netcdf.putVar(nc,itime_varid,0,ntimes,floor(wind.time));
+netcdf.putVar(nc,itime2_varid,0,ntimes,mod(wind.time,1)*24*3600*1000);
 netcdf.putVar(nc,x_varid,x);
 netcdf.putVar(nc,y_varid,y);
 netcdf.putVar(nc,u10_varid,[0,0],[nElems,ntimes],fvcom_u10);
