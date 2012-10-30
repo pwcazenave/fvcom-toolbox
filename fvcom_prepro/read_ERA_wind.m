@@ -66,7 +66,7 @@ eratimehours = datevec((double(eratimehours)/24) + datenum('1900-01-01 00:00:0.0
 % Convert the ERA times to Modified Julian Date.
 era.time = greg2mjulian(eratimehours(:,1), eratimehours(:,2),...
     eratimehours(:,3), eratimehours(:,4), eratimehours(:,5),...
-    eratimehours(:,1));
+    eratimehours(:,6));
 
 if(ftbverbose);
     fprintf('beg time of ERA Interim data %04i/%02i/%02i %02i:%02i:%02i\n', eratimehours(1,:));

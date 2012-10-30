@@ -72,7 +72,7 @@ nceptimehours = netcdf.getVar(nc_u10, time_varid);
 nceptimedays = datevec((nceptimehours/24) + (datenum(1, 0, -1)));
 ncep.time = greg2mjulian(nceptimedays(:,1), nceptimedays(:,2),...
     nceptimedays(:,3), nceptimedays(:,4), nceptimedays(:,5),...
-    nceptimedays(:,1));
+    nceptimedays(:,6));
 
 if(ftbverbose);
     fprintf('beg time of NCEP data %04i/%02i/%02i %02i:%02i:%02i\n',nceptimedays(1,:));
