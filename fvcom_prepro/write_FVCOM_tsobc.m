@@ -143,25 +143,28 @@ siglev_dimid=netcdf.defDim(nc,'siglev',nSiglev);
 
 time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
 netcdf.putAtt(nc,time_varid,'long_name','time');
-netcdf.putAtt(nc,time_varid,'units','days since 0.0');
-netcdf.putAtt(nc,time_varid,'time_zone','none');
+netcdf.putAtt(nc,time_varid,'units','days since 1858-11-17 00:00:00');
+netcdf.putAtt(nc,time_varid,'time_zone','UTC');
 
 itime_varid=netcdf.defVar(nc,'Itime','NC_INT',time_dimid);
-netcdf.putAtt(nc,itime_varid,'units','days since 0.0');
-netcdf.putAtt(nc,itime_varid,'time_zone','none');
+netcdf.putAtt(nc,itime_varid,'units','days since 1858-11-17 00:00:00');
+netcdf.putAtt(nc,itime_varid,'format','modified julian day (MJD)');
+netcdf.putAtt(nc,itime_varid,'time_zone','UTC');
 
 itime2_varid=netcdf.defVar(nc,'Itime2','NC_INT',time_dimid);
 netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
-netcdf.putAtt(nc,itime2_varid,'time_zone','none');
+netcdf.putAtt(nc,itime2_varid,'time_zone','UTC');
 
 nobc_varid=netcdf.defVar(nc,'obc_nodes','NC_INT',nobc_dimid);
 netcdf.putAtt(nc,nobc_varid,'long_name','Open Boundary Node Number');
 netcdf.putAtt(nc,nobc_varid,'grid','obc_grid');
+netcdf.putAtt(nc,nobc_varid,'type','data');
 
 obc_h_varid=netcdf.defVar(nc,'obc_h','NC_FLOAT',nobc_dimid);
-netcdf.putAtt(nc,obc_h_varid,'long_name','ocean boundary depth');
+netcdf.putAtt(nc,obc_h_varid,'long_name','Open Boundary Depth');
 netcdf.putAtt(nc,obc_h_varid,'units','m');
 netcdf.putAtt(nc,obc_h_varid,'grid','obc_grid');
+netcdf.putAtt(nc,obc_h_varid,'type','data');
 
 obc_siglev_varid=netcdf.defVar(nc,'siglev','NC_FLOAT',siglev_dimid);
 netcdf.putAtt(nc,obc_siglev_varid,'long_name','ocean_sigma/general_coordinate');
