@@ -69,7 +69,7 @@ nceptimehours = netcdf.getVar(nc_u10, time_varid);
 % NCEP dates are relative to 0001/01/01 00:00:00 and stored in hours.
 % MATLAB's dates are relative to 0000/00/00 00:00:00 and stored in days.
 % Need to add a year and a day to the NCEP time when converting.
-nceptimedays = datevec((nceptimehours/24) + (datenum(1, 0, -1)));
+nceptimedays = datevec((nceptimehours/24) + datenum(1, 0, -1));
 ncep.time = greg2mjulian(nceptimedays(:,1), nceptimedays(:,2),...
     nceptimedays(:,3), nceptimedays(:,4), nceptimedays(:,5),...
     nceptimedays(:,6));
@@ -107,8 +107,8 @@ add_offset = netcdf.getAtt(nc_u10,u10_varid_NCEP,'add_offset','single');
 % Unpack the values. U10 and V10 must be doubles for griddata to work. Fix
 % the order of the dimensions to match the coordinates in nceplon and
 % nceplat. 
-ncep.u10 = permute(double(add_offset + (U10.*scale_factor)), [2,1,3]);
-ncep.v10 = permute(double(add_offset + (V10.*scale_factor)), [2,1,3]);
+ncep.uwnd = permute(double(add_offset + (U10.*scale_factor)), [2,1,3]);
+ncep.vwnd = permute(double(add_offset + (V10.*scale_factor)), [2,1,3]);
 
 netcdf.close(nc_u10)
 netcdf.close(nc_v10)
