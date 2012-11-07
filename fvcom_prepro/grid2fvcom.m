@@ -1,4 +1,4 @@
-function fvcom = grid2fvcom(Mobj,vars,wind)
+function fvcom = grid2fvcom(Mobj,vars,data)
 % Interpolate regularly gridded wind speed data onto a given FVCOM grid
 %
 % grid2fvcom(Mobj,vars,wind,fvcom_forcing_file,infos)
@@ -11,7 +11,7 @@ function fvcom = grid2fvcom(Mobj,vars,wind)
 %   Mobj - MATLAB mesh object
 %   vars - a cell array of the variables to be interpolated on the FVCOM
 %   grid in Mobj (e.g. uwnd, U10, vwnd, V10 etc.).
-%   wind - a struct which contains the following arrays:
+%   data - a struct which contains the following arrays:
 %       x - x data (probably best in cartesian for the interpolation)
 %       y - y data (probably best in cartesian for the interpolation)
 %       The struct must also contain all the variables defined in vars.
@@ -19,7 +19,8 @@ function fvcom = grid2fvcom(Mobj,vars,wind)
 % 
 % OUTPUT:
 %   fvcom - struct of the interpolated data values at the model nodes and
-%   element centres.
+%   element centres. Also includes any variables which were in the input
+%   struct but which have not been interpolated (e.g. time).
 % 
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -70,18 +71,22 @@ xc = nodes2elems(x, Mobj);
 yc = nodes2elems(y, Mobj);
 
 try
-    ntimes = numel(wind.time);
+    ntimes = numel(data.time);
 catch
-    ntimes = numel(wind.(vars{1}).time);
+    ntimes = numel(data.(vars{1}).time);
 end
 
 % Interpolate supplied regularly gridded data to FVCOM mesh. Use
 % TriScatteredInterp to do the interpolation instead of griddata (should be
 % faster).
 for vv=1:length(vars)
-    if strcmpi(vars{vv}, 'lat') || strcmpi(vars{vv}, 'lon') || strcmpi(vars{vv}, 'x') || strcmpi(vars{vv}, 'y') || strcmpi(vars{vv}, 'time')
-        fprintf('skipping variable %s\n', vars{vv})
+    if strcmpi(vars{vv}, 'time')
+        fprintf('transferring variable %s as is\n', vars{vv})
+        fvcom.(vars{vv}) = data.(vars{1});
         continue
+    elseif strcmpi(vars{vv}, 'lat') || strcmpi(vars{vv}, 'lon') || strcmpi(vars{vv}, 'x') || strcmpi(vars{vv}, 'y')
+        fprintf('reassigning variable %s from unstructured grid\n', vars{vv})
+        fvcom.(vars{vv}) = Mobj.(vars{1});
     else
         % Preallocate the output arrays
         fvcom.(vars{vv}).data = zeros(nElems,ntimes);
@@ -89,12 +94,12 @@ for vv=1:length(vars)
 
         for i=1:ntimes
             fprintf('interpolating %s, frame %d of %d\n', vars{vv}, i, ntimes);
-            currvar =  wind.(vars{1}).data(:, :, 1);
+            currvar = data.(vars{vv}).data(:, :, 1);
             % griddata way (cubic interpolation)
             %fvcom.(vars{vv}).node(:,i) = griddata(wind.x,wind.y,currvar,x,y,'cubic');
             %fvcom.(vars{vv}).data(:,i) = griddata(wind.x,wind.y,currvar,xc,yc,'cubic');
             % TriScatteredInterp way (with natural neighbour interpolation)
-            ftsin = TriScatteredInterp(wind.x(:), wind.y(:), currvar(:), 'natural');
+            ftsin = TriScatteredInterp(data.x(:), data.y(:), currvar(:), 'natural');
             fvcom.(vars{vv}).node(:,i) = ftsin(x,y);
             fvcom.(vars{vv}).data(:,i) = ftsin(xc,yc);
         end
