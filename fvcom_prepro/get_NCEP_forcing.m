@@ -52,8 +52,6 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 % 
 %==========================================================================
 
-warning off
-
 subname = 'get_NCEP_forcing';
 
 global ftbverbose;
@@ -231,7 +229,7 @@ end
 
 % Convert precipitation from kg/m^2/s to m/s (required by FVCOM) by
 % dividing by freshwater density (kg/m^3).
-prate = data.prate.data/1000;
+data.prate.data = data.prate.data/1000;
 
 % Evaporation can be approximated by:
 % 
@@ -246,7 +244,7 @@ prate = data.prate.data/1000;
 Llv = 2.5*10^6;
 rho = 1025; % using a typical value for seawater.
 Et = data.lhtfl.data/Llv/rho;
-data.P_E.data = prate-Et;
+data.P_E.data = data.prate.data-Et;
 
 % Calculate the momentum flux
 WW = data.uwnd.data + data.vwnd.data * 1i;
