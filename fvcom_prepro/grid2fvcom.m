@@ -21,6 +21,13 @@ function fvcom = grid2fvcom(Mobj,vars,data)
 %   fvcom - struct of the interpolated data values at the model nodes and
 %   element centres. Also includes any variables which were in the input
 %   struct but which have not been interpolated (e.g. time).
+%
+% NOTE: 
+%   The shape of the returned arrays for rhum and slp (via
+%   get_NCEP_forcing.m) have sometimes differed from the other vairables
+%   (they appear to be projected onto a different grid). Unless you
+%   desperately need them, I would suggest omitting them from the
+%   interpolation here as this assumes the arrays are all the same size.
 % 
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -94,7 +101,7 @@ for vv=1:length(vars)
 
         for i=1:ntimes
             fprintf('interpolating %s, frame %d of %d\n', vars{vv}, i, ntimes);
-            currvar = data.(vars{vv}).data(:, :, 1);
+            currvar = data.(vars{vv}).data(:, :, i);
             % griddata way (cubic interpolation)
             %fvcom.(vars{vv}).node(:,i) = griddata(wind.x,wind.y,currvar,x,y,'cubic');
             %fvcom.(vars{vv}).data(:,i) = griddata(wind.x,wind.y,currvar,xc,yc,'cubic');
