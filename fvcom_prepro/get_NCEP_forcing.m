@@ -112,7 +112,7 @@ for aa=1:length(fields)
 
     % Get the data time and convert to Modified Julian Day.
     data_time = loaddap([ncep.(fields{aa}),'?time']);
-    data_attributes.(fields{aa})=loaddap('-A',[ncep.(fields{aa})]);
+    data_attributes.(fields{aa}) = loaddap('-A',[ncep.(fields{aa})]);
     timevec = datevec((data_time.time)/24+365);
     data.time = greg2mjulian(timevec(:,1), timevec(:,2), timevec(:,3), ...
         timevec(:,4), timevec(:,5), timevec(:,6));
@@ -123,8 +123,8 @@ for aa=1:length(fields)
     data.time = data.time(data_time_mask);
     
     % Check the times
-    %datestr(data.time(1))
-    %datestr(data.time(end))
+    %[yyyy,mm,dd,hh,MM,ss] = mjulian2greg(data.time(1))
+    %[yyyy,mm,dd,hh,MM,ss] = mjulian2greg(data.time(end))
 
     % Clip the data to the model domain
     data_lon = loaddap([ncep.(fields{aa}),'?lon']);
