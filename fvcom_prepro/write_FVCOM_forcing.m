@@ -1,4 +1,4 @@
-function write_FVCOM_forcing(fileprefix, data, infos, fver)
+function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 % Write data out to FVCOM NetCDF forcing file.
 % 
 % write_FVCOM_forcing(fvcom_forcing_file, data, infos, fver)
@@ -45,9 +45,9 @@ function write_FVCOM_forcing(fileprefix, data, infos, fver)
 %==========================================================================
 
 multi_out = false; % default to 3.1.6, single output file
-if nargin < 3 || nargin > 4
+if nargin < 4 || nargin > 5
     error('Incorrect number of arguments')
-elseif nargin == 4
+elseif nargin == 5
     if strcmpi(fver, '3.1.0')
         multi_out = true;
     end
