@@ -1,4 +1,4 @@
-function write_FVCOM_tsobc(basename,time,nSiglay,obc_temp,obc_salt)
+function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
 % example file for dumping a file to force temperature and salinity at the open b.
 %
 % function example_FVCOM_tsobc()
@@ -103,7 +103,7 @@ nSiglev = nSiglay + 1;
 inc = 1./real(nSiglay);
 siglev = 0:-inc:-1;
 for i=1:nSiglay
-	siglay(i) = mean(siglev(i:i+1));
+    siglay(i) = mean(siglev(i:i+1));
 end;
 
 
@@ -118,8 +118,8 @@ salt = zeros(nObc,nSiglay,nTimes);
 % end
 
 % set a constant temperature and salinity
-% obc_temp = ones(1,nTimes)*13;
-% obc_salt = ones(1,nTimes)*35;
+obc_temp = ones(1,nTimes)*in_temp;
+obc_salt = ones(1,nTimes)*in_salt;
 
 %--------------------------------------------------------------
 % dump to netcdf file
