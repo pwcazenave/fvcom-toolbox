@@ -2,11 +2,11 @@ function fvcom = grid2fvcom(Mobj,vars,data)
 % Interpolate regularly gridded wind speed data onto a given FVCOM grid
 %
 % grid2fvcom(Mobj,vars,wind,fvcom_forcing_file,infos)
-% 
+%
 % DESCRIPTION:
 %   Takes a given NCEP reanalysis grid file and interpolates the U10 and
-%   V10 values onto the specified FVCOM grid file. 
-%   
+%   V10 values onto the specified FVCOM grid file.
+%
 % INPUT:
 %   Mobj - MATLAB mesh object
 %   vars - a cell array of the variables to be interpolated on the FVCOM
@@ -16,35 +16,35 @@ function fvcom = grid2fvcom(Mobj,vars,data)
 %       y - y data (probably best in cartesian for the interpolation)
 %       The struct must also contain all the variables defined in vars.
 %       time - time vector (in Modified Julian Days)
-% 
+%
 % OUTPUT:
 %   fvcom - struct of the interpolated data values at the model nodes and
 %   element centres. Also includes any variables which were in the input
 %   struct but which have not been interpolated (e.g. time).
 %
-% NOTE: 
+% NOTE:
 %   The shape of the returned arrays for rhum and slp (via
 %   get_NCEP_forcing.m) have sometimes differed from the other vairables
 %   (they appear to be projected onto a different grid). Unless you
 %   desperately need them, I would suggest omitting them from the
 %   interpolation here as this assumes the arrays are all the same size.
-% 
+%
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
-% 
+%
 % Revision history:
 %   2012-10-15 First version based on ncep2fvcom_U10V10.m in the
 %   fvcom-toolbox.
 %   2012-10-16 Removed the code to read the NCEP file. Instead, farmed that
 %   out to a new function (read_NCEP_wind) so that the relevant section can
 %   be more readily extracted (rather than using the entire globe's data:
-%   it's easier to subsample and provide the subsampled data here). 
-%   2012-10-17 Add outputs to the function for use in visualisation. 
+%   it's easier to subsample and provide the subsampled data here).
+%   2012-10-17 Add outputs to the function for use in visualisation.
 %   2012-10-19 Add wind struct as input rather than separate u, v, time and
 %   lat/long arrays. Makes invocation a bit cleaner.
 %   2012-11-01 Farmed out the creation of the NetCDF file to
-%   write_FVCOM_forcing.m and made this purely an interpolation script. 
-% 
+%   write_FVCOM_forcing.m and made this purely an interpolation script.
+%
 %==========================================================================
 
 warning off
@@ -89,11 +89,11 @@ end
 for vv=1:length(vars)
     if strcmpi(vars{vv}, 'time')
         fprintf('transferring variable %s as is\n', vars{vv})
-        fvcom.(vars{vv}) = data.(vars{1});
+        fvcom.(vars{vv}) = data.(vars{vv});
         continue
     elseif strcmpi(vars{vv}, 'lat') || strcmpi(vars{vv}, 'lon') || strcmpi(vars{vv}, 'x') || strcmpi(vars{vv}, 'y')
         fprintf('reassigning variable %s from unstructured grid\n', vars{vv})
-        fvcom.(vars{vv}) = Mobj.(vars{1});
+        fvcom.(vars{vv}) = Mobj.(vars{vv});
     else
         % Preallocate the output arrays
         fvcom.(vars{vv}).data = zeros(nElems,ntimes);
