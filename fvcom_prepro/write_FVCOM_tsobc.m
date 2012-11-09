@@ -1,4 +1,4 @@
-function write_FVCOM_tsobc(basename,time,nSiglay)
+function write_FVCOM_tsobc(basename,time,nSiglay,obc_temp,obc_salt)
 % example file for dumping a file to force temperature and salinity at the open b.
 %
 % function example_FVCOM_tsobc()
@@ -10,6 +10,8 @@ function write_FVCOM_tsobc(basename,time,nSiglay)
 %    Model case name
 %    Time
 %    Number of sigma layers
+%    Boundary temperature (Celcius)
+%    Boundary salinity (psu)
 %
 % OUTPUT:
 %    FVCOM hydrographic open boundary file
@@ -25,6 +27,8 @@ function write_FVCOM_tsobc(basename,time,nSiglay)
 %    arguments list.
 %    2012-10-08 Updated help to reflect the fact nSiglev is calculated as
 %    nSiglay+1.
+%    2012-11-09 Add new arguments to use user defined temperature and
+%    salinity.
 %
 %==============================================================================
 
@@ -114,8 +118,8 @@ salt = zeros(nObc,nSiglay,nTimes);
 % end
 
 % set a constant temperature and salinity
-obc_temp = ones(1,nTimes)*13;
-obc_salt = ones(1,nTimes)*35;
+% obc_temp = ones(1,nTimes)*13;
+% obc_salt = ones(1,nTimes)*35;
 
 %--------------------------------------------------------------
 % dump to netcdf file
