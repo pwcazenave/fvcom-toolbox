@@ -91,7 +91,7 @@ netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','FILE CREATED using w
 one_dimid=netcdf.defDim(nc,'one',1);
 nobc_dimid=netcdf.defDim(nc,'nobc',nObcs);
 tidal_components_dimid=netcdf.defDim(nc,'tidal_components',nComponents);
-date_str_len_dimid=netcdf.defDim(nc,'DateStrLen',[26,nComponents]);
+date_str_len_dimid=netcdf.defDim(nc,'DateStrLen',26);
 
 % define variables and attributes
 nobc_varid=netcdf.defVar(nc,'obc_nodes','NC_INT',nobc_dimid);
