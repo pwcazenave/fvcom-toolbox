@@ -77,6 +77,10 @@ else
     y = Mobj.lat;
 end
 
+% Create element vertices positions
+xc = nodes2elems(x, Mobj);
+yc = nodes2elems(y, Mobj);
+
 %--------------------------------------------------------------------------
 % Create the NetCDF header for the FVCOM forcing file
 %--------------------------------------------------------------------------
@@ -93,10 +97,11 @@ for i=1:length(suffixes)
 
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM Forcing File')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','FVCOM grid (unstructured) surface forcing')
-    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'references','http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu, http://www.pml.ac.uk')
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'references','http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'institution','Plymouth Marine Laboratory')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','Created with write_FVCOM_forcing.m from the fvcom-toolbox (https://github.com/pwcazenave/fvcom-toolbox)')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'infos',infos)
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'CoordinateSystem',Mobj.nativeCoords)
 
     % Dimensions
     three_dimid=netcdf.defDim(nc,'three',3);
@@ -128,6 +133,14 @@ for i=1:length(suffixes)
     y_varid=netcdf.defVar(nc,'y','NC_FLOAT',node_dimid);
     netcdf.putAtt(nc,y_varid,'long_name','nodal y-coordinate');
     netcdf.putAtt(nc,y_varid,'units','m');
+    
+    xc_varid=netcdf.defVar(nc,'xc','NC_FLOAT',node_dimid);
+    netcdf.putAtt(nc,xc_varid,'long_name','zonal x-coordinate');
+    netcdf.putAtt(nc,xc_varid,'units','m');
+
+    yc_varid=netcdf.defVar(nc,'yc','NC_FLOAT',node_dimid);
+    netcdf.putAtt(nc,yc_varid,'long_name','zonal y-coordinate');
+    netcdf.putAtt(nc,yc_varid,'units','m');
 
     nv_varid=netcdf.defVar(nc,'nv','NC_FLOAT',[nele_dimid, three_dimid]);
     netcdf.putAtt(nc,nv_varid,'long_name','nodes surrounding element');
@@ -274,6 +287,8 @@ for i=1:length(suffixes)
     netcdf.putVar(nc,itime2_varid,0,ntimes,mod(data.time,1)*24*3600*1000);
     netcdf.putVar(nc,x_varid,x);
     netcdf.putVar(nc,y_varid,y);
+    netcdf.putVar(nc,xc_varid,xc);
+    netcdf.putVar(nc,yc_varid,yc);
 
     % Now do the dynamic ones. Set the heat flux to not done (0) until we
     % hit one of the holy trinity (shtfl, lhtfl, nlwrs).
