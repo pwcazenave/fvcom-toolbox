@@ -47,8 +47,6 @@ function fvcom = grid2fvcom(Mobj,vars,data)
 %
 %==========================================================================
 
-warning off
-
 if nargin ~= 3
     error('Incorrect number of arguments')
 end
@@ -109,6 +107,9 @@ for vv=1:length(vars)
             ftsin = TriScatteredInterp(data.x(:), data.y(:), currvar(:), 'natural');
             fvcom.(vars{vv}).node(:,i) = ftsin(x,y);
             fvcom.(vars{vv}).data(:,i) = ftsin(xc,yc);
+            if sum(isnan(fvcom.(vars{vv}).node(:,i))) > 0 || sum(isnan(fvcom.(vars{vv}).data(:,i))) > 0
+                warning('NaNs in the interpolated data. This won''t work with FVCOM.')
+            end
         end
         fprintf('interpolation of %s complete\n', vars{vv});
     end
