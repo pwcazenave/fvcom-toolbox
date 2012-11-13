@@ -95,36 +95,23 @@ for i=1:length(suffixes)
 
     nc = netcdf.create([fileprefix, suffixes{i}, '.nc'], 'clobber');
 
-    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM Forcing File')
-    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','FVCOM grid (unstructured) surface forcing')
-    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'references','http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu')
+%     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM Forcing File')
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','FVCOM Forcing File')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'institution','Plymouth Marine Laboratory')
-    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','Created with write_FVCOM_forcing.m from the fvcom-toolbox (https://github.com/pwcazenave/fvcom-toolbox)')
-    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'infos',infos)
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','FVCOM grid (unstructured) surface forcing')
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history',['File created on ', datestr(now, 'yyyy-mm-dd HH:MM:SS'), ' with write_FVCOM_forcing.m from the fvcom-toolbox (https://github.com/pwcazenave/fvcom-toolbox)'])
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'references','http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu')
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'Conventions','CF-1.0')
+%     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'infos',infos)
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'CoordinateSystem',Mobj.nativeCoords)
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'CoordinateProjection','init=epsg:4326') % WGS84?
 
     % Dimensions
-    three_dimid=netcdf.defDim(nc,'three',3);
     nele_dimid=netcdf.defDim(nc,'nele',nElems);
     node_dimid=netcdf.defDim(nc,'node',nNodes);
+    three_dimid=netcdf.defDim(nc,'three',3);
     time_dimid=netcdf.defDim(nc,'time',netcdf.getConstant('NC_UNLIMITED'));
     datestrlen_dimid=netcdf.defDim(nc,'DateStrLen',26);
-
-    % Time variables
-    time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
-    netcdf.putAtt(nc,time_varid,'long_name','time');
-    netcdf.putAtt(nc,time_varid,'units','days since 1858-11-17 00:00:00');
-    netcdf.putAtt(nc,time_varid,'format','modified julian day (MJD)');
-    netcdf.putAtt(nc,time_varid,'time_zone','UTC');
-
-    itime_varid=netcdf.defVar(nc,'Itime','NC_INT',time_dimid);
-    netcdf.putAtt(nc,itime_varid,'units','days since 1858-11-17 00:00:00');
-    netcdf.putAtt(nc,itime_varid,'format','modified julian day (MJD)');
-    netcdf.putAtt(nc,itime_varid,'time_zone','UTC');
-
-    itime2_varid=netcdf.defVar(nc,'Itime2','NC_INT',time_dimid);
-    netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
-    netcdf.putAtt(nc,itime2_varid,'time_zone','UTC');
 
     % Space variables
     x_varid=netcdf.defVar(nc,'x','NC_FLOAT',node_dimid);
@@ -146,6 +133,22 @@ for i=1:length(suffixes)
     nv_varid=netcdf.defVar(nc,'nv','NC_INT',[nele_dimid, three_dimid]);
     netcdf.putAtt(nc,nv_varid,'long_name','nodes surrounding element');
 
+    % Time variables
+    time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
+    netcdf.putAtt(nc,time_varid,'long_name','time');
+    netcdf.putAtt(nc,time_varid,'units','days since 1858-11-17 00:00:00');
+    netcdf.putAtt(nc,time_varid,'format','modified julian day (MJD)');
+    netcdf.putAtt(nc,time_varid,'time_zone','UTC');
+
+    itime_varid=netcdf.defVar(nc,'Itime','NC_INT',time_dimid);
+    netcdf.putAtt(nc,itime_varid,'units','days since 1858-11-17 00:00:00');
+    netcdf.putAtt(nc,itime_varid,'format','modified julian day (MJD)');
+    netcdf.putAtt(nc,itime_varid,'time_zone','UTC');
+
+    itime2_varid=netcdf.defVar(nc,'Itime2','NC_INT',time_dimid);
+    netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
+    netcdf.putAtt(nc,itime2_varid,'time_zone','UTC');
+
     % Since we have a dynamic number of variables in the struct, try to be a
     % bit clever about how to create the output variables. 
     fnames = fieldnames(data);
@@ -165,19 +168,33 @@ for i=1:length(suffixes)
                     % On the elements
                     u10_varid=netcdf.defVar(nc,'U10','NC_FLOAT',[nele_dimid, time_dimid]);
                     netcdf.putAtt(nc,u10_varid,'long_name','Eastward Wind Speed');
-                    netcdf.putAtt(nc,u10_varid,'standard_name','Eastward Wind Speed');
+%                     netcdf.putAtt(nc,u10_varid,'standard_name','Eastward Wind Speed');
                     netcdf.putAtt(nc,u10_varid,'units','m/s');
                     netcdf.putAtt(nc,u10_varid,'grid','fvcom_grid');
-                    netcdf.putAtt(nc,u10_varid,'type','data');
                     netcdf.putAtt(nc,u10_varid,'coordinates','');
+                    netcdf.putAtt(nc,u10_varid,'type','data');
 
                     v10_varid=netcdf.defVar(nc,'V10','NC_FLOAT',[nele_dimid, time_dimid]);
                     netcdf.putAtt(nc,v10_varid,'long_name','Northward Wind Speed');
-                    netcdf.putAtt(nc,v10_varid,'standard_name','Northward Wind Speed');
+%                     netcdf.putAtt(nc,v10_varid,'standard_name','Northward Wind Speed');
                     netcdf.putAtt(nc,v10_varid,'units','m/s');
                     netcdf.putAtt(nc,v10_varid,'grid','fvcom_grid');
-                    netcdf.putAtt(nc,v10_varid,'type','data');
                     netcdf.putAtt(nc,v10_varid,'coordinates','');
+                    netcdf.putAtt(nc,v10_varid,'type','data');
+
+                    uwind_varid=netcdf.defVar(nc,'uwind_speed','NC_FLOAT',[nele_dimid, time_dimid]);
+                    netcdf.putAtt(nc,uwind_varid,'long_name','Eastward Wind Speed');
+                    netcdf.putAtt(nc,uwind_varid,'standard_name','Wind Speed');
+                    netcdf.putAtt(nc,uwind_varid,'units','m/s');
+                    netcdf.putAtt(nc,uwind_varid,'grid','fvcom_grid');
+                    netcdf.putAtt(nc,uwind_varid,'type','data');
+
+                    vwind_varid=netcdf.defVar(nc,'vwind_speed','NC_FLOAT',[nele_dimid, time_dimid]);
+                    netcdf.putAtt(nc,vwind_varid,'long_name','Northward Wind Speed');
+                    netcdf.putAtt(nc,vwind_varid,'standard_name','Wind Speed');
+                    netcdf.putAtt(nc,vwind_varid,'units','m/s');
+                    netcdf.putAtt(nc,vwind_varid,'grid','fvcom_grid');
+                    netcdf.putAtt(nc,vwind_varid,'type','data');
 
                     % On the nodes
 %                     u10_node_varid=netcdf.defVar(nc,'U10','NC_FLOAT',[node_dimid, time_dimid]);
@@ -205,9 +222,14 @@ for i=1:length(suffixes)
 %                     used_fnames = [used_fnames, {'uwnd', 'vwnd'}];
 %                     used_dims = [used_dims, {'nNodes', 'nNodes'}];
                     % Only on the elements
-                    used_varids = [used_varids, {'u10_varid', 'v10_varid'}];
-                    used_fnames = [used_fnames, {'uwnd', 'vwnd'}];
-                    used_dims = [used_dims, {'nElems', 'nElems'}];
+%                     used_varids = [used_varids, {'u10_varid', 'v10_varid'}];
+%                     used_fnames = [used_fnames, {'uwnd', 'vwnd'}];
+%                     used_dims = [used_dims, {'nElems', 'nElems'}];
+                    % Only on the elements (both U10/V10 and uwind_speed and
+                    % vwind_speed).
+                    used_varids = [used_varids, {'u10_varid', 'v10_varid', 'uwind_varid', 'vwind_varid'}];
+                    used_fnames = [used_fnames, {'uwnd', 'vwnd', 'uwnd', 'vwnd'}];
+                    used_dims = [used_dims, {'nElems', 'nElems', 'nElems', 'nElems'}];
                 end
 
             case 'P_E'
