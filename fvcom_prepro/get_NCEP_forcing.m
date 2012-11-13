@@ -46,6 +46,7 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 % 
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
+%   Ricardo Torres (Plymouth Marine Laboratory)
 % 
 % Revision history:
 %   2012-10-31 First version based on get_NCEP_L4.m.
@@ -69,10 +70,10 @@ addpath('/users/modellers/rito/matlab/opendap/bin/')
 if ~Mobj.have_lonlat
     error('Need spherical coordinates to extract the forcing data')
 else
-    % Add a buffer of one grid cell to make sure the model domain is fully
-    % covered by the extracted data.
+    % Add a buffer of one grid cell in latitude and two in longitude to
+    % make sure the model domain is fully covered by the extracted data.
     [dx, dy] = deal(2.5, 2.5); % NCEP resolution in degrees
-    extents = [min(Mobj.lon(:))-dx, max(Mobj.lon(:))+dx, min(Mobj.lat(:))-dy, max(Mobj.lat(:))+dy];
+    extents = [min(Mobj.lon(:))-(2*dx), max(Mobj.lon(:))+(2*dx), min(Mobj.lat(:))-dy, max(Mobj.lat(:))+dy];
 end
 
 if modelTime(end) - modelTime(1) > 365
@@ -142,8 +143,8 @@ for aa=1:length(fields)
         % This is the tricky one. We'll do two passes to extract the
         % western chunk first (extents(1)+360 to 360), then the eastern
         % chunk (0-extents(2))
-        index_lon{1} = find(data_lon.lon > extents(1) + 360);
-        index_lon{2} = find(data_lon.lon < extents(2));
+        index_lon{1} = find(data_lon.lon >= extents(1) + 360);
+        index_lon{2} = find(data_lon.lon <= extents(2));
     else
         % Dead easy, we're in the eastern hemisphere, so nothing too
         % strenuous here
