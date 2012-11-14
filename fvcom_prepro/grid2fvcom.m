@@ -107,8 +107,13 @@ for vv=1:length(vars)
             ftsin = TriScatteredInterp(data.x(:), data.y(:), currvar(:), 'natural');
             fvcom.(vars{vv}).node(:,i) = ftsin(x,y);
             fvcom.(vars{vv}).data(:,i) = ftsin(xc,yc);
-            if sum(isnan(fvcom.(vars{vv}).node(:,i))) > 0 || sum(isnan(fvcom.(vars{vv}).data(:,i))) > 0
-                warning('NaNs in the interpolated data. This won''t work with FVCOM.')
+            nnans(1) = sum(isnan(fvcom.(vars{vv}).node(:,i)));
+            nnans(2) = sum(isnan(fvcom.(vars{vv}).data(:,i)));
+            if  nnans(1) > 0
+                warning('%i NaNs in the interpolated node data. This won''t work with FVCOM.', nnans(1))
+            end
+            if nnans(2) > 0
+                warning('%i NaNs in the interpolated element data. This won''t work with FVCOM.', nnans(2))
             end
         end
         fprintf('interpolation of %s complete\n', vars{vv});
