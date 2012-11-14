@@ -35,7 +35,6 @@ function write_FVCOM_spectide(ObcNodes,Components,Period,Phase,Amp,BetaLove,Equi
 %    when writing output.
 %
 %==============================================================================
-warning off
 
 global ftbverbose
 report = false;
