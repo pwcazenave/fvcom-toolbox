@@ -1,21 +1,18 @@
-function write_FVCOM_elevtide(ObcNodes,JulianTime,SurfaceElevation,ElevationFile,MyTitle)
-	
+function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
 % Write an FVCOM surface elevation time series forcing file 
 %
-% function write_FVCOM_elevtide(ObcNodes,JulianTime,SurfaceElevation,SpectralFile,MyTitle)
+% write_FVCOM_elevtide(ObcNodes,JulianTime,ElevationFile,MyTitle)
 %
 % DESCRIPTION:
 %    Write an FVCOM NetCDF surface elevation forcing file
 %
 % INPUT:
-%   ObcNodes         = list of open boundary nodes of size [nObcs]
-%   JulianTime       = list of modified Julian Dates of size [times] (but
-%   defined as unlimited in the NetCDF file.
-%   SurfaceElevation = list of surface elevation values of size [nObcs,
-%   times]
-%   ElevationFile    = name of NetCDF file
-%   MyTitle          = case title, written as global attribute of NetCDF
-%   file
+%   ObcNodes         = list of open boundary nodes of size [nObcs].
+%   MJD              = list of modified Modified Julian Dates of size
+%       [times] (defined as unlimited in the NetCDF file).
+%   ElevationFile    = name of NetCDF file.
+%   MyTitle          = casename title, written as global attribute of
+%       NetCDF file.
 %
 % OUTPUT:
 %    ElevationFile, A NetCDF FVCOM surface elevations tide forcing file
@@ -28,25 +25,39 @@ function write_FVCOM_elevtide(ObcNodes,JulianTime,SurfaceElevation,ElevationFile
 % 
 % Revision history
 %    2012-08-08 First version.
+%    2012-11-14 Updated to expect Modified Julian Day rather than doing the
+%    conversion in here. Also put the pieces in set_elevtide in here to
+%    simplify the process of writing out an elevation input file.
 %   
 %==============================================================================
 
 global ftbverbose 
 report = false;
-if(ftbverbose); report = true; end;
+if(ftbverbose); report = true; end
 subname = 'write_FVCOM_elevtide';
-if(report);  fprintf('\n'); end;
-if(report); fprintf(['begin : ' subname '\n']); end;
+if(report); fprintf('\n'); end
+if(report); fprintf(['begin : ' subname '\n']); end
+
+cnt = 0;
+ObcNodes = nan(1,sum(Mobj.nObcNodes));
+for ob=1:Mobj.nObs
+	nObcs = Mobj.nObcNodes(ob);
+	for j=1:nObcs
+		cnt = cnt + 1;
+		ObcNodes(cnt) = Mobj.obc_nodes(ob,j);  % set open boundary nodes
+    end
+end
+
 %------------------------------------------------------------------------------
 % Sanity check on input and dimensions
 %------------------------------------------------------------------------------
-nTimes = numel(JulianTime);
-if(report); fprintf('Number of time steps %d\n',nTimes); end;
+nTimes = numel(MJD);
+if(report); fprintf('Number of time steps %d\n',nTimes); end
 
 nObcs = numel(ObcNodes);
-if(report); fprintf('Number of Open Boundary Nodes %d\n',nObcs); end;
+if(report); fprintf('Number of Open Boundary Nodes %d\n',nObcs); end
 
-[chk1,chk2] = size(SurfaceElevation);
+[chk1, chk2] = size(Mobj.surfaceElevation);
 if nObcs ~= chk1 || nTimes ~= chk2
     fprintf('Surface elevation dimensions do not match time series and number of boundary nodes.\n')
     fprintf('Surface elevation nodes and time sizes: (%d, %d)\n', chk1, chk2)
@@ -70,7 +81,7 @@ netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','FILE CREATED using w
 % define dimensions
 nobc_dimid=netcdf.defDim(nc,'nobc',nObcs);
 time_dimid=netcdf.defDim(nc,'time',netcdf.getConstant('NC_UNLIMITED'));
-date_str_len_dimid=netcdf.defDim(nc,'DateStrLen',[26,1]);
+date_str_len_dimid=netcdf.defDim(nc,'DateStrLen',26);
 
 % define variables and attributes
 nobc_varid=netcdf.defVar(nc,'obc_nodes','NC_INT',nobc_dimid);
@@ -108,15 +119,15 @@ netcdf.endDef(nc);
 % write data
 netcdf.putVar(nc,nobc_varid,ObcNodes);
 netcdf.putVar(nc,iint_varid,0,nTimes,1:nTimes);
-netcdf.putVar(nc,time_varid,0,nTimes,JulianTime - 678942);
-netcdf.putVar(nc,itime_varid,floor(JulianTime - 678942));
-netcdf.putVar(nc,itime2_varid,0,nTimes,mod(JulianTime - 678942,1)*24*3600*1000);
+netcdf.putVar(nc,time_varid,0,nTimes,MJD);
+netcdf.putVar(nc,itime_varid,floor(MJD));
+netcdf.putVar(nc,itime2_varid,0,nTimes,mod(MJD,1)*24*3600*1000);
 nStringOut = char();
 for i=1:nTimes
-    nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ',datevec(JulianTime(i)))];
+    nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ',datevec(MJD(i)))];
 end
 netcdf.putVar(nc,Times_varid,nStringOut);
-netcdf.putVar(nc,elevation_varid,SurfaceElevation);
+netcdf.putVar(nc,elevation_varid,Mobj.surfaceElevation);
 
 % close file
 netcdf.close(nc);
