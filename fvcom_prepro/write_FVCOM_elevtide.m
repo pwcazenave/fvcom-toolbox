@@ -38,15 +38,23 @@ subname = 'write_FVCOM_elevtide';
 if(report); fprintf('\n'); end
 if(report); fprintf(['begin : ' subname '\n']); end
 
-cnt = 0;
-ObcNodes = nan(1,sum(Mobj.nObcNodes));
-for ob=1:Mobj.nObs
-	nObcs = Mobj.nObcNodes(ob);
-	for j=1:nObcs
-		cnt = cnt + 1;
-		ObcNodes(cnt) = Mobj.obc_nodes(ob,j);  % set open boundary nodes
-    end
-end
+% Get a list of the open boundary nodes. Transpose Mobj.obc_nodes so the
+% order of the boundary nodes is preserved.
+tmpObcNodes = Mobj.obc_nodes';
+% Flip it back so it's the same shape as it would have been using the old
+% code (see below for the old way).
+ObcNodes = tmpObcNodes(tmpObcNodes~=0)';
+
+% cnt = 0;
+% ObcNodes = nan(1,sum(Mobj.nObcNodes));
+% for ob=1:Mobj.nObs
+% 	nObcs = Mobj.nObcNodes(ob);
+% 	for j=1:nObcs
+% 		cnt = cnt + 1;
+% 		ObcNodes(cnt) = Mobj.obc_nodes(ob,j);  % set open boundary nodes
+%     end
+% end
+
 
 %------------------------------------------------------------------------------
 % Sanity check on input and dimensions
@@ -124,7 +132,21 @@ netcdf.putVar(nc,itime_varid,floor(MJD));
 netcdf.putVar(nc,itime2_varid,0,nTimes,mod(MJD,1)*24*3600*1000);
 nStringOut = char();
 for i=1:nTimes
-    nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ',datevec(MJD(i)))];
+    [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(MJD(i));
+    if strcmp(sprintf('%02i', nSec), '60')
+        % Fix some weirdness with mjulian2greg. I think this is caused by
+        % rounding errors. My testing suggests this is not a problem around
+        % midnight, so the number of days (and thus possibly months and
+        % years) is unaffected.
+        if mod(nMin + 1, 60) == 0
+            % Up the hour by one too
+            nHour = mod(nHour + 1, 24);
+        end
+        nMin = mod(nMin + 1, 60);
+        nSec = 0;
+    end
+    nDate = [nYr, nMon, nDay, nHour, nMin, nSec];
+    nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ',nDate)];
 end
 netcdf.putVar(nc,Times_varid,nStringOut);
 netcdf.putVar(nc,elevation_varid,Mobj.surfaceElevation);
