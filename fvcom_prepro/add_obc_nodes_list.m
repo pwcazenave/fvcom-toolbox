@@ -1,4 +1,4 @@
-function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType) 
+function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType,plotFig) 
 
 % Add a set of obc nodes comprising a single obc boundary to Mesh structure  
 % Using a list of nodes
@@ -13,6 +13,7 @@ function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType)
 %    Nlist = List of nodes
 %    ObcName = Name of the Open Boundary
 %    ObcType = FVCOM Flag for OBC Type
+%    plotFig = [optional] show a figure of the mesh (1 = yes)
 %
 % OUTPUT:
 %    Mobj = Matlab mesh object with an additional obc nodelist
@@ -26,6 +27,7 @@ function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType)
 %
 %
 % Revision history:
+%    2012-11-26 Add ability to turn off the figures.
 %   
 %==========================================================================
 subname = 'add_obc_nodes';
@@ -35,6 +37,10 @@ if(ftbverbose)
   fprintf(['begin : ' subname '\n'])
 end
 
+% Do we want a figure showing how we're getting along?
+if nargin == 4
+    plotFig = 0;
+end
 
 %--------------------------------------------------------------------------
 % Get a unique list and make sure they are in the range of node numbers 
@@ -49,23 +55,24 @@ end
 %--------------------------------------------------------------------------
 % Plot the mesh 
 %--------------------------------------------------------------------------
+if plotFig == 1
+    if strcmpi(Mobj.nativeCoords(1:3), 'car')
+        x = Mobj.x;
+        y = Mobj.y;
+    else
+        x = Mobj.lon;
+        y = Mobj.lat;
+    end
 
-if strcmpi(Mobj.nativeCoords(1:3), 'car')
-	x = Mobj.x;
-	y = Mobj.y;
-else
-	x = Mobj.lon;
-	y = Mobj.lat;
+    figure
+    patch('Vertices',[x,y],'Faces',Mobj.tri,...
+            'Cdata',Mobj.h,'edgecolor','k','facecolor','interp');
+    hold on;
+    whos Nlist
+    plot(x(Nlist),y(Nlist),'ro');
+    axis('equal','tight')
+    title('open boundary nodes');
 end
-
-figure
-patch('Vertices',[x,y],'Faces',Mobj.tri,...
-    	'Cdata',Mobj.h,'edgecolor','k','facecolor','interp');
-hold on;
-whos Nlist
-plot(x(Nlist),y(Nlist),'ro');
-axis('equal','tight')
-title('open boundary nodes');
 
 % add to mesh object
 npts = numel(Nlist);
