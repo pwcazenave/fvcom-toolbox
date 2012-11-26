@@ -111,8 +111,10 @@ while readingData
     lin = fgetl(fid);
     if lin ~= -1 % EOF is -1
         i = i + 1;
-        if ftbverbose && mod(i, 10000) == 0
-            fprintf('line %i\n', i)
+        if ftbverbose
+            if mod(i, 10000) == 0
+                fprintf('line %i\n', i)
+            end
         end
         % str2double doesn't work without a couple of calls to regexp,
         % which makes it ~20x slower than str2num on its own. The regexp
