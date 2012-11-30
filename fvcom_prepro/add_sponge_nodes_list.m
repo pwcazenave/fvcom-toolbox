@@ -31,8 +31,12 @@ function [Mobj]  = add_sponge_nodes_list(Mobj,SpongeList,SpongeName,SpongeRadius
 %   
 %==============================================================================
 subname = 'add_sponge_nodes';
-fprintf('\n')
-fprintf(['begin : ' subname '\n'])
+
+global ftbverbose
+if(ftbverbose)
+  fprintf('\n')
+  fprintf(['begin : ' subname '\n'])
+end
 
 % Do we want a figure showing how we're getting along?
 if nargin == 5
@@ -49,7 +53,7 @@ if plotFig == 1
     else
         x = Mobj.lon;
         y = Mobj.lat;
-    end;
+    end
 
     figure
     patch('Vertices',[x,y],'Faces',Mobj.tri,...
@@ -65,8 +69,10 @@ if(npts == 0)
 	fprintf('No points in given list')
 	fprintf(['end   : ' subname '\n'])
 	return
-end;
-fprintf('%d points provided\n',npts)
+end
+if(ftbverbose)
+    fprintf('%d points provided\n',npts)
+end
 
 % add to mesh object
 Mobj.nSponge = Mobj.nSponge + 1;
@@ -76,6 +82,8 @@ Mobj.sponge_name{Mobj.nSponge} = SpongeName;
 Mobj.sponge_rad(Mobj.nSponge) = SpongeRadius;
 Mobj.sponge_fac(Mobj.nSponge) = SpongeCoeff;
 
+if(ftbverbose)
+    fprintf(['end   : ' subname '\n'])
+end
 
-fprintf(['end   : ' subname '\n'])
 
