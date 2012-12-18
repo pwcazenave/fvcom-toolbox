@@ -35,7 +35,7 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
 warning off;
 
 
-subname = 'example_FVCOM_tsobc';
+subname = 'write_FVCOM_tsobc';
 global ftbverbose;
 if(ftbverbose);
   fprintf('\n')
