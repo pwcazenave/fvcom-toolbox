@@ -83,7 +83,7 @@ Mobj.sponge_rad(Mobj.nSponge) = SpongeRadius;
 Mobj.sponge_fac(Mobj.nSponge) = SpongeCoeff;
 
 if(ftbverbose)
-    fprintf(['end   : ' subname '\n'])
+  fprintf(['end   : ' subname '\n'])
 end
 
 
