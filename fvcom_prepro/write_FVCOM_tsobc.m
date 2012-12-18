@@ -1,5 +1,5 @@
 function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
-% example file for dumping a file to force temperature and salinity at the open b.
+% Output uniform temperature and salinity to force open boundary inputs.
 %
 % function example_FVCOM_tsobc()
 %

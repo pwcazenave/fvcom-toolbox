@@ -1,17 +1,18 @@
-function write_FVCOM_z0(z0,filename,mytitle) 
+function write_FVCOM_z0(z0,filename,mytitle)
 
-% Dump spatially-variable bottom roughness (z0) to FVCOM forcing file
+% Dump spatially-variable or uniform bottom roughness (z0) to FVCOM forcing
+% file.
 %
 % function write_FVCOM_z0(z0,filename,mytitle)
 %
 % DESCRIPTION:
-%    Generate a NetCDF file containing spatially variable z0 for FVCOM 
+%    Generate a NetCDF file containing spatially variable z0 for FVCOM
 %
-% INPUT 
-%   z0        = user defined roughness field (m) 
+% INPUT
+%   z0        = user defined roughness field (m)
 %               roughness is defined on the elements
 %   filename  = filename to dump to
-%   mytitle   = title of the case (set as global attribute) 
+%   mytitle   = title of the case (set as global attribute)
 %
 % OUTPUT:
 %    NetCDF file: filename
@@ -19,14 +20,14 @@ function write_FVCOM_z0(z0,filename,mytitle)
 % EXAMPLE USAGE
 %    write_FVCOM_z0(z0field, 'tst_z0.nc', 'z0 tst domain')
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
 %    2012-06-15 Added support for native MATLAB NetCDF routines. Requires
 %    MATLAB 2010a or higher.
-%   
+%
 %==============================================================================
 warning off
 subname = 'write_FVCOM_z0';

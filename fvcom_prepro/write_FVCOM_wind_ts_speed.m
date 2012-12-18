@@ -1,6 +1,6 @@
 function write_FVCOM_wind_ts_speed(Mobj, WindFile, time, u10, v10)
 
-% example file for FVCOM, time-varying/spatially constant wind forcing as speed
+% Write out time-varying/spatially constant wind forcing as speed.
 %
 % function write_FVCOM_wind_ts_speed
 %
@@ -11,12 +11,12 @@ function write_FVCOM_wind_ts_speed(Mobj, WindFile, time, u10, v10)
 %    Mobj - MATLAB mesh object
 %    WindFile - output NetCDF filename (including path)
 %    time - time in MJD
-%    u10 - vector x component of wind field 10m above the surface. 
-%    v10 - vector y component of wind field 10m above the surface. 
-% 
-% Note: the shape of u10 and v10 must match that of time since the
+%    u10 - vector x component of wind field 10m above the surface.
+%    v10 - vector y component of wind field 10m above the surface.
+%
+% Note: the shape of u10 and v10 must match that of time since this
 % currently only outputs temporally varying wind (not spatially varying).
-%   
+%
 % OUTPUT:
 %    NetCDF WindFile
 %
@@ -27,7 +27,7 @@ function write_FVCOM_wind_ts_speed(Mobj, WindFile, time, u10, v10)
 %       time, ones(size(time)),...
 %       ones(size(time))*0.25);
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
@@ -37,7 +37,7 @@ function write_FVCOM_wind_ts_speed(Mobj, WindFile, time, u10, v10)
 %   need for the third party NetCDF library. Also added three additional
 %   arguments to the function call (time and u and v vectors). u and v
 %   vectors vary in time and space.
-%   
+%
 %==============================================================================
 warning off
 subname = 'example_FVCOM_wind_ts_speed';
@@ -51,7 +51,7 @@ nElems = Mobj.nElems;
 nNodes = Mobj.nVerts;
 
 %------------------------------------------------------------------------------
-% write output to time and spatially-varying FVCOM wind file 
+% write output to time and spatially-varying FVCOM wind file
 %------------------------------------------------------------------------------
 
 nc=netcdf.create(WindFile,'clobber');

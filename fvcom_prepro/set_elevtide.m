@@ -1,8 +1,9 @@
 function set_elevtide(Mobj,JulianTime,SurfaceElevation,ElevationFile,MyTitle)
 
-% Setup spectral tides on the open boundary and dump a spectral file  
+% Setup surface elevation tides on the open boundary and dump an
+% elevation time series file.
 %
-% functionset_elevtide(Mobj,JulianTime,SurfaceElevation,ElevationFile,MyTitle)
+% function set_elevtide(Mobj,JulianTime,SurfaceElevation,ElevationFile,MyTitle)
 %
 % DESCRIPTION:
 %    Setup surface elevation tides on the open boundary and dump a NetCDF
@@ -14,18 +15,18 @@ function set_elevtide(Mobj,JulianTime,SurfaceElevation,ElevationFile,MyTitle)
 %    Julian Time)
 %    ElevationFile = Output file name
 %    MyTitle       = Title in resulting NetCDF file.
-% 
+%
 % OUTPUT:
 %
 % EXAMPLE USAGE
 %    set_elevtide(Mobj,JulianTime,SurfaceElevation,ElevationFile,MyTitle)
 %
-% Author(s):  
+% Author(s):
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
 %    2012-08-08 First version.
-%   
+%
 %==============================================================================
 subname = 'set_spectide';
 global ftbverbose;
