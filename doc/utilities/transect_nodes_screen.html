@@ -1,0 +1,239 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of transect_nodes_screen</title>
+  <meta name="keywords" content="transect_nodes_screen">
+  <meta name="description" content="function to select and output index of nodes along a defined transect">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; transect_nodes_screen.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>transect_nodes_screen
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function to select and output index of nodes along a defined transect</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [transect]  = transect_nodes_screen(Mobj,VarType) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> function to select and output index of nodes along a defined transect
+ By clicking on points on the screen
+   Choose between nodes or vertices (U,V or tracers)
+ [transect]  = transect_nodes_screen(Mobj,VarType)
+
+ DESCRIPTION:
+    Select using ginput the set of nodes comprising a transect. It will
+    interpolate between consecutive points to the resolution of the mesh
+
+ INPUT
+    Mobj = Matlab mesh object
+    VarType = node or element (for elements, one needs xc and yc from
+    FVCOM NC file. Not implemented yet.
+
+
+ OUTPUT:
+    transect = Matlab structure with indices
+
+ EXAMPLE USAGE
+    [transect]  = transect_nodes_screen(Mobj,'nodes')
+
+ Author(s):
+    Ricardo Torres and Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Note:
+    Uses ginput2 which allows zoom/pan before selecting points and displays
+    clicked points realtime
+
+ Revision history
+
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ginput2.html" class="code" title="function  [X,Y,BUTTON,SCALEMAT] = ginput2(varargin)">ginput2</a>	GINPUT2   Graphical input from mouse with zoom, pan, plot and scaling.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [transect]  = transect_nodes_screen(Mobj,VarType)</a>
+0002 <span class="comment">% function to select and output index of nodes along a defined transect</span>
+0003 <span class="comment">% By clicking on points on the screen</span>
+0004 <span class="comment">%   Choose between nodes or vertices (U,V or tracers)</span>
+0005 <span class="comment">% [transect]  = transect_nodes_screen(Mobj,VarType)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Select using ginput the set of nodes comprising a transect. It will</span>
+0009 <span class="comment">%    interpolate between consecutive points to the resolution of the mesh</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT</span>
+0012 <span class="comment">%    Mobj = Matlab mesh object</span>
+0013 <span class="comment">%    VarType = node or element (for elements, one needs xc and yc from</span>
+0014 <span class="comment">%    FVCOM NC file. Not implemented yet.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% OUTPUT:</span>
+0018 <span class="comment">%    transect = Matlab structure with indices</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% EXAMPLE USAGE</span>
+0021 <span class="comment">%    [transect]  = transect_nodes_screen(Mobj,'nodes')</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Author(s):</span>
+0024 <span class="comment">%    Ricardo Torres and Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Note:</span>
+0027 <span class="comment">%    Uses ginput2 which allows zoom/pan before selecting points and displays</span>
+0028 <span class="comment">%    clicked points realtime</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">% Revision history</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%==============================================================================</span>
+0033 subname = <span class="string">'transect_nodes_screen'</span>;
+0034 <span class="keyword">global</span> ftbverbose
+0035 <span class="keyword">if</span>(ftbverbose)
+0036     fprintf(<span class="string">'\n'</span>)
+0037     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0038 <span class="keyword">end</span>;
+0039 <span class="comment">%%-----------------------------------------------------------</span>
+0040 <span class="comment">% Plot the mesh</span>
+0041 <span class="comment">%------------------------------------------------------------------------------</span>
+0042 
+0043 <span class="keyword">if</span>(lower(Mobj.nativeCoords(1:3)) == <span class="string">'car'</span>)
+0044     x = Mobj.x;
+0045     y = Mobj.y;
+0046 <span class="keyword">else</span>
+0047     x = Mobj.lon;
+0048     y = Mobj.lat;
+0049 <span class="keyword">end</span>;
+0050 
+0051 figure
+0052 patch(<span class="string">'Vertices'</span>,[x,y],<span class="string">'Faces'</span>,Mobj.tri,<span class="keyword">...</span>
+0053     <span class="string">'Cdata'</span>,Mobj.h,<span class="string">'edgecolor'</span>,<span class="string">'k'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0054 hold on;
+0055 plot(x(1316),y(1316),<span class="string">'ro'</span>)
+0056 <span class="comment">% use ginput2 (which allows zooming and plots points as they are clicked) to let</span>
+0057 <span class="comment">% user select the boundary points</span>
+0058 [xselect] = <a href="ginput2.html" class="code" title="function  [X,Y,BUTTON,SCALEMAT] = ginput2(varargin)">ginput2</a>(true,<span class="string">'k+'</span>)
+0059 [npts,jnk] = size(xselect);
+0060 
+0061 <span class="keyword">if</span>(npts == 0)
+0062     fprintf(<span class="string">'you didn''t select any points'</span>)
+0063     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0064     <span class="keyword">return</span>
+0065 <span class="keyword">end</span>;
+0066 fprintf(<span class="string">'you selected %d points\n'</span>,npts)
+0067 
+0068 <span class="comment">% snap to the closest vertices</span>
+0069 <span class="keyword">for</span> i=1:npts
+0070     [ipt(i),dist] = find_nearest_pt(xselect(i,1),xselect(i,2),Mobj);
+0071 <span class="keyword">end</span>;
+0072 
+0073 <span class="comment">% replot domain with snapped vertices</span>
+0074 plot(x(ipt),y(ipt),<span class="string">'ro'</span>);
+0075 <span class="comment">% find nodes closes to straight lines between selected points</span>
+0076 transect.x=[];
+0077 transect.y=[];
+0078 transect.idx=[];
+0079 <span class="keyword">for</span> i=1:npts-1
+0080     dI=1;
+0081     keepgoing=1;
+0082     <span class="keyword">while</span> keepgoing
+0083         dx=diff(x([ipt(i),ipt(i+1)]));
+0084         dy=diff(y([ipt(i),ipt(i+1)]));
+0085         datadxy=[dx,dy];
+0086         [~,direction]=max(abs([dx,dy]));
+0087         data=circshift([x([ipt(i),ipt(i+1)]),y([ipt(i),ipt(i+1)])],[0,direction-1]);
+0088         datadxy= circshift(  datadxy,[0,direction-1]);
+0089         dataXI=data(1,1):datadxy(1)/dI:data(<span class="keyword">end</span>,1);
+0090         dataYI = interp1(data(:,1),data(:,2),dataXI);
+0091         dataI=circshift([dataXI(:),dataYI(:)],[0,direction-1]);
+0092         plot(dataI(:,1),dataI(:,2),<span class="string">'yx'</span>);
+0093         idx=nan*ones(1,length(dataI));
+0094         <span class="keyword">for</span> ii=1:length(dataI)
+0095             [idx(ii),~] = find_nearest_pt(dataI(ii,1),dataI(ii,2),Mobj);
+0096         <span class="keyword">end</span>;
+0097         <span class="comment">% find if there are duplicates in idx</span>
+0098         [~,igood]=unique(idx);
+0099         <span class="keyword">if</span> length(igood)~=length(idx)
+0100             <span class="comment">% there are duplicates so no need to interpolate to higher resolution</span>
+0101             keepgoing=0;
+0102         <span class="keyword">else</span>
+0103             <span class="comment">% increase interpolation to dI*2;</span>
+0104             dI=dI*2;
+0105             disp(<span class="string">'Increasing resolution of transect'</span>)
+0106         <span class="keyword">end</span>
+0107         idx= idx(sort(igood));
+0108         checkelems={};
+0109         <span class="comment">% check if there are more than two nodes per element in the transect</span>
+0110         <span class="comment">% first get all possible elements in the transect</span>
+0111         <span class="keyword">for</span> ii=1:length(idx)
+0112             checkelems{ii,1}=find(Mobj.tri(:,1)==idx(ii));
+0113             checkelems{ii,2}=find(Mobj.tri(:,2)==idx(ii));
+0114             checkelems{ii,3}=find(Mobj.tri(:,3)==idx(ii));
+0115             
+0116         <span class="keyword">end</span>
+0117         
+0118         unique_elems=unique(sort(cat(1,checkelems{:})));
+0119         cc=1;newidx=zeros(length(unique_elems),2);
+0120         <span class="keyword">for</span> ii=1:length(unique_elems)
+0121             test4nodes=zeros(1,3);
+0122             <span class="keyword">for</span> rr=1:3
+0123                 test= find(idx==Mobj.tri(unique_elems(ii),rr));
+0124                 <span class="keyword">if</span> ~isempty(test);
+0125                     test4nodes(rr)=test;
+0126                 <span class="keyword">end</span>
+0127             <span class="keyword">end</span>
+0128             <span class="keyword">switch</span> length(find(test4nodes))
+0129                 <span class="keyword">case</span> 2
+0130                     <span class="comment">% we have an element with two nodes. Its a keeper</span>
+0131                     newidx(cc,1:2)=test4nodes(find(test4nodes));
+0132                     cc=cc+1;
+0133                 <span class="keyword">case</span> 3
+0134                     disp([<span class="string">'Too many nodes in element '</span>,num2str(ii)])
+0135                     disp(<span class="string">'Removing the middle node as locations are in order'</span>)
+0136 <span class="comment">%                     plot(x(idx(test4nodes)),y(idx(test4nodes)),'w-')</span>
+0137                     newidx(cc,1:2)=test4nodes([1,3]);
+0138                      cc=cc+1;
+0139             <span class="keyword">end</span>
+0140         <span class="keyword">end</span>
+0141         newidx=unique(newidx(:));
+0142         newidx=newidx(find(newidx));
+0143         <span class="keyword">if</span> length(newidx)==length(idx)
+0144             disp(<span class="string">'All nodes are linked, continue to next section'</span>)
+0145             keepgoing=0;
+0146             
+0147             transect.x=[transect.x;x(idx)];
+0148             transect.y=[transect.y;y(idx)];
+0149             transect.idx=[transect.idx;idx(:)];
+0150             plot(transect.x,transect.y,<span class="string">'wo'</span>);
+0151             
+0152         <span class="keyword">else</span>
+0153             disp(<span class="string">'Mising linked nodes in transect, continue with increased resolution'</span>)
+0154             keepgoing=1;
+0155         <span class="keyword">end</span>
+0156     <span class="keyword">end</span>
+0157 <span class="keyword">end</span>
+0158 <span class="comment">% check that no repeated values are present in indices</span>
+0159             transect.x=unique(transect.x);
+0160             transect.y=unique(transect.y);
+0161             transect.idx=unique(transect.idx);
+0162             <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

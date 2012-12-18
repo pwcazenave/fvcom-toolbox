@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of do_residual_plot</title>
+  <meta name="keywords" content="do_residual_plot">
+  <meta name="description" content="Take the output of do_residual and plot as a vector figure. Summarises a">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; do_residual_plot.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>do_residual_plot
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Take the output of do_residual and plot as a vector figure. Summarises a</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Plots]=do_residual_plot(plotOPTS,FVCOM,dt) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Take the output of do_residual and plot as a vector figure. Summarises a
+ specified interval of time as a single long-term direction and magnitude.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="do_residual.html" class="code" title="function [rDir,rMag,uRes,vRes]=do_residual(u,v,dt)">do_residual</a>	DO_RESIDUAL Takes the u and v vectors of a model output and calculates</li><li><a href="m_ll2ll.html" class="code" title="function [X,Y]=m_ll2ll(lon1,lat1, zone, hemisphere,ellipsoid);">m_ll2ll</a>	M_ll2LL Converts LON,LAT to long,lat coordinates using the current projection</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Plots]=do_residual_plot(plotOPTS,FVCOM,dt)</a>
+0002 <span class="comment">% Take the output of do_residual and plot as a vector figure. Summarises a</span>
+0003 <span class="comment">% specified interval of time as a single long-term direction and magnitude.</span>
+0004 m_mappath;
+0005 
+0006 warning(<span class="string">'on'</span>,<span class="string">'FVCOM:Plot:ResidualAnalysis'</span>)
+0007 
+0008 figure(plotOPTS.figure); clf
+0009 m_proj(<span class="string">'UTM'</span>,<span class="string">'lon'</span>,[plotOPTS.range_lon],<span class="string">'lat'</span>,[plotOPTS.range_lat],<span class="string">'zon'</span>,30,<span class="string">'ell'</span>,<span class="string">'grs80'</span>);
+0010 m_grid(<span class="string">'box'</span>,<span class="string">'fancy'</span>);
+0011 m_usercoast(plotOPTS.coastline_file,<span class="string">'Color'</span>,<span class="string">'k'</span>,<span class="string">'LineWidth'</span>,3);
+0012 [x,y]=<a href="m_ll2ll.html" class="code" title="function [X,Y]=m_ll2ll(lon1,lat1, zone, hemisphere,ellipsoid);">m_ll2ll</a>(FVCOM.xc,FVCOM.yc); x=x+6;
+0013 
+0014 igood = find (x &lt; plotOPTS.range_lon(2) &amp; x &gt; plotOPTS.range_lon(1) &amp;<span class="keyword">...</span>
+0015     y &lt; plotOPTS.range_lat(2) &amp; y &gt; plotOPTS.range_lat(1));
+0016 igood=igood(1:plotOPTS.data_dec:end);
+0017 
+0018 <span class="keyword">if</span> isfield(plotOPTS,<span class="string">'nz_plot_vec'</span>)
+0019     nLayers=size(plotOPTS.nz_plot_vec,2);
+0020     nLayersRange=plotOPTS.nz_plot_vec;
+0021 <span class="keyword">else</span>
+0022     nLayers=size(plotOPTS.nz_plot,2);
+0023     nLayersRange=plotOPTS.nz_plot;
+0024 <span class="keyword">end</span>
+0025 
+0026 <span class="comment">% Check we're not depth averaging values.</span>
+0027 <span class="keyword">if</span> isfield(plotOPTS,<span class="string">'depth_average'</span>) &amp;&amp; plotOPTS.depth_average
+0028     <span class="keyword">if</span> nLayers&gt;1
+0029         warning(<span class="string">'FVCOM:Plot:ResidualAnalysis'</span>,<span class="string">'Depth averaging has been set as well as a specific number of layers to extract. Usually one or the other is preferred.'</span>)
+0030     <span class="keyword">end</span>
+0031     nLayers=1;
+0032     nLayersRange=1;
+0033     <span class="comment">% Average through all depths. Don't squeeze() here as that's taken</span>
+0034     <span class="comment">% care of in do_residual().</span>
+0035     uIn=mean(FVCOM.u,2);
+0036     vIn=mean(FVCOM.v,2);
+0037 <span class="keyword">else</span>
+0038     uIn=FVCOM.u(:,nLayersRange,:);
+0039     vIn=FVCOM.v(:,nLayersRange,:);
+0040 <span class="keyword">end</span>
+0041 
+0042 <span class="keyword">if</span> nLayers==1
+0043     colourSpec=[0 0 0];
+0044 <span class="keyword">else</span>
+0045     colourSpec=colormap(hsv(nLayers));
+0046     setColourMap=1;
+0047 <span class="keyword">end</span>
+0048 
+0049 <span class="comment">% We're not using uRes and vRes here, but if you wanted to do a PVD, then</span>
+0050 <span class="comment">% you would use:</span>
+0051 <span class="comment">%   plot(uRes(someElement,someLayer,:),vRes(someElement,someLayer,:),'.-'),</span>
+0052 <span class="comment">% for example.</span>
+0053 [rDir,rMag,uRes,vRes]=<a href="do_residual.html" class="code" title="function [rDir,rMag,uRes,vRes]=do_residual(u,v,dt)">do_residual</a>(uIn,vIn,dt);
+0054 
+0055 <span class="comment">% Mesh goes underneath the vectors</span>
+0056 <span class="keyword">if</span> plotOPTS.do_mesh
+0057     <span class="comment">% plot vertices</span>
+0058     [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0059     Plots(plotOPTS.figure).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="keyword">...</span>
+0060         <span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="string">'EdgeColor'</span>,[0.6 0.6 0.6],<span class="keyword">...</span>
+0061         <span class="string">'FaceColor'</span>,<span class="string">'none'</span>); hold on
+0062 <span class="keyword">end</span>
+0063 
+0064 <span class="keyword">for</span> ii=1:nLayers
+0065     <span class="comment">% Decompose to vector components for m_vec.</span>
+0066     uVec=rMag(:,ii,:).*sind(rDir(:,ii,:));
+0067     vVec=rMag(:,ii,:).*cosd(rDir(:,ii,:));
+0068     [Plots(plotOPTS.figure).handles(ii),~]=m_vec(plotOPTS.vel_sca,<span class="keyword">...</span>
+0069         x(igood),y(igood),squeeze(uVec(igood)),squeeze(vVec(igood)),<span class="keyword">...</span>
+0070         colourSpec(ii,:),<span class="string">'shaftwidth'</span>,1,<span class="string">'headwidth'</span>,2);
+0071     <span class="keyword">if</span> exist(<span class="string">'setColourMap'</span>,<span class="string">'var'</span>)
+0072         <span class="keyword">if</span> setColourMap
+0073             colorbar
+0074             set(get(colorbar,<span class="string">'YLabel'</span>),<span class="string">'String'</span>,<span class="string">'Layer'</span>)
+0075         <span class="keyword">end</span>
+0076     <span class="keyword">end</span>
+0077 <span class="keyword">end</span>
+0078</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

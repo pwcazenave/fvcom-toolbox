@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of example_surface_plot</title>
+  <meta name="keywords" content="example_surface_plot">
+  <meta name="description" content="Sample script to extract and generate m_map contours of tracer variables">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_postproc</a> &gt; example_surface_plot.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_postproc&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>example_surface_plot
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Sample script to extract and generate m_map contours of tracer variables</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Sample script to extract and generate m_map contours of tracer variables 
+ Modify to suit your requirements
+
+ DESCRIPTION:
+    Extracts data from FVCOM and generates contour plots using m_map 
+
+ INPUT: 
+   
+   
+           
+ OUTPUT:
+   
+ EXAMPLE USAGE
+    See scripts and modify at will 
+
+ Author(s):  
+    Ricardo Torres and Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">% Sample script to extract and generate m_map contours of tracer variables</span>
+0002 <span class="comment">% Modify to suit your requirements</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% DESCRIPTION:</span>
+0005 <span class="comment">%    Extracts data from FVCOM and generates contour plots using m_map</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% INPUT:</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% OUTPUT:</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% EXAMPLE USAGE</span>
+0014 <span class="comment">%    See scripts and modify at will</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Author(s):</span>
+0017 <span class="comment">%    Ricardo Torres and Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% Revision history</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">%==============================================================================</span>
+0022 addpath ../utilities
+0023 <span class="comment">%%-----------------------------------------------------------</span>
+0024 <span class="comment">% set directories default values</span>
+0025 <span class="comment">%</span>
+0026 FVCOM_root = <span class="string">''</span>;
+0027 FVCOM_data_dir=<span class="string">'/home_nfs/rito/models/FVCOM/runCO2_leak/output/'</span>;
+0028 FVCOM_mat_dir=<span class="string">'../mat/'</span>;
+0029 FVCOM_plot_dir=<span class="string">'../plots/'</span>;
+0030 FVCOM_ =<span class="string">'./'</span>;
+0031 <span class="comment">%</span>
+0032 time_offset = 678942; <span class="comment">% from FVCOM time to matlab time</span>
+0033 <span class="comment">%%</span>
+0034 <span class="comment">%------------------------------------------------------------------------------</span>
+0035 <span class="comment">% set casename specifics here</span>
+0036 <span class="comment">%------------------------------------------------------------------------------</span>
+0037 <span class="comment">%</span>
+0038 casename=<span class="string">'co2_S5'</span>;
+0039 experiment_name=<span class="string">'slowleak'</span>
+0040 [plotOPTS.range_lat ,plotOPTS.range_lon] = deal([50.1 50.4],[ -4.5 -3.85]);
+0041 base_year = datenum(2006,1,1,0,0,0);
+0042 files_FVCOM =<span class="string">'co2_S5.1.2.1_0002.nc'</span><span class="comment">%</span>
+0043 date_range={<span class="string">'30/01/06 00:00:00'</span>,<span class="string">'01/02/06 23:00:00'</span>}; <span class="comment">% -1 if all available data wanted</span>
+0044 plotOPTS.fig_name = [casename <span class="string">'_'</span> experiment_name];
+0045 var_2_xtractFVCOM = {<span class="string">'Itime'</span>,<span class="string">'Itime2'</span>,<span class="string">'xc'</span>,<span class="string">'yc'</span>,<span class="string">'h'</span>,<span class="string">'siglay'</span>,<span class="string">'siglev'</span>,<span class="string">'zeta'</span>,<span class="string">'salinity'</span>,<span class="string">'u'</span>,<span class="string">'v'</span>};
+0046 dt=1/24; <span class="comment">% time step of output in days.</span>
+0047 <span class="comment">% Time record to extract</span>
+0048 <span class="comment">%</span>
+0049 STnum = datenum(date_range{1},<span class="string">'dd/mm/yy HH:MM:SS'</span>);
+0050 ENDnum = datenum(date_range{2},<span class="string">'dd/mm/yy HH:MM:SS'</span>);
+0051 Time_record=STnum:dt:ENDnum;
+0052 CD=pwd
+0053 <span class="comment">%%</span>
+0054 <span class="comment">%------------------------------------------------------------------------------</span>
+0055 <span class="comment">% Specify What indices to read from FVCOM file</span>
+0056 <span class="comment">%------------------------------------------------------------------------------</span>
+0057 node_idx= -1 <span class="comment">% to extract all nodes from netcdf file</span>
+0058 nele_idx=-1 <span class="comment">% to extract all elements from netcdf file</span>
+0059 siglev_idx=-1 <span class="comment">% to extract all water levels from netcdf file</span>
+0060 siglay_idx=-1 <span class="comment">% to extract all water levels from netcdf file</span>
+0061 
+0062 <span class="comment">%%</span>
+0063 <span class="comment">%------------------------------------------------------------------------------</span>
+0064 <span class="comment">% load mesh information for current casename This is generated at preproc</span>
+0065 <span class="comment">% stage (see %%%% matlab script)</span>
+0066 <span class="comment">%------------------------------------------------------------------------------</span>
+0067 load(fullfile(FVCOM_mat_dir, [casename, <span class="string">'mesh'</span>]));
+0068 plotOPTS.mesh=mesh;
+0069 
+0070 <span class="comment">%%</span>
+0071 <span class="comment">%------------------------------------------------------------------------------</span>
+0072 <span class="comment">% Specify variable and conditions of plot</span>
+0073 <span class="comment">%------------------------------------------------------------------------------</span>
+0074 <span class="comment">% if you have a coastline that can be directly used by m_map here is the</span>
+0075 <span class="comment">% place to put it!</span>
+0076 plotOPTS.coastline_file=[FVCOM_mat_dir <span class="string">'tamar3_0coast.mat'</span>];
+0077 <span class="comment">% m_map projection information</span>
+0078 plotOPTS.zone=30;
+0079 plotOPTS.ell=<span class="string">'grs80'</span>;
+0080 <span class="comment">% variable to plot</span>
+0081 plotOPTS.var_plot = <span class="string">'PH'</span>;
+0082 <span class="comment">% color limits for the colorbar</span>
+0083 plotOPTS.clims=[6.0 8.0]
+0084 plotOPTS.do_mesh=0; <span class="comment">% don't display mesh 1 to overlay mesh</span>
+0085 plotOPTS.nz_plot=1;<span class="comment">% layer to plot</span>
+0086 plotOPTS.Time_record=Time_record; <span class="comment">% time steps to make plots (1 for single or more for animation)</span>
+0087 <span class="comment">%% ------------------------------------------------------------------------</span>
+0088 <span class="comment">%%</span>
+0089 <span class="comment">%------------------------------------------------------------------------------</span>
+0090 <span class="comment">% read FVCOM data. See read_netCDF_FVCOM.m for help</span>
+0091 <span class="comment">%------------------------------------------------------------------------------</span>
+0092 <span class="comment">%</span>
+0093 FVCOM_data=read_netCDF_FVCOM(<span class="string">'time'</span>,date_range,<span class="string">'data_dir'</span>,FVCOM_data_dir ,<span class="keyword">...</span>
+0094     <span class="string">'file_netcdf'</span>,files_FVCOM,<span class="string">'node_idx'</span>,node_idx,<span class="string">'nele_idx'</span>,nele_idx,<span class="string">'siglev_idx'</span>,siglev_idx,<span class="keyword">...</span>
+0095     <span class="string">'siglay_idx'</span>,siglay_idx,<span class="string">'varnames'</span>,var_2_xtractFVCOM)
+0096 <span class="comment">% put variables into a strcuture variable</span>
+0097 <span class="keyword">for</span> vv=1:length(var_2_xtractFVCOM)
+0098     FVCOM.(var_2_xtractFVCOM{vv}) = FVCOM_data{vv};
+0099 <span class="keyword">end</span>
+0100 
+0101 <span class="comment">%%</span>
+0102 <span class="comment">%------------------------------------------------------------------------------</span>
+0103 <span class="comment">% Do surface contour plots</span>
+0104 <span class="comment">%------------------------------------------------------------------------------</span>
+0105 <span class="comment">% select figure to plot on</span>
+0106 plotOPTS.figure=1;
+0107 PLotoutS=do_surface_plot(plotOPTS,FVCOM)
+0108 <span class="comment">% PLotoutS has the figure handles or last handle if a time series is being</span>
+0109 <span class="comment">% plot</span>
+0110 <span class="comment">%------------------------------------------------------------------------------</span>
+0111 <span class="comment">% Do vector maps at single or multiple levels plots</span>
+0112 <span class="comment">%------------------------------------------------------------------------------</span>
+0113 plotOPTS.figure=2;
+0114 <span class="comment">% plotOPTS.nz_plot_vec optional. If it exists, it will overlay vectors from</span>
+0115 <span class="comment">% the specified layers, otherwise it uses layer from nz_plot</span>
+0116 plotOPTS.nz_plot_vec=[1,10];
+0117 plotOPTS.data_dec=5;
+0118 plotOPTS.vel_sca=5; <span class="comment">% scaling for ploting vectors with m_map m_vec.</span>
+0119 plotOPTS.pause=0.5 <span class="comment">% pause between generation of plots</span>
+0120 <span class="comment">% vector plots requires correct lat and lon for u and v positions: FVCOM.xc</span>
+0121 <span class="comment">% and FVCOM.yc. Remember to extract them</span>
+0122 PLotoutV=do_vector_plot(plotOPTS,FVCOM)</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

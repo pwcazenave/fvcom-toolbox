@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of do_volume_change</title>
+  <meta name="keywords" content="do_volume_change">
+  <meta name="description" content="DO_VOLUME_CHANGE Calculate volume of water which experiences a change in">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; do_volume_change.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>do_volume_change
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>DO_VOLUME_CHANGE Calculate volume of water which experiences a change in</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [totalVolume] = do_volume_change(plotOPTS,FVCOM) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> DO_VOLUME_CHANGE Calculate volume of water which experiences a change in
+   pH beyond some defined threshold.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_runs.html" class="code" title="function totalVolume = get_runs(plotOPTS,data,cellVolume,lengthThreshold,changeThreshold)">get_runs</a>	GET_RUNS Finds runs of continuous change in some value beyond some length</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [totalVolume] = do_volume_change(plotOPTS,FVCOM)</a>
+0002 <span class="comment">% DO_VOLUME_CHANGE Calculate volume of water which experiences a change in</span>
+0003 <span class="comment">%   pH beyond some defined threshold.</span>
+0004 
+0005 <span class="comment">% Make a 3D array of the volumes to get to total volume which experiences</span>
+0006 <span class="comment">% the change in pH.</span>
+0007 [nx,nz,ttot]=size(FVCOM.(plotOPTS.var_plot));
+0008 
+0009 <span class="comment">% Get the time step (in seconds)</span>
+0010 dt=round((plotOPTS.Time_record(2)-plotOPTS.Time_record(1))*24*60*60);
+0011 <span class="comment">% Make sure we're actually able to sample at the rate requested.</span>
+0012 <span class="keyword">if</span> plotOPTS.change_type~=0 &amp;&amp; dt/(60*60)&gt;plotOPTS.change_type
+0013     error(<span class="string">'Output file sampling frequency is coarser than specified time sampling.'</span>)
+0014 <span class="keyword">end</span>
+0015 
+0016 <span class="comment">% Sigma layer fraction (nz*nz)</span>
+0017 sigThickness=roundn(abs(diff(FVCOM.siglev,1,2)),-5); <span class="comment">% roundn to even values out.</span>
+0018 <span class="comment">% Total depth (nz*ttot)</span>
+0019 totalDepth=repmat(FVCOM.h,1,size(FVCOM.zeta,2))+FVCOM.zeta;
+0020 <span class="comment">% Volume for every element for each time step</span>
+0021 cellVolume=nan(nx,nz,ttot);
+0022 <span class="keyword">for</span> ii=1:nz
+0023     <span class="keyword">for</span> jj=1:ttot
+0024         cellVolume(:,ii,jj)=totalDepth(:,jj).*sigThickness(:,ii).*FVCOM.art1.*dt;
+0025     <span class="keyword">end</span>
+0026 <span class="keyword">end</span>
+0027 
+0028 <span class="keyword">if</span> plotOPTS.change_type==0 || plotOPTS.change_type==dt/(60*60)
+0029     <span class="comment">% Instantaneous change (i.e. a change between outputs beyond a given value.</span>
+0030     phChange=diff(FVCOM.DYE,1,3);
+0031     
+0032     <span class="comment">% Find the elements with the change beyond the threshold.</span>
+0033     idx=phChange&lt;plotOPTS.threshold_change;
+0034 
+0035     <span class="comment">% Using those indices, find the volume which is affected.</span>
+0036     totalVolume=sum(cellVolume(idx));
+0037 <span class="keyword">else</span>
+0038     <span class="comment">% The more complicated n-hour change.</span>
+0039     
+0040     <span class="comment">% Use the time period over which we're interested in to get an index</span>
+0041     <span class="comment">% jump value.</span>
+0042     dtJump=(plotOPTS.change_type*60*60)/dt;
+0043     <span class="keyword">if</span> dtJump-round(dtJump)~=0
+0044         error(<span class="string">'Output sampling is not compatible with time period of change.'</span>)
+0045     <span class="keyword">end</span>
+0046 
+0047     phChange=nan(nx,nz,ttot-dtJump);
+0048     <span class="keyword">for</span> tt=1:length(plotOPTS.Time_record)
+0049         <span class="keyword">if</span> tt&lt;=length(plotOPTS.Time_record)-dtJump
+0050             phChange(:,:,tt)=(FVCOM.DYE(:,:,tt+dtJump)-FVCOM.DYE(:,:,tt));
+0051         <span class="keyword">end</span>
+0052     <span class="keyword">end</span>
+0053     
+0054     <span class="comment">% Find the change values that happen for at least n-hours.</span>
+0055     <span class="comment">% Probably best to look away now if you're interested in clean quick</span>
+0056     <span class="comment">% code.</span>
+0057     totalVolume=0;
+0058     <span class="keyword">for</span> ii=1:nx
+0059         <span class="keyword">for</span> jj=1:nz
+0060             totalVolumeCurrent=<a href="get_runs.html" class="code" title="function totalVolume = get_runs(plotOPTS,data,cellVolume,lengthThreshold,changeThreshold)">get_runs</a>(plotOPTS,squeeze(phChange(ii,jj,:)),squeeze(cellVolume(ii,jj,:)),plotOPTS.change_type,plotOPTS.threshold_change);
+0061             totalVolume=totalVolume+totalVolumeCurrent;
+0062         <span class="keyword">end</span>
+0063     <span class="keyword">end</span>
+0064     
+0065 <span class="keyword">end</span>
+0066 
+0067 
+0068 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

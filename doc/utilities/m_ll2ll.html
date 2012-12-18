@@ -1,0 +1,272 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of m_ll2ll</title>
+  <meta name="keywords" content="m_ll2ll">
+  <meta name="description" content="M_ll2LL Converts LON,LAT to long,lat coordinates using the current projection">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; m_ll2ll.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>m_ll2ll
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>M_ll2LL Converts LON,LAT to long,lat coordinates using the current projection</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [X,Y]=m_ll2ll(lon1,lat1, zone, hemisphere,ellipsoid); </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> M_ll2LL Converts LON,LAT to long,lat coordinates using the current projection
+ and a provided one. I really only want to do UTM to LATLON so keep it
+ simple (this is provided to use m_map instead of proj.exe )</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="do_residual_plot.html" class="code" title="function [Plots]=do_residual_plot(plotOPTS,FVCOM,dt)">do_residual_plot</a>	Take the output of do_residual and plot as a vector figure. Summarises a</li><li><a href="do_transect_plot.html" class="code" title="function [Plots]=do_transect_plot(plotOPTS,FVCOM)">do_transect_plot</a>	</li><li><a href="do_vector_plot.html" class="code" title="function [Plots]=do_vector_plot(plotOPTS,FVCOM)">do_vector_plot</a>	Plot vectors of parameters of interest.</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [x,y] = mu_ll2utm (lat,lon, zone, hemisphere,ellipsoid)</a></li><li><a href="#_sub2" class="code">function [lat,lon] = mu_utm2ll (x,y, zone, hemisphere,ellipsoid)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [X,Y]=m_ll2ll(lon1,lat1, zone, hemisphere,ellipsoid);</a>
+0002 <span class="comment">% M_ll2LL Converts LON,LAT to long,lat coordinates using the current projection</span>
+0003 <span class="comment">% and a provided one. I really only want to do UTM to LATLON so keep it</span>
+0004 <span class="comment">% simple (this is provided to use m_map instead of proj.exe )</span>
+0005 <span class="keyword">global</span> MAP_PROJECTION MAP_VAR_LIST
+0006 
+0007 <span class="comment">% define a structure of various ellipsoids. each has a name, and</span>
+0008 <span class="comment">% a vector consisting of equatorial radius and flattening. the first</span>
+0009 <span class="comment">% two are somewhat special cases.</span>
+0010 
+0011 MAP_ELLIP = struct ( <span class="string">'normal'</span>, [1.0, 0], <span class="keyword">...</span>
+0012     <span class="string">'sphere'</span>, [6370997.0, 0], <span class="keyword">...</span>
+0013     <span class="string">'grs80'</span> , [6378137.0, 1/298.257], <span class="keyword">...</span>
+0014     <span class="string">'grs67'</span> , [6378160.0, 1/247.247], <span class="keyword">...</span>
+0015     <span class="string">'wgs84'</span> , [6378137.0, 1/298.257], <span class="keyword">...</span>
+0016     <span class="string">'wgs72'</span> , [6378135.0, 1/298.260], <span class="keyword">...</span>
+0017     <span class="string">'wgs66'</span> , [6378145.0, 1/298.250], <span class="keyword">...</span>
+0018     <span class="string">'wgs60'</span> , [6378165.0, 1/298.300], <span class="keyword">...</span>
+0019     <span class="string">'clrk66'</span>, [6378206.4, 1/294.980], <span class="keyword">...</span>
+0020     <span class="string">'clrk80'</span>, [6378249.1, 1/293.466], <span class="keyword">...</span>
+0021     <span class="string">'intl24'</span>, [6378388.0, 1/297.000], <span class="keyword">...</span>
+0022     <span class="string">'intl67'</span>, [6378157.5, 1/298.250]);
+0023 
+0024 MAP_VAR_LIST.zone
+0025 MAP_VAR_LIST.hemisphere
+0026 MAP_VAR_LIST.ellipsoid
+0027 getfield(MAP_ELLIP,MAP_VAR_LIST.ellipsoid)
+0028 <span class="comment">%     [X,Y] = mu_ll2utm(lat1,lon1,MAP_VAR_LIST.zone,MAP_VAR_LIST.hemisphere, ...</span>
+0029 <span class="comment">%     getfield(MAP_ELLIP,MAP_VAR_LIST.ellipsoid));</span>
+0030     [Y,X] = <a href="#_sub2" class="code" title="subfunction [lat,lon] = mu_utm2ll (x,y, zone, hemisphere,ellipsoid)">mu_utm2ll</a>(lon1, lat1, MAP_VAR_LIST.zone, <span class="keyword">...</span>
+0031     MAP_VAR_LIST.hemisphere, getfield(MAP_ELLIP,MAP_VAR_LIST.ellipsoid));
+0032 
+0033 <span class="keyword">return</span>
+0034 <a name="_sub1" href="#_subfunctions" class="code">function [x,y] = mu_ll2utm (lat,lon, zone, hemisphere,ellipsoid)</a>
+0035 <span class="comment">%mu_ll2utm        Convert geodetic lat,lon to X/Y UTM coordinates</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">%    [x,y] = mu_ll2utm (lat, lon, zone, hemisphere,ellipsoid)</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">%    input is latitude and longitude vectors, zone number,</span>
+0040 <span class="comment">%        hemisphere(N=0,S=1), ellipsoid info [eq-rad, flat]</span>
+0041 <span class="comment">%    output is X/Y vectors</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">%    see also    mu_utm2ll, utmzone</span>
+0044 
+0045 
+0046 <span class="comment">% some general constants</span>
+0047 
+0048 DEG2RADS    = 0.01745329252;
+0049 RADIUS      = ellipsoid(1);
+0050 FLAT        = ellipsoid(2);
+0051 K_NOT       = 0.9996;
+0052 FALSE_EAST  = 500000;
+0053 FALSE_NORTH = 10000000;
+0054 
+0055 <span class="comment">% check for valid numbers</span>
+0056 
+0057 <span class="keyword">if</span> (max(abs(lat)) &gt; 90)
+0058   error(<span class="string">'latitude values exceed 89 degree'</span>);
+0059   <span class="keyword">return</span>;
+0060 <span class="keyword">end</span>
+0061 
+0062 <span class="keyword">if</span> ((zone &lt; 1) | (zone &gt; 60))
+0063   error (<span class="string">'utm zones only valid from 1 to 60'</span>);
+0064   <span class="keyword">return</span>;
+0065 <span class="keyword">end</span>
+0066 
+0067 <span class="comment">% compute some geodetic parameters</span>
+0068 
+0069 lambda_not  = ((-180 + zone*6) - 3) * DEG2RADS;
+0070 
+0071 e2  = 2*FLAT - FLAT*FLAT;
+0072 e4  = e2 * e2;
+0073 e6  = e4 * e2;
+0074 ep2 = e2/(1-e2);
+0075 
+0076 <span class="comment">% some other constants, vectors</span>
+0077 
+0078 lat = lat * DEG2RADS;
+0079 lon = lon * DEG2RADS;
+0080 
+0081 sinL = sin(lat);
+0082 tanL = tan(lat);
+0083 cosL = cos(lat);
+0084 
+0085 T = tanL.*tanL;
+0086 C = ep2 * (cosL.*cosL);
+0087 A = (lon - lambda_not).*cosL;
+0088 A2 = A.*A;
+0089 A4 = A2.*A2;
+0090 S = sinL.*sinL;
+0091 
+0092 <span class="comment">% solve for N</span>
+0093 
+0094 N = RADIUS ./ (sqrt (1-e2*S));
+0095 
+0096 <span class="comment">% solve for M</span>
+0097 
+0098 M0 = 1 - e2*0.25 - e4*0.046875 - e6*0.01953125;
+0099 M1 = e2*0.375 + e4*0.09375 + e6*0.043945313;
+0100 M2 = e4*0.05859375 + e6*0.043945313;
+0101 M3 = e6*0.011393229;
+0102 M = RADIUS.*(M0.*lat - M1.*sin(2*lat) + M2.*sin(4*lat) - M3.*sin(6*lat));
+0103 
+0104 <span class="comment">% solve for x</span>
+0105 
+0106 X0 = A4.*A/120;
+0107 X1 = 5 - 18*T + T.*T + 72*C - 58*ep2;
+0108 X2 = A2.*A/6;
+0109 X3 = 1 - T + C;
+0110 x = N.*(A + X3.*X2 + X1.* X0);
+0111 
+0112 <span class="comment">% solve for y</span>
+0113 
+0114 Y0 = 61 - 58*T + T.*T + 600*C - 330*ep2;
+0115 Y1 = 5 - T + 9*C + 4*C.*C;
+0116 
+0117 y = M + N.*tanL.*(A2/2 + Y1.*A4/24 + Y0.*A4.*A2/720);
+0118 
+0119 
+0120 <span class="comment">% finally, do the scaling and false thing. if using a unit-normal radius,</span>
+0121 <span class="comment">% we don't bother.</span>
+0122 
+0123 x = x*K_NOT + (RADIUS&gt;1) * FALSE_EAST;
+0124 
+0125 y = y*K_NOT;
+0126 <span class="keyword">if</span> (hemisphere)
+0127   y = y + (RADIUS&gt;1) * FALSE_NORTH;
+0128 <span class="keyword">end</span>
+0129 
+0130 <span class="keyword">return</span>
+0131 
+0132 
+0133 
+0134 <span class="comment">%-------------------------------------------------------------------</span>
+0135 
+0136 <a name="_sub2" href="#_subfunctions" class="code">function [lat,lon] = mu_utm2ll (x,y, zone, hemisphere,ellipsoid)</a>
+0137 <span class="comment">%mu_utm2ll        Convert X/Y UTM coordinates to geodetic lat,lon</span>
+0138 <span class="comment">%</span>
+0139 <span class="comment">%    [lat,lon] = mu_utm2ll (x,y, zone, hemisphere,ellipsoid)</span>
+0140 <span class="comment">%</span>
+0141 <span class="comment">%    input is X/Y vectors, zone number, hemisphere(N=0,S=1),</span>
+0142 <span class="comment">%        ellipsoid info [eq-rad, flat]</span>
+0143 <span class="comment">%    output is lat/lon vectors</span>
+0144 <span class="comment">%</span>
+0145 <span class="comment">%    see also    mu_ll2utm, utmzone</span>
+0146 
+0147 
+0148 <span class="comment">% some general constants</span>
+0149 
+0150 DEG2RADS    = 0.01745329252;
+0151 RADIUS      = ellipsoid(1);
+0152 FLAT        = ellipsoid(2);
+0153 K_NOT       = 0.9996;
+0154 FALSE_EAST  = 500000;
+0155 FALSE_NORTH = 10000000;
+0156 
+0157 <span class="keyword">if</span> ((zone &lt; 1) | (zone &gt; 60))
+0158   error (<span class="string">'utm zones only valid from 1 to 60'</span>);
+0159   <span class="keyword">return</span>;
+0160 <span class="keyword">end</span>
+0161 
+0162 <span class="comment">% compute some geodetic parameters</span>
+0163 
+0164 e2  = 2*FLAT - FLAT*FLAT;
+0165 e4  = e2 * e2;
+0166 e6  = e4 * e2;
+0167 eps = e2 / (1-e2);
+0168 em1 = sqrt(1-e2);
+0169 e1  = (1-em1)/(1+em1);
+0170 e12 = e1*e1;
+0171 
+0172 lambda_not  = ((-180 + zone*6) - 3) * DEG2RADS;
+0173 
+0174 <span class="comment">% remove the false things</span>
+0175 
+0176 x = x - (RADIUS&gt;1)*FALSE_EAST;
+0177 <span class="keyword">if</span> (hemisphere)
+0178   y = y - (RADIUS&gt;1)*FALSE_NORTH;
+0179 <span class="keyword">end</span>
+0180 
+0181 <span class="comment">% compute the footpoint latitude</span>
+0182 
+0183 M = y/K_NOT;
+0184 mu = M/(RADIUS * (1 - 0.25*e2 - 0.046875*e4 - 0.01953125*e6));
+0185 foot = mu + (1.5*e1 - 0.84375*e12*e1)*sin(2*mu) <span class="keyword">...</span>
+0186     + (1.3125*e12 - 1.71875*e12*e12)*sin(4*mu) <span class="keyword">...</span>
+0187     + (1.57291666667*e12*e1)*sin(6*mu) <span class="keyword">...</span>
+0188     + (2.142578125*e12*e12)*sin(8*mu);
+0189 
+0190 <span class="comment">% some other terms</span>
+0191 
+0192 sinF = sin(foot);
+0193 cosF = cos(foot);
+0194 tanF = tan(foot);
+0195 
+0196 N = RADIUS ./ sqrt(1-e2*(sinF.*sinF));
+0197 T = tanF.*tanF;
+0198 T2 = T.*T;
+0199 C = eps * cosF.*cosF;
+0200 C2 = C.*C;
+0201 denom = sqrt(1-e2*(sinF.*sinF));
+0202 R = RADIUS * em1*em1 ./ (denom.*denom.*denom);
+0203 D = x./(N*K_NOT);
+0204 D2 = D.*D;
+0205 D4 = D2.*D2;
+0206 
+0207 <span class="comment">% can now compute the lat and lon</span>
+0208 
+0209 lat = foot - (N.*tanF./R) .* (0.5*D2 - (5 + 3*T + 10*C - 4*C2 - 9*eps).*D4/24 <span class="keyword">...</span>
+0210     + (61 + 90*T + 298*C + 45*T2 - 252*eps - 3*C2) .* D4 .* D2/720);
+0211 
+0212 lon = lambda_not + (D - (1 + 2*T +C).*D2.*D/6 + <span class="keyword">...</span>
+0213     (5 - 2*C + 28*T - 3*C2 + 8*eps + 24*T2).*D4.*D./120)./cosF;
+0214 
+0215 
+0216 <span class="comment">% convert back to degrees;</span>
+0217 
+0218 lat=lat/DEG2RADS;
+0219 lon=lon/DEG2RADS;
+0220 
+0221 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

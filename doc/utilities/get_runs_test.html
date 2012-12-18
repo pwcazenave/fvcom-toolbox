@@ -1,0 +1,518 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_runs_test</title>
+  <meta name="keywords" content="get_runs_test">
+  <meta name="description" content="Figure out a way to identify runs longer than some specified length for">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; get_runs_test.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_runs_test
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Figure out a way to identify runs longer than some specified length for</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Figure out a way to identify runs longer than some specified length for
+ the purposes of calculating the volume of water which is subjected to a
+ change in a parameter of some value.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">% Figure out a way to identify runs longer than some specified length for</span>
+0002 <span class="comment">% the purposes of calculating the volume of water which is subjected to a</span>
+0003 <span class="comment">% change in a parameter of some value.</span>
+0004 
+0005 <span class="comment">%% 1D</span>
+0006 
+0007 <span class="comment">% close all</span>
+0008 
+0009 clear testChange negIdx dn startEndIdx gotTo inc longOnesIdx
+0010 
+0011 testIdx=88;
+0012 
+0013 dtJump=plotOPTS.change_type;
+0014 lengthThreshold=12;
+0015 changeThreshold=-0.5;
+0016 
+0017 <span class="comment">% Model results</span>
+0018 testData=(squeeze(phChange(testIdx,1,:)));
+0019 testTime=plotOPTS.Time_record(1:end-dtJump-1);
+0020 <span class="comment">% Synthetic data</span>
+0021 <span class="comment">% testData=[10,10,9,8,7,6,4,2,0,-2,-4,-6,-8,-10,-20,-30,-40,-50,-60,-70,-80,-90,-100,-110,-109,-108,-107,-106,-105,-104,-103,-102,-101,-100,-99,-97,-95,-96,-97,-98,-99,-99,-99,-99,-99,-100,-101,-102,-103,-105,-107,-109,-111,-113,-115,-117,-119,-129,-130,-130,-129,-128,-127];</span>
+0022 <span class="comment">% testTime=1:length(testData)-1;</span>
+0023 
+0024 testChange=diff(testData);
+0025 
+0026 allIdx=1:length(testData); <span class="comment">% array of index positions</span>
+0027 negIdx=testChange&lt;0; <span class="comment">% where the negative values are.</span>
+0028 dn=diff(negIdx); <span class="comment">% the boundaries of those negative data</span>
+0029 
+0030 <span class="comment">% Find locations at which dn changes from zero to non-zero</span>
+0031 dnIdxStart=allIdx(dn==1)+1; <span class="comment">% add one to move start along to correct index</span>
+0032 dnIdxEnd=allIdx(dn==-1);
+0033 
+0034 <span class="comment">% Check if the start and end are identical (i.e. we have a spike).</span>
+0035 <span class="keyword">if</span> (numel(dnIdxStart)==1 || numel(dnIdxEnd)==1)
+0036     <span class="keyword">if</span> dnIdxStart==dnIdxEnd
+0037         warning(<span class="string">'Single spike in time series, so carry on.'</span>)
+0038         <span class="keyword">continue</span>
+0039     <span class="keyword">end</span>
+0040 <span class="keyword">end</span>
+0041 
+0042 <span class="keyword">if</span> sum(dnIdxStart)==0 || sum(dnIdxEnd)==0
+0043     <span class="comment">% No appropriate values here, so carry on.</span>
+0044     <span class="keyword">continue</span>
+0045 <span class="keyword">end</span>
+0046 
+0047 <span class="comment">% If arrays are different lengths, lop off the last one from the longer</span>
+0048 <span class="comment">% array.</span>
+0049 <span class="keyword">if</span> length(dnIdxEnd)&gt;length(dnIdxStart)
+0050     timeIndices=(dnIdxEnd(1:end-1)-dnIdxStart)&gt;=lengthThreshold;
+0051 <span class="keyword">elseif</span> length(dnIdxEnd)&lt;length(dnIdxStart)
+0052     timeIndices=(dnIdxEnd-dnIdxStart(1:end-1))&gt;=lengthThreshold;
+0053 <span class="keyword">elseif</span> length(dnIdxEnd)==length(dnIdxStart)
+0054     <span class="keyword">if</span> dnIdxStart(1)==1
+0055         timeIndices=(dnIdxEnd(1:end-1)-dnIdxStart(2:end))&gt;=lengthThreshold;
+0056     <span class="keyword">elseif</span> dnIdxEnd(1)==1
+0057         timeIndices=(dnIdxEnd(2:end)-dnIdxStart(1:end-1))&gt;=lengthThreshold;
+0058     <span class="keyword">else</span>
+0059         timeIndices=(dnIdxEnd-dnIdxStart)&gt;=lengthThreshold;
+0060     <span class="keyword">end</span>
+0061 <span class="keyword">else</span>
+0062     <span class="keyword">return</span>
+0063 <span class="keyword">end</span>
+0064 
+0065 <span class="keyword">if</span> sum(timeIndices~=0)
+0066     longOnesIdx(:,1)=dnIdxStart(timeIndices);
+0067     longOnesIdx(:,2)=dnIdxEnd(timeIndices);
+0068 <span class="keyword">else</span>
+0069     <span class="keyword">return</span>
+0070 <span class="keyword">end</span>
+0071 
+0072 <span class="comment">% Check the change magnitude for those time steps. Here we have to decide</span>
+0073 <span class="comment">% if we're doing average change over the n-hour time period, or the maximum</span>
+0074 <span class="comment">% instantaneous change, or ... For a first go, we'll do the average change</span>
+0075 <span class="comment">% and use that for the threshold comparison.</span>
+0076 checkInc=1;
+0077 totalVolume=0;
+0078 <span class="keyword">for</span> jj=1:size(longOnesIdx,2)
+0079     averageChange=mean(testData(longOnesIdx(jj,1):longOnesIdx(jj,2)));
+0080     <span class="keyword">if</span> averageChange&lt;changeThreshold
+0081         totalVolume=totalVolume+cellVolume(longOnesIdx(jj,1):longOnesIdx(jj,2));
+0082         checkInc=checkInc+1;
+0083     <span class="keyword">end</span>
+0084 <span class="keyword">end</span>
+0085 
+0086 close all
+0087 
+0088 figure(2)
+0089 plot(testTime,testChange)
+0090 hold on
+0091 plot(testTime(testChange&lt;0),testChange(testChange&lt;0),<span class="string">'r.'</span>)
+0092 <span class="comment">% plot(testTime(4:end)-((testTime(2)-testTime(1))/2),dn*0.01,'gp')</span>
+0093 <span class="keyword">for</span> i=1:size(longOnesIdx,1)
+0094     plot(testTime(longOnesIdx(i,:)),zeros(1,length(longOnesIdx(i,:))),<span class="string">'g-x'</span>)
+0095     text(mean(testTime(longOnesIdx(i,:))),0.01,num2str((testTime(longOnesIdx(i,2))-testTime(longOnesIdx(i,1)))*24))
+0096 <span class="keyword">end</span>
+0097 
+0098 <span class="comment">%% 1Dv2</span>
+0099 
+0100 close all
+0101 
+0102 clear testChange negIdx dn startEndIdx gotTo inc longOnesIdx
+0103 
+0104 testIdx=124;
+0105 
+0106 dtJump=plotOPTS.change_type;
+0107 lengthThreshold=4;
+0108 changeThreshold=-1.5;
+0109 
+0110 <span class="comment">% Model results</span>
+0111 testData=(squeeze(phChange(testIdx,1,:)));
+0112 testTime=plotOPTS.Time_record(1:end-dtJump-1);
+0113 <span class="comment">% Synthetic data</span>
+0114 <span class="comment">% testData=[10,10,9,8,7,6,4,2,0,-2,-4,-6,-8,-10,-20,-30,-40,-50,-60,-70,-80,-90,-100,-110,-109,-108,-107,-106,-105,-104,-103,-102,-101,-100,-99,-97,-95,-96,-97,-98,-99,-99,-99,-99,-99,-100,-101,-102,-103,-105,-107,-109,-111,-113,-115,-117,-119,-129,-130,-130,-129,-128,-127];</span>
+0115 <span class="comment">% testTime=1:length(testData)-1;</span>
+0116 
+0117 testChange=diff(testData);
+0118 
+0119 allIdx=1:length(testData); <span class="comment">% array of index positions</span>
+0120 negIdx=testChange&lt;0; <span class="comment">% where the negative values are.</span>
+0121 dn=diff(negIdx); <span class="comment">% the boundaries of those negative data</span>
+0122 
+0123 <span class="comment">% Find locations at which dn changes from zero to non-zero</span>
+0124 dnIdxStart=allIdx(dn==1)+1; <span class="comment">% add one to move start along to correct index</span>
+0125 dnIdxEnd=allIdx(dn==-1);
+0126 
+0127 <span class="comment">% Check if the start and end are identical (i.e. we have a spike).</span>
+0128 <span class="keyword">if</span> (numel(dnIdxStart)==1 || numel(dnIdxEnd)==1)
+0129     <span class="keyword">if</span> dnIdxStart==dnIdxEnd
+0130         warning(<span class="string">'Single spike in time series, so carry on.'</span>)
+0131     <span class="keyword">end</span>
+0132 <span class="keyword">end</span>
+0133 <span class="comment">% Check for no values</span>
+0134 <span class="keyword">if</span> sum(dnIdxStart)==0 || sum(dnIdxEnd)==0
+0135     <span class="comment">% No appropriate values here, so carry on.</span>
+0136     warning(<span class="string">'No appropriate values here, so carry on.'</span>)
+0137 <span class="keyword">end</span>
+0138 <span class="comment">% Check the first index in dnIdxEnd is larger than the dnIdxStart.</span>
+0139 <span class="keyword">if</span> dnIdxEnd(1)&lt;dnIdxStart(1)
+0140     <span class="comment">% Strip it out and adjust the dnIdxStart index accordingly.</span>
+0141     dnIdxEnd=dnIdxEnd(2:end);
+0142     dnIdxStart=dnIdxStart(1:end-1);
+0143 <span class="keyword">end</span>
+0144 
+0145 
+0146 <span class="comment">% If arrays are different lengths, lop off the last one from the longer</span>
+0147 <span class="comment">% array.</span>
+0148 <span class="keyword">if</span> size(dnIdxEnd,2)&gt;size(dnIdxStart,2)
+0149     longOnesIdx(:,1)=dnIdxStart((dnIdxEnd(1:end-1)-dnIdxStart)&gt;=lengthThreshold);
+0150     longOnesIdx(:,2)=dnIdxEnd((dnIdxEnd(1:end-1)-dnIdxStart)&gt;=lengthThreshold);
+0151 <span class="keyword">elseif</span> size(dnIdxEnd,2)&lt;size(dnIdxStart,2)
+0152     longOnesIdx(:,1)=dnIdxStart((dnIdxEnd-dnIdxStart(1:end-1))&gt;=lengthThreshold);
+0153     longOnesIdx(:,2)=dnIdxEnd((dnIdxEnd-dnIdxStart(1:end-1))&gt;=lengthThreshold);
+0154 <span class="keyword">else</span>
+0155     <span class="keyword">if</span> dnIdxStart(1)==1
+0156         longOnesIdx(:,1)=dnIdxStart((dnIdxEnd(1:end-1)-dnIdxStart(2:end))&gt;=lengthThreshold);
+0157         longOnesIdx(:,2)=dnIdxEnd((dnIdxEnd(1:end-1)-dnIdxStart(2:end))&gt;=lengthThreshold);
+0158     <span class="keyword">elseif</span> dnIdxEnd(1)==1
+0159         longOnesIdx(:,1)=dnIdxStart((dnIdxEnd(2:end)-dnIdxStart(1:end-1))&gt;=lengthThreshold);
+0160         longOnesIdx(:,2)=dnIdxEnd((dnIdxEnd(2:end)-dnIdxStart(1:end-1))&gt;=lengthThreshold);
+0161     <span class="keyword">else</span>
+0162         longOnesIdx(:,1)=dnIdxStart((dnIdxEnd-dnIdxStart)&gt;=lengthThreshold);
+0163         longOnesIdx(:,2)=dnIdxEnd((dnIdxEnd-dnIdxStart)&gt;=lengthThreshold);
+0164     <span class="keyword">end</span>        
+0165 <span class="keyword">end</span>
+0166 
+0167 close all
+0168 
+0169 plot(testTime,testChange)
+0170 hold on
+0171 plot(testTime(testChange&lt;0),testChange(testChange&lt;0),<span class="string">'r.'</span>)
+0172 <span class="comment">% plot(testTime(4:end)-((testTime(2)-testTime(1))/2),dn*0.01,'gp')</span>
+0173 <span class="keyword">for</span> i=1:size(longOnesIdx,1)
+0174     plot(testTime(longOnesIdx(i,:)),zeros(1,length(longOnesIdx(i,:))),<span class="string">'g-x'</span>)
+0175     text(mean(testTime(longOnesIdx(i,:))),0.01,num2str((testTime(longOnesIdx(i,2))-testTime(longOnesIdx(i,1)))*24))
+0176 <span class="keyword">end</span>
+0177 
+0178 
+0179 <span class="comment">%% 2D</span>
+0180 
+0181 clear testChange negIdx dn startEndIdx gotTo inc allInc longOnesIdx
+0182 
+0183 dtJump=plotOPTS.change_type;
+0184 lengthThreshold=7;
+0185 changeThreshold=-0.1;
+0186 
+0187 testData=squeeze(phChange(:,1,:));
+0188 testTime=plotOPTS.Time_record(1:end-dtJump-1);
+0189 
+0190 inc=1;
+0191 
+0192 <span class="comment">% Easiest way I can think of doing this is to just loop through each</span>
+0193 <span class="comment">% element, doing each timestep as a 1D analysis.</span>
+0194 <span class="keyword">for</span> i=1:size(testData,1);
+0195     disp(i)
+0196     testChange=diff(testData(i,:),1,2);
+0197     allIdx=1:length(testChange);
+0198     negIdx=testChange&lt;0; <span class="comment">% where the negative values are.</span>
+0199     dn=diff(negIdx,1,2);
+0200 
+0201     <span class="comment">% Add one to move start along to correct index. Since the diff</span>
+0202     <span class="comment">% describes the relationship between the first and second value in</span>
+0203     <span class="comment">% testData at the first value of dn. So, if you have a change between</span>
+0204     <span class="comment">% the first and second testData values, then the start of the run is</span>
+0205     <span class="comment">% necessarily at the second index in testData. For the end though, the</span>
+0206     <span class="comment">% index in dn will describe the change from the run to a non-run part,</span>
+0207     <span class="comment">% so we don't need to adjust that in the same way. We need also to</span>
+0208     <span class="comment">% adjust the values of testChange when comparine them with</span>
+0209     <span class="comment">%</span>
+0210     <span class="comment">% allIdx:   |  1  |  2  |  3  |  4  |  5  |  6  |  7  |</span>
+0211     <span class="comment">% testData: |  P  |     |     |     |     |  P  |     |</span>
+0212     <span class="comment">%           |     |  N  |  N  |  N  |  N  |     |  N  |</span>
+0213     <span class="comment">% negIdx:   |  0  |  1  |  1  |  1  |  1  |  0  |  1  |</span>
+0214     <span class="comment">% dn:       |  1  |  0  |  0  |  0  | -1  |  1  |  ~  |</span>
+0215     <span class="comment">%</span>
+0216     <span class="comment">% So you can see that dn is positive before the start of the N run</span>
+0217     <span class="comment">% whilst dn is negative at the last element of the run. So we need to</span>
+0218     <span class="comment">% increase the idxStart value by one. The idxEnd doesn't need to be</span>
+0219     <span class="comment">% modified this way.</span>
+0220     idxStart_dn=allIdx(dn==1)+1;
+0221 <span class="comment">%     idxStart_tc=allIdx(testChange(1:end-1)&lt;changeThreshold);</span>
+0222 <span class="comment">%     dnIdxStart=intersect(idxStart_dn,idxStart_tc);</span>
+0223     dnIdxStart=idxStart_dn;
+0224     idxEnd_dn=allIdx(dn==-1);
+0225 <span class="comment">%     idxEnd_tc=allIdx(testChange(1:end-1)&lt;changeThreshold);</span>
+0226 <span class="comment">%     dnIdxEnd=intersect(idxEnd_dn,idxEnd_tc);</span>
+0227     dnIdxEnd=idxEnd_dn;
+0228 
+0229     <span class="comment">% QC the picked results.</span>
+0230 
+0231     <span class="comment">% Check if the start and end are identical (i.e. we have a spike).</span>
+0232     <span class="keyword">if</span> (numel(dnIdxStart)==1 || numel(dnIdxEnd)==1)
+0233         <span class="keyword">if</span> dnIdxStart==dnIdxEnd
+0234             warning(<span class="string">'Single spike in time series, so carry on.'</span>)
+0235             <span class="keyword">continue</span>
+0236         <span class="keyword">end</span>
+0237     <span class="keyword">end</span>
+0238     <span class="comment">% Check for no values</span>
+0239     <span class="keyword">if</span> sum(dnIdxStart)==0 || sum(dnIdxEnd)==0
+0240         <span class="comment">% No appropriate values here, so carry on.</span>
+0241         warning(<span class="string">'No appropriate values here, so carry on.'</span>)
+0242         <span class="keyword">continue</span>
+0243     <span class="keyword">end</span>
+0244     <span class="comment">% Check the first index in dnIdxEnd is larger than the dnIdxStart.</span>
+0245     <span class="keyword">if</span> dnIdxEnd(1)&lt;dnIdxStart(1)
+0246         <span class="comment">% Strip it out and adjust the dnIdxStart index accordingly.</span>
+0247         dnIdxEnd=dnIdxEnd(2:end);
+0248         dnIdxStart=dnIdxStart(1:end-1);
+0249     <span class="keyword">end</span>
+0250 
+0251     <span class="comment">% If arrays are different lengths, lop off the last one from the longer</span>
+0252     <span class="comment">% array.</span>
+0253     <span class="keyword">if</span> size(dnIdxEnd,2)&gt;size(dnIdxStart,2)
+0254         <span class="comment">% Not ideal with the try's, but it seems to work...</span>
+0255         <span class="keyword">try</span>
+0256             timeRange(:,1)=dnIdxStart((dnIdxEnd(1:end-1)-dnIdxStart)&gt;=lengthThreshold);
+0257             timeRange(:,2)=dnIdxEnd((dnIdxEnd(1:end-1)-dnIdxStart)&gt;=lengthThreshold);
+0258         <span class="keyword">catch</span> <span class="comment">%#ok&lt;CTCH&gt;</span>
+0259             <span class="keyword">continue</span>
+0260         <span class="keyword">end</span>
+0261     <span class="keyword">elseif</span> size(dnIdxEnd,2)&lt;size(dnIdxStart,2)
+0262         <span class="keyword">try</span>
+0263             timeRange(:,1)=dnIdxStart((dnIdxEnd-dnIdxStart(1:end-1))&gt;=lengthThreshold);
+0264             timeRange(:,2)=dnIdxEnd((dnIdxEnd-dnIdxStart(1:end-1))&gt;=lengthThreshold);
+0265         <span class="keyword">catch</span> <span class="comment">%#ok&lt;CTCH&gt;</span>
+0266             <span class="keyword">continue</span>
+0267         <span class="keyword">end</span>
+0268     <span class="keyword">else</span>
+0269         <span class="keyword">try</span>
+0270             timeRange(:,1)=dnIdxStart((dnIdxEnd-dnIdxStart)&gt;=lengthThreshold);
+0271             timeRange(:,2)=dnIdxEnd((dnIdxEnd-dnIdxStart)&gt;=lengthThreshold);
+0272         <span class="keyword">catch</span> <span class="comment">%#ok&lt;CTCH&gt;</span>
+0273             <span class="keyword">continue</span>
+0274         <span class="keyword">end</span>
+0275     <span class="keyword">end</span>
+0276     
+0277     <span class="comment">% Now do the magnitude check now.</span>
+0278     timeRange=timeRange(testChange(timeRange(:,1))&lt;changeThreshold &amp; testChange(timeRange(:,2))&lt;changeThreshold,:);
+0279     <span class="comment">% If the start and end ranges are non-zero in length, add them to the</span>
+0280     <span class="comment">% longOnesIdx cell array.</span>
+0281     <span class="keyword">if</span> numel(timeRange)&gt;=2
+0282         longOnesIdx{inc}=timeRange;
+0283         allInc(inc)=i;
+0284         inc=inc+1;
+0285     <span class="keyword">end</span>
+0286 <span class="keyword">end</span>
+0287 
+0288 <span class="comment">%% 2Dv2</span>
+0289 
+0290 clear testChange negIdx dn startEndIdx gotTo inc allInc longOnesIdx timeRange
+0291 
+0292 dtJump=plotOPTS.change_type;
+0293 lengthThreshold=2;
+0294 changeThreshold=-1;
+0295 
+0296 testData=squeeze(phChange(:,1,:));
+0297 testTime=plotOPTS.Time_record(1:end-dtJump-1);
+0298 
+0299 inc=1;
+0300 
+0301 <span class="comment">% Easiest way I can think of doing this is to just loop through each</span>
+0302 <span class="comment">% element, doing each timestep as a 1D analysis.</span>
+0303 <span class="keyword">for</span> i=222<span class="comment">%1:size(testData,1);</span>
+0304     disp(i)
+0305     <span class="comment">% Model results</span>
+0306     testData=squeeze(phChange(i,1,:))*10000000000;
+0307     testTime=plotOPTS.Time_record(1:end-dtJump-1);
+0308     <span class="comment">% Synthetic data</span>
+0309     <span class="comment">% testData=[10,10,9,8,7,6,4,2,0,-2,-4,-6,-8,-10,-20,-30,-40,-50,-60,-70,-80,-90,-100,-110,-109,-108,-107,-106,-105,-104,-103,-102,-101,-100,-99,-97,-95,-96,-97,-98,-99,-99,-99,-99,-99,-100,-101,-102,-103,-105,-107,-109,-111,-113,-115,-117,-119,-129,-130,-130,-129,-128,-127];</span>
+0310     <span class="comment">% testTime=1:length(testData)-1;</span>
+0311 
+0312     testChange=diff(testData);
+0313 
+0314     allIdx=1:length(testData); <span class="comment">% array of index positions</span>
+0315     negIdx=testChange&lt;0; <span class="comment">% where the negative values are.</span>
+0316     dn=diff(negIdx); <span class="comment">% the boundaries of those negative data</span>
+0317 
+0318     <span class="comment">% Find indices at which dn changes from zero to non-zero</span>
+0319     dnIdxStart=allIdx(dn==1)+1; <span class="comment">% add one to move start along to correct index</span>
+0320     dnIdxEnd=allIdx(dn==-1);
+0321 
+0322     <span class="comment">% Check if the start and end are identical (i.e. we have a spike).</span>
+0323     <span class="keyword">if</span> (numel(dnIdxStart)==1 || numel(dnIdxEnd)==1)
+0324         <span class="keyword">if</span> dnIdxStart==dnIdxEnd
+0325             warning(<span class="string">'Single spike in time series, so carry on.'</span>)
+0326             <span class="keyword">continue</span>
+0327         <span class="keyword">end</span>
+0328     <span class="keyword">end</span>
+0329     <span class="comment">% Check for no values</span>
+0330     <span class="keyword">if</span> sum(dnIdxStart)==0 || sum(dnIdxEnd)==0
+0331         <span class="comment">% No appropriate values here, so carry on.</span>
+0332         warning(<span class="string">'No appropriate values here, so carry on.'</span>)
+0333         <span class="keyword">continue</span>
+0334     <span class="keyword">end</span>
+0335     <span class="comment">% Check the first index in dnIdxEnd is larger than the dnIdxStart.</span>
+0336     <span class="keyword">if</span> dnIdxEnd(1)&lt;dnIdxStart(1)
+0337         <span class="comment">% Strip it out and adjust the dnIdxStart index accordingly.</span>
+0338         dnIdxEnd=dnIdxEnd(2:end);
+0339         dnIdxStart=dnIdxStart(1:end-1);
+0340     <span class="keyword">end</span>
+0341 
+0342     <span class="comment">% If arrays are different lengths, lop off the last one from the longer</span>
+0343     <span class="comment">% array.</span>
+0344     clear timeRange
+0345     <span class="keyword">if</span> size(dnIdxEnd,2)&gt;size(dnIdxStart,2)
+0346         <span class="comment">% Not ideal with the try's, but it seems to work...</span>
+0347         <span class="keyword">try</span>
+0348             timeRange(:,1)=dnIdxStart((dnIdxEnd(1:end-1)-dnIdxStart)&gt;=lengthThreshold);
+0349             timeRange(:,2)=dnIdxEnd((dnIdxEnd(1:end-1)-dnIdxStart)&gt;=lengthThreshold);
+0350         <span class="keyword">catch</span> <span class="comment">%#ok&lt;CTCH&gt;</span>
+0351             <span class="keyword">continue</span>
+0352         <span class="keyword">end</span>
+0353     <span class="keyword">elseif</span> size(dnIdxEnd,2)&lt;size(dnIdxStart,2)
+0354         <span class="keyword">try</span>
+0355             timeRange(:,1)=dnIdxStart((dnIdxEnd-dnIdxStart(1:end-1))&gt;=lengthThreshold);
+0356             timeRange(:,2)=dnIdxEnd((dnIdxEnd-dnIdxStart(1:end-1))&gt;=lengthThreshold);
+0357         <span class="keyword">catch</span> <span class="comment">%#ok&lt;CTCH&gt;</span>
+0358             <span class="keyword">continue</span>
+0359         <span class="keyword">end</span>
+0360     <span class="keyword">else</span>
+0361         <span class="keyword">try</span>
+0362             timeRange(:,1)=dnIdxStart((dnIdxEnd-dnIdxStart)&gt;=lengthThreshold);
+0363             timeRange(:,2)=dnIdxEnd((dnIdxEnd-dnIdxStart)&gt;=lengthThreshold);
+0364         <span class="keyword">catch</span> <span class="comment">%#ok&lt;CTCH&gt;</span>
+0365             <span class="keyword">continue</span>
+0366         <span class="keyword">end</span>
+0367     <span class="keyword">end</span>
+0368 
+0369     <span class="comment">% Now do the magnitude check now.</span>
+0370     timeRange=timeRange(testChange(timeRange(:,1))&lt;changeThreshold &amp; testChange(timeRange(:,2))&lt;changeThreshold,:);
+0371     
+0372     <span class="comment">% If the start and end ranges are non-zero in length, add them to the</span>
+0373     <span class="comment">% longOnesIdx cell array.</span>
+0374     <span class="keyword">if</span> numel(timeRange)&gt;=2
+0375         longOnesIdx{inc}=timeRange;
+0376         allInc(inc)=i;
+0377         inc=inc+1;
+0378     <span class="keyword">end</span>
+0379 
+0380 <span class="comment">%     if size(dnIdxEnd,2)&gt;size(dnIdxStart,2)</span>
+0381 <span class="comment">%         try</span>
+0382 <span class="comment">%             timeRange</span>
+0383 <span class="comment">%             longOnesIdx{inc}(:,1)=dnIdxStart((dnIdxEnd(1:end-1)-dnIdxStart)&gt;=lengthThreshold);</span>
+0384 <span class="comment">%             longOnesIdx{inc}(:,2)=dnIdxEnd((dnIdxEnd(1:end-1)-dnIdxStart)&gt;=lengthThreshold);</span>
+0385 <span class="comment">%             allInc(inc)=i;</span>
+0386 <span class="comment">%             inc=inc+1;</span>
+0387 <span class="comment">%         end</span>
+0388 <span class="comment">%     elseif size(dnIdxEnd,2)&lt;size(dnIdxStart,2)</span>
+0389 <span class="comment">%         try</span>
+0390 <span class="comment">%             longOnesIdx{inc}(:,1)=dnIdxStart((dnIdxEnd-dnIdxStart(1:end-1))&gt;=lengthThreshold);</span>
+0391 <span class="comment">%             longOnesIdx{inc}(:,2)=dnIdxEnd((dnIdxEnd-dnIdxStart(1:end-1))&gt;=lengthThreshold);</span>
+0392 <span class="comment">%             allInc(inc)=i;</span>
+0393 <span class="comment">%             inc=inc+1;</span>
+0394 <span class="comment">%         end</span>
+0395 <span class="comment">%     else</span>
+0396 <span class="comment">%         try</span>
+0397 <span class="comment">%             longOnesIdx{inc}(:,1)=dnIdxStart((dnIdxEnd-dnIdxStart)&gt;=lengthThreshold);</span>
+0398 <span class="comment">%             longOnesIdx{inc}(:,2)=dnIdxEnd((dnIdxEnd-dnIdxStart)&gt;=lengthThreshold);</span>
+0399 <span class="comment">%             allInc(inc)=i;</span>
+0400 <span class="comment">%             inc=inc+1;</span>
+0401 <span class="comment">%         end</span>
+0402 <span class="comment">%     end</span>
+0403 
+0404    
+0405 <span class="comment">%     close all</span>
+0406 <span class="comment">%</span>
+0407 <span class="comment">%     plot(testTime,testChange)</span>
+0408 <span class="comment">%     hold on</span>
+0409 <span class="comment">%     plot(testTime(testChange&lt;0),testChange(testChange&lt;0),'r.')</span>
+0410 <span class="comment">%     % plot(testTime(4:end)-((testTime(2)-testTime(1))/2),dn*0.01,'gp')</span>
+0411 <span class="comment">%     for j=1:size(longOnesIdx{inc-1},1)</span>
+0412 <span class="comment">%         plot(testTime(longOnesIdx{inc}(j,:)),zeros(1,length(longOnesIdx{inc}(j,:))),'g-x')</span>
+0413 <span class="comment">%         text(mean(testTime(longOnesIdx{inc-1}(j,:))),0.01,num2str((testTime(longOnesIdx{inc-1}(j,2))-testTime(longOnesIdx{inc-1}(j,1)))*24))</span>
+0414 <span class="comment">%     end</span>
+0415 
+0416 <span class="keyword">end</span>
+0417 <span class="comment">%%</span>
+0418 close all
+0419 
+0420 [tx,ty]=meshgrid(1:size(testChange,2),1:size(testChange,1));
+0421 
+0422 pcolor(tx,ty,testChange); shading flat; axis tight
+0423 colorbar
+0424 caxis([-1 1])
+0425 hold on
+0426 plot(tx(allIdx(dn&lt;0)),ty(allIdx(dn&lt;0)),<span class="string">'r.'</span>)
+0427 plot(tx(allIdx(dn&gt;0)),ty(allIdx(dn&gt;0)),<span class="string">'g.'</span>)
+0428 <span class="keyword">for</span> i=1:size(longOnesIdx,1)
+0429     plot(tx(longOnesIdx(i,1)),ty(longOnesIdx(i,2)),<span class="string">'g-x'</span>)
+0430 <span class="keyword">end</span>
+0431 
+0432 <span class="comment">%% 1D (old way)</span>
+0433 
+0434 <span class="comment">% % Find continuous negatives for more than changeThreshold &quot;hours&quot;.</span>
+0435 <span class="comment">% inc=0;</span>
+0436 <span class="comment">% gotTo=1;</span>
+0437 <span class="comment">% for i=1:length(dn)</span>
+0438 <span class="comment">%     % Check whether we're in a flat big (i.e. the change is constant) and</span>
+0439 <span class="comment">%     % whether the value of the change exceeds the threshold change</span>
+0440 <span class="comment">%     % specified.</span>
+0441 <span class="comment">%     if dn(i)==0 &amp;&amp; testChange(i)&lt;0</span>
+0442 <span class="comment">%         fprintf('dn: %i\ttestChange: %i\tinc: %i\n',dn(i),testChange(i),inc)</span>
+0443 <span class="comment">%         % Check what the value of inc is:</span>
+0444 <span class="comment">%         % - If it's zero, we're at the start of a run.</span>
+0445 <span class="comment">%         % - If it's non-zero, we're part way through a run.</span>
+0446 <span class="comment">%         % - If it's negative, the last value was the end of a run.</span>
+0447 <span class="comment">%         if inc==0</span>
+0448 <span class="comment">%             % Start of a run</span>
+0449 <span class="comment">%             startEndIdx(gotTo,1)=i;</span>
+0450 <span class="comment">%             gotTo=gotTo+1;</span>
+0451 <span class="comment">%             inc=1;</span>
+0452 <span class="comment">%         elseif inc&gt;0</span>
+0453 <span class="comment">%             % Midway through a run</span>
+0454 <span class="comment">%             inc=inc+1;</span>
+0455 <span class="comment">%         else</span>
+0456 <span class="comment">%             warning('Uhhh... this shouldn''t ever appear...')</span>
+0457 <span class="comment">%         end</span>
+0458 <span class="comment">%     elseif dn(i)~=0 &amp;&amp; testChange(i)&lt;0</span>
+0459 <span class="comment">%         % At the end of a run when diff is non-zero and increment is</span>
+0460 <span class="comment">%         % greater than zero.</span>
+0461 <span class="comment">%         if inc&gt;0</span>
+0462 <span class="comment">%             startEndIdx(gotTo-1,2)=i;</span>
+0463 <span class="comment">%             inc=0;</span>
+0464 <span class="comment">%         end</span>
+0465 <span class="comment">%     end</span>
+0466 <span class="comment">%</span>
+0467 <span class="comment">% end</span>
+0468 
+0469</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

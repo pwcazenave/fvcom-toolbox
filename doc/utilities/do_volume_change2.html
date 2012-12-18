@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of do_volume_change2</title>
+  <meta name="keywords" content="do_volume_change2">
+  <meta name="description" content="Calculate the volume exposed to a given change in pH.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; do_volume_change2.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>do_volume_change2
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Calculate the volume exposed to a given change in pH.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [summedVolume]=do_volume_change2(plotOPTS,FVCOM,startIdx) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Calculate the volume exposed to a given change in pH.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [summedVolume]=do_volume_change2(plotOPTS,FVCOM,startIdx)</a>
+0002 <span class="comment">% Calculate the volume exposed to a given change in pH.</span>
+0003 
+0004 m_mappath;
+0005 
+0006 [nx,nz,ttot]=size(FVCOM.(plotOPTS.var_plot));
+0007 
+0008 <span class="comment">% Check we have some of the required fields.</span>
+0009 <span class="keyword">if</span> ~isfield(FVCOM,plotOPTS.var_plot)
+0010     error(<span class="string">'Need %s input to calculate change in %s.'</span>,plotOPTS.var_plot,plotOPTS.var_plot)
+0011 <span class="keyword">end</span>
+0012 
+0013 <span class="comment">% Get the time step (in seconds)</span>
+0014 dt=round((plotOPTS.Time_record(2)-plotOPTS.Time_record(1))*24*60*60);
+0015 
+0016 <span class="comment">% Sigma layer fraction (nz*nz)</span>
+0017 sigThickness=roundn(abs(diff(FVCOM.siglev,1,2)),-5); <span class="comment">% roundn to even values out.</span>
+0018 <span class="comment">% Total depth (nz*ttot)</span>
+0019 totalDepth=repmat(FVCOM.h,1,size(FVCOM.zeta,2))+FVCOM.zeta;
+0020 <span class="comment">% Volume for every element for each time step</span>
+0021 cellVolume=nan(nx,nz,ttot);
+0022 <span class="keyword">for</span> ii=1:nz
+0023     <span class="keyword">for</span> jj=1:ttot
+0024         <span class="comment">% I'm pretty certain this needs to integrate for the time between</span>
+0025         <span class="comment">% time steps, otherwise halving the output time step would halve</span>
+0026         <span class="comment">% the exposed volume, which can't be right...</span>
+0027         cellVolume(:,ii,jj)=totalDepth(:,jj).*sigThickness(:,ii).*FVCOM.art1*dt;
+0028     <span class="keyword">end</span>
+0029 <span class="keyword">end</span>
+0030 
+0031 dataToUse=single(FVCOM.(plotOPTS.var_plot));
+0032 
+0033 <span class="comment">% Old way.</span>
+0034 <span class="comment">% % Calculate the difference between the current step and the previous step.</span>
+0035 <span class="comment">% phChange=diff(squeeze(FVCOM.(plotOPTS.var_plot)(:,plotOPTS.nz_plot,:)),[],2);</span>
+0036 <span class="comment">% % Nope, get the background condition and compare against that. Depth</span>
+0037 <span class="comment">% average if necessary.</span>
+0038 <span class="comment">% if isfield(plotOPTS,'depth_average') &amp;&amp; plotOPTS.depth_average</span>
+0039 <span class="comment">%     bgPH=squeeze(mean(FVCOM.(plotOPTS.var_plot)(:,:,startIdx),2));</span>
+0040 <span class="comment">% else</span>
+0041 <span class="comment">%     bgPH=squeeze(FVCOM.(plotOPTS.var_plot)(:,plotOPTS.nz_plot,startIdx));</span>
+0042 <span class="comment">% end</span>
+0043 <span class="comment">% % Are we depth averaging?</span>
+0044 <span class="comment">% if isfield(plotOPTS,'depth_average') &amp;&amp; plotOPTS.depth_average</span>
+0045 <span class="comment">%     % Now, for each successive time step, calculate the difference between the</span>
+0046 <span class="comment">%     % current time step and the background level.</span>
+0047 <span class="comment">%     phMean=squeeze(mean(FVCOM.(plotOPTS.var_plot),2));</span>
+0048 <span class="comment">%     phDiff=phMean-repmat(bgPH,1,size(phMean,2));</span>
+0049 <span class="comment">% else</span>
+0050 <span class="comment">%     phDiff=squeeze(FVCOM.(plotOPTS.var_plot)(:,plotOPTS.nz_plot,:))-repmat(bgPH,1,size(FVCOM.(plotOPTS.var_plot),3));</span>
+0051 <span class="comment">% end</span>
+0052 
+0053 <span class="comment">% New, simple way. Just compare against the background.</span>
+0054 <span class="comment">% Get the background condition. Depth average if necessary.</span>
+0055 <span class="keyword">if</span> isfield(plotOPTS,<span class="string">'depth_average'</span>) &amp;&amp; plotOPTS.depth_average
+0056     bgPH=squeeze(mean(dataToUse(:,:,startIdx),2));
+0057 <span class="keyword">else</span>
+0058     bgPH=squeeze(dataToUse(:,plotOPTS.nz_plot,startIdx));
+0059 <span class="keyword">end</span>
+0060 
+0061 <span class="comment">% Are we depth averaging?</span>
+0062 <span class="keyword">if</span> isfield(plotOPTS,<span class="string">'depth_average'</span>) &amp;&amp; plotOPTS.depth_average
+0063     phData=squeeze(mean(dataToUse,2));
+0064 <span class="keyword">else</span>
+0065     phData=squeeze(dataToUse(:,plotOPTS.nz_plot,:));
+0066 <span class="keyword">end</span>
+0067 
+0068 <span class="comment">% Get the differences</span>
+0069 phDiff=phData-repmat(bgPH,1,size(phData,2));
+0070 
+0071 <span class="comment">% For positions if we want to plot them</span>
+0072 [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0073 
+0074 foundXY=cell(1,length(plotOPTS.nz_plot));
+0075 countSites=zeros(nx,1);
+0076 
+0077 <span class="comment">% Find all locations which experience a change in excess of the threshold.</span>
+0078 <span class="keyword">for</span> tt=1:ttot
+0079     <span class="comment">% Find drops greater than the threshold</span>
+0080     idx=find(phDiff(:,tt)&lt;plotOPTS.threshold_change);
+0081     <span class="keyword">if</span> ~isempty(idx)
+0082         countSites(idx)=countSites(idx)+1;
+0083         foundXY{tt}.xy=[X(idx),Y(idx)];
+0084     <span class="keyword">end</span>
+0085 <span class="keyword">end</span>
+0086 
+0087 <span class="comment">% Now we can use countSites to calculate the volume exposed to the change,</span>
+0088 <span class="comment">% although this ignores the effect of the tide (because we don't know which</span>
+0089 <span class="comment">% time step triggered the threshold condition test)</span>
+0090 totalVolume=squeeze(cellVolume(:,plotOPTS.nz_plot,1)).*countSites;
+0091 <span class="comment">% Now get the volume over the entire domain</span>
+0092 summedVolume=sum(totalVolume);
+0093 
+0094 <span class="comment">% Visualise the count threshold</span>
+0095 <span class="keyword">if</span> 0
+0096     Plots(1).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0097         <span class="string">'Cdata'</span>,countSites,<span class="keyword">...</span>
+0098         <span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0099     <span class="keyword">if</span> plotOPTS.do_mesh
+0100         <span class="comment">% plot vertices</span>
+0101         [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0102         patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0103             <span class="string">'EdgeColor'</span>,[0.6 0.6 0.6],<span class="string">'FaceColor'</span>,<span class="string">'none'</span>); hold on
+0104     <span class="keyword">end</span>
+0105     colorbar
+0106 
+0107     figure;
+0108     patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0109         <span class="string">'Cdata'</span>,totalVolume/1e9,<span class="keyword">...</span>
+0110         <span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0111     <span class="keyword">if</span> plotOPTS.do_mesh
+0112         <span class="comment">% plot vertices</span>
+0113         [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0114         patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0115             <span class="string">'EdgeColor'</span>,[0.6 0.6 0.6],<span class="string">'FaceColor'</span>,<span class="string">'none'</span>); hold on
+0116     <span class="keyword">end</span>
+0117     colorbar
+0118 
+0119     figure;
+0120     patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0121         <span class="string">'Cdata'</span>,squeeze(FVCOM.ph(:,1,2)),<span class="keyword">...</span>
+0122         <span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0123     colorbar
+0124 <span class="keyword">end</span>
+0125 
+0126 <span class="comment">% figure(1)</span>
+0127 <span class="comment">% subplot(2,1,1)</span>
+0128 <span class="comment">% plot(Time_record-min(Time_record),squeeze(FVCOM.ph(1316,plotOPTS.nz_plot,:)))</span>
+0129 <span class="comment">% subplot(2,1,2)</span>
+0130 <span class="comment">% plot(Time_record(1:end-1)-min(Time_record),phChange(1316,:),'r')</span>
+0131 <span class="comment">% hold on</span>
+0132 <span class="comment">% plot(Time_record(idxAtLeak)-min(Time_record),phChange(1316,idxAtLeak),'g.')</span>
+0133 <span class="comment">% % Add the threshold</span>
+0134 <span class="comment">% plot([min(Time_record)-min(Time_record),max(Time_record)-min(Time_record)],[plotOPTS.threshold_change,plotOPTS.threshold_change],'k--')</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

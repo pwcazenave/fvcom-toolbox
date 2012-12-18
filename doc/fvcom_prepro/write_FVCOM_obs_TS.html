@@ -4,7 +4,7 @@
 <head>
   <title>Description of write_FVCOM_obs_TS</title>
   <meta name="keywords" content="write_FVCOM_obs_TS">
-  <meta name="description" content="Dump observation profile of T/S to netcdf file to initialize stratification in FVCOM">
+  <meta name="description" content="Dump observation profile of T/S to netcdf file to initialize">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
   <meta name="robots" content="index, follow">
@@ -21,15 +21,16 @@
 </h1>
 
 <h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>Dump observation profile of T/S to netcdf file to initialize stratification in FVCOM</strong></div>
+<div class="box"><strong>Dump observation profile of T/S to netcdf file to initialize</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="box"><strong>function write_FVCOM_obs_TS(time,zsl,nverts,tsl,ssl,filename,mytitle) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"> Dump observation profile of T/S to netcdf file to initialize stratification in FVCOM 
+<div class="fragment"><pre class="comment"> Dump observation profile of T/S to netcdf file to initialize
+ stratification in FVCOM
 
- function write_FVCOM_obs_TS(mjday,zsl,nverts,tsl,ssl,filename,mytitle) 
+ function write_FVCOM_obs_TS(jday,zsl,nverts,tsl,ssl,filename,mytitle) 
 
  DESCRIPTION:
     Generate a NetCDF file containing vertical profile of T/S for FVCOM 
@@ -40,20 +41,24 @@
    nverts = number of vertices in the mesh**
    tsl = temperature at level k (C)
    ssl = salinity at level k (PSU)
-   filename  = filename to dump to
+   filename  = filename to which to dump data
    mytitle   = global attribute 
 
  OUTPUT:
     NetCDF file: filename
 
- **in this script the temp/sal profiles are assumed to be constant at each node
+ **in this script the temp/sal profiles are assumed to be constant at each
+ node
 
  EXAMPLE USAGE
 
  Author(s):  
     Geoff Cowles (University of Massachusetts Dartmouth)
+    Pierre Cazenave (Plymouth Marine Laboratory)
 
  Revision history
+    2012-06-15 Added support for native MATLAB NetCDF routines. Requires
+    MATLAB 2010a or higher.
    
 ==============================================================================</pre></div>
 
@@ -72,110 +77,123 @@ This function is called by:
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_obs_TS(time,zsl,nverts,tsl,ssl,filename,mytitle) </a>
 0002 
-0003 <span class="comment">% Dump observation profile of T/S to netcdf file to initialize stratification in FVCOM</span>
-0004 <span class="comment">%</span>
-0005 <span class="comment">% function write_FVCOM_obs_TS(mjday,zsl,nverts,tsl,ssl,filename,mytitle)</span>
-0006 <span class="comment">%</span>
-0007 <span class="comment">% DESCRIPTION:</span>
-0008 <span class="comment">%    Generate a NetCDF file containing vertical profile of T/S for FVCOM</span>
-0009 <span class="comment">%</span>
-0010 <span class="comment">% INPUT</span>
-0011 <span class="comment">%   jday= modified julian day or initial model time</span>
-0012 <span class="comment">%   zsl = zcoordinate of observations, positive up</span>
-0013 <span class="comment">%   nverts = number of vertices in the mesh**</span>
-0014 <span class="comment">%   tsl = temperature at level k (C)</span>
-0015 <span class="comment">%   ssl = salinity at level k (PSU)</span>
-0016 <span class="comment">%   filename  = filename to dump to</span>
-0017 <span class="comment">%   mytitle   = global attribute</span>
-0018 <span class="comment">%</span>
-0019 <span class="comment">% OUTPUT:</span>
-0020 <span class="comment">%    NetCDF file: filename</span>
-0021 <span class="comment">%</span>
-0022 <span class="comment">% **in this script the temp/sal profiles are assumed to be constant at each node</span>
-0023 <span class="comment">%</span>
-0024 <span class="comment">% EXAMPLE USAGE</span>
+0003 <span class="comment">% Dump observation profile of T/S to netcdf file to initialize</span>
+0004 <span class="comment">% stratification in FVCOM</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% function write_FVCOM_obs_TS(jday,zsl,nverts,tsl,ssl,filename,mytitle)</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% DESCRIPTION:</span>
+0009 <span class="comment">%    Generate a NetCDF file containing vertical profile of T/S for FVCOM</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT</span>
+0012 <span class="comment">%   jday= modified julian day or initial model time</span>
+0013 <span class="comment">%   zsl = zcoordinate of observations, positive up</span>
+0014 <span class="comment">%   nverts = number of vertices in the mesh**</span>
+0015 <span class="comment">%   tsl = temperature at level k (C)</span>
+0016 <span class="comment">%   ssl = salinity at level k (PSU)</span>
+0017 <span class="comment">%   filename  = filename to which to dump data</span>
+0018 <span class="comment">%   mytitle   = global attribute</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% OUTPUT:</span>
+0021 <span class="comment">%    NetCDF file: filename</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% **in this script the temp/sal profiles are assumed to be constant at each</span>
+0024 <span class="comment">% node</span>
 0025 <span class="comment">%</span>
-0026 <span class="comment">% Author(s):</span>
-0027 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0028 <span class="comment">%</span>
-0029 <span class="comment">% Revision history</span>
-0030 <span class="comment">%</span>
-0031 <span class="comment">%==============================================================================</span>
-0032 
-0033 
-0034 <span class="comment">% check dimensions</span>
-0035 ksl = numel(zsl);
-0036 
-0037 <span class="keyword">if</span>(numel(tsl) ~= ksl)
-0038   error(<span class="string">'dimensions of ssl do not match zsl'</span>)
-0039 <span class="keyword">end</span>;
-0040 <span class="keyword">if</span>(numel(ssl) ~= ksl)
-0041   error(<span class="string">'dimensions of ssl do not match zsl'</span>)
-0042 <span class="keyword">end</span>;
-0043 
-0044 <span class="comment">%------------------------------------------------------------------------------</span>
-0045 <span class="comment">% Dump to S/T profile to NetCDF file</span>
-0046 <span class="comment">%------------------------------------------------------------------------------</span>
-0047 fprintf(<span class="string">'Dumping to NetCDF file: \n'</span>,filename);
-0048 fprintf(<span class="string">'Size of T/S array: \n'</span>,ksl);
-0049 nc = netcdf(filename,<span class="string">'clobber'</span>);
-0050 nc.title = mytitle;
-0051 nc(<span class="string">'ksl'</span>) = ksl ;
-0052 nc(<span class="string">'node'</span>) = nverts;
-0053 nc(<span class="string">'time'</span>) = 0;
+0026 <span class="comment">% EXAMPLE USAGE</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Author(s):</span>
+0029 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0030 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% Revision history</span>
+0033 <span class="comment">%    2012-06-15 Added support for native MATLAB NetCDF routines. Requires</span>
+0034 <span class="comment">%    MATLAB 2010a or higher.</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">%==============================================================================</span>
+0037 
+0038 
+0039 <span class="comment">% check dimensions</span>
+0040 ksl = numel(zsl);
+0041 
+0042 <span class="keyword">if</span>(numel(tsl) ~= ksl)
+0043   error(<span class="string">'dimensions of ssl do not match zsl'</span>)
+0044 <span class="keyword">end</span>;
+0045 <span class="keyword">if</span>(numel(ssl) ~= ksl)
+0046   error(<span class="string">'dimensions of ssl do not match zsl'</span>)
+0047 <span class="keyword">end</span>;
+0048 
+0049 <span class="comment">%------------------------------------------------------------------------------</span>
+0050 <span class="comment">% Dump to S/T profile to NetCDF file</span>
+0051 <span class="comment">%------------------------------------------------------------------------------</span>
+0052 fprintf(<span class="string">'Dumping to NetCDF file: \n'</span>,filename);
+0053 fprintf(<span class="string">'Size of T/S array: \n'</span>,ksl);
 0054 
-0055 nc{<span class="string">'time'</span>} = ncfloat(<span class="string">'time'</span>);
-0056 nc{<span class="string">'time'</span>}.long_name = <span class="string">'time'</span>;
-0057 nc{<span class="string">'time'</span>}.units     = <span class="string">'days since 0.0'</span>;
-0058 nc{<span class="string">'time'</span>}.time_zone = <span class="string">'none'</span>;
-0059 
-0060 nc{<span class="string">'Itime'</span>} = ncint(<span class="string">'time'</span>);
-0061 nc{<span class="string">'Itime'</span>}.units     = <span class="string">'days since 0.0'</span>;
-0062 nc{<span class="string">'Itime'</span>}.time_zone = <span class="string">'none'</span>;
+0055 nc = netcdf.create(filename,<span class="string">'clobber'</span>);
+0056 
+0057 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,mytitle)
+0058 
+0059 <span class="comment">% define dimensions</span>
+0060 ksl_dimid=netcdf.defDim(nc,<span class="string">'ksl'</span>,ksl);
+0061 node_dimid=netcdf.defDim(nc,<span class="string">'ksl'</span>,nverts);
+0062 time_dimid=netcdf.defDim(nc,<span class="string">'ksl'</span>,netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
 0063 
-0064 nc{<span class="string">'Itime2'</span>} = ncint(<span class="string">'time'</span>);
-0065 nc{<span class="string">'Itime2'</span>}.units     = <span class="string">'msec since 00:00:00'</span>;
-0066 nc{<span class="string">'Itime2'</span>}.time_zone = <span class="string">'none'</span>;
-0067 
-0068 nc{<span class="string">'zsl'</span>}  = ncfloat(<span class="string">'ksl'</span>);
-0069 nc{<span class="string">'zsl'</span>}.long_name = <span class="string">'standard z levels positive up'</span>;
-0070 nc{<span class="string">'zsl'</span>}.units = <span class="string">'m'</span>;
-0071 
-0072 nc{<span class="string">'ssl'</span>}  = ncfloat(<span class="string">'time'</span>,<span class="string">'ksl'</span>,<span class="string">'node'</span>);
-0073 nc{<span class="string">'ssl'</span>}.long_name = <span class="string">'observed_salinity_profile'</span>; 
-0074 nc{<span class="string">'ssl'</span>}.units = <span class="string">'PSU'</span>;
-0075 
-0076 nc{<span class="string">'tsl'</span>}  = ncfloat(<span class="string">'time'</span>,<span class="string">'ksl'</span>,<span class="string">'node'</span>);
-0077 nc{<span class="string">'tsl'</span>}.long_name = <span class="string">'observed_temperature_profile'</span>; 
-0078 nc{<span class="string">'tsl'</span>}.units = <span class="string">'C'</span>;
-0079 
-0080 <span class="comment">% write vars</span>
-0081 <span class="keyword">for</span> i=1:numel(time);
-0082 nc{<span class="string">'time'</span>}(i) = time;
-0083 nc{<span class="string">'Itime'</span>}(i) = floor(time);
-0084 nc{<span class="string">'Itime2'</span>}(i) = mod(time,1)*24*3600*1000.;
-0085 <span class="keyword">end</span>;
+0064 <span class="comment">% define variables and attributes</span>
+0065 time_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,time_dimid);
+0066 netcdf.putAtt(nc,time_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
+0067 netcdf.putAtt(nc,time_varid,<span class="string">'units'</span>,<span class="string">'days since 0.0'</span>);
+0068 netcdf.putAtt(nc,time_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
+0069 
+0070 itime_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0071 netcdf.putAtt(nc,itime_varid,<span class="string">'units'</span>,<span class="string">'days since 0.0'</span>);
+0072 netcdf.putAtt(nc,itime_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
+0073 
+0074 itime2_varid=netcdf.defVar(nc,<span class="string">'Itime'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0075 netcdf.putAtt(nc,itime2_varid,<span class="string">'units'</span>,<span class="string">'msec since 00:00:00'</span>);
+0076 netcdf.putAtt(nc,itime2_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
+0077 
+0078 zsl_varid=netcdf.defVar(nc,<span class="string">'Itime2'</span>,<span class="string">'NC_FLOAT'</span>,ksl_dimid);
+0079 netcdf.putAtt(nc,zsl_varid,<span class="string">'long_name'</span>,<span class="string">'standard z levels positive up'</span>);
+0080 netcdf.putAtt(nc,zsl_varid,<span class="string">'units'</span>,<span class="string">'m'</span>);
+0081 
+0082 <span class="comment">% TODO: Check order of dimensions here</span>
+0083 ssl_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,[time_dimid,ksl_dimid,node_dimid]);
+0084 netcdf.putAtt(nc,ssl_varid,<span class="string">'long_name'</span>,<span class="string">'observed_salinity_profile'</span>);
+0085 netcdf.putAtt(nc,ssl_varid,<span class="string">'units'</span>,<span class="string">'PSU'</span>);
 0086 
-0087 nc{<span class="string">'zsl'</span>}(1:ksl) = zsl; 
-0088 
-0089 <span class="keyword">for</span> i=1:numel(time)
-0090 <span class="keyword">for</span> k=1:ksl
-0091 nc{<span class="string">'tsl'</span>}(i,k,:) = tsl(k); 
-0092 <span class="keyword">end</span>;
-0093 <span class="keyword">end</span>;
+0087 tsl_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,[time_dimid,ksl_dimid,node_dimid]);
+0088 netcdf.putAtt(nc,tsl_varid,<span class="string">'long_name'</span>,<span class="string">'observed_temperature_profile'</span>);
+0089 netcdf.putAtt(nc,tsl_varid,<span class="string">'units'</span>,<span class="string">'C'</span>);
+0090 
+0091 <span class="comment">% end definitions</span>
+0092 netcdf.endDef(nc);
+0093 
 0094 
-0095 <span class="keyword">for</span> i=1:numel(time)
-0096 <span class="keyword">for</span> k=1:ksl
-0097 nc{<span class="string">'ssl'</span>}(i,k,:) = ssl(k); 
-0098 <span class="keyword">end</span>;
-0099 <span class="keyword">end</span>;
+0095 <span class="comment">% write vars</span>
+0096 netcdf.putVar(nc,time_varid,time*ones(1,nverts));
+0097 netcdf.putVar(nc,itime_varid,floor(time)*ones(1,nverts));
+0098 netcdf.putVar(nc,itime2_varid,(mod(time,1)*24*3600*1000)*ones(1,nverts));
+0099 netcdf.putVar(nc,zsl_varid,zsl);
 0100 
-0101 ierr = close(nc);
-0102 
-0103 
-0104 
-0105 
-0106</pre></div>
-<hr><address>Generated on Wed 02-Nov-2011 21:58:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0101 
+0102 <span class="keyword">for</span> i=1:numel(time)
+0103     <span class="keyword">for</span> k=1:ksl
+0104         nc{<span class="string">'tsl'</span>}(i,k,:) = tsl(k); 
+0105     <span class="keyword">end</span>;
+0106 <span class="keyword">end</span>;
+0107 
+0108 <span class="keyword">for</span> i=1:numel(time)
+0109     <span class="keyword">for</span> k=1:ksl
+0110         nc{<span class="string">'ssl'</span>}(i,k,:) = ssl(k);
+0111     <span class="keyword">end</span>;
+0112 <span class="keyword">end</span>;
+0113 
+0114 ierr = close(nc);
+0115 
+0116 
+0117 
+0118 
+0119</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -24,13 +24,13 @@
 <div class="box"><strong>Add a set of obc nodes comprising a single obc boundary to Mesh structure</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType) </strong></div>
+<div class="box"><strong>function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType,plotFig) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Add a set of obc nodes comprising a single obc boundary to Mesh structure  
  Using a list of nodes
 
- [Mobj] = add_obc_nodes(Mobj)
+ [Mobj] = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType)
 
  DESCRIPTION:
     Select using ginput the set of nodes comprising an obc
@@ -40,6 +40,7 @@
     Nlist = List of nodes
     ObcName = Name of the Open Boundary
     ObcType = FVCOM Flag for OBC Type
+    plotFig = [optional] show a figure of the mesh (1 = yes)
 
  OUTPUT:
     Mobj = Matlab mesh object with an additional obc nodelist
@@ -49,14 +50,13 @@
 
  Author(s):  
     Geoff Cowles (University of Massachusetts Dartmouth)
+    Pierre Cazenave (Plymouth Marine Laboratory)
 
- Note:
-    Uses ginput2 which allows zoom/pan before selecting points and displays
-    clicked points realtime
 
- Revision history
+ Revision history:
+    2012-11-26 Add ability to turn off the figures.
    
-==============================================================================</pre></div>
+==========================================================================</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -71,12 +71,12 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType) </a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType,plotFig) </a>
 0002 
 0003 <span class="comment">% Add a set of obc nodes comprising a single obc boundary to Mesh structure</span>
 0004 <span class="comment">% Using a list of nodes</span>
 0005 <span class="comment">%</span>
-0006 <span class="comment">% [Mobj] = add_obc_nodes(Mobj)</span>
+0006 <span class="comment">% [Mobj] = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType)</span>
 0007 <span class="comment">%</span>
 0008 <span class="comment">% DESCRIPTION:</span>
 0009 <span class="comment">%    Select using ginput the set of nodes comprising an obc</span>
@@ -86,74 +86,80 @@ This function is called by:
 0013 <span class="comment">%    Nlist = List of nodes</span>
 0014 <span class="comment">%    ObcName = Name of the Open Boundary</span>
 0015 <span class="comment">%    ObcType = FVCOM Flag for OBC Type</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">% OUTPUT:</span>
-0018 <span class="comment">%    Mobj = Matlab mesh object with an additional obc nodelist</span>
-0019 <span class="comment">%</span>
-0020 <span class="comment">% EXAMPLE USAGE</span>
-0021 <span class="comment">%    Mobj = add_obc_nodes_list(Mobj,Nlist,'OpenOcean')</span>
-0022 <span class="comment">%</span>
-0023 <span class="comment">% Author(s):</span>
-0024 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0025 <span class="comment">%</span>
-0026 <span class="comment">% Note:</span>
-0027 <span class="comment">%    Uses ginput2 which allows zoom/pan before selecting points and displays</span>
-0028 <span class="comment">%    clicked points realtime</span>
-0029 <span class="comment">%</span>
-0030 <span class="comment">% Revision history</span>
+0016 <span class="comment">%    plotFig = [optional] show a figure of the mesh (1 = yes)</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% OUTPUT:</span>
+0019 <span class="comment">%    Mobj = Matlab mesh object with an additional obc nodelist</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% EXAMPLE USAGE</span>
+0022 <span class="comment">%    Mobj = add_obc_nodes_list(Mobj,Nlist,'OpenOcean')</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Author(s):</span>
+0025 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0026 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Revision history:</span>
+0030 <span class="comment">%    2012-11-26 Add ability to turn off the figures.</span>
 0031 <span class="comment">%</span>
-0032 <span class="comment">%==============================================================================</span>
+0032 <span class="comment">%==========================================================================</span>
 0033 subname = <span class="string">'add_obc_nodes'</span>;
 0034 <span class="keyword">global</span> ftbverbose
 0035 <span class="keyword">if</span>(ftbverbose)
 0036   fprintf(<span class="string">'\n'</span>)
 0037   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
-0038 <span class="keyword">end</span>;
+0038 <span class="keyword">end</span>
 0039 
-0040 
-0041 <span class="comment">%------------------------------------------------------------------------------</span>
-0042 <span class="comment">% Get a unique list and make sure they are in the range of node numbers</span>
-0043 <span class="comment">%------------------------------------------------------------------------------</span>
-0044 Nlist = unique(Nlist);
-0045 
-0046 <span class="keyword">if</span>(max(Nlist) &gt; Mobj.nVerts);
-0047   fprintf(<span class="string">'your open boundary node number exceed the total number of nodes in the domain\n'</span>);
-0048   error(<span class="string">'stopping...\n'</span>)
-0049 <span class="keyword">end</span>;
-0050 
-0051 <span class="comment">%------------------------------------------------------------------------------</span>
-0052 <span class="comment">% Plot the mesh</span>
-0053 <span class="comment">%------------------------------------------------------------------------------</span>
+0040 <span class="comment">% Do we want a figure showing how we're getting along?</span>
+0041 <span class="keyword">if</span> nargin == 4
+0042     plotFig = 0;
+0043 <span class="keyword">end</span>
+0044 
+0045 <span class="comment">%--------------------------------------------------------------------------</span>
+0046 <span class="comment">% Get a unique list and make sure they are in the range of node numbers</span>
+0047 <span class="comment">%--------------------------------------------------------------------------</span>
+0048 Nlist = unique(Nlist);
+0049 
+0050 <span class="keyword">if</span>(max(Nlist) &gt; Mobj.nVerts);
+0051   fprintf(<span class="string">'your open boundary node number exceed the total number of nodes in the domain\n'</span>);
+0052   error(<span class="string">'stopping...\n'</span>)
+0053 <span class="keyword">end</span>
 0054 
-0055 <span class="keyword">if</span>(lower(Mobj.nativeCoords(1:3)) == <span class="string">'car'</span>)
-0056     x = Mobj.x;
-0057     y = Mobj.y;
-0058 <span class="keyword">else</span>
-0059     x = Mobj.lon;
-0060     y = Mobj.lat;
-0061 <span class="keyword">end</span>;
-0062 
-0063 figure
-0064 patch(<span class="string">'Vertices'</span>,[x,y],<span class="string">'Faces'</span>,Mobj.tri,<span class="keyword">...</span>
-0065         <span class="string">'Cdata'</span>,Mobj.h,<span class="string">'edgecolor'</span>,<span class="string">'k'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
-0066 hold on;
-0067 
-0068 plot(x(Nlist),y(Nlist),<span class="string">'ro'</span>);
-0069 title(<span class="string">'open boundary nodes'</span>);
-0070 
-0071 <span class="comment">% add to mesh object</span>
-0072 npts = numel(Nlist);
-0073 Mobj.nObs = Mobj.nObs + 1;
-0074 Mobj.nObcNodes(Mobj.nObs) = npts; 
-0075 Mobj.obc_nodes(Mobj.nObs,1:npts) = Nlist;
-0076 Mobj.obc_name{Mobj.nObs} = ObcName;
-0077 Mobj.obc_type(Mobj.nObs) = ObcType;
-0078 
-0079 
-0080 <span class="keyword">if</span>(ftbverbose)
-0081   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0082 <span class="keyword">end</span>;
-0083</pre></div>
-<hr><address>Generated on Wed 02-Nov-2011 21:58:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0055 <span class="comment">%--------------------------------------------------------------------------</span>
+0056 <span class="comment">% Plot the mesh</span>
+0057 <span class="comment">%--------------------------------------------------------------------------</span>
+0058 <span class="keyword">if</span> plotFig == 1
+0059     <span class="keyword">if</span> strcmpi(Mobj.nativeCoords(1:3), <span class="string">'car'</span>)
+0060         x = Mobj.x;
+0061         y = Mobj.y;
+0062     <span class="keyword">else</span>
+0063         x = Mobj.lon;
+0064         y = Mobj.lat;
+0065     <span class="keyword">end</span>
+0066 
+0067     figure
+0068     patch(<span class="string">'Vertices'</span>,[x,y],<span class="string">'Faces'</span>,Mobj.tri,<span class="keyword">...</span>
+0069             <span class="string">'Cdata'</span>,Mobj.h,<span class="string">'edgecolor'</span>,<span class="string">'k'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0070     hold on;
+0071     whos Nlist
+0072     plot(x(Nlist),y(Nlist),<span class="string">'ro'</span>);
+0073     axis(<span class="string">'equal'</span>,<span class="string">'tight'</span>)
+0074     title(<span class="string">'open boundary nodes'</span>);
+0075 <span class="keyword">end</span>
+0076 
+0077 <span class="comment">% add to mesh object</span>
+0078 npts = numel(Nlist);
+0079 Mobj.nObs = Mobj.nObs + 1;
+0080 Mobj.nObcNodes(Mobj.nObs) = npts; 
+0081 Mobj.obc_nodes(Mobj.nObs,1:npts) = Nlist;
+0082 Mobj.obc_name{Mobj.nObs} = ObcName;
+0083 Mobj.obc_type(Mobj.nObs) = ObcType;
+0084 
+0085 
+0086 <span class="keyword">if</span>(ftbverbose)
+0087   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0088 <span class="keyword">end</span>
+0089</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

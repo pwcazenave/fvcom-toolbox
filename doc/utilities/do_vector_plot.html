@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of do_vector_plot</title>
+  <meta name="keywords" content="do_vector_plot">
+  <meta name="description" content="Plot vectors of parameters of interest.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; do_vector_plot.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>do_vector_plot
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Plot vectors of parameters of interest.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Plots]=do_vector_plot(plotOPTS,FVCOM) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Plot vectors of parameters of interest.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="m_ll2ll.html" class="code" title="function [X,Y]=m_ll2ll(lon1,lat1, zone, hemisphere,ellipsoid);">m_ll2ll</a>	M_ll2LL Converts LON,LAT to long,lat coordinates using the current projection</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Plots]=do_vector_plot(plotOPTS,FVCOM)</a>
+0002 <span class="comment">% Plot vectors of parameters of interest.</span>
+0003 m_mappath;
+0004 
+0005 figure(plotOPTS.figure); clf
+0006 m_proj(<span class="string">'UTM'</span>,<span class="string">'lon'</span>,[plotOPTS.range_lon],<span class="string">'lat'</span>,[plotOPTS.range_lat],<span class="string">'zon'</span>,30,<span class="string">'ell'</span>,<span class="string">'grs80'</span>)
+0007 m_grid(<span class="string">'box'</span>,<span class="string">'fancy'</span>)
+0008 m_usercoast(plotOPTS.coastline_file,<span class="string">'Color'</span>,<span class="string">'k'</span>,<span class="string">'LineWidth'</span>,3);
+0009 [x,y]=<a href="m_ll2ll.html" class="code" title="function [X,Y]=m_ll2ll(lon1,lat1, zone, hemisphere,ellipsoid);">m_ll2ll</a>(FVCOM.xc,FVCOM.yc); x=x+6;
+0010 
+0011 igood = find (x &lt; plotOPTS.range_lon(2) &amp; x &gt; plotOPTS.range_lon(1) &amp;<span class="keyword">...</span>
+0012     y &lt; plotOPTS.range_lat(2) &amp; y &gt; plotOPTS.range_lat(1));
+0013 igood=igood(1:plotOPTS.data_dec:end);
+0014 
+0015 <span class="keyword">if</span> isfield(plotOPTS,<span class="string">'nz_plot_vec'</span>)
+0016     nLayers=size(plotOPTS.nz_plot_vec,2);
+0017     nLayersRange=plotOPTS.nz_plot_vec;
+0018 <span class="keyword">else</span>
+0019     nLayers=size(plotOPTS.nz_plot,2);
+0020     nLayersRange=plotOPTS.nz_plot;
+0021 <span class="keyword">end</span>
+0022 
+0023 <span class="keyword">if</span> nLayers==1
+0024     colourSpec=[0 0 0];
+0025 <span class="keyword">else</span>
+0026     colourSpec=colormap(hsv(nLayers));
+0027 <span class="keyword">end</span>
+0028 
+0029 <span class="comment">% Preallocate outputs</span>
+0030 u=nan(size(igood,1),nLayers,length(plotOPTS.Time_record));
+0031 v=nan(size(igood,1),nLayers,length(plotOPTS.Time_record));
+0032 
+0033 <span class="comment">% Check if we're running</span>
+0034 <span class="keyword">for</span> aa=1:length(plotOPTS.Time_record)
+0035     fprintf(<span class="string">'Time step %i of %i\n'</span>,aa,length(plotOPTS.Time_record))
+0036     
+0037 
+0038     <span class="comment">% Mesh goes underneath vectors.</span>
+0039     <span class="keyword">if</span> plotOPTS.do_mesh
+0040         <span class="comment">% plot vertices</span>
+0041         [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0042         Plots(plotOPTS.figure).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0043             <span class="string">'EdgeColor'</span>,[0.6 0.6 0.6],<span class="string">'FaceColor'</span>,<span class="string">'none'</span>);hold on
+0044     <span class="keyword">end</span>
+0045 
+0046     <span class="keyword">for</span> ii=1:nLayers
+0047         u(:,ii)=squeeze(FVCOM.u(igood,nLayersRange(ii),(aa)));
+0048         v(:,ii)=squeeze(FVCOM.v(igood,nLayersRange(ii),(aa)));
+0049     <span class="keyword">end</span>
+0050     <span class="keyword">for</span> jj=1:nLayers
+0051         [Plots(plotOPTS.figure).handles(jj),~]=m_vec(plotOPTS.vel_sca,x(igood),y(igood),<span class="keyword">...</span>
+0052             u(:,jj),v(:,jj),colourSpec(jj,:),<span class="keyword">...</span>
+0053             <span class="string">'shaftwidth'</span>,1,<span class="string">'headwidth'</span>,2);
+0054         hold on
+0055     <span class="keyword">end</span>
+0056     pause(plotOPTS.pause)
+0057     <span class="keyword">if</span> aa~=length(plotOPTS.Time_record)
+0058         delete(Plots(plotOPTS.figure).handles(:))
+0059     <span class="keyword">end</span>
+0060 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

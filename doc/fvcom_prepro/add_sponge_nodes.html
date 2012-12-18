@@ -121,41 +121,42 @@ This function is called by:
 0049 figure
 0050 patch(<span class="string">'Vertices'</span>,[x,y],<span class="string">'Faces'</span>,Mobj.tri,<span class="keyword">...</span>
 0051         <span class="string">'Cdata'</span>,Mobj.h,<span class="string">'edgecolor'</span>,<span class="string">'k'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
-0052 hold on;
-0053 
-0054 <span class="comment">% use ginput2 (which allows zooming and plots points as they are clicked) to let</span>
-0055 <span class="comment">% user select the boundary points</span>
-0056 [xselect] = ginput2(true,<span class="string">'k+'</span>)
-0057 
+0052 axis(<span class="string">'equal'</span>,<span class="string">'tight'</span>)
+0053 hold on;
+0054 
+0055 <span class="comment">% use ginput2 (which allows zooming and plots points as they are clicked) to let</span>
+0056 <span class="comment">% user select the boundary points</span>
+0057 [xselect] = ginput2(true,<span class="string">'k+'</span>)
 0058 
-0059 [npts,jnk] = size(xselect);
-0060 
-0061 <span class="keyword">if</span>(npts == 0)
-0062     fprintf(<span class="string">'you didn''t select any points'</span>)
-0063     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0064     <span class="keyword">return</span>
-0065 <span class="keyword">end</span>;
-0066 fprintf(<span class="string">'you selected %d points\n'</span>,npts)
-0067 
-0068 <span class="comment">% snap to the closest vertices</span>
-0069 <span class="keyword">for</span> i=1:npts
-0070     [ipt(i),dist] = <a href="find_nearest_pt.html" class="code" title="function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj)">find_nearest_pt</a>(xselect(i,1),xselect(i,2),Mobj);
-0071 <span class="keyword">end</span>;
-0072 
-0073 <span class="comment">% replot domain with snapped vertices</span>
-0074 plot(x(ipt),y(ipt),<span class="string">'ro'</span>);
-0075 
-0076 <span class="comment">% add to mesh object</span>
-0077 Mobj.nSponge = Mobj.nSponge + 1;
-0078 Mobj.nSpongeNodes(Mobj.nSponge) = npts;
-0079 Mobj.sponge_nodes(Mobj.nSponge,1:npts) = ipt;
-0080 Mobj.sponge_name{Mobj.nSponge} = SpongeName;
-0081 Mobj.sponge_rad(Mobj.nSponge) = SpongeRadius;
-0082 Mobj.sponge_fac(Mobj.nSponge) = SpongeCoeff;
-0083 
+0059 
+0060 npts = size(xselect,1);
+0061 
+0062 <span class="keyword">if</span>(npts == 0)
+0063     fprintf(<span class="string">'you didn''t select any points'</span>)
+0064     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0065     <span class="keyword">return</span>
+0066 <span class="keyword">end</span>;
+0067 fprintf(<span class="string">'you selected %d points\n'</span>,npts)
+0068 
+0069 <span class="comment">% snap to the closest vertices</span>
+0070 <span class="keyword">for</span> i=1:npts
+0071     [ipt(i),dist] = <a href="find_nearest_pt.html" class="code" title="function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj)">find_nearest_pt</a>(xselect(i,1),xselect(i,2),Mobj);
+0072 <span class="keyword">end</span>;
+0073 
+0074 <span class="comment">% replot domain with snapped vertices</span>
+0075 plot(x(ipt),y(ipt),<span class="string">'ro'</span>);
+0076 
+0077 <span class="comment">% add to mesh object</span>
+0078 Mobj.nSponge = Mobj.nSponge + 1;
+0079 Mobj.nSpongeNodes(Mobj.nSponge) = npts;
+0080 Mobj.sponge_nodes(Mobj.nSponge,1:npts) = ipt;
+0081 Mobj.sponge_name{Mobj.nSponge} = SpongeName;
+0082 Mobj.sponge_rad(Mobj.nSponge) = SpongeRadius;
+0083 Mobj.sponge_fac(Mobj.nSponge) = SpongeCoeff;
 0084 
-0085 fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0086</pre></div>
-<hr><address>Generated on Wed 02-Nov-2011 21:58:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0085 
+0086 fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0087</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

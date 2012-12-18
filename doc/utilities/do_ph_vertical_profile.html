@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of do_ph_vertical_profile</title>
+  <meta name="keywords" content="do_ph_vertical_profile">
+  <meta name="description" content="For a supplied transect, plot the vertical profile through the water">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; do_ph_vertical_profile.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>do_ph_vertical_profile
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>For a supplied transect, plot the vertical profile through the water</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Plots]=do_ph_vertical_profile(plotOPTS,FVCOM,transectPoints) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> For a supplied transect, plot the vertical profile through the water
+ column supplied in FVCOM.var_plot.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Plots]=do_ph_vertical_profile(plotOPTS,FVCOM,transectPoints)</a>
+0002 <span class="comment">% For a supplied transect, plot the vertical profile through the water</span>
+0003 <span class="comment">% column supplied in FVCOM.var_plot.</span>
+0004 
+0005 <span class="comment">% Get the relevant time intervals</span>
+0006 <span class="keyword">if</span> isempty(plotOPTS.save_intervals)
+0007     plotOPTS.save_intervals=1:length(plotOPTS.Time_record);
+0008     dontSave=1;
+0009 <span class="keyword">else</span>
+0010     dontSave=0;
+0011 <span class="keyword">end</span>
+0012 
+0013 <span class="keyword">if</span> isfield(plotOPTS,<span class="string">'altColours'</span>) &amp;&amp; plotOPTS.altColours==1
+0014     colourSpec=flipud(jet);
+0015 <span class="keyword">else</span>
+0016     clear nColours nColourIn nColourOut colourSpec
+0017     <span class="comment">% Build a colour palette which matches Jerry's ranges.</span>
+0018     <span class="comment">% Dark Red -&gt; Red -&gt; Amber -&gt; Yellow -&gt; Green -&gt; Blue</span>
+0019     nColours=200;
+0020     nColourIn=[1,nColours*0.15,nColours*0.6,nColours*0.75,nColours*0.9,nColours];
+0021     nColourOut=1:nColours; <span class="comment">% Gives a nice continuous palette.</span>
+0022     <span class="comment">%                          DR    R     A    Y    G     B</span>
+0023     cRed=interp1(nColourIn,  [0.62, 0.9, 1    , 1  , 0  , 0.46],nColourOut);
+0024     cGreen=interp1(nColourIn,[0   , 0  , 0.52 , 1  , 0.8, 0.63],nColourOut);
+0025     cBlue=interp1(nColourIn, [0.2 , 0.2, 0    , 0  , 0  , 0.83],nColourOut);
+0026     colourSpec=[cRed;cGreen;cBlue]';
+0027 <span class="keyword">end</span>
+0028 
+0029 dataToUse=single(FVCOM.(plotOPTS.var_plot));
+0030 
+0031 saveInc=1;
+0032 <span class="keyword">for</span> aa=1:length(plotOPTS.Time_record)
+0033 
+0034     verticalProfile=squeeze(dataToUse(transectPoints.trn_nodes.idx,:,plotOPTS.save_intervals(aa)));
+0035     
+0036 <span class="comment">%     xValues=repmat(transectPoints.trn_dis,1,size(verticalProfile,2));</span>
+0037     <span class="comment">% Not sure about those distance values...</span>
+0038     xNorm=transectPoints.trn_nodes.x-min(transectPoints.trn_nodes.x);
+0039     yNorm=transectPoints.trn_nodes.y-min(transectPoints.trn_nodes.y);
+0040     xDist=sqrt(xNorm.^2+yNorm.^2);
+0041     xValues=repmat(xDist,1,size(verticalProfile,2));
+0042 
+0043     zeta=squeeze(FVCOM.zeta(transectPoints.trn_nodes.idx,plotOPTS.save_intervals(aa)));
+0044     waterDepth=FVCOM.h(transectPoints.trn_nodes.idx);
+0045     zValues=(zeta+waterDepth)*FVCOM.siglay(1,:);
+0046 
+0047     <span class="comment">% plot profile</span>
+0048     fprintf(<span class="string">'Time step %i of %i\n'</span>,aa,length(plotOPTS.Time_record))
+0049     figure(plotOPTS.figure); clf
+0050     hold on
+0051     Plots(1).handles=contourf(<span class="keyword">...</span>
+0052         xValues/1000,<span class="keyword">...</span><span class="comment"> % km</span>
+0053         zValues,<span class="keyword">...</span>
+0054         fliplr(verticalProfile),<span class="keyword">...</span><span class="comment"> % get vertical right way up</span>
+0055         200,<span class="string">'edgecolor'</span>,<span class="string">'none'</span>);
+0056 <span class="comment">%     ylim([-max(FVCOM.h(:)) -0.5])</span>
+0057     xlabel(<span class="string">'Distance along transect (km)'</span>)
+0058     ylabel(<span class="string">'Depth (m)'</span>)
+0059     colormap(colourSpec)
+0060     ch=colorbar;
+0061     set(ch,<span class="string">'FontSize'</span>,10);
+0062     ylabel(ch,<span class="string">'pH'</span>)
+0063 
+0064     <span class="keyword">if</span> ~isempty(plotOPTS.vlims)
+0065         caxis(plotOPTS.vlims);
+0066         <span class="comment">% Get sensible tick formatting (if necessary)</span>
+0067         <span class="keyword">if</span> plotOPTS.vlims(2)-plotOPTS.vlims(1)&lt;1e-4
+0068             xx=0:length(plotOPTS.vlims)-1;
+0069             yy=plotOPTS.vlims;
+0070             xxi=0:1/6:1; <span class="comment">% six ticks</span>
+0071             cticks=interp1(xx,yy,xxi);
+0072             set(ch,<span class="string">'YTick'</span>,double(cticks))
+0073             set(ch,<span class="string">'yticklabel'</span>,cticks)
+0074         <span class="keyword">end</span>
+0075     <span class="keyword">end</span>
+0076 
+0077 
+0078 
+0079     pause(plotOPTS.pause)
+0080     <span class="keyword">if</span> plotOPTS.save_output <span class="comment">% Are we even trying to save figures?</span>
+0081         <span class="keyword">if</span> saveInc&lt;=length(plotOPTS.save_intervals) &amp;&amp; plotOPTS.save_intervals(aa)==plotOPTS.save_intervals(saveInc) &amp;&amp; ~dontSave
+0082             <span class="comment">% Save output</span>
+0083             fprintf(<span class="string">'Saving figure... '</span>)
+0084             set(findobj(gcf,<span class="string">'Type'</span>,<span class="string">'text'</span>),<span class="string">'FontSize'</span>,10)
+0085             <span class="comment">%set(gcf,'PaperSize',fliplr(get(gcf,'PaperSize')))</span>
+0086             set(gcf,<span class="string">'PaperPositionMode'</span>,<span class="string">'auto'</span>);
+0087             set(gcf,<span class="string">'renderer'</span>,<span class="string">'painters'</span>); <span class="comment">% for vector output in pdfs</span>
+0088             print(gcf,<span class="string">'-dpdf'</span>,<span class="string">'-r600'</span>,[plotOPTS.FVCOM_plot_dir,plotOPTS.var_plot,<span class="string">'/pdf/'</span>,plotOPTS.fig_name,<span class="string">'_vertical_profile_'</span>,plotOPTS.var_plot,<span class="string">'_'</span>,num2str(plotOPTS.save_intervals(aa)),<span class="string">'.pdf'</span>]); <span class="comment">% pdf</span>
+0089             <span class="comment">%print(gcf,'-dpng','-r600',[plotOPTS.FVCOM_plot_dir,plotOPTS.var_plot,'/png/',plotOPTS.fig_name,'_layer=',num2str(plotOPTS.nz_plot),'_',plotOPTS.var_plot,'_change_',num2str(plotOPTS.save_intervals(aa)),'.png']); % png</span>
+0090             saveInc=saveInc+1;
+0091             fprintf(<span class="string">'done.\n'</span>)
+0092         <span class="keyword">end</span>
+0093     <span class="keyword">end</span>
+0094 
+0095     <span class="keyword">if</span> aa~=length(plotOPTS.Time_record)
+0096         clf
+0097     <span class="keyword">end</span>
+0098 <span class="keyword">end</span>
+0099 
+0100 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of set_elevtide</title>
+  <meta name="keywords" content="set_elevtide">
+  <meta name="description" content="Setup surface elevation tides on the open boundary and dump an">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; set_elevtide.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>set_elevtide
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Setup surface elevation tides on the open boundary and dump an</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function set_elevtide(Mobj,JulianTime,SurfaceElevation,ElevationFile,MyTitle) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Setup surface elevation tides on the open boundary and dump an
+ elevation time series file.
+
+ function set_elevtide(Mobj,JulianTime,SurfaceElevation,ElevationFile,MyTitle)
+
+ DESCRIPTION:
+    Setup surface elevation tides on the open boundary and dump a NetCDF
+    file.
+
+ INPUT
+    Mobj          = Matlab mesh object
+    JulianTime    = Array of time steps in Julian Time (NOT Modified
+    Julian Time)
+    ElevationFile = Output file name
+    MyTitle       = Title in resulting NetCDF file.
+
+ OUTPUT:
+
+ EXAMPLE USAGE
+    set_elevtide(Mobj,JulianTime,SurfaceElevation,ElevationFile,MyTitle)
+
+ Author(s):
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+    2012-08-08 First version.
+
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="write_FVCOM_elevtide.html" class="code" title="function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)">write_FVCOM_elevtide</a>	Write an FVCOM surface elevation time series forcing file</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function set_elevtide(Mobj,JulianTime,SurfaceElevation,ElevationFile,MyTitle)</a>
+0002 
+0003 <span class="comment">% Setup surface elevation tides on the open boundary and dump an</span>
+0004 <span class="comment">% elevation time series file.</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% function set_elevtide(Mobj,JulianTime,SurfaceElevation,ElevationFile,MyTitle)</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% DESCRIPTION:</span>
+0009 <span class="comment">%    Setup surface elevation tides on the open boundary and dump a NetCDF</span>
+0010 <span class="comment">%    file.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% INPUT</span>
+0013 <span class="comment">%    Mobj          = Matlab mesh object</span>
+0014 <span class="comment">%    JulianTime    = Array of time steps in Julian Time (NOT Modified</span>
+0015 <span class="comment">%    Julian Time)</span>
+0016 <span class="comment">%    ElevationFile = Output file name</span>
+0017 <span class="comment">%    MyTitle       = Title in resulting NetCDF file.</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% OUTPUT:</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% EXAMPLE USAGE</span>
+0022 <span class="comment">%    set_elevtide(Mobj,JulianTime,SurfaceElevation,ElevationFile,MyTitle)</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Author(s):</span>
+0025 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Revision history</span>
+0028 <span class="comment">%    2012-08-08 First version.</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">%==============================================================================</span>
+0031 subname = <span class="string">'set_spectide'</span>;
+0032 <span class="keyword">global</span> ftbverbose;
+0033 <span class="keyword">if</span>(ftbverbose);
+0034   fprintf(<span class="string">'\n'</span>)
+0035   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0036 <span class="keyword">end</span>;
+0037 
+0038 cnt = 0;
+0039 ObcNodes = nan(1,sum(Mobj.nObcNodes));
+0040 <span class="keyword">for</span> ob=1:Mobj.nObs
+0041     nObcs = Mobj.nObcNodes(ob);
+0042     <span class="keyword">for</span> j=1:nObcs
+0043         cnt = cnt + 1;
+0044         ObcNodes(cnt) = Mobj.obc_nodes(ob,j);  <span class="comment">% set the open boundary nodes</span>
+0045     <span class="keyword">end</span>
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="comment">%------------------------------------------------------------------------------</span>
+0049 <span class="comment">% Dump a surface elevation tide file in NetCDF</span>
+0050 <span class="comment">%------------------------------------------------------------------------------</span>
+0051 <a href="write_FVCOM_elevtide.html" class="code" title="function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)">write_FVCOM_elevtide</a>(ObcNodes,JulianTime,SurfaceElevation,ElevationFile,MyTitle)
+0052 
+0053 <span class="keyword">if</span>(ftbverbose); fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>]); <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of do_ph_change_plot</title>
+  <meta name="keywords" content="do_ph_change_plot">
+  <meta name="description" content="Calculate the change in the given parameter (plotOPTS.var_plot) and plot">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; do_ph_change_plot.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>do_ph_change_plot
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Calculate the change in the given parameter (plotOPTS.var_plot) and plot</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Plots]=do_ph_change_plot(plotOPTS,FVCOM,startIdx) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Calculate the change in the given parameter (plotOPTS.var_plot) and plot
+ accordingly.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Plots]=do_ph_change_plot(plotOPTS,FVCOM,startIdx)</a>
+0002 <span class="comment">% Calculate the change in the given parameter (plotOPTS.var_plot) and plot</span>
+0003 <span class="comment">% accordingly.</span>
+0004 m_mappath;
+0005 
+0006 <span class="comment">% For testing</span>
+0007 <span class="comment">% startIdx=48; % Leak start</span>
+0008 <span class="comment">% layerIdx=10; % Bottom layer</span>
+0009 <span class="comment">% For testing</span>
+0010 
+0011 <span class="comment">% Check we have some of the required fields.</span>
+0012 <span class="keyword">if</span> ~isfield(FVCOM,plotOPTS.var_plot)
+0013     error(<span class="string">'Need %s input to calculate change in %s.'</span>,plotOPTS.var_plot,plotOPTS.var_plot)
+0014 <span class="keyword">end</span>
+0015 
+0016 <span class="comment">% Get the relevant time intervals</span>
+0017 <span class="keyword">if</span> isempty(plotOPTS.save_intervals)
+0018     plotOPTS.save_intervals=1:length(plotOPTS.Time_record);
+0019     dontSave=1;
+0020 <span class="keyword">else</span>
+0021     dontSave=0;
+0022 <span class="keyword">end</span>
+0023 
+0024 <span class="comment">% Build a colour palette which matches Jerry's ranges.</span>
+0025 <span class="comment">% Dark Red -&gt; Red -&gt; Amber -&gt; Yellow -&gt; Green -&gt; Blue</span>
+0026 nColours=200;
+0027 nColourIn=[1,nColours*0.15,nColours*0.6,nColours*0.75,nColours*0.9,nColours];
+0028 nColourOut=1:nColours; <span class="comment">% Gives a nice continuous palette.</span>
+0029 <span class="comment">%                          DR    R     A    Y    G     B</span>
+0030 cRed=interp1(nColourIn,  [0.62, 0.9, 1    , 1  , 0  , 0.46],nColourOut);
+0031 cGreen=interp1(nColourIn,[0   , 0  , 0.52 , 1  , 0.8, 0.63],nColourOut);
+0032 cBlue=interp1(nColourIn, [0.2 , 0.2, 0    , 0  , 0  , 0.83],nColourOut);
+0033 colourSpec=[cRed;cGreen;cBlue]';
+0034 
+0035 <span class="keyword">if</span> isfield(plotOPTS,<span class="string">'altColours'</span>) &amp;&amp; plotOPTS.altColours==1
+0036     clear nColours nColourIn nColourOut colourSpec
+0037     <span class="comment">% Build a colour palette which matches Jerry's ranges.</span>
+0038     <span class="comment">% Dark Red -&gt; Red -&gt; Amber -&gt; Yellow -&gt; Green -&gt; Blue</span>
+0039     nColours=200;
+0040     nColourIn=[1,nColours*0.1,nColours*0.2,nColours*0.3,nColours*0.4,nColours];
+0041     nColourOut=1:nColours; <span class="comment">% Gives a nice continuous palette.</span>
+0042     <span class="comment">%                          DB    B     LB   DG    G     LG</span>
+0043     cRed=interp1(nColourIn,  [0   , 0   , 0   , 0.04, 0 , 0.2 ],nColourOut);
+0044     cGreen=interp1(nColourIn,[0   , 0   , 0.2 , 0.51, 0.6, 0.76 ],nColourOut);
+0045     cBlue=interp1(nColourIn, [0.4 , 0.6 , 0.79, 0.78, 0.6  , 0],nColourOut);
+0046     colourSpec=flipud([cRed;cGreen;cBlue]');
+0047 <span class="keyword">end</span>
+0048 
+0049 dataToUse=single(FVCOM.(plotOPTS.var_plot));
+0050 
+0051 <span class="comment">% Get the background condition. Depth average if necessary.</span>
+0052 <span class="keyword">if</span> isfield(plotOPTS,<span class="string">'depth_average'</span>) &amp;&amp; plotOPTS.depth_average
+0053     bgPH=squeeze(mean(dataToUse(:,:,startIdx),2));
+0054 <span class="keyword">else</span>
+0055     bgPH=squeeze(dataToUse(:,plotOPTS.nz_plot,startIdx));
+0056 <span class="keyword">end</span>
+0057 
+0058 <span class="comment">% Are we depth averaging?</span>
+0059 <span class="keyword">if</span> isfield(plotOPTS,<span class="string">'depth_average'</span>) &amp;&amp; plotOPTS.depth_average
+0060     phData=squeeze(mean(dataToUse,2));
+0061 <span class="keyword">else</span>
+0062     phData=squeeze(dataToUse(:,plotOPTS.nz_plot,:));
+0063 <span class="keyword">end</span>
+0064 <span class="comment">% Check if we're doing the cumulative difference. For this to work, you</span>
+0065 <span class="comment">% need to start your data import before the start of the leak.</span>
+0066 <span class="comment">% if isfield(plotOPTS,'summed_ph') &amp;&amp; plotOPTS.summed_ph</span>
+0067 <span class="comment">%     phDiff=cumsum(diff(phData,[],2));</span>
+0068 <span class="comment">% else</span>
+0069 <span class="comment">%     % Otherwise, just do the difference from the start, ignoring all</span>
+0070 <span class="comment">%     % previous steps i.e. for each successive time step, calculate the</span>
+0071 <span class="comment">%     % difference between the current time step and the background</span>
+0072 <span class="comment">%     % level.</span>
+0073 <span class="comment">%     phDiff=phData-repmat(bgPH,1,size(phData,2));</span>
+0074 <span class="comment">% end</span>
+0075 
+0076 <span class="comment">% Check if we're doing the cumulative difference</span>
+0077 <span class="comment">% if isfield(plotOPTS,'summed_ph') &amp;&amp; plotOPTS.summed_ph</span>
+0078 <span class="comment">%     phDiff=cumsum(phDiff,2);</span>
+0079 <span class="comment">% end</span>
+0080 
+0081 <span class="comment">% Since we're not doing the cumulative difference, just do the difference</span>
+0082 <span class="comment">% relative to the background value</span>
+0083 phDiff=phData-repmat(bgPH,1,size(phData,2));
+0084 
+0085 
+0086 figure(plotOPTS.figure); clf
+0087 m_proj(<span class="string">'UTM'</span>,<span class="string">'lon'</span>,[plotOPTS.range_lon],<span class="string">'lat'</span>,[plotOPTS.range_lat],<span class="string">'zon'</span>,plotOPTS.zone,<span class="string">'ell'</span>,<span class="string">'grs80'</span>)
+0088 m_grid(<span class="string">'box'</span>,<span class="string">'fancy'</span>)
+0089 m_usercoast(plotOPTS.coastline_file,<span class="string">'Color'</span>,<span class="string">'k'</span>,<span class="string">'LineWidth'</span>,3);
+0090 [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0091 
+0092 saveInc=1;
+0093 <span class="keyword">for</span> aa=1:length(plotOPTS.Time_record)
+0094     <span class="comment">% plot map with change</span>
+0095     hold on
+0096     Plots(1).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0097         <span class="string">'Cdata'</span>,phDiff(:,plotOPTS.save_intervals(aa)),<span class="keyword">...</span>
+0098         <span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0099     fprintf(<span class="string">'Time step %i of %i\n'</span>,aa,length(plotOPTS.Time_record))
+0100     caxis(plotOPTS.clims)
+0101     colormap(colourSpec)
+0102     ch=colorbar;
+0103     set(ch,<span class="string">'FontSize'</span>,10);
+0104     ylabel(ch,<span class="string">'pH change'</span>);
+0105     <span class="comment">% ylabel(ch,[plotOPTS.var_plot,' change'])</span>
+0106     <span class="comment">% check if mesh elements are required</span>
+0107     <span class="keyword">if</span> plotOPTS.do_mesh
+0108         <span class="comment">% plot vertices</span>
+0109         [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0110         patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0111             <span class="string">'EdgeColor'</span>,[0.6 0.6 0.6],<span class="string">'FaceColor'</span>,<span class="string">'none'</span>); hold on
+0112     <span class="keyword">end</span>
+0113 
+0114     pause(plotOPTS.pause)
+0115     <span class="keyword">if</span> plotOPTS.save_output <span class="comment">% Are we even trying to save figures?</span>
+0116         <span class="keyword">if</span> saveInc&lt;=length(plotOPTS.save_intervals) &amp;&amp; plotOPTS.save_intervals(aa)==plotOPTS.save_intervals(saveInc) &amp;&amp; ~dontSave
+0117             <span class="comment">% Save output</span>
+0118             fprintf(<span class="string">'Saving figure... '</span>)
+0119             set(findobj(gcf,<span class="string">'Type'</span>,<span class="string">'text'</span>),<span class="string">'FontSize'</span>,10)
+0120             <span class="comment">%set(gcf,'PaperSize',fliplr(get(gcf,'PaperSize')))</span>
+0121             set(gcf,<span class="string">'PaperPositionMode'</span>,<span class="string">'auto'</span>);
+0122             set(gcf,<span class="string">'renderer'</span>,<span class="string">'painters'</span>); <span class="comment">% for vector output in pdfs</span>
+0123             print(gcf,<span class="string">'-dpdf'</span>,<span class="string">'-r600'</span>,[plotOPTS.FVCOM_plot_dir,plotOPTS.var_plot,<span class="string">'/pdf/'</span>,plotOPTS.fig_name,<span class="string">'_layer='</span>,num2str(plotOPTS.nz_plot),<span class="string">'_'</span>,plotOPTS.var_plot,<span class="string">'_change_'</span>,num2str(plotOPTS.save_intervals(aa)),<span class="string">'.pdf'</span>]); <span class="comment">% pdf</span>
+0124             <span class="comment">%print(gcf,'-dpng','-r600',[plotOPTS.FVCOM_plot_dir,plotOPTS.var_plot,'/png/',plotOPTS.fig_name,'_layer=',num2str(plotOPTS.nz_plot),'_',plotOPTS.var_plot,'_change_',num2str(plotOPTS.save_intervals(aa)),'.png']); % png</span>
+0125             saveInc=saveInc+1;
+0126             fprintf(<span class="string">'done.\n'</span>)
+0127         <span class="keyword">end</span>
+0128     <span class="keyword">end</span>
+0129 
+0130     <span class="keyword">if</span> aa~=length(plotOPTS.Time_record)
+0131         delete(Plots(1).handles)
+0132     <span class="keyword">end</span>
+0133 <span class="keyword">end</span>
+0134 
+0135 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of do_volume</title>
+  <meta name="keywords" content="do_volume">
+  <meta name="description" content="Calculate a volume for a given time step above a threshold value.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; do_volume.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>do_volume
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Calculate a volume for a given time step above a threshold value.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Plots,totalVol]=do_volume(plotOPTS,FVCOM,startIdx,thresholdValue) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Calculate a volume for a given time step above a threshold value.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function idx=thresholdTest(dataArray,thresholdType,thresholdValue)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Plots,totalVol]=do_volume(plotOPTS,FVCOM,startIdx,thresholdValue)</a>
+0002 <span class="comment">% Calculate a volume for a given time step above a threshold value.</span>
+0003 m_mappath;
+0004 
+0005 [nx,nz,ttot]=size(FVCOM.(plotOPTS.var_plot));
+0006 
+0007 <span class="comment">% Get the time step (in seconds)</span>
+0008 dt=round((plotOPTS.Time_record(2)-plotOPTS.Time_record(1))*24*60*60);
+0009 
+0010 <span class="comment">% Sigma layer fraction (nz*nz)</span>
+0011 sigThickness=roundn(abs(diff(FVCOM.siglev,1,2)),-5); <span class="comment">% roundn to even values out.</span>
+0012 <span class="comment">% Total depth (nz*ttot)</span>
+0013 totalDepth=repmat(FVCOM.h,1,size(FVCOM.zeta,2))+FVCOM.zeta;
+0014 <span class="comment">% Volume for every element for each time step</span>
+0015 cellVolume=nan(nx,nz,ttot);
+0016 <span class="keyword">for</span> ii=1:nz
+0017     <span class="keyword">for</span> jj=1:ttot
+0018         cellVolume(:,ii,jj)=totalDepth(:,jj).*sigThickness(:,ii).*FVCOM.art1*dt;
+0019     <span class="keyword">end</span>
+0020 <span class="keyword">end</span>
+0021 
+0022 <span class="keyword">if</span> plotOPTS.nz_plot==0
+0023     <span class="comment">% Depth averaging the results</span>
+0024     cellVolume=squeeze(sum(cellVolume,2));
+0025     dataArray=squeeze(mean(FVCOM.(plotOPTS.var_plot)(:,:,:),2));
+0026 <span class="keyword">else</span>
+0027     dataArray=FVCOM.(plotOPTS.var_plot)(:,:,:);
+0028 <span class="keyword">end</span>
+0029 
+0030 <span class="comment">%%</span>
+0031 <span class="comment">% Calculate volume of elements matching threshold condition</span>
+0032 totalVolTemp=0;
+0033 colourSpec=hsv(length(plotOPTS.nz_plot));
+0034 plotSymbols={<span class="string">'.'</span>,<span class="string">'o'</span>,<span class="string">'x'</span>,<span class="string">'+'</span>,<span class="string">'^'</span>,<span class="string">'*'</span>,<span class="string">'p'</span>,<span class="string">'h'</span>};
+0035 
+0036 <span class="keyword">for</span> tt=1:size(startIdx,2)
+0037     
+0038     foundXY=cell(1,length(plotOPTS.nz_plot));
+0039     
+0040     figure(plotOPTS.figure); clf
+0041     m_proj(<span class="string">'UTM'</span>,<span class="string">'lon'</span>,[plotOPTS.range_lon],<span class="string">'lat'</span>,[plotOPTS.range_lat],<span class="string">'zon'</span>,plotOPTS.zone,<span class="string">'ell'</span>,<span class="string">'grs80'</span>)
+0042     m_grid(<span class="string">'box'</span>,<span class="string">'fancy'</span>)
+0043     m_usercoast(plotOPTS.coastline_file,<span class="string">'Color'</span>,<span class="string">'k'</span>,<span class="string">'LineWidth'</span>,3);
+0044     [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0045 
+0046     fprintf(<span class="string">'Time step %i of %i\n'</span>,startIdx(tt),length(plotOPTS.Time_record))
+0047     <span class="comment">% Find all values of pH greater than the thresholdValue for the layers</span>
+0048     <span class="comment">% specified in .nz_plot only.</span>
+0049     
+0050     <span class="keyword">for</span> ss=1:size(plotOPTS.nz_plot,2)
+0051         <span class="keyword">if</span> plotOPTS.nz_plot==0
+0052             <span class="comment">% Depth averaged, so easy.</span>
+0053             idx=<a href="#_sub1" class="code" title="subfunction idx=thresholdTest(dataArray,thresholdType,thresholdValue)">thresholdTest</a>(dataArray(:,startIdx(tt)),plotOPTS.volume_thresh,thresholdValue);
+0054             <span class="comment">% Do we have any locations where the condition has been met?</span>
+0055             <span class="keyword">if</span> ~isempty(idx)
+0056                 totalVolTemp=totalVolTemp+sum(sum(cellVolume(idx,startIdx(tt))));
+0057             <span class="keyword">end</span>
+0058         <span class="keyword">else</span>
+0059             <span class="comment">% Loop through the layers</span>
+0060             <span class="keyword">for</span> qq=1:size(plotOPTS.nz_plot,2)
+0061                 idx=<a href="#_sub1" class="code" title="subfunction idx=thresholdTest(dataArray,thresholdType,thresholdValue)">thresholdTest</a>(dataArray(:,plotOPTS.nz_plot(qq),startIdx(tt)),plotOPTS.volume_thresh,thresholdValue);
+0062                 <span class="comment">% Again, look for areas where we have met the threshold</span>
+0063                 <span class="comment">% condition. Here, we need to save the xy coordinates for</span>
+0064                 <span class="comment">% each find with the layer number.</span>
+0065                 <span class="keyword">if</span> ~isempty(idx)
+0066                     totalVolTemp=totalVolTemp+sum(sum(cellVolume(idx,plotOPTS.nz_plot(qq),startIdx(tt))));
+0067                     <span class="comment">% This may skip the odd layer...</span>
+0068                     foundXY{qq}.xy=[X(idx),Y(idx),repmat(plotOPTS.nz_plot(qq),length(idx),1)];
+0069                 <span class="keyword">end</span>
+0070             <span class="keyword">end</span>
+0071         <span class="keyword">end</span>
+0072     <span class="keyword">end</span>
+0073     <span class="keyword">if</span> tt==1;
+0074         totalVol(tt)=totalVolTemp;
+0075     <span class="keyword">else</span>
+0076         totalVol(tt)=totalVol(tt-1)+totalVolTemp;
+0077     <span class="keyword">end</span>
+0078     <span class="comment">% Do a figure identifying the locations above the threshold for the</span>
+0079     <span class="comment">% surface sigma layer.</span>
+0080     <span class="keyword">if</span> plotOPTS.nz_plot==0
+0081         Plots(plotOPTS.figure).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,<span class="keyword">...</span>
+0082             plotOPTS.mesh.tri,<span class="string">'Cdata'</span>,squeeze(cellVolume(:,tt)),<span class="keyword">...</span>
+0083             <span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0084     <span class="keyword">else</span>
+0085             Plots(plotOPTS.figure).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,<span class="keyword">...</span>
+0086         plotOPTS.mesh.tri,<span class="string">'Cdata'</span>,squeeze(cellVolume(:,1,tt)),<span class="keyword">...</span>
+0087         <span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0088     <span class="keyword">end</span>
+0089     hold on
+0090     <span class="comment">% TODO: For multiple layers, do unique indices for each layer so they</span>
+0091     <span class="comment">% can be plotted separately here (a la do_vector_plot.m).</span>
+0092     <span class="keyword">if</span> ~isempty(idx)
+0093         <span class="keyword">for</span> kk=1:size(plotOPTS.nz_plot,2);
+0094             plot(foundXY{kk}.xy(:,1),foundXY{kk}.xy(:,2),plotSymbols{mod(kk,length(plotSymbols)+1)},<span class="string">'Color'</span>,colourSpec(kk,:))
+0095         <span class="keyword">end</span>
+0096     <span class="keyword">end</span>
+0097     <span class="keyword">if</span> plotOPTS.do_mesh
+0098         <span class="comment">% plot vertices</span>
+0099         [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0100         patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0101             <span class="string">'EdgeColor'</span>,[0.6 0.6 0.6],<span class="string">'FaceColor'</span>,<span class="string">'none'</span>); hold on
+0102     <span class="keyword">end</span>
+0103     <span class="comment">% Some useful text</span>
+0104     [textX,textY]=m_ll2xy(-4.45,50.13);
+0105     text(textX,textY,sprintf(<span class="string">'Total volume:\t\t%.2fkm^{3}\nVolume this time step:\t%.2fkm^{3}\n'</span>,totalVol(tt)/1e9,totalVolTemp/1e9))
+0106         
+0107     pause(plotOPTS.pause)
+0108     caxis(plotOPTS.clims)
+0109     colorbar
+0110     set(get(colorbar,<span class="string">'YLabel'</span>),<span class="string">'String'</span>,<span class="string">'Volume (m^{3})'</span>)
+0111     
+0112     <span class="keyword">if</span> tt~=size(startIdx,2)
+0113         delete(Plots(plotOPTS.figure).handles)
+0114     <span class="keyword">end</span>
+0115 <span class="keyword">end</span>
+0116 
+0117 <a name="_sub1" href="#_subfunctions" class="code">function idx=thresholdTest(dataArray,thresholdType,thresholdValue)</a>
+0118 <span class="comment">% Abstract some of the complexity into a function.</span>
+0119 <span class="comment">% Usage: thresholdTest(inputData,thresholdValue)</span>
+0120     <span class="keyword">switch</span> thresholdType
+0121         <span class="keyword">case</span> -1
+0122             idx=find(dataArray&lt;thresholdValue);
+0123         <span class="keyword">case</span> 1
+0124             idx=find(dataArray&gt;thresholdValue);
+0125         <span class="keyword">case</span> 0
+0126             idx=find(dataArray==thresholdValue);
+0127         <span class="keyword">otherwise</span>
+0128             error(<span class="string">'Unrecognised value for ''plotOPTS.volume_thresh''.'</span>)
+0129     <span class="keyword">end</span>
+0130 
+0131     <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

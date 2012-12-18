@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of add_stations_list</title>
+  <meta name="keywords" content="add_stations_list">
+  <meta name="description" content="Add a set of stations at which FVCOM will output time series.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; add_stations_list.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>add_stations_list
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Add a set of stations at which FVCOM will output time series.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Mobj]  = add_stations_list(Mobj,Positions,Names,Dist) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Add a set of stations at which FVCOM will output time series.
+
+ [Mobj] = add_stations_list(Mobj,Positions,Names,Dist)
+
+ DESCRIPTION:
+    Supply a list of positions (in the same coordinate system as the
+    native coordinates of the grid) and a cell array of names. Nearest
+    grid node to those supplied will be used in the output file.
+
+ INPUT
+    Mobj = Matlab mesh object
+    Positions = 2xn array of the XY positions of the stations
+    Names = Cell array of the names of the stations defined in Positions
+    Dist = Maximum distance from a station for a node to be included
+
+    Optionally supply positions as a 4xn array with spherical x and y and
+    cartesian x and y in columns 1, 2, 3 and 4, respectively. The
+    values in Mobj.nativecoords will be used for the distance check, so
+    ensure Dist is in those units.
+
+ OUTPUT:
+    Mobj = Matlab mesh object with an additional cell array containing id,
+    x, y, nodelist, depth and station name.
+
+ EXAMPLE USAGE
+    Mobj = add_stations_list(Mobj, [-5.54, 50.103; -3.0865, 58.441], ...
+    {'Newlyn', 'Wick'}, 0.25)
+
+ Author(s):
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+
+ Revision history
+    2012-11-30 First version.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="find_nearest_pt.html" class="code" title="function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj)">find_nearest_pt</a>	Find nearest point in Mesh structure to (x,y)</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj]  = add_stations_list(Mobj,Positions,Names,Dist)</a>
+0002 
+0003 <span class="comment">% Add a set of stations at which FVCOM will output time series.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% [Mobj] = add_stations_list(Mobj,Positions,Names,Dist)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Supply a list of positions (in the same coordinate system as the</span>
+0009 <span class="comment">%    native coordinates of the grid) and a cell array of names. Nearest</span>
+0010 <span class="comment">%    grid node to those supplied will be used in the output file.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% INPUT</span>
+0013 <span class="comment">%    Mobj = Matlab mesh object</span>
+0014 <span class="comment">%    Positions = 2xn array of the XY positions of the stations</span>
+0015 <span class="comment">%    Names = Cell array of the names of the stations defined in Positions</span>
+0016 <span class="comment">%    Dist = Maximum distance from a station for a node to be included</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">%    Optionally supply positions as a 4xn array with spherical x and y and</span>
+0019 <span class="comment">%    cartesian x and y in columns 1, 2, 3 and 4, respectively. The</span>
+0020 <span class="comment">%    values in Mobj.nativecoords will be used for the distance check, so</span>
+0021 <span class="comment">%    ensure Dist is in those units.</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% OUTPUT:</span>
+0024 <span class="comment">%    Mobj = Matlab mesh object with an additional cell array containing id,</span>
+0025 <span class="comment">%    x, y, nodelist, depth and station name.</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% EXAMPLE USAGE</span>
+0028 <span class="comment">%    Mobj = add_stations_list(Mobj, [-5.54, 50.103; -3.0865, 58.441], ...</span>
+0029 <span class="comment">%    {'Newlyn', 'Wick'}, 0.25)</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Author(s):</span>
+0032 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">% Revision history</span>
+0036 <span class="comment">%    2012-11-30 First version.</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">%==========================================================================</span>
+0039 subname = <span class="string">'add_stations_list'</span>;
+0040 <span class="keyword">global</span> ftbverbose
+0041 <span class="keyword">if</span>(ftbverbose)
+0042   fprintf(<span class="string">'\n'</span>)
+0043   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0044 <span class="keyword">end</span>;
+0045 
+0046 <span class="comment">%--------------------------------------------------------------------------</span>
+0047 <span class="comment">% Check the inputs</span>
+0048 <span class="comment">%--------------------------------------------------------------------------</span>
+0049 nPos = size(Positions, 1);
+0050 nNames = size(Names, 1);
+0051 <span class="keyword">if</span> nPos ~= nNames
+0052     error(<span class="string">'The number of the supplied station positions and names do not match (%i and %i respectively)'</span>, nPos, nNames)
+0053 <span class="keyword">end</span>
+0054 
+0055 <span class="comment">%--------------------------------------------------------------------------</span>
+0056 <span class="comment">% For each site in the supplied positions, find the nearest node ID</span>
+0057 <span class="comment">%--------------------------------------------------------------------------</span>
+0058 
+0059 <span class="comment">% Check for whether the input has both spherical and cartesian.</span>
+0060 <span class="keyword">if</span> size(Positions, 2) &gt; 2
+0061     <span class="comment">% Now check for which is the native coordinate system, and output the</span>
+0062     <span class="comment">% station positions in that coordinate system.</span>
+0063     <span class="keyword">if</span> strcmpi(Mobj.nativeCoords, <span class="string">'cartesian'</span>)
+0064         cols = [3, 4];
+0065     <span class="keyword">elseif</span> strcmpi(Mobj.nativeCoords, <span class="string">'spherical'</span>)
+0066         cols = [1, 2];
+0067     <span class="keyword">else</span>
+0068         error(<span class="string">'Unknown native coordinate system string: %s'</span>, Mobj.nativeCoords)
+0069     <span class="keyword">end</span>
+0070 <span class="keyword">else</span>
+0071     <span class="comment">% We have to assume the positions are in the grid's native coordinate</span>
+0072     <span class="comment">% system.</span>
+0073     cols = [1, 2];
+0074 <span class="keyword">end</span>
+0075 
+0076 inc = 1;
+0077 <span class="comment">% out = cell(nPos, 1);</span>
+0078 
+0079 <span class="keyword">for</span> s=1:nPos
+0080     [node, dist] = <a href="find_nearest_pt.html" class="code" title="function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj)">find_nearest_pt</a>(Positions(s, cols(1)), Positions(s, cols(2)), Mobj);
+0081 
+0082     <span class="keyword">if</span> dist &gt;= Dist
+0083         <span class="comment">% Skip out for this station</span>
+0084         <span class="keyword">if</span>(ftbverbose)
+0085             fprintf(<span class="string">'Skipping station %s (%g, %g). Nodal distance from station position = %f\n'</span>, Names{s}, Positions(s, 1), Positions(s, 2), dist)
+0086         <span class="keyword">end</span>
+0087         <span class="keyword">continue</span>
+0088     <span class="keyword">end</span>
+0089     out{inc} = {inc, Positions(s, cols(1)), Positions(s, cols(2)), node, Mobj.h(node), Names{s}};
+0090     inc = inc + 1;
+0091 <span class="keyword">end</span>
+0092 
+0093 Mobj.stations = out;</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
