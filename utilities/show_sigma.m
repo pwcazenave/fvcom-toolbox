@@ -10,7 +10,7 @@ function show_sigma(meshfile,bathfile,sigmafile,varargin)
 %    meshfile:   fvcom grid file
 %    bathfile:   fvcom bathymetry file
 %    sigmafile:  fvcom sigma distribution file
-%    spoints:    number of points in the user-selected line (optional,
+%    npts:       number of points in the user-selected line (optional,
 %                defaults to 25).
 %
 % OUTPUT:
@@ -28,22 +28,20 @@ function show_sigma(meshfile,bathfile,sigmafile,varargin)
 %   argument to increase the profile sampling frequency.
 %   
 %==============================================================================
-% meshfile = 'tst_grd.dat';
-% bathfile = 'tst_dep.dat';
-% sigmafile = 'sigma.dat';
+
 close all
 
 if nargin == 4
-    spoints = varargin{1}
+    npts = varargin{1};
 else
-    spoints = 25;
+    npts = 25;
 end
 
-% read the mesh 
+% read the mesh
 fid = fopen(meshfile,'r');
 if(fid  < 0)
-  error(['file: ' meshfile ' does not exist']);
-end;
+    error(['file: ' meshfile ' does not exist']);
+end
 C = textscan(fid, '%s %s %s %d', 1);
 Nverts = C{4};
 C = textscan(fid, '%s %s %s %d', 1);
@@ -52,28 +50,28 @@ x = zeros(Nverts,3);
 tri = zeros(Nelems,3);
 fprintf('Nverts: %d\n',Nverts)
 fprintf('Nelems: %d\n',Nelems)
-for i=1:Nelems 
-  C = textscan(fid, '%d %d %d %d %d', 1);
-  tri(i,1) = C{2}; 
-  tri(i,2) = C{3}; 
-  tri(i,3) = C{4}; 
-end;
-for i=1:Nverts 
-  C = textscan(fid, '%d %f %f %f ', 1);
-  x(i,1) = C{2}; 
-  x(i,2) = C{3}; 
-end;
+for i=1:Nelems
+    C = textscan(fid, '%d %d %d %d %d', 1);
+    tri(i,1) = C{2};
+    tri(i,2) = C{3};
+    tri(i,3) = C{4};
+end
+for i=1:Nverts
+    C = textscan(fid, '%d %f %f %f ', 1);
+    x(i,1) = C{2};
+    x(i,2) = C{3};
+end
 
-% read the bathy 
+% read the bathy
 fid = fopen(bathfile,'r');
 if(fid  < 0)
-  error(['file: ' bathfile ' does not exist']);
-end;
+    error(['file: ' bathfile ' does not exist']);
+end
 C = textscan(fid, '%s %s %s %d', 1);
 for i=1:Nverts
-  C = textscan(fid, '%f %f %f ', 1);
-  x(i,3) = C{3};
-end;
+    C = textscan(fid, '%f %f %f ', 1);
+    x(i,3) = C{3};
+end
 
 fprintf('min topography %f\n',min(x(:,3)));
 fprintf('max topography %f\n',max(x(:,3)));
@@ -81,7 +79,7 @@ fprintf('max topography %f\n',max(x(:,3)));
 % read the sigma file
 fid = fopen(sigmafile,'r');
 if(fid  < 0)
-  error(['file: ' sigmafile ' does not exist']);
+    error(['file: ' sigmafile ' does not exist']);
 end
 
 while ~feof(fid)
@@ -133,37 +131,42 @@ fprintf('zkl %d\n',zkl)
 
 
 % generate the sigma coordinates
-fprintf('select two endpoints of a transect')
+
+% fix "java.lang.IllegalArgumentException: adding a container to a container
+% on a different GraphicsDevice" error. See
+% http://www.mathworks.co.uk/matlabcentral/newsreader/view_thread/169024.
+set(0,'DefaultFigureRenderer','OpenGL')
+
 figure(1)
 patch('Vertices',[x(:,1),x(:,2)],'Faces',tri,...
-       'Cdata',x(:,3),'edgecolor','interp','facecolor','interp');
+    'Cdata',x(:,3),'edgecolor','interp','facecolor','interp');
 axis equal
 
 % plot to get a line
-%fprintf('select two end points of a transect with your mouse');
+fprintf('select two end points of a transect with your mouse');
 [xt,yt] = ginput(2);
 hold on
 
-npts = 25;
 ds = (xt(2)-xt(1))/(npts-1);
 xline = xt(1):ds:xt(2);
 ds = (yt(2)-yt(1))/(npts-1);
 yline = yt(1):ds:yt(2);
-plot(xline,yline,'w+')
+plot(xline, yline, 'r+')
 sline = zeros(1, npts);
 for i=2:npts
-  sline(i) = sline(i-1) + sqrt(   (xline(i)-xline(i-1))^2 + (yline(i)-yline(i-1))^2);
+    sline(i) = sline(i-1) + sqrt((xline(i)-xline(i-1))^2 + (yline(i)-yline(i-1))^2);
 end
 
 % interpolate the bathymetry along the line
-zline = griddata(x(:,1),x(:,2),x(:,3),xline,yline);
+zline = griddata(x(:,1), x(:,2), x(:,3), xline, yline);
 
-figure
-plot(sline,-zline)
+figure(2)
+plot(sline, -zline)
 
 % generate the sigma coordinates along the line
 xslice = zeros(npts,nlev);
 yslice = zeros(npts,nlev);
+z = nan(npts, nlev);
 
 % calculate the sigma distributions along the transect
 switch lower(sigtype)
@@ -180,19 +183,17 @@ switch lower(sigtype)
 end
 
 for i=1:npts
-  xslice(i,1:nlev) = sline(i);
-  yslice(i,1:nlev) = z(i,1:nlev)*zline(i);
-end;
+    xslice(i,1:nlev) = sline(i);
+    yslice(i,1:nlev) = z(i,1:nlev)*zline(i);
+end
 
 
 % plot the mesh along the transect
 for k=1:nlev
-  plot(xslice(:,k),yslice(:,k),'k'); hold on;
-end;
+    plot(xslice(:,k),yslice(:,k),'k'); hold on;
+end
 for k=1:npts
-  plot(xslice(k,:),yslice(k,:),'k'); hold on;
-end;
+    plot(xslice(k,:),yslice(k,:),'k'); hold on;
+end
 axis([xslice(1,1),xslice(end,1),min(yslice(:,end)),5])
 title('sigma distribution along the transect');
-
-
