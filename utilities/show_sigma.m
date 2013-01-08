@@ -1,4 +1,4 @@
-%function [] = show_sigma(meshfile,bathfile,sigmafile) 
+function show_sigma(meshfile,bathfile,sigmafile,varargin)
 % plot a sigma distribution along a user-selected line
 %
 % function [] = show_sigma(meshfile,bathfile,sigmafile) 
@@ -10,22 +10,34 @@
 %    meshfile:   fvcom grid file
 %    bathfile:   fvcom bathymetry file
 %    sigmafile:  fvcom sigma distribution file
+%    spoints:    number of points in the user-selected line (optional,
+%                defaults to 25).
 %
 % OUTPUT:
 %
 % EXAMPLE USAGE
-%    show_sigma('tst_grd.dat','tst_dep.dat','sigma.dat') 
+%    show_sigma('tst_grd.dat', 'tst_dep.dat', 'sigma.dat', 50)
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory, pica@pml.ac.uk)
 %
 % Revision history
+%   2013-01-08 Added more resilient reading of the sigma coordinates file
+%   (can now handle comments and blank lines). Also add extra (optional)
+%   argument to increase the profile sampling frequency.
 %   
 %==============================================================================
-meshfile = 'tst_grd.dat';
-bathfile = 'tst_dep.dat';
-sigmafile = 'sigma.dat';
-close all;
+% meshfile = 'tst_grd.dat';
+% bathfile = 'tst_dep.dat';
+% sigmafile = 'sigma.dat';
+close all
+
+if nargin == 4
+    spoints = varargin{1}
+else
+    spoints = 25;
+end
 
 % read the mesh 
 fid = fopen(meshfile,'r');
@@ -70,29 +82,44 @@ fprintf('max topography %f\n',max(x(:,3)));
 fid = fopen(sigmafile,'r');
 if(fid  < 0)
   error(['file: ' sigmafile ' does not exist']);
-end;
-C = textscan(fid, '%s %s %s %s %s %d', 1);
-nlev = C{6};
-C = textscan(fid, '%s %s %s %s %s', 1);
-sigtype = char(C{5});
-C = textscan(fid, '%s %s %f', 1);
-du = C{3};
-C = textscan(fid, '%s %s %f', 1);
-dl = C{3};
-C = textscan(fid, '%s %s %s %s %f', 1);
-min_constant_depth = C{5};
-C = textscan(fid, '%s %s %d', 1);
-ku = C{3};
-C = textscan(fid, '%s %s %d', 1);
-kl = C{3};
-C = textscan(fid, '%s %s %f %f %f %f %f %f %f %f %f %f %f', 1);
-for i=1:ku
- zku(i) = C{2+i};
-end;
-C = textscan(fid, '%s %s %f %f %f %f %f %f %f %f %f %f %f', 1);
-for i=1:kl
- zkl(i) = C{2+i};
-end;
+end
+
+while ~feof(fid)
+    line = fgetl(fid);
+    if isempty(line) || strncmp(line, '!', 1) || ~ischar(line)
+        continue
+    end
+    key = lower(line(1:3));
+    C = strtrim(regexpi(line, '=', 'split'));
+    switch key
+        case 'num'
+            nlev = str2double(C{2});
+        case 'sig'
+            sigtype = C{2};
+        case 'du '
+            du = str2double(C{2});
+        case 'dl '
+            dl = str2double(C{2});
+        case 'min'
+            min_constant_depth = str2double(C{2});
+        case 'ku '
+            ku = str2double(C{2});
+        case 'kl '
+            kl = str2double(C{2});
+        case 'zku'
+            s = str2double(regexp(C{2}, ' ', 'split'));
+            zku = zeros(ku, 1);
+            for i = 1:ku
+                zku(i) = s(i);
+            end
+        case 'zkl'
+            s = str2double(regexp(C{2}, ' ', 'split'));
+            zkl = zeros(kl, 1);
+            for i = 1:kl
+                zkl(i) = s(i);
+            end
+    end
+end
 
 fprintf('nlev %d\n',nlev)
 fprintf('sigtype %s\n',sigtype)
@@ -105,9 +132,9 @@ fprintf('zku %d\n',zku)
 fprintf('zkl %d\n',zkl)
 
 
-
 % generate the sigma coordinates
 fprintf('select two endpoints of a transect')
+figure(1)
 patch('Vertices',[x(:,1),x(:,2)],'Faces',tri,...
        'Cdata',x(:,3),'edgecolor','interp','facecolor','interp');
 axis equal
@@ -123,13 +150,13 @@ xline = xt(1):ds:xt(2);
 ds = (yt(2)-yt(1))/(npts-1);
 yline = yt(1):ds:yt(2);
 plot(xline,yline,'w+')
-sline(1) = 0.;
+sline = zeros(1, npts);
 for i=2:npts
   sline(i) = sline(i-1) + sqrt(   (xline(i)-xline(i-1))^2 + (yline(i)-yline(i-1))^2);
-end;
+end
 
 % interpolate the bathymetry along the line
-[zline] = griddata(x(:,1),x(:,2),x(:,3),xline,yline);
+zline = griddata(x(:,1),x(:,2),x(:,3),xline,yline);
 
 figure
 plot(sline,-zline)
@@ -139,19 +166,18 @@ xslice = zeros(npts,nlev);
 yslice = zeros(npts,nlev);
 
 % calculate the sigma distributions along the transect
-if(max(sigtype(1:3)=='gen') || max(sigtype(1:3)=='GEN'))
-  for i=1:npts
-     z(i,1:nlev) = sigma_gen(nlev,dl,du,kl,ku,zkl,zku,zline(i),min_constant_depth);
-  end;
-elseif(max(sigtype(1:3)=='uni') || max(sigtype(1:3)=='UNI'))
-  for i=1:npts
-    z(i,1:nlev) = 0:-1/double(nlev-1):-1; 
-  end;
-else
-  error('cant do that sigtype')
-end;
-
-
+switch lower(sigtype)
+    case 'generalized'
+        for i=1:npts
+            z(i,1:nlev) = sigma_gen(nlev,dl,du,kl,ku,zkl,zku,zline(i),min_constant_depth);
+        end
+    case 'uniform'
+        for i=1:npts
+            z(i,1:nlev) = 0:-1/double(nlev-1):-1;
+        end
+    otherwise
+        error('cant do that sigtype')
+end
 
 for i=1:npts
   xslice(i,1:nlev) = sline(i);
