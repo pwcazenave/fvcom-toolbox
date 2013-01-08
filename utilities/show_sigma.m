@@ -1,7 +1,7 @@
 function show_sigma(meshfile,bathfile,sigmafile,varargin)
 % plot a sigma distribution along a user-selected line
 %
-% function [] = show_sigma(meshfile,bathfile,sigmafile) 
+% show_sigma(meshfile,bathfile,sigmafile) 
 %
 % DESCRIPTION:
 %    plot a sigma distribution along a user-selected line
@@ -20,7 +20,7 @@ function show_sigma(meshfile,bathfile,sigmafile,varargin)
 %
 % Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
-%    Pierre Cazenave (Plymouth Marine Laboratory, pica@pml.ac.uk)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
 %   2013-01-08 Added more resilient reading of the sigma coordinates file
@@ -151,7 +151,7 @@ ds = (xt(2)-xt(1))/(npts-1);
 xline = xt(1):ds:xt(2);
 ds = (yt(2)-yt(1))/(npts-1);
 yline = yt(1):ds:yt(2);
-plot(xline, yline, 'r+')
+plot(xline, yline, 'w+')
 sline = zeros(1, npts);
 for i=2:npts
     sline(i) = sline(i-1) + sqrt((xline(i)-xline(i-1))^2 + (yline(i)-yline(i-1))^2);
