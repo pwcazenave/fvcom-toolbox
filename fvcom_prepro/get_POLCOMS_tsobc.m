@@ -25,10 +25,11 @@ function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_z)
 %                 called 'depth' and 'pdepth' respectively.
 % 
 % OUTPUT:
-%    Mobj = MATLAB structure in which two new fields (called temperature
-%           and salinity) have been created whose sizes are
+%    Mobj = MATLAB structure in which three new fields (called temperature,
+%           salinity and ts_time). temperature and salinity have sizes
 %           (sum(Mobj.nObcNodes), sigma, time). The time dimension is
-%           determined based on the input NetCDF file.
+%           determined based on the input NetCDF file. The ts_time variable
+%           is just the input file times in Modified Julian Day.
 %
 % EXAMPLE USAGE
 %    Mobj = get_POLCOMS_forcing(Mobj, polcoms_ts, polcoms_z)
@@ -61,9 +62,14 @@ for var=1:numel(varlist)
     varid_pc = netcdf.inqVarID(nc, getVar);
     
     data = netcdf.getVar(nc, varid_pc, 'single');
-    
-    pc.(getVar) = double(data);
-
+    pc.(getVar).data = double(data);
+    % Try to get some units (important for the calculation of MJD).
+    try
+        units = netcdf.getAtt(nc,varid_pc,'units');
+    catch
+        units = [];
+    end
+    pc.(getVar).units = units;
 end
 
 netcdf.close(nc)
@@ -72,9 +78,19 @@ netcdf.close(nc)
 % centre depth).
 nc = netcdf.open(polcoms_z, 'NOWRITE');
 varid_pc = netcdf.inqVarID(nc, 'depth'); 
-pc.depth = double(netcdf.getVar(nc, varid_pc, 'single'));
+pc.depth.data = double(netcdf.getVar(nc, varid_pc, 'single'));
+try
+    pc.depth.units = netcdf.getAtt(nc, varid_pc, 'units');
+catch
+    pc.depth.units = [];
+end
 varid_pc = netcdf.inqVarID(nc, 'pdepth'); 
-pc.pdepth = double(netcdf.getVar(nc, varid_pc, 'single'));
+pc.pdepth.data = double(netcdf.getVar(nc, varid_pc, 'single'));
+try
+    pc.pdepth.units = netcdf.getAtt(nc, varid_pc, 'units');
+catch
+    pc.pdepth.units = [];
+end
 netcdf.close(nc)
 
 % Data format:
@@ -118,7 +134,7 @@ for t = 1:nt
         % data to be (x, y) rather than (y, x).
         pctemp2 = pctemp3(:, :, j)';
         pcsal2 = pcsal3(:, :, j)';
-        pcdepth2 = squeeze(pc.depth(:, :, j, t))';
+        pcdepth2 = squeeze(pc.depth.data(:, :, j, t))';
        
         % Create new arrays which will be flattened when masking (below).
         tpctemp2 = pctemp2;
@@ -212,6 +228,7 @@ for t = 1:nt
                 fvtempz(pp, :) = interp1(tpz, itempz(pp, :), tfz, 'linear', 'extrap');
                 fvsalz(pp, :) = interp1(tpz, isalz(pp, :), tfz, 'linear', 'extrap');
             else
+                warning('Should never see this... ') % because we test for NaNs when fetching the values.
                 warning('FVCOM boundary node at %f, %f is outside the POLCOMS domain. Skipping.', fvlon(pp), fvlat(pp))
                 continue
             end
@@ -232,6 +249,17 @@ end
 
 Mobj.temperature = fvtemp;
 Mobj.salt = fvsal;
+
+% Do we have to interpolate to the FVCOM time series? Looking at page 325
+% of the FVCOM manual, it looks like the temperature and salinity are on a
+% different time sampling from the other example files (14 time steps vs.
+% 3625 for _wnd.nc or 43922 for _julain_obc.nc (i.e. surface elevation at
+% the boundary)). That's not to say those files were all used in the same
+% model run... In the interim, just convert the current times to Modified
+% Julian Day (this is a bit ugly).
+pc.time.yyyymmdd = strtrim(regexp(pc.time.units, 'since', 'split'));
+pc.time.yyyymmdd = str2double(regexp(pc.time.yyyymmdd{end}, '-', 'split'));
+Mobj.ts_times = greg2mjulian(pc.time.yyyymmdd(1), pc.time.yyyymmdd(2), pc.time.yyyymmdd(3), 0, 0, 0) + (pc.time.data / 3600 / 24);
 
 if ftbverbose
     fprintf(['end   : ' subname '\n'])
