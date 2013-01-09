@@ -120,3 +120,6 @@ for vv=1:length(vars)
     end
 end
 
+if ftbverbose;
+    fprintf(['end   : ' subname '\n'])
+end

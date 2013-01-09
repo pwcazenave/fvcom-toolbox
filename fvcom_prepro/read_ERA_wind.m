@@ -113,3 +113,7 @@ for var=1:numel(varlist)
 end
 
 netcdf.close(ncERA)
+
+if ftbverbose;
+    fprintf(['end   : ' subname '\n'])
+end
