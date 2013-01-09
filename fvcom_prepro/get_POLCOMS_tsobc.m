@@ -1,8 +1,8 @@
-function Mobj = get_POLCOMS_forcing(Mobj, polcoms_ts, polcoms_z)
+function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_z)
 % Read temperature and salinity from POLCOMS NetCDF model output files and
 % interpolate onto the open boundaries in Mobj.
 %
-% function Mobj = get_POLCOMS_forcing(Mobj, polcoms_ts, polcoms_bathy, varlist)
+% function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_bathy, varlist)
 %
 % DESCRIPTION:
 %    Interpolate temperature and salinity values onto the FVCOM open
@@ -10,7 +10,8 @@ function Mobj = get_POLCOMS_forcing(Mobj, polcoms_ts, polcoms_z)
 %
 % INPUT:
 %   Mobj        = MATLAB mesh structure which must contain:
-%                   - Mobj.sigmaz - sigma depths for all model nodes.
+%                   - Mobj.siglayz - sigma layer depths for all model
+%                   nodes.
 %                   - Mobj.lon, Mobj.lat and/or Mobj.x, Mobj.y - node
 %                   coordinates.
 %                   - Mobj.obc_nodes - list of open boundary node inidices.
@@ -36,7 +37,7 @@ function Mobj = get_POLCOMS_forcing(Mobj, polcoms_ts, polcoms_z)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
-%    2013-01-09 First version based on the shelf model
+%    2013-01-09 First version based on the FVCOM shelf model
 %    get_POLCOMS_forcing.m script (i.e. not a function but a plain script).
 %
 %==========================================================================
@@ -80,7 +81,6 @@ netcdf.close(nc)
 % 
 %   pc.ETW and pc.x1X are y, x, sigma, time
 % 
-% 
 [~, ~, nz, nt] = size(pc.ETW);
 
 % Make rectangular arrays for the nearest point lookup.
@@ -100,7 +100,9 @@ fz = size(Mobj.sigmaz, 2);
 fvtemp = nan(nf, fz, nt); % FVCOM interpolated temperatures
 fvsal = nan(nf, fz, nt); % FVCOM interpolated salinities
 
-tic
+if ftbverbose
+    tic
+end
 for t = 1:nt
     % Get the current 3D array of POLCOMS results.
     pctemp3 = pc.ETW(:, :, :, t);
@@ -154,11 +156,8 @@ for t = 1:nt
             fy = fvlat(i);
 
             [~, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
-            % Get the n nearest nodes from POLCOMS
+            % Get the n nearest nodes from POLCOMS (more? fewer?).
             ixy = ii(1:16);
-
-            % Interpolate the temperature and salinity to the FVCOM
-            % boundary node.
 
             % Get the variables into static variables for the
             % parallelisation.
@@ -185,9 +184,7 @@ for t = 1:nt
             end
         end
         
-        % Put the results in this intermediate array (no need to do z as we
-        % don't have vertical layers of depth, so we can just leave that as
-        % is).
+        % Put the results in this intermediate array.
         itempz(:, j) = itempobc;
         isalz(:, j) = isalobc;
         idepthz(:, j) = idepthobc;
@@ -229,7 +226,9 @@ for t = 1:nt
     fvtemp(:, :, t) = fvtempz;
     fvsal(:, :, t) = fvsalz;
 end
-toc
+if ftbverbose
+    toc
+end
 
 Mobj.temperature = fvtemp;
 Mobj.salt = fvsal;
