@@ -1,13 +1,15 @@
 function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
 % example file for dumping a file to force temperature and salinity at the open b.
 %
-% function example_FVCOM_tsobc()
+% function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
 %
 % DESCRIPTION:
-%    Setup a sample FVCOM hydrographic open boundary forcing file
+%    Setup an FVCOM hydrographic open boundary forcing file. Supply either
+%    uniform values for temperature and salinity or 3D arrays (node, sigma,
+%    time).
 %
 % INPUT
-%    Model case name
+%    Model case name (to find the bathymetry and open boundary .dat files).
 %    Time
 %    Number of sigma layers
 %    Boundary temperature (Celcius)
@@ -29,6 +31,8 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
 %    nSiglay+1.
 %    2012-11-09 Add new arguments to use user defined temperature and
 %    salinity.
+%    2013-01-09 Add support for 3D input temperature and salinity (such as
+%    might be generated with get_POLCOMS_tsobc.m.
 %
 %==============================================================================
 
@@ -86,7 +90,7 @@ if(ftbverbose); fprintf('bathymetry reading complete\n');end;
 fclose(fid);
 
 %--------------------------------------------------------------
-% set variables for NetCDF file
+% Generate the requisite data
 %--------------------------------------------------------------
 
 % extract bathymetry at open boundary nodes
@@ -96,33 +100,48 @@ obc_h = h(obc_nodes);
 % time = 0:1:31.;
 nTimes = numel(time);
 
-% set siglev/siglay
-% nSiglay = 10;
-% nSiglev = 11;
-nSiglev = nSiglay + 1;
-inc = 1./real(nSiglay);
-siglev = 0:-inc:-1;
-for i=1:nSiglay
-    siglay(i) = mean(siglev(i:i+1));
-end;
+% Create or process the temperature and salinity arrays.
+if ndim(in_temp) == 1
+    nSiglev = nSiglay + 1;
+    inc = 1./real(nSiglay);
+    siglev = 0:-inc:-1;
+    siglay = nan(1, nSiglay);
+    for i=1:nSiglay
+        siglay(i) = mean(siglev(i:i+1));
+    end
+    % initialize temperature/salinity arrays
+    temp = zeros(nObc,nSiglay,nTimes);
+    salt = zeros(nObc,nSiglay,nTimes);
 
+    % set a constant temperature and salinity
+    obc_temp = ones(1,nTimes)*in_temp;
+    obc_salt = ones(1,nTimes)*in_salt;
 
-% initialize temperature/salinity arrays
-temp = zeros(nObc,nSiglay,nTimes);
-salt = zeros(nObc,nSiglay,nTimes);
+    % set variable temperature and salinity
+    % for i=1:nTimes
+    % 	obc_temp(i) = 18. + 2.*real(i-1)/nTimes;
+    % 	obc_salt(i) = 30. - 5.*real(i-1)/nTimes;
+    % end
 
-% set variable temperature and salinity
-% for i=1:nTimes
-% 	obc_temp(i) = 18. + 2.*real(i-1)/nTimes;
-% 	obc_salt(i) = 30. - 5.*real(i-1)/nTimes;
-% end
-
-% set a constant temperature and salinity
-obc_temp = ones(1,nTimes)*in_temp;
-obc_salt = ones(1,nTimes)*in_salt;
+    % Create 3D array from three 1D arrays
+    % temp = repmat(obc_temp, [nObc, nSiglay, 1]);
+    % salt = repmat(obc_salt, [nObc, nSiglay, 1]);
+    for i=1:nObc
+        for j=1:nSiglay
+            temp(i,j,:) = obc_temp;
+            salt(i,j,:) = obc_salt;
+        end
+    end
+else
+    % We have a 3D array already so we just need a couple of stats.
+    temp = in_temp;
+    salt = in_salt;
+    nSiglev = size(in_temp, 3);
+    nSiglay = nSiglev - 1;
+end
 
 %--------------------------------------------------------------
-% dump to netcdf file
+% set NetCDF variables and dump to file
 %--------------------------------------------------------------
 
 % open boundary forcing
@@ -200,15 +219,6 @@ netcdf.putVar(nc,time_varid,0,numel(time),time);
 netcdf.putVar(nc,itime_varid,floor(time));
 netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000);
 
-% Create 3D array from three 1D arrays
-% temp = repmat(obc_temp, [nObc, nSiglay, 1]);
-% salt = repmat(obc_salt, [nObc, nSiglay, 1]);
-for i=1:nObc
-    for j=1:nSiglay
-        temp(i,j,:) = obc_temp;
-        salt(i,j,:) = obc_salt;
-    end
-end
 netcdf.putVar(nc,obc_temp_varid,temp);
 netcdf.putVar(nc,obc_salinity_varid,salt);
 
