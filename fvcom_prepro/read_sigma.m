@@ -11,8 +11,9 @@ function Mobj = read_sigma(Mobj, sigmafile)
 %   sigmafile : Full path to an FVCOM sigma.dat file.
 % 
 % OUTPUT:
-%   Mobj:       Mesh object with a new field (sigmaz) which contains the
-%               depths of the sigma layers at each grid node.
+%   Mobj:       Mesh object with two new fields (siglayz and siglevz) which
+%               contain depths of the sigma layers and levels at each grid
+%               node.
 % 
 % EXAMPLE USAGE:
 %   read_sigma(Mobj, 'sigma.dat')
@@ -98,7 +99,11 @@ switch lower(sigtype)
         error('Can''t do that sigtype')
 end
 
-Mobj.sigmaz = repmat(Mobj.h, 1, nlev) .* repmat(z, Mobj.nVerts, 1);
+% Create a siglay variable (i.e. midpoint in the sigma levels).
+zlay = z(1:end-1) + (diff(z)/2);
+
+Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* repmat(z, Mobj.nVerts, 1);
+Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* repmat(zlay, Mobj.nVerts, 1);
 
 if ftbverbose;
     fprintf(['end   : ' subname '\n'])
