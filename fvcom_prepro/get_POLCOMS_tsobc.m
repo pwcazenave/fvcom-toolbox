@@ -100,7 +100,7 @@ netcdf.close(nc)
 [~, ~, nz, nt] = size(pc.ETW);
 
 % Make rectangular arrays for the nearest point lookup.
-[lon, lat] = meshgrid(pc.lon, pc.lat);
+[lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
 
 % Find the nearest POLCOMS point to each point in the FVCOM open boundaries
 fvlon = Mobj.lon(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
