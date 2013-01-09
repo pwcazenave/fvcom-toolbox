@@ -31,6 +31,8 @@ function show_sigma(meshfile,bathfile,sigmafile,varargin)
 
 close all
 
+global ftbverbose
+
 if nargin == 4
     npts = varargin{1};
 else
@@ -48,8 +50,11 @@ C = textscan(fid, '%s %s %s %d', 1);
 Nelems = C{4};
 x = zeros(Nverts,3);
 tri = zeros(Nelems,3);
-fprintf('Nverts: %d\n',Nverts)
-fprintf('Nelems: %d\n',Nelems)
+if ftbverbose
+    fprintf('Nverts: %d\n',Nverts)
+    fprintf('Nelems: %d\n',Nelems)
+end
+
 for i=1:Nelems
     C = textscan(fid, '%d %d %d %d %d', 1);
     tri(i,1) = C{2};
@@ -73,8 +78,10 @@ for i=1:Nverts
     x(i,3) = C{3};
 end
 
-fprintf('min topography %f\n',min(x(:,3)));
-fprintf('max topography %f\n',max(x(:,3)));
+if ftbverbose
+    fprintf('min topography %f\n',min(x(:,3)));
+    fprintf('max topography %f\n',max(x(:,3)));
+end
 
 % read the sigma file
 fid = fopen(sigmafile,'r');
@@ -119,16 +126,17 @@ while ~feof(fid)
     end
 end
 
-fprintf('nlev %d\n',nlev)
-fprintf('sigtype %s\n',sigtype)
-fprintf('du %d\n',du)
-fprintf('dl %d\n',dl)
-fprintf('min_constant_depth %f\n',min_constant_depth)
-fprintf('ku %d\n',ku)
-fprintf('kl %d\n',kl)
-fprintf('zku %d\n',zku)
-fprintf('zkl %d\n',zkl)
-
+if ftbverbose
+    fprintf('nlev %d\n',nlev)
+    fprintf('sigtype %s\n',sigtype)
+    fprintf('du %d\n',du)
+    fprintf('dl %d\n',dl)
+    fprintf('min_constant_depth %f\n',min_constant_depth)
+    fprintf('ku %d\n',ku)
+    fprintf('kl %d\n',kl)
+    fprintf('zku %d\n',zku)
+    fprintf('zkl %d\n',zkl)
+end
 
 % generate the sigma coordinates
 
@@ -143,9 +151,10 @@ patch('Vertices',[x(:,1),x(:,2)],'Faces',tri,...
 axis equal
 
 % plot to get a line
-fprintf('select two end points of a transect with your mouse');
+fprintf('select two end points of a transect with your mouse... ');
 [xt,yt] = ginput(2);
 hold on
+fprintf('done.\n')
 
 ds = (xt(2)-xt(1))/(npts-1);
 xline = xt(1):ds:xt(2);
@@ -179,12 +188,12 @@ switch lower(sigtype)
             z(i,1:nlev) = 0:-1/double(nlev-1):-1;
         end
     otherwise
-        error('cant do that sigtype')
+        error('Can''t do that sigtype')
 end
 
 for i=1:npts
     xslice(i,1:nlev) = sline(i);
-    yslice(i,1:nlev) = z(i,1:nlev)*zline(i);
+    yslice(i,1:nlev) = z(i,1:nlev) * zline(i);
 end
 
 
