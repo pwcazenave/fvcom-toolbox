@@ -201,6 +201,8 @@ netcdf.putVar(nc,itime_varid,floor(time));
 netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000);
 
 % Create 3D array from three 1D arrays
+% temp = repmat(obc_temp, [nObc, nSiglay, 1]);
+% salt = repmat(obc_salt, [nObc, nSiglay, 1]);
 for i=1:nObc
     for j=1:nSiglay
         temp(i,j,:) = obc_temp;
