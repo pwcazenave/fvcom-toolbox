@@ -210,16 +210,17 @@ for t = 1:nt
     % to the sigma depths.
     oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);
     for zi = 1:fz
+
+        % Preallocate the output arrays
+        fvtempz = nan(nf, fz);
+        fvsalz = nan(nf, fz);
+
         for pp = 1:nf
             % Get the FVCOM depths at this node
             tfz = Mobj.siglayz(oNodes(pp), :);
             % Now get the interpolated POLCOMS depth at this node
             tpz = idepthz(pp, :);
-            
-            % Preallocate the output arrays
-            fvtempz = nan(nf, fz);
-            fvsalz = nan(nf, fz);
-            
+
             % Get the temperature and salinity values for this node and
             % interpolate down the water column (from POLCOMS to FVCOM).
             % TODO: Use csaps for the vertical interplation/subsampling at
