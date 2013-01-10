@@ -11,12 +11,14 @@ function Mobj = read_sigma(Mobj, sigmafile)
 %   sigmafile : Full path to an FVCOM sigma.dat file.
 % 
 % OUTPUT:
-%   Mobj:       Mesh object with two new fields (siglayz and siglevz) which
-%               contain depths of the sigma layers and levels at each grid
-%               node.
+%   Mobj:       Mesh object with four new fields:
+%               - siglayz and siglevz: contain depths of the sigma layers
+%               and levels at each grid node.
+%               - siglay and siglev: the sigma layer and levels in the
+%               range 0 to -1.
 % 
 % EXAMPLE USAGE:
-%   read_sigma(Mobj, 'sigma.dat')
+%   Mobj = read_sigma(Mobj, 'sigma.dat')
 % 
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -25,6 +27,8 @@ function Mobj = read_sigma(Mobj, sigmafile)
 %   2013-01-08 Based on the code in show_sigma.m but instead of calculating
 %   sigma layers along a user-defined line, the depths are calculated for
 %   each node in the unstructured grid.
+%   2013-01-10 Added two new outputs to the returned Mobj (siglay and
+%   siglev). They're useful in write_FVCOM_tsobc.m.
 
 subname = 'read_sigma';
 
@@ -104,6 +108,10 @@ zlay = z(1:end-1) + (diff(z)/2);
 
 Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* repmat(z, Mobj.nVerts, 1);
 Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* repmat(zlay, Mobj.nVerts, 1);
+
+% Add the sigma levels and layers to the Mobj.
+Mobj.siglev = z;
+Mobj.siglay = zlay;
 
 if ftbverbose;
     fprintf(['end   : ' subname '\n'])
