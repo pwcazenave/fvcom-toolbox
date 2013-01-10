@@ -95,9 +95,9 @@ netcdf.close(nc)
 
 % Data format:
 % 
-%   pc.ETW and pc.x1X are y, x, sigma, time
+%   pc.ETW.data and pc.x1X.data are y, x, sigma, time
 % 
-[~, ~, nz, nt] = size(pc.ETW);
+[~, ~, nz, nt] = size(pc.ETW.data);
 
 % Make rectangular arrays for the nearest point lookup.
 [lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
@@ -108,8 +108,8 @@ fvlat = Mobj.lat(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
 
 % Number of boundary nodes
 nf = sum(Mobj.nObcNodes);
-% Number of sigma levels (although we actually need layers...)
-fz = size(Mobj.sigmaz, 2);
+% Number of sigma layers.
+fz = size(Mobj.siglayz, 2);
 
 % itemp = nan(nf, nz, nt); % POLCOMS interpolated temperatures
 % isal = nan(nf, nz, nt); % POLCOMS interpolated salinities
@@ -121,8 +121,8 @@ if ftbverbose
 end
 for t = 1:nt
     % Get the current 3D array of POLCOMS results.
-    pctemp3 = pc.ETW(:, :, :, t);
-    pcsal3 = pc.x1X(:, :, :, t);
+    pctemp3 = pc.ETW.data(:, :, :, t);
+    pcsal3 = pc.x1X.data(:, :, :, t);
     
     % Preallocate the intermediate results arrays.
     itempz = nan(nf, nz);
@@ -212,7 +212,7 @@ for t = 1:nt
     for zi = 1:fz
         for pp = 1:nf
             % Get the FVCOM depths at this node
-            tfz = Mobj.sigmaz(oNodes(pp), :);
+            tfz = Mobj.siglayz(oNodes(pp), :);
             % Now get the interpolated POLCOMS depth at this node
             tpz = idepthz(pp, :);
             
