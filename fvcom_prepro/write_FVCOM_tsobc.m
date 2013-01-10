@@ -1,12 +1,12 @@
-function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
+function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj)
 % example file for dumping a file to force temperature and salinity at the open b.
 %
 % function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
 %
 % DESCRIPTION:
 %    Setup an FVCOM hydrographic open boundary forcing file. Supply either
-%    uniform values for temperature and salinity or 3D arrays (node, sigma,
-%    time).
+%    uniform values for temperature and salinity or 3D arrays (node,
+%    sigma_layers, time).
 %
 % INPUT
 %    Model case name (to find the bathymetry and open boundary .dat files).
@@ -14,6 +14,7 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
 %    Number of sigma layers
 %    Boundary temperature (Celcius)
 %    Boundary salinity (psu)
+%    Mobj (optional)
 %
 % OUTPUT:
 %    FVCOM hydrographic open boundary file
@@ -36,8 +37,11 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
 %
 %==============================================================================
 
-warning off;
-
+if nargin == 5
+    warning(['Assuming uniform terrain-following sigma coordinates. ',...
+        'To specify different sigma coordintes, supply a MATLAB mesh ',...
+        'structure with fields siglay and siglev.'])
+end
 
 subname = 'write_FVCOM_tsobc';
 global ftbverbose;
@@ -100,10 +104,11 @@ obc_h = h(obc_nodes);
 % time = 0:1:31.;
 nTimes = numel(time);
 
+nSiglev = nSiglay + 1;
+
 % Create or process the temperature and salinity arrays.
-if ndim(in_temp) == 1
-    nSiglev = nSiglay + 1;
-    inc = 1./real(nSiglay);
+if ndims(in_temp) == 1
+    inc = 1/real(nSiglay);
     siglev = 0:-inc:-1;
     siglay = nan(1, nSiglay);
     for i=1:nSiglay
@@ -114,8 +119,8 @@ if ndim(in_temp) == 1
     salt = zeros(nObc,nSiglay,nTimes);
 
     % set a constant temperature and salinity
-    obc_temp = ones(1,nTimes)*in_temp;
-    obc_salt = ones(1,nTimes)*in_salt;
+    obc_temp = repmat(in_temp, 1, nTimes);
+    obc_salt = repmat(in_salt, 1, nTimes);
 
     % set variable temperature and salinity
     % for i=1:nTimes
@@ -136,8 +141,23 @@ else
     % We have a 3D array already so we just need a couple of stats.
     temp = in_temp;
     salt = in_salt;
-    nSiglev = size(in_temp, 3);
-    nSiglay = nSiglev - 1;
+
+    if nargin == 6 && isfield(Mobj, 'siglay') && isfield(Mobj, 'siglev')
+        siglev = Mobj.siglev;
+        siglay = Mobj.siglay;
+    else
+        warning('Assuming uniform terrain-following sigma coordinates')
+        inc = 1/real(nSiglay);
+        siglev = 0:-inc:-1;
+        siglay = nan(1, nSiglay);
+    end
+
+    if nSiglev ~= size(in_temp, 2) + 1 || length(siglev) ~= size(in_temp, 2) + 1 || length(siglev) ~= size(in_salt, 2) + 1
+        error('Specified number sigma levels does not match supplied data')
+    end
+    if nSiglay ~= size(in_temp, 2) || length(siglay) ~= size(in_temp, 2) || length(siglay) ~= size(in_salt, 2)
+        error('Specified number of sigma layers does not match supplied data')
+    end
 end
 
 %--------------------------------------------------------------
