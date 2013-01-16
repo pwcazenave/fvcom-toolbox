@@ -1,33 +1,35 @@
 function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
 % Write an FVCOM surface elevation time series forcing file 
 %
-% write_FVCOM_elevtide(ObcNodes,JulianTime,ElevationFile,MyTitle)
+% write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
 %
 % DESCRIPTION:
 %    Write an FVCOM NetCDF surface elevation forcing file
 %
 % INPUT:
-%   ObcNodes         = list of open boundary nodes of size [nObcs].
-%   MJD              = list of modified Modified Julian Dates of size
-%       [times] (defined as unlimited in the NetCDF file).
+%   Mobj         = Matlab mesh object.
+%   MJD          = list of modified Modified Julian Dates of size [times]
+%                   (defined as unlimited in the NetCDF file).
 %   ElevationFile    = name of NetCDF file.
-%   MyTitle          = casename title, written as global attribute of
-%       NetCDF file.
+%   MyTitle      = casename title, written as global attribute of NetCDF file.
 %
 % OUTPUT:
 %    ElevationFile, A NetCDF FVCOM surface elevations tide forcing file
 %
 % EXAMPLE USAGE
-%    write_FVCOM_elevtide(ObcNodes,JulianTime,SurfaceElevation,SpectralFile,MyTitle)
+%    write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
 %
 % Author(s):  
 %    Pierre Cazenave (Plymouth Marine Laboratory)
+%    Karen Thurston (National Oceanography Centre Liverpool)
 % 
 % Revision history
-%    2012-08-08 First version.
-%    2012-11-14 Updated to expect Modified Julian Day rather than doing the
-%    conversion in here. Also put the pieces in set_elevtide in here to
+%    2012-08-08 (PWC) First version.
+%    2012-11-14 (PWC) Updated to expect Modified Julian Day rather than doing 
+%    the conversion in here. Also put the pieces in set_elevtide in here to
 %    simplify the process of writing out an elevation input file.
+%    2012-12-04 (KJT) Updated to use surface elevation and open boundary 
+%    nodes from Mobj.
 %   
 %==============================================================================
 
@@ -42,19 +44,8 @@ if(report); fprintf(['begin : ' subname '\n']); end
 % order of the boundary nodes is preserved.
 tmpObcNodes = Mobj.obc_nodes';
 % Flip it back so it's the same shape as it would have been using the old
-% code (see below for the old way).
+% code.
 ObcNodes = tmpObcNodes(tmpObcNodes~=0)';
-
-% cnt = 0;
-% ObcNodes = nan(1,sum(Mobj.nObcNodes));
-% for ob=1:Mobj.nObs
-% 	nObcs = Mobj.nObcNodes(ob);
-% 	for j=1:nObcs
-% 		cnt = cnt + 1;
-% 		ObcNodes(cnt) = Mobj.obc_nodes(ob,j);  % set open boundary nodes
-%     end
-% end
-
 
 %------------------------------------------------------------------------------
 % Sanity check on input and dimensions
