@@ -1,12 +1,12 @@
 function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 % Write data out to FVCOM NetCDF forcing file.
-% 
+%
 % write_FVCOM_forcing(fvcom_forcing_file, data, infos, fver)
-% 
+%
 % DESCRIPTION:
 %   Takes the given interpolated data (e.g. from grid2fvcom) and writes out
 %   to a NetCDF file.
-% 
+%
 % INPUT:
 %   Mobj - MATLAB mesh object
 %   fileprefix - Output NetCDF file prefix (plus path) will be
@@ -17,9 +17,10 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   fver - Output for version 3.1.0 or 3.1.6. The latter means all the
 %       forcing can go in a single file, the former needs separate files
 %       for specific forcing data (wind, heating and precipitation).
-% 
+%
 % The fields in data may be called any of:
 %     - 'u10', 'v10', 'uwnd', 'vwnd' - wind components
+%     - 'slp'       - sea level pressure
 %     - 'P_E'       - evaporation
 %     - 'prate'     - precipitation
 %     - 'nswrs'     - short wave radiation
@@ -31,20 +32,24 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %     - 'lat'
 %     - 'x'
 %     - 'y'
-% 
+%
 % OUTPUT:
 %   FVCOM wind speed forcing NetCDF file(s)
-% 
-% 
+%
+%
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
-% 
-% Revision history:
+%   Karen Thurston (National Oceanography Centre, Liverpool)
+%
+% PWC Revision history:
 %   2012-11-01 - First version based on the parts of grid2fvcom_U10V10.m
 %   which dealt with writing the NetCDF file. This version now dynamically
 %   deals with varying numbers of forcing data.
 %   2012-11-09 - Add the correct calculation for the surface net heat flux.
-% 
+%
+% KJT Revision history:
+%   2013-01-16 - Added support for output of sea level pressure.
+%
 %==========================================================================
 
 multi_out = false; % default to 3.1.6, single output file
@@ -86,13 +91,12 @@ yc = nodes2elems(y, Mobj);
 %--------------------------------------------------------------------------
 
 if multi_out
-    suffixes = {'_wnd', '_hfx', '_evap'};
+    suffixes = {'_wnd', '_hfx', '_evap', '_air_press'};
 else
     suffixes = {'_wnd'};
 end
 
 for i=1:length(suffixes)
-
     nc = netcdf.create([fileprefix, suffixes{i}, '.nc'], 'clobber');
 
 %     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM Forcing File')
@@ -121,7 +125,7 @@ for i=1:length(suffixes)
     y_varid=netcdf.defVar(nc,'y','NC_FLOAT',node_dimid);
     netcdf.putAtt(nc,y_varid,'long_name','nodal y-coordinate');
     netcdf.putAtt(nc,y_varid,'units','meters');
-    
+
     xc_varid=netcdf.defVar(nc,'xc','NC_FLOAT',nele_dimid);
     netcdf.putAtt(nc,xc_varid,'long_name','zonal x-coordinate');
     netcdf.putAtt(nc,xc_varid,'units','meters');
@@ -150,7 +154,7 @@ for i=1:length(suffixes)
     netcdf.putAtt(nc,itime2_varid,'time_zone','UTC');
 
     % Since we have a dynamic number of variables in the struct, try to be a
-    % bit clever about how to create the output variables. 
+    % bit clever about how to create the output variables.
     fnames = fieldnames(data);
     used_varids = cell(0);
     used_fnames = cell(0);
@@ -204,7 +208,7 @@ for i=1:length(suffixes)
 %                     netcdf.putAtt(nc,u10_node_varid,'grid','fvcom_grid');
 %                     netcdf.putAtt(nc,u10_node_varid,'type','data');
 %                     netcdf.putAtt(nc,u10_node_varid,'coordinates','');
-% 
+%
 %                     v10_node_varid=netcdf.defVar(nc,'V10','NC_FLOAT',[node_dimid, time_dimid]);
 %                     netcdf.putAtt(nc,v10_node_varid,'long_name','Northward 10-m Velocity');
 %                     netcdf.putAtt(nc,v10_node_varid,'standard_name','Northward Wind Speed');
@@ -232,6 +236,21 @@ for i=1:length(suffixes)
                     used_dims = [used_dims, {'nElems', 'nElems', 'nElems', 'nElems'}];
                 end
 
+            case 'slp'
+                if strcmpi(suffixes{i}, '_air_press') || ~multi_out
+                    % Sea level pressure
+                    slp_varid=netcdf.defVar(nc,'air_pressure','NC_FLOAT',[node_dimid, time_dimid]);
+                    netcdf.putAtt(nc,slp_varid,'long_name','Surface air pressure');
+                    netcdf.putAtt(nc,slp_varid,'units','Pa');
+                    netcdf.putAtt(nc,slp_varid,'grid','fvcom_grid');
+                    netcdf.putAtt(nc,slp_varid,'coordinates','');
+                    netcdf.putAtt(nc,slp_varid,'type','data');
+
+                    used_varids = [used_varids, 'slp_varid'];
+                    used_fnames = [used_fnames, fnames{vv}];
+                    used_dims = [used_dims, 'nNodes'];
+                end
+
             case 'P_E'
                 if strcmpi(suffixes{i}, '_evap') || ~multi_out
                     % Evaporation
@@ -247,7 +266,7 @@ for i=1:length(suffixes)
                     used_fnames = [used_fnames, fnames{vv}];
                     used_dims = [used_dims, 'nNodes'];
                 end
-                
+
             case 'prate'
                 if strcmpi(suffixes{i}, '_evap') || ~multi_out
                     % Precipitation
@@ -302,7 +321,7 @@ for i=1:length(suffixes)
                     used_fnames = [used_fnames, fnames{vv}];
                     used_dims = [used_dims, 'nNodes'];
                 end
-                
+
             case {'time', 'lon', 'lat', 'x', 'y'}
                 continue
 
@@ -341,9 +360,9 @@ for i=1:length(suffixes)
             % One of the other data sets for which we can simply dump the
             % existing array without waiting for other data
         	if strcmpi(used_dims{ff}, 'nNodes')
-                eval(['netcdf.putVar(nc,',used_varids{ff},',[0,0],[',used_dims{ff},',ntimes],data.(used_fnames{ff}).node)'])
+                eval(['netcdf.putVar(nc,',used_varids{ff},',[0,0],[',used_dims{ff},',ntimes],data.',used_fnames{ff},'.node);'])
             else
-                eval(['netcdf.putVar(nc,',used_varids{ff},',[0,0],[',used_dims{ff},',ntimes],data.(used_fnames{ff}).data)'])
+                eval(['netcdf.putVar(nc,',used_varids{ff},',[0,0],[',used_dims{ff},',ntimes],data.',used_fnames{ff},'.data);'])
             end
         end
     end
