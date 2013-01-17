@@ -34,6 +34,8 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj)
 %    salinity.
 %    2013-01-09 Add support for 3D input temperature and salinity (such as
 %    might be generated with get_POLCOMS_tsobc.m.
+%    KJT: Add better check for the size of the input arrays (works with 
+%    scalars).
 %
 %==============================================================================
 
@@ -107,7 +109,7 @@ nTimes = numel(time);
 nSiglev = nSiglay + 1;
 
 % Create or process the temperature and salinity arrays.
-if ndims(in_temp) == 1
+if max(size(in_temp)) == 1
     inc = 1/real(nSiglay);
     siglev = 0:-inc:-1;
     siglay = nan(1, nSiglay);
