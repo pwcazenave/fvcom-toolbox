@@ -24,18 +24,20 @@ function [Mobj]  = add_sponge_nodes_list(Mobj,SpongeList,SpongeName,SpongeRadius
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
+%    Karen Thurston (National Oceanography Centre, Liverpool)
 %
 % Revision history
 %    Modifed from add_sponge_nodes to read in nodes from a supplied list.
 %    2012-11-26 Add ability to turn off the figures.
+%    2013-01-18 Added support for variable sponge radius
 %   
 %==============================================================================
 subname = 'add_sponge_nodes';
 
 global ftbverbose
 if(ftbverbose)
-  fprintf('\n')
-  fprintf(['begin : ' subname '\n'])
+    fprintf('\n')
+    fprintf(['begin : ' subname '\n'])
 end
 
 % Do we want a figure showing how we're getting along?
@@ -46,6 +48,7 @@ end
 %------------------------------------------------------------------------------
 % Plot the mesh 
 %------------------------------------------------------------------------------
+
 if plotFig == 1
     if(lower(Mobj.nativeCoords(1:3)) == 'car')
         x = Mobj.x;
@@ -63,7 +66,7 @@ if plotFig == 1
     axis('equal','tight')
 end
 
-npts = size(SpongeList,2);
+npts = length(SpongeList);
 
 if(npts == 0)
 	fprintf('No points in given list')
@@ -79,11 +82,15 @@ Mobj.nSponge = Mobj.nSponge + 1;
 Mobj.nSpongeNodes(Mobj.nSponge) = npts;
 Mobj.sponge_nodes(Mobj.nSponge,1:npts) = SpongeList;
 Mobj.sponge_name{Mobj.nSponge} = SpongeName;
-Mobj.sponge_rad(Mobj.nSponge) = SpongeRadius;
 Mobj.sponge_fac(Mobj.nSponge) = SpongeCoeff;
 
-if(ftbverbose)
-  fprintf(['end   : ' subname '\n'])
+if max(size(SpongeRadius))==1   % if you have a constant sponge radius
+    Mobj.sponge_rad(Mobj.nSponge) = SpongeRadius;
+else    % if you have a variable sponge radius
+    Mobj.sponge_rad(Mobj.nSponge,1:npts) = SpongeRadius;
 end
 
+if(ftbverbose)
+    fprintf(['end   : ' subname '\n'])
+end
 

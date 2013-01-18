@@ -19,8 +19,10 @@ function write_FVCOM_sponge(Mobj,filename)
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Karen Thurston (National Oceanography Centre, Liverpool)
 %
 % Revision history
+%   2013-01-18  Added support for variable sponge radius
 %   
 %==============================================================================
 subname = 'write_FVCOM_sponge';
@@ -48,9 +50,15 @@ else
 	Total_Sponge = sum(Mobj.nSpongeNodes(1:Mobj.nSponge));
 	fprintf(fid,'Sponge Node Number = %d\n',Total_Sponge);
 	for i=1:Mobj.nSponge
-		for j=1:Mobj.nSpongeNodes(i)
-			fprintf(fid,'%d %f %f \n',Mobj.sponge_nodes(i,j),Mobj.sponge_rad(i),Mobj.sponge_fac(i));
-		end;
+        if max(size(Mobj.sponge_rad))==1   % if you have a constant sponge radius
+            for j=1:Mobj.nSpongeNodes(i)
+                fprintf(fid,'%d %f %f \n',Mobj.sponge_nodes(i,j),Mobj.sponge_rad(i),Mobj.sponge_fac(i));
+            end;
+        else    % if you have a variable sponge radius
+            for j=1:Mobj.nSpongeNodes(i)
+                fprintf(fid,'%d %f %f \n',Mobj.sponge_nodes(i,j),Mobj.sponge_rad(i,j),Mobj.sponge_fac(i));
+            end;
+        end
 	end;
 end;
 fclose(fid);
