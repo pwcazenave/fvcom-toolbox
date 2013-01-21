@@ -79,7 +79,7 @@ pIndUse = nan(length(Mobj.Components), 2);
 for i=1:length(Mobj.Components)
     pPos = pInd(strcmp(Mobj.Components{i}, header.Harmonics));
     if isempty(pPos)
-        warning('Supplied constituent (%s) is not present in the POLPRED data') %#ok<WNTAG>
+        warning('Supplied constituent (%s) is not present in the POLPRED data', Mobj.Components{i}) %#ok<WNTAG>
     else
         % Make index start at zero so the multiplication works, but
         % compensate for that once the offset has been applied. Also add
@@ -155,15 +155,18 @@ obc_lat = Mobj.lat(ObcNodes);
 % Mobj).
 distance = nan(size(obc_lon));
 point = nan(size(distance));
-amp = nan(length(obc_lon), length(pIndUse));
+% Omit the NaNs in the indices from POLPRED when calculating the output
+% array size.
+amp = nan(length(obc_lon), length(pIndUse(~isnan(pIndUse(:, 1)), 1)));
 phase = nan(size(amp));
 for i=1:length(obc_lon)
     radvec = sqrt((obc_lon(i)-data(:,2)).^2 + (obc_lat(i)-data(:,1)).^2);
     [distance(i), point(i)] = min(radvec);
     % Get the amplitude and phase for each constituent (in order of
-    % Mobj.Components).
-    amp(i, :) = data(point(i), pIndUse(:, 1));
-    phase(i, :) = data(point(i), pIndUse(:, 2));
+    % Mobj.Components). Check for and omit NaNs here (for missing tidal
+    % constituents in the supplied list and what's given in POLPRED).
+    amp(i, :) = data(point(i), pIndUse(~isnan(pIndUse(:, 1)), 1));
+    phase(i, :) = data(point(i), pIndUse(~isnan(pIndUse(:, 1)), 2));
 end
 
 % Check for and warn about NaNs (-999.9 in POLPRED data).
