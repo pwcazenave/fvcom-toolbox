@@ -12,8 +12,7 @@ function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_z)
 %   Mobj        = MATLAB mesh structure which must contain:
 %                   - Mobj.siglayz - sigma layer depths for all model
 %                   nodes.
-%                   - Mobj.lon, Mobj.lat and/or Mobj.x, Mobj.y - node
-%                   coordinates.
+%                   - Mobj.lon, Mobj.lat - node coordinates (lat/long).
 %                   - Mobj.obc_nodes - list of open boundary node inidices.
 %                   - Mobj.nObcNodes - number of nodes in each open
 %                   boundary.
@@ -224,7 +223,12 @@ for t = 1:nt
             % Get the temperature and salinity values for this node and
             % interpolate down the water column (from POLCOMS to FVCOM).
             % TODO: Use csaps for the vertical interplation/subsampling at
-            % each location.
+            % each location. Alternatively, the pchip interp1 method seems
+            % to do a decent job of the interpolation; it might be a more
+            % suitable candidate in the absence of csaps. In fact, the demo
+            % of csaps in the MATLAB documentation makes the interpolation
+            % look horrible (shaving off extremes). I think pchip is
+            % better.
             if ~isnan(tpz)
                 fvtempz(pp, :) = interp1(tpz, itempz(pp, :), tfz, 'linear', 'extrap');
                 fvsalz(pp, :) = interp1(tpz, isalz(pp, :), tfz, 'linear', 'extrap');
