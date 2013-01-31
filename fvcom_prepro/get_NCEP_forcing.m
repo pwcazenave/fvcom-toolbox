@@ -61,11 +61,6 @@ if(ftbverbose);
   fprintf(['begin : ' subname '\n'])
 end
 
-% Add the air_sea toolbox
-addpath('/users/modellers/rito/matlab/air-sea')
-% Add the opendap tools
-addpath('/users/modellers/rito/matlab/opendap/bin/')
-
 % Get the extent of the model domain (in spherical)
 if ~Mobj.have_lonlat
     error('Need spherical coordinates to extract the forcing data')
@@ -83,13 +78,12 @@ end
 yearStart = mjulian2greg(modelTime(1));
 yearEnd = mjulian2greg(modelTime(end));
 if yearEnd ~= yearStart
-    error('Can''t (yet) process more than a year at a time.')
+    error('Can''t (yet) process across a year boundary.')
 else
     year = yearEnd;
 end
 
-% Set up a struct of the NCEP remote locations in which we're
-% interested.
+% Set up a struct of the NCEP remote locations in which we're interested.
 ncep.uwnd   = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/uwnd.10m.gauss.',num2str(year),'.nc'];
 ncep.vwnd   = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/vwnd.10m.gauss.',num2str(year),'.nc'];
 ncep.nlwrs  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/nlwrs.sfc.gauss.',num2str(year),'.nc'];
