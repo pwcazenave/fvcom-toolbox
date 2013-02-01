@@ -262,8 +262,18 @@ Mobj.salt = fvsal;
 % the boundary)). That's not to say those files were all used in the same
 % model run... In the interim, just convert the current times to Modified
 % Julian Day (this is a bit ugly).
+% pc.time.yyyymmdd = strtrim(regexp(pc.time.units, 'since', 'split'));
+% pc.time.yyyymmdd = str2double(regexp(pc.time.yyyymmdd{end}, '-', 'split'));
+% Mobj.ts_times = greg2mjulian(pc.time.yyyymmdd(1), pc.time.yyyymmdd(2), pc.time.yyyymmdd(3), 0, 0, 0) + (pc.time.data / 3600 / 24);
+
+% Convert the POLCOMS times to Modified Julian Day (this is a very ugly).
 pc.time.yyyymmdd = strtrim(regexp(pc.time.units, 'since', 'split'));
-pc.time.yyyymmdd = str2double(regexp(pc.time.yyyymmdd{end}, '-', 'split'));
+pc.time.strtime = regexp(pc.time.yyyymmdd{end}, '-', 'split');
+% This new version of the time has the year in a weird format (yr.#). We
+% thus need to split it again to get the decimal year (post-2000 only?).
+pc.time.strtimeyr = regexp(pc.time.strtime, '\.', 'split');
+pc.time.yyyymmdd = str2double([pc.time.strtimeyr{1}(2), pc.time.strtime{2:3}]);
+pc.time.yyyymmdd(1) = pc.time.yyyymmdd(1) + 2000; % add full year.
 Mobj.ts_times = greg2mjulian(pc.time.yyyymmdd(1), pc.time.yyyymmdd(2), pc.time.yyyymmdd(3), 0, 0, 0) + (pc.time.data / 3600 / 24);
 
 if ftbverbose
