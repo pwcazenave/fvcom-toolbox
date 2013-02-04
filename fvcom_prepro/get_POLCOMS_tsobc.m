@@ -16,13 +16,26 @@ function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_z)
 %                   - Mobj.obc_nodes - list of open boundary node inidices.
 %                   - Mobj.nObcNodes - number of nodes in each open
 %                   boundary.
-%   polcoms_ts  = POLCOMS NetCDF file in which 4D variables of temperature 
-%                 and salinity (called 'ETW' and 'x1X') exist. Their shape
-%                 should be (y, x, sigma, time).
-%   polcoms_z   = POLCOMS NetCDF file in which 4D variables of bathymetry
-%                 and sigma layer thickness can be found. They should be
-%                 called 'depth' and 'pdepth' respectively.
-% 
+%   polcoms_ts  = Cell array of POLCOMS NetCDF file(s) in which 4D
+%                 variables of temperature and salinity (called 'ETW' and
+%                 'x1X') exist. Their shape should be (y, x, sigma, time).
+%   polcoms_z   = Cell array of POLCOMS NetCDF file(s) in which 4D
+%                 variables of bathymetry and sigma layer thickness can be
+%                 found. They should be called 'depth' and 'pdepth'
+%                 respectively.
+% NOTES:
+%   - The POLCOMS NetCDF files should also contain 'time', 'lat' and 'lon'
+%   variables.
+%
+%   - If you supply multiple files in polcoms_ts, there are a few
+%   assumptions:
+%
+%       - Variables are only appended if there are 4 dimensions; fewer than
+%       that, and the values are assumed to be static across all the given
+%       files (e.g. longitude, latitude etc.). The fourth dimension is
+%       time.
+%       - The order of the files given should be chronological.
+%
 % OUTPUT:
 %    Mobj = MATLAB structure in which three new fields (called temperature,
 %           salinity and ts_time). temperature and salinity have sizes
@@ -39,6 +52,7 @@ function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_z)
 % Revision history
 %    2013-01-09 First version based on the FVCOM shelf model
 %    get_POLCOMS_forcing.m script (i.e. not a function but a plain script).
+%    2013-02-04 Add support for reading in multiple NetCDF files.
 %
 %==========================================================================
 
@@ -52,45 +66,134 @@ end
 
 varlist = {'lon', 'lat', 'ETW', 'x1X', 'time'};
 
-% Get the results
-nc = netcdf.open(polcoms_ts, 'NOWRITE');
+% Get the results. Check we have a cell array, and if we don't, assume it's
+% a file name.
 
-for var=1:numel(varlist)
-    
-    getVar = varlist{var};
-    varid_pc = netcdf.inqVarID(nc, getVar);
-    
-    data = netcdf.getVar(nc, varid_pc, 'single');
-    pc.(getVar).data = double(data);
-    % Try to get some units (important for the calculation of MJD).
-    try
-        units = netcdf.getAtt(nc,varid_pc,'units');
-    catch
-        units = [];
+if iscell(polcoms_ts)
+    todo = length(polcoms_ts);
+    todo2 = length(polcoms_z);
+    if todo2 ~= todo
+        error('Supply matching POLCOMS temperature/salinity and depth NetCDF files')
     end
-    pc.(getVar).units = units;
+    clear todo2
+else
+    todo = 1;
 end
 
-netcdf.close(nc)
+for ii = 1:todo
 
-% Extract the bathymetry ('pdepth' is cell thickness, 'depth' is cell
-% centre depth).
-nc = netcdf.open(polcoms_z, 'NOWRITE');
-varid_pc = netcdf.inqVarID(nc, 'depth'); 
-pc.depth.data = double(netcdf.getVar(nc, varid_pc, 'single'));
-try
-    pc.depth.units = netcdf.getAtt(nc, varid_pc, 'units');
-catch
-    pc.depth.units = [];
+    if ftbverbose
+        if iscell(polcoms_ts)
+            ftn = polcoms_ts{ii};
+            fzn = polcoms_z{ii};
+        else
+            ftn = polcoms_ts;
+            fzn = polcoms_z;
+        end
+        % Strip path from filename for the verbose output.
+        [~, basename, ext] = fileparts(ftn);
+        tmp_fn = [basename, ext];
+
+        if todo == 1
+            fprintf('%s: extracting file %s\n', subname, tmp_fn)
+        else
+            fprintf('%s: extracting file %s (%i of %i)... ', subname, tmp_fn, ii, todo)
+        end
+    end
+    
+    nc = netcdf.open(ftn, 'NOWRITE');
+
+    for var = 1:numel(varlist)
+
+        getVar = varlist{var};
+        varid_pc = netcdf.inqVarID(nc, getVar);
+
+        data = double(netcdf.getVar(nc, varid_pc, 'single'));
+        if ii == 1
+            pc.(getVar).data = data;
+        else
+            if ndims(data) < 4
+                if strcmpi(varlist{var}, 'time')
+                    % If the dimension is time, we need to be a bit more
+                    % clever since we'll need a concatenated time series
+                    % (in which values are continuous and from which we
+                    % can extract a sensible time). As such, we need to add
+                    % the maximum of the existing time. On the first
+                    % iteration, we should save ourselves the base time
+                    % (from the units of the time variable).
+                    pc.(getVar).data = [pc.(getVar).data; data + max(pc.(getVar).data)];
+                else
+                    % This should be a fixed set of values (probably lon or
+                    % lat) in which case we don't need to append them, so
+                    % just replace the existing values with those in the
+                    % current NetCDF file.
+                    pc.(getVar).data = data;
+                end
+            elseif ndims(data) == 4
+                % Assume we're concatenating with time (so along the fourth
+                % dimesnion.
+                pc.(getVar).data = cat(4, pc.(getVar).data, data);
+            else
+                error('Unsupported number of dimensions in POLCOMS data')
+            end
+        end
+        % Try to get some units (important for the calculation of MJD).
+        try
+            if ii == 1
+                units = netcdf.getAtt(nc,varid_pc,'units');
+            else
+                % Leave the units values alone so we always use the values
+                % from the first file. This is particularly important for
+                % the time calculation later on which is dependent on
+                % knowing the time origin of the first file.
+                continue
+            end
+        catch
+            units = [];
+        end
+        pc.(getVar).units = units;
+    end
+
+    netcdf.close(nc)
+    
+    % Extract the bathymetry ('pdepth' is cell thickness, 'depth' is cell
+    % centre depth). We still need to append along the fourth dimension
+    % here too (I think depth and pdepth include the tidal component).
+    nc = netcdf.open(fzn, 'NOWRITE');
+    varid_pc = netcdf.inqVarID(nc, 'depth');
+    data = double(netcdf.getVar(nc, varid_pc, 'single'));
+    if ii == 1
+        pc.depth.data = data;
+    else
+        pc.depth.data = cat(4, pc.depth.data, data);
+    end
+    try
+        pc.depth.units = netcdf.getAtt(nc, varid_pc, 'units');
+    catch
+        pc.depth.units = [];
+    end
+    clear data
+
+    varid_pc = netcdf.inqVarID(nc, 'pdepth'); 
+    data = double(netcdf.getVar(nc, varid_pc, 'single'));
+    if ii == 1
+        pc.pdepth.data = data;
+    else
+        pc.pdepth.data = cat(4, pc.pdepth.data, data);
+    end
+    try
+        pc.pdepth.units = netcdf.getAtt(nc, varid_pc, 'units');
+    catch
+        pc.pdepth.units = [];
+    end
+    clear data
+    netcdf.close(nc)
+
+    if ftbverbose
+        fprintf('done.\n')
+    end
+
 end
-varid_pc = netcdf.inqVarID(nc, 'pdepth'); 
-pc.pdepth.data = double(netcdf.getVar(nc, varid_pc, 'single'));
-try
-    pc.pdepth.units = netcdf.getAtt(nc, varid_pc, 'units');
-catch
-    pc.pdepth.units = [];
-end
-netcdf.close(nc)
 
 % Data format:
 % 
@@ -110,8 +213,6 @@ nf = sum(Mobj.nObcNodes);
 % Number of sigma layers.
 fz = size(Mobj.siglayz, 2);
 
-% itemp = nan(nf, nz, nt); % POLCOMS interpolated temperatures
-% isal = nan(nf, nz, nt); % POLCOMS interpolated salinities
 fvtemp = nan(nf, fz, nt); % FVCOM interpolated temperatures
 fvsal = nan(nf, fz, nt); % FVCOM interpolated salinities
 
@@ -240,9 +341,6 @@ for t = 1:nt
         end
     end
     
-    % The horizontally-interpolated values in the final results array.
-%     itemp(:, :, t) = itempz;
-%     isal(:, :, t) = isalz;
     % The horizontally- and vertically-interpolated values in the final
     % FVCOM results array.
     fvtemp(:, :, t) = fvtempz;
@@ -262,19 +360,19 @@ Mobj.salt = fvsal;
 % the boundary)). That's not to say those files were all used in the same
 % model run... In the interim, just convert the current times to Modified
 % Julian Day (this is a bit ugly).
-% pc.time.yyyymmdd = strtrim(regexp(pc.time.units, 'since', 'split'));
-% pc.time.yyyymmdd = str2double(regexp(pc.time.yyyymmdd{end}, '-', 'split'));
-% Mobj.ts_times = greg2mjulian(pc.time.yyyymmdd(1), pc.time.yyyymmdd(2), pc.time.yyyymmdd(3), 0, 0, 0) + (pc.time.data / 3600 / 24);
-
-% Convert the POLCOMS times to Modified Julian Day (this is a very ugly).
 pc.time.yyyymmdd = strtrim(regexp(pc.time.units, 'since', 'split'));
-pc.time.strtime = regexp(pc.time.yyyymmdd{end}, '-', 'split');
-% This new version of the time has the year in a weird format (yr.#). We
-% thus need to split it again to get the decimal year (post-2000 only?).
-pc.time.strtimeyr = regexp(pc.time.strtime, '\.', 'split');
-pc.time.yyyymmdd = str2double([pc.time.strtimeyr{1}(2), pc.time.strtime{2:3}]);
-pc.time.yyyymmdd(1) = pc.time.yyyymmdd(1) + 2000; % add full year.
+pc.time.yyyymmdd = str2double(regexp(pc.time.yyyymmdd{end}, '-', 'split'));
 Mobj.ts_times = greg2mjulian(pc.time.yyyymmdd(1), pc.time.yyyymmdd(2), pc.time.yyyymmdd(3), 0, 0, 0) + (pc.time.data / 3600 / 24);
+
+% % Convert the POLCOMS times to Modified Julian Day (this is a very ugly).
+% pc.time.yyyymmdd = strtrim(regexp(pc.time.units, 'since', 'split'));
+% pc.time.strtime = regexp(pc.time.yyyymmdd{end}, '-', 'split');
+% % This new version of the time has the year in a weird format (yr.#). We
+% % thus need to split it again to get the decimal year (post-2000 only?).
+% pc.time.strtimeyr = regexp(pc.time.strtime, '\.', 'split');
+% pc.time.yyyymmdd = str2double([pc.time.strtimeyr{1}(2), pc.time.strtime{2:3}]);
+% pc.time.yyyymmdd(1) = pc.time.yyyymmdd(1) + 2000; % add full year.
+% Mobj.ts_times = greg2mjulian(pc.time.yyyymmdd(1), pc.time.yyyymmdd(2), pc.time.yyyymmdd(3), 0, 0, 0) + (pc.time.data / 3600 / 24);
 
 if ftbverbose
     fprintf(['end   : ' subname '\n'])
