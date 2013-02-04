@@ -1,0 +1,513 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of replace_FVCOM_restart_vars</title>
+  <meta name="keywords" content="replace_FVCOM_restart_vars">
+  <meta name="description" content="Use an FVCOM restart file to seed a model run with spatially varying">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; replace_FVCOM_restart_vars.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>replace_FVCOM_restart_vars
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Use an FVCOM restart file to seed a model run with spatially varying</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function replace_FVCOM_restart_vars(Mobj, polcoms_ts, polcoms_z, start_date, fv_restart, varlist) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Use an FVCOM restart file to seed a model run with spatially varying
+ versions of otherwise constant variables (temperature and salinity only
+ for the time being).
+
+ function replace_FVCOM_restart_vars(Mobj, polcoms_ts, polcoms_z, ...
+    start_date, fv_restart, varlist)
+
+ DESCRIPTION:
+    FVCOM does not yet support spatially varying temperature and salinity
+    inputs as initial conditions. To avoid having to run a model for a
+    long time in order for temperature and salinity to settle within the
+    model from the atmospheric and boundary forcing, we can use a restart
+    file to cheat. If we run a model for a week or so (until the
+    hydrodynamics has stabilised, we can use the restart file generated
+    from that run as the basis for a new run, except we replace the
+    currently computed temperature and salinity and replace them with data
+    interpolated from another source (in this case, POLCOMS). 
+
+ INPUT:
+   Mobj        = MATLAB mesh structure which must contain:
+                   - Mobj.siglayz - sigma layer depths for all model
+                   nodes.
+                   - Mobj.lon, Mobj.lat - node coordinates (long/lat).
+   polcoms_ts  = POLCOMS NetCDF file in which 4D variables of temperature
+   and salinity (called 'ETW' and 'x1X') exist. Their shape should be (y,
+   x, sigma, time).
+   polcoms_z   = POLCOMS NetCDF file in which 4D variables of bathymetry
+   and sigma layer thickness can be found. They should be called 'depth'
+   and 'pdepth' respectively.
+   start_date  = Gregorian start date array (YYYY, MM, DD, hh, mm, ss).
+   fv_restart  = full path to the FVCOM restart file.
+   varlist     = cell array of variables to extract from the POLCOMS
+   NetCDF files (polcoms_ts only, pdepth and depth will be extracted from
+   polcoms_z).
+ 
+ OUTPUT:
+   NetCDF file in which the temperature and salinity variables have been
+   replaced with the POLCOMS versions. The file name is the input restart
+   file name appended _polcoms.nc.
+
+ EXAMPLE USAGE
+   replace_FVCOM_restart_vars(Mobj, '/tmp/pc_ts.nc', '/tmp/pc_z.nc', ...
+       '2006-01-01 00:00:00', '/tmp/fvcom_restart.nc', ...
+       {'lon', 'lat', 'ETW', 'x1X', 'time'})
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+   2013-01-28 First version (based on initial_tsobc.m).
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function replace_FVCOM_restart_vars(Mobj, polcoms_ts, polcoms_z, start_date, fv_restart, varlist)</a>
+0002 <span class="comment">% Use an FVCOM restart file to seed a model run with spatially varying</span>
+0003 <span class="comment">% versions of otherwise constant variables (temperature and salinity only</span>
+0004 <span class="comment">% for the time being).</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% function replace_FVCOM_restart_vars(Mobj, polcoms_ts, polcoms_z, ...</span>
+0007 <span class="comment">%    start_date, fv_restart, varlist)</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% DESCRIPTION:</span>
+0010 <span class="comment">%    FVCOM does not yet support spatially varying temperature and salinity</span>
+0011 <span class="comment">%    inputs as initial conditions. To avoid having to run a model for a</span>
+0012 <span class="comment">%    long time in order for temperature and salinity to settle within the</span>
+0013 <span class="comment">%    model from the atmospheric and boundary forcing, we can use a restart</span>
+0014 <span class="comment">%    file to cheat. If we run a model for a week or so (until the</span>
+0015 <span class="comment">%    hydrodynamics has stabilised, we can use the restart file generated</span>
+0016 <span class="comment">%    from that run as the basis for a new run, except we replace the</span>
+0017 <span class="comment">%    currently computed temperature and salinity and replace them with data</span>
+0018 <span class="comment">%    interpolated from another source (in this case, POLCOMS).</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% INPUT:</span>
+0021 <span class="comment">%   Mobj        = MATLAB mesh structure which must contain:</span>
+0022 <span class="comment">%                   - Mobj.siglayz - sigma layer depths for all model</span>
+0023 <span class="comment">%                   nodes.</span>
+0024 <span class="comment">%                   - Mobj.lon, Mobj.lat - node coordinates (long/lat).</span>
+0025 <span class="comment">%   polcoms_ts  = POLCOMS NetCDF file in which 4D variables of temperature</span>
+0026 <span class="comment">%   and salinity (called 'ETW' and 'x1X') exist. Their shape should be (y,</span>
+0027 <span class="comment">%   x, sigma, time).</span>
+0028 <span class="comment">%   polcoms_z   = POLCOMS NetCDF file in which 4D variables of bathymetry</span>
+0029 <span class="comment">%   and sigma layer thickness can be found. They should be called 'depth'</span>
+0030 <span class="comment">%   and 'pdepth' respectively.</span>
+0031 <span class="comment">%   start_date  = Gregorian start date array (YYYY, MM, DD, hh, mm, ss).</span>
+0032 <span class="comment">%   fv_restart  = full path to the FVCOM restart file.</span>
+0033 <span class="comment">%   varlist     = cell array of variables to extract from the POLCOMS</span>
+0034 <span class="comment">%   NetCDF files (polcoms_ts only, pdepth and depth will be extracted from</span>
+0035 <span class="comment">%   polcoms_z).</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">% OUTPUT:</span>
+0038 <span class="comment">%   NetCDF file in which the temperature and salinity variables have been</span>
+0039 <span class="comment">%   replaced with the POLCOMS versions. The file name is the input restart</span>
+0040 <span class="comment">%   file name appended _polcoms.nc.</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">% EXAMPLE USAGE</span>
+0043 <span class="comment">%   replace_FVCOM_restart_vars(Mobj, '/tmp/pc_ts.nc', '/tmp/pc_z.nc', ...</span>
+0044 <span class="comment">%       '2006-01-01 00:00:00', '/tmp/fvcom_restart.nc', ...</span>
+0045 <span class="comment">%       {'lon', 'lat', 'ETW', 'x1X', 'time'})</span>
+0046 <span class="comment">%</span>
+0047 <span class="comment">% Author(s):</span>
+0048 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0049 <span class="comment">%</span>
+0050 <span class="comment">% Revision history</span>
+0051 <span class="comment">%   2013-01-28 First version (based on initial_tsobc.m).</span>
+0052 <span class="comment">%</span>
+0053 <span class="comment">%==========================================================================</span>
+0054 
+0055 subname = <span class="string">'replace_FVCOM_restart_vars'</span>;
+0056 
+0057 <span class="keyword">global</span> ftbverbose;
+0058 <span class="keyword">if</span> ftbverbose
+0059     fprintf(<span class="string">'\n'</span>)
+0060     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0061 <span class="keyword">end</span>
+0062 
+0063 <span class="comment">%--------------------------------------------------------------------------</span>
+0064 <span class="comment">% Extract the POLCOMS data specified in varlist</span>
+0065 <span class="comment">%--------------------------------------------------------------------------</span>
+0066 
+0067 <span class="keyword">if</span> ftbverbose
+0068     fprintf(<span class="string">'%s : read POLCOMS data... '</span>, subname)
+0069 <span class="keyword">end</span>
+0070 
+0071 nc = netcdf.open(polcoms_ts, <span class="string">'NOWRITE'</span>);
+0072 
+0073 <span class="keyword">for</span> var=1:numel(varlist)
+0074     
+0075     getVar = varlist{var};
+0076     varid_pc = netcdf.inqVarID(nc, getVar);
+0077     
+0078     data = netcdf.getVar(nc, varid_pc, <span class="string">'single'</span>);
+0079     pc.(getVar).data = double(data);
+0080     <span class="comment">% Try to get some units (important for the calculation of MJD).</span>
+0081     <span class="keyword">try</span>
+0082         units = netcdf.getAtt(nc,varid_pc,<span class="string">'units'</span>);
+0083     <span class="keyword">catch</span> err
+0084         units = [];
+0085     <span class="keyword">end</span>
+0086     pc.(getVar).units = units;
+0087 <span class="keyword">end</span>
+0088 clear data getVar varid_pc var
+0089 
+0090 netcdf.close(nc)
+0091 
+0092 <span class="comment">% Extract the bathymetry ('pdepth' is cell thickness, 'depth' is cell</span>
+0093 <span class="comment">% centre depth).</span>
+0094 nc = netcdf.open(polcoms_z, <span class="string">'NOWRITE'</span>);
+0095 varid_pc = netcdf.inqVarID(nc, <span class="string">'depth'</span>); 
+0096 pc.depth.data = double(netcdf.getVar(nc, varid_pc, <span class="string">'single'</span>));
+0097 <span class="keyword">try</span>
+0098     pc.depth.units = netcdf.getAtt(nc, varid_pc, <span class="string">'units'</span>);
+0099 <span class="keyword">catch</span> err
+0100     pc.depth.units = [];
+0101 <span class="keyword">end</span>
+0102 varid_pc = netcdf.inqVarID(nc, <span class="string">'pdepth'</span>); 
+0103 pc.pdepth.data = double(netcdf.getVar(nc, varid_pc, <span class="string">'single'</span>));
+0104 <span class="keyword">try</span>
+0105     pc.pdepth.units = netcdf.getAtt(nc, varid_pc, <span class="string">'units'</span>);
+0106 <span class="keyword">catch</span> err
+0107     pc.pdepth.units = [];
+0108 <span class="keyword">end</span>
+0109 netcdf.close(nc)
+0110 
+0111 <span class="comment">% Data format:</span>
+0112 <span class="comment">%</span>
+0113 <span class="comment">%   pc.ETW.data and pc.x1X.data are y, x, sigma, time</span>
+0114 <span class="comment">%</span>
+0115 [ny, nx, ~, ~] = size(pc.ETW.data);
+0116 
+0117 <span class="comment">% Number of sigma layers.</span>
+0118 [fn, fz] = size(Mobj.siglayz);
+0119 
+0120 <span class="comment">% Make rectangular arrays for the nearest point lookup.</span>
+0121 [lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
+0122 
+0123 <span class="comment">% Convert the POLCOMS times to Modified Julian Day (this is a very ugly).</span>
+0124 pc.time.yyyymmdd = strtrim(regexp(pc.time.units, <span class="string">'since'</span>, <span class="string">'split'</span>));
+0125 pc.time.strtime = regexp(pc.time.yyyymmdd{end}, <span class="string">'-'</span>, <span class="string">'split'</span>);
+0126 <span class="comment">% This new version of the time has the year in a weird format (yr.#). We</span>
+0127 <span class="comment">% thus need to split it again to get the decimal year (post-2000 only?).</span>
+0128 pc.time.strtimeyr = regexp(pc.time.strtime, <span class="string">'\.'</span>, <span class="string">'split'</span>);
+0129 pc.time.yyyymmdd = str2double([pc.time.strtimeyr{1}(2), pc.time.strtime{2:3}]);
+0130 pc.time.yyyymmdd(1) = pc.time.yyyymmdd(1) + 2000; <span class="comment">% add full year.</span>
+0131 Mobj.ts_times = greg2mjulian(pc.time.yyyymmdd(1), pc.time.yyyymmdd(2), pc.time.yyyymmdd(3), 0, 0, 0) + (pc.time.data / 3600 / 24);
+0132 
+0133 <span class="comment">% Given our intput time (in start_date), find the nearest time</span>
+0134 <span class="comment">% index for the POLCOMS data.</span>
+0135 stime = greg2mjulian(start_date(1), start_date(2), <span class="keyword">...</span>
+0136     start_date(3), start_date(4), <span class="keyword">...</span>
+0137     start_date(5), start_date(6));
+0138 [~, tidx] = min(abs(Mobj.ts_times - stime));
+0139 
+0140 <span class="keyword">if</span> ftbverbose
+0141     fprintf(<span class="string">'done.\n'</span>) 
+0142 <span class="keyword">end</span>
+0143 
+0144 <span class="comment">%--------------------------------------------------------------------------</span>
+0145 <span class="comment">% Interpolate the regularly gridded POLCOMS data onto the FVCOM grid</span>
+0146 <span class="comment">% (vertical grid first).</span>
+0147 <span class="comment">%--------------------------------------------------------------------------</span>
+0148 
+0149 <span class="keyword">if</span> ftbverbose
+0150     fprintf(<span class="string">'%s : interpolate POLCOMS onto FVCOM''s vertical grid... '</span>, subname)
+0151 <span class="keyword">end</span>
+0152 
+0153 <span class="comment">% Preallocate the output arrays</span>
+0154 pctempz = nan(nx, ny, fz);
+0155 pcsalz = nan(nx, ny, fz);
+0156 
+0157 <span class="keyword">for</span> xi = 1:nx
+0158     <span class="comment">% For the parallel loop, get all the y and z dimension data for the</span>
+0159     <span class="comment">% current x position (temperature, salinity and depth).</span>
+0160     <span class="comment">% N.B. The POLCOMS data is stored y, x, z, t (first two dimensions the</span>
+0161     <span class="comment">% wrong way around).</span>
+0162     xtemp = squeeze(pc.ETW.data(:, xi, :, tidx));
+0163     xsalt = squeeze(pc.x1X.data(:, xi, :, tidx));
+0164     xdepth = squeeze(pc.depth.data(:, xi, :, tidx));
+0165     
+0166     <span class="comment">% Preallocate the arrays for the inner loop</span>
+0167     ytemp = nan(ny, fz);
+0168     ysalt = nan(ny, fz);
+0169     <span class="keyword">for</span> yi = 1:ny
+0170         <span class="comment">% First things first, check we're within the POLCOMS domain</span>
+0171         <span class="comment">% (assuming anything beyond a maximum depth of 20km is outside the</span>
+0172         <span class="comment">% domain).</span>
+0173         <span class="keyword">if</span> xdepth(yi, end) &lt; -20000 <span class="comment">% use deepest depth</span>
+0174             <span class="keyword">continue</span>
+0175         <span class="keyword">end</span>
+0176 
+0177         <span class="comment">% Find the nearest sigma layer z values from the unstructured grid.</span>
+0178         [md, mi] = min(sqrt((Mobj.lon - lon(xi, yi)).^2 + (Mobj.lat - lat(xi, yi)).^2));
+0179 
+0180         <span class="comment">% Skip data point if the closest FVCOM node is more than 10 minutes</span>
+0181         <span class="comment">% away.</span>
+0182         <span class="keyword">if</span> md &gt; 10 / 60
+0183             <span class="keyword">continue</span>
+0184         <span class="keyword">else</span>
+0185             <span class="comment">% Use the FVCOM node's sigma depths to interpolate this POLCOMS</span>
+0186             <span class="comment">% position's temperature and salinity data.</span>
+0187             
+0188             <span class="comment">% Get the FVCOM depths closest to this POLCOMS grid position.</span>
+0189             tfz = Mobj.siglayz(mi, :);
+0190             <span class="comment">% Now get the POLCOMS depth at this node for the time index</span>
+0191             <span class="comment">% identified above.</span>
+0192             tpz = xdepth(yi, :); 
+0193             ytemp(yi, :) = interp1(tpz, xtemp(yi, :), tfz, <span class="string">'linear'</span>, <span class="string">'extrap'</span>);
+0194             
+0195             ysalt(yi, :) = interp1(tpz, xsalt(yi, :), tfz, <span class="string">'linear'</span>, <span class="string">'extrap'</span>);
+0196         <span class="keyword">end</span>
+0197     <span class="keyword">end</span>
+0198     pctempz(xi, :, :) = ytemp;
+0199     pcsalz(xi, :, :) = ysalt;
+0200 <span class="keyword">end</span>
+0201 <span class="comment">% Tidy up the namespace a bit.</span>
+0202 clear ytemp ysalt tfz tpz md mi xtemp xsalt xdepth xi yi zi
+0203 
+0204 <span class="keyword">if</span> ftbverbose
+0205     fprintf(<span class="string">'done.\n'</span>) 
+0206 <span class="keyword">end</span>
+0207 
+0208 <span class="comment">%--------------------------------------------------------------------------</span>
+0209 <span class="comment">% Now we have vertically interpolated POLCOMS data, we can interpolate each</span>
+0210 <span class="comment">% sigma layer onto the FVCOM unstructured grid ready to write out to</span>
+0211 <span class="comment">% NetCDF. We'll use the triangular interpolation in MATLAB with the natural</span>
+0212 <span class="comment">% method (gives pretty good results, at least qualitatively).</span>
+0213 <span class="comment">%--------------------------------------------------------------------------</span>
+0214 
+0215 <span class="keyword">if</span> ftbverbose
+0216     fprintf(<span class="string">'%s : interpolate POLCOMS onto FVCOM''s horizontal grid... '</span>, subname)
+0217 <span class="keyword">end</span>
+0218 
+0219 fvtemp = nan(fn, fz);
+0220 fvsalt = nan(fn, fz);
+0221 <span class="keyword">for</span> zi = 1:fz
+0222     <span class="comment">% Set up the interpolation object.</span>
+0223     ft = TriScatteredInterp(lon(:), lat(:), reshape(pctempz(:, :, zi), [], 1), <span class="string">'natural'</span>);
+0224     fs = TriScatteredInterp(lon(:), lat(:), reshape(pcsalz(:, :, zi), [], 1), <span class="string">'natural'</span>);
+0225     <span class="comment">% Interpolate temperature and salinity onto the unstructured grid.</span>
+0226     fvtemp(:, zi) = ft(Mobj.lon, Mobj.lat);
+0227     fvsalt(:, zi) = fs(Mobj.lon, Mobj.lat);
+0228 <span class="keyword">end</span>
+0229 
+0230 <span class="comment">% Unfortunately, TriScatteredInterp won't extrapolate, returning instead</span>
+0231 <span class="comment">% NaNs outside the original data's extents. So, for each NaN position, find</span>
+0232 <span class="comment">% the nearest non-NaN value and use that instead. The order in which the</span>
+0233 <span class="comment">% NaN-nodes are found will determine the spatial pattern of the</span>
+0234 <span class="comment">% extrapolation.</span>
+0235 
+0236 <span class="comment">% We can assume that all layers will have NaNs in the same place</span>
+0237 <span class="comment">% (horizontally), so just use the surface layer (1) for the identification</span>
+0238 <span class="comment">% of NaNs. Also store the finite values so we can find the nearest real</span>
+0239 <span class="comment">% value to the current NaN node and use its temperature and salinity</span>
+0240 <span class="comment">% values.</span>
+0241 fvidx = 1:fn;
+0242 fvnanidx = fvidx(isnan(fvtemp(:, 1)));
+0243 fvfinidx = fvidx(~isnan(fvtemp(:, 1)));
+0244 <span class="keyword">for</span> ni = 1:length(fvnanidx);
+0245     <span class="comment">% Current position</span>
+0246     xx = Mobj.lon(fvnanidx(ni));
+0247     yy = Mobj.lat(fvnanidx(ni));
+0248     <span class="comment">% Find the nearest non-nan temperature and salinity value.</span>
+0249     [~, di] = min(sqrt((Mobj.lon(fvfinidx) - xx).^2 + (Mobj.lat(fvfinidx) - yy).^2));
+0250     <span class="comment">% Replace the temperature and salinity values at all depths at the</span>
+0251     <span class="comment">% current NaN position with the closest non-nan value.</span>
+0252     fvtemp(fvnanidx(ni), :) = fvtemp(fvfinidx(di), :);
+0253     fvsalt(fvnanidx(ni), :) = fvsalt(fvfinidx(di), :);
+0254 <span class="keyword">end</span>
+0255 
+0256 <span class="keyword">if</span> ftbverbose
+0257     fprintf(<span class="string">'done.\n'</span>) 
+0258 <span class="keyword">end</span>
+0259 
+0260 <span class="comment">%--------------------------------------------------------------------------</span>
+0261 <span class="comment">% Get the restart data and replace with the interpolated data.</span>
+0262 <span class="comment">%--------------------------------------------------------------------------</span>
+0263 
+0264 <span class="keyword">if</span> ftbverbose
+0265     fprintf(<span class="string">'%s : export interpolated data to NetCDF:\n'</span>, subname)
+0266 <span class="keyword">end</span>
+0267 
+0268 nc = netcdf.open(fv_restart, <span class="string">'NOWRITE'</span>);
+0269 [pp, nn, ee] = fileparts(fv_restart);
+0270 ncout = netcdf.create(fullfile(pp, [nn, <span class="string">'_polcoms'</span>, ee]), <span class="string">'clobber'</span>);
+0271 <span class="comment">% ncout = netcdf.create(fullfile('/tmp/pica/', [nn, '_polcoms', ee]), 'clobber');</span>
+0272 
+0273 [numdims, numvars, numglobatts, unlimdimID] = netcdf.inq(nc);
+0274 
+0275 <span class="comment">% Define the dimensions for all variables.</span>
+0276 dimid = nan(numdims, 1);
+0277 dimnames = cell(numdims, 1);
+0278 dimlengths = nan(numdims, 1);
+0279 <span class="keyword">for</span> ii = 1:numdims
+0280     [dimname, dimlen] = netcdf.inqDim(nc, ii - 1);
+0281     <span class="keyword">if</span> ii ~= unlimdimID + 1 <span class="comment">% NetCDF indices start at zero</span>
+0282         dimid(ii) = netcdf.defDim(ncout, dimname, dimlen);
+0283     <span class="keyword">else</span>
+0284         dimid(ii) = netcdf.defDim(ncout, dimname, netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0285     <span class="keyword">end</span>
+0286     dimnames{ii} = dimname;
+0287     dimlengths(ii) = dimlen;
+0288 <span class="keyword">end</span>
+0289 
+0290 <span class="comment">% Now define the variables and attributes.</span>
+0291 <span class="keyword">for</span> ii = 1:numvars
+0292 
+0293     <span class="comment">% Find name of the current variable.</span>
+0294     [varname, xtype, varDimIDs, varAtts] = netcdf.inqVar(nc, ii - 1);
+0295 
+0296     <span class="comment">% Create the variables.</span>
+0297     varid = netcdf.defVar(ncout, varname, xtype, varDimIDs);
+0298 
+0299     <span class="comment">% Get each attribute and add it to the current variable.</span>
+0300     <span class="keyword">for</span> j = 1:varAtts
+0301 
+0302         attname = netcdf.inqAttName(nc, varid, j - 1);
+0303         attval = netcdf.getAtt(nc, varid, attname);
+0304 
+0305         netcdf.putAtt(ncout, varid, attname, attval);
+0306     <span class="keyword">end</span>
+0307 <span class="keyword">end</span>
+0308 
+0309 <span class="comment">% Do the global attributes</span>
+0310 <span class="keyword">for</span> ii = 1:numglobatts
+0311     
+0312     <span class="comment">% Find the current global attribute's name and value.</span>
+0313     gattname = netcdf.inqAttName(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), ii - 1);
+0314     gattval = netcdf.getAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), gattname);
+0315     
+0316     <span class="comment">% Put that back into the output NetCDF file.</span>
+0317     netcdf.putAtt(ncout, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), gattname, gattval);
+0318 <span class="keyword">end</span>
+0319 
+0320 netcdf.endDef(ncout);
+0321 
+0322 <span class="comment">% Get the existing data and output to the new NetCDF file, except for</span>
+0323 <span class="comment">% temperature and salinity, where we replace the values with the</span>
+0324 <span class="comment">% interpolated POLCOMS data.</span>
+0325 <span class="keyword">for</span> ii = 1:numvars
+0326 
+0327     [varname, ~, varDimIDs, ~] = netcdf.inqVar(nc, ii - 1);
+0328     varid = netcdf.inqVarID(nc, varname);
+0329 
+0330     <span class="keyword">if</span> ftbverbose
+0331         fprintf(<span class="string">'\tvariable %s... '</span>, varname)
+0332     <span class="keyword">end</span>
+0333 
+0334     <span class="comment">% We need the data irrespective of whether we're replacing it or not,</span>
+0335     <span class="comment">% so grab it outside the if statement below.</span>
+0336     data = netcdf.getVar(nc, varid);
+0337 
+0338     <span class="comment">% Get the size of the data and the dimension names.</span>
+0339     currDimsNames = dimnames(varDimIDs + 1);
+0340     currDimsLengths = dimlengths(varDimIDs + 1);
+0341 
+0342     <span class="comment">% Find whether we've got an unlimited dimension in this data.</span>
+0343     wasUnlimited = -1;
+0344     <span class="keyword">for</span> jj = varDimIDs
+0345         <span class="keyword">if</span> numel(unlimdimID) &gt; 1
+0346             error(<span class="string">'Do not currently support multiple unlimited dimensions.'</span>)
+0347         <span class="keyword">end</span>
+0348         <span class="keyword">if</span> strcmpi(dimnames(jj + 1), dimnames(unlimdimID + 1))
+0349             wasUnlimited = jj;
+0350         <span class="keyword">end</span>
+0351     <span class="keyword">end</span>
+0352 
+0353     <span class="comment">% Since the restart file has a number of time values, we'll ramp up</span>
+0354     <span class="comment">% the temperature from some constant to the actual value over the</span>
+0355     <span class="comment">% time steps. So, we need to know how many time steps we actually</span>
+0356     <span class="comment">% have.</span>
+0357 
+0358     <span class="comment">% Get the dimension data ready for the temperature and salinity arrays.</span>
+0359     tIdx = strncmp(dimnames(unlimdimID + 1), currDimsNames, length(dimnames{unlimdimID + 1}));
+0360     <span class="comment">% Not sure about the hardcoded strings below...</span>
+0361     sIdx = strncmp(<span class="string">'siglay'</span>, currDimsNames, length(dimnames{unlimdimID + 1}));
+0362     nIdx = strncmp(<span class="string">'node'</span>, currDimsNames, length(dimnames{unlimdimID + 1}));
+0363     nt = currDimsLengths(tIdx);
+0364     ns = currDimsLengths(sIdx);
+0365     nd = currDimsLengths(nIdx);
+0366 
+0367     <span class="keyword">if</span> strcmpi(varname, <span class="string">'temp'</span>) || strcmpi(varname, <span class="string">'salinity'</span>)
+0368         <span class="comment">% To make the scaling go from the initial value to the POLCOMS value,</span>
+0369         <span class="comment">% we need to take the scale the difference between the end members by</span>
+0370         <span class="comment">% the scaling factor at each time and add to the current time's value.</span>
+0371         sfvdata = nan(nd, ns, nt);
+0372         ss = 0:1 / (nt - 1):1; <span class="comment">% scale from 0 to 1.</span>
+0373         startdata = squeeze(data(:, :, 1)); <span class="comment">% use the first modelled time step</span>
+0374         <span class="keyword">for</span> tt = 1:nt;
+0375             <span class="keyword">if</span> tt == 1
+0376                 sfvdata(:, :, 1) = startdata;
+0377             <span class="keyword">else</span>
+0378                 td = fvtemp - startdata;
+0379                 sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
+0380             <span class="keyword">end</span>
+0381         <span class="keyword">end</span>
+0382 
+0383         <span class="comment">% Replace the values with the scaled interpolated values.</span>
+0384         netcdf.putVar(ncout, varid, sfvdata)
+0385     <span class="keyword">else</span>
+0386         <span class="comment">% We need to check if the dimension is unlimited, and use a start</span>
+0387         <span class="comment">% and end with netcdf.putVar if it is. This is largely because</span>
+0388         <span class="comment">% MATLAB can't handle unlimited dimensions in the same way as it</span>
+0389         <span class="comment">% does finite dimensions.</span>
+0390         <span class="keyword">if</span> wasUnlimited &lt; 0
+0391             <span class="comment">% We can just dump the entire data without specifying over what</span>
+0392             <span class="comment">% indices.</span>
+0393             netcdf.putVar(ncout, varid, data);
+0394         <span class="keyword">else</span>
+0395             <span class="comment">% Use the dimension length we extracted above to output the</span>
+0396             <span class="comment">% data with the valid unlimited dimension format.</span>
+0397             netcdf.putVar(ncout, varid, zeros(length(currDimsLengths), 1), currDimsLengths, data);
+0398         <span class="keyword">end</span>
+0399     <span class="keyword">end</span>
+0400 
+0401     <span class="keyword">if</span> ftbverbose
+0402         fprintf(<span class="string">'done.\n'</span>)
+0403     <span class="keyword">end</span>
+0404 <span class="keyword">end</span>
+0405 
+0406 netcdf.close(nc)
+0407 netcdf.close(ncout)
+0408 
+0409 <span class="keyword">if</span> ftbverbose
+0410     fprintf(<span class="string">'%s : export complete.\n'</span>, subname)
+0411 <span class="keyword">end</span>
+0412 
+0413 <span class="keyword">if</span> ftbverbose
+0414     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0415 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

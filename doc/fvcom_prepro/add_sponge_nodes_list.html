@@ -51,10 +51,12 @@
  Author(s):  
     Geoff Cowles (University of Massachusetts Dartmouth)
     Pierre Cazenave (Plymouth Marine Laboratory)
+    Karen Thurston (National Oceanography Centre, Liverpool)
 
  Revision history
     Modifed from add_sponge_nodes to read in nodes from a supplied list.
     2012-11-26 Add ability to turn off the figures.
+    2013-01-18 Added support for variable sponge radius
    
 ==============================================================================</pre></div>
 
@@ -97,69 +99,76 @@ This function is called by:
 0024 <span class="comment">% Author(s):</span>
 0025 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
 0026 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">% Revision history</span>
-0029 <span class="comment">%    Modifed from add_sponge_nodes to read in nodes from a supplied list.</span>
-0030 <span class="comment">%    2012-11-26 Add ability to turn off the figures.</span>
-0031 <span class="comment">%</span>
-0032 <span class="comment">%==============================================================================</span>
-0033 subname = <span class="string">'add_sponge_nodes'</span>;
-0034 
-0035 <span class="keyword">global</span> ftbverbose
-0036 <span class="keyword">if</span>(ftbverbose)
-0037   fprintf(<span class="string">'\n'</span>)
-0038   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
-0039 <span class="keyword">end</span>
-0040 
-0041 <span class="comment">% Do we want a figure showing how we're getting along?</span>
-0042 <span class="keyword">if</span> nargin == 5
-0043     plotFig = 0;
-0044 <span class="keyword">end</span>
-0045 
-0046 <span class="comment">%------------------------------------------------------------------------------</span>
-0047 <span class="comment">% Plot the mesh</span>
+0027 <span class="comment">%    Karen Thurston (National Oceanography Centre, Liverpool)</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Revision history</span>
+0030 <span class="comment">%    Modifed from add_sponge_nodes to read in nodes from a supplied list.</span>
+0031 <span class="comment">%    2012-11-26 Add ability to turn off the figures.</span>
+0032 <span class="comment">%    2013-01-18 Added support for variable sponge radius</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">%==============================================================================</span>
+0035 subname = <span class="string">'add_sponge_nodes'</span>;
+0036 
+0037 <span class="keyword">global</span> ftbverbose
+0038 <span class="keyword">if</span>(ftbverbose)
+0039     fprintf(<span class="string">'\n'</span>)
+0040     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0041 <span class="keyword">end</span>
+0042 
+0043 <span class="comment">% Do we want a figure showing how we're getting along?</span>
+0044 <span class="keyword">if</span> nargin == 5
+0045     plotFig = 0;
+0046 <span class="keyword">end</span>
+0047 
 0048 <span class="comment">%------------------------------------------------------------------------------</span>
-0049 <span class="keyword">if</span> plotFig == 1
-0050     <span class="keyword">if</span>(lower(Mobj.nativeCoords(1:3)) == <span class="string">'car'</span>)
-0051         x = Mobj.x;
-0052         y = Mobj.y;
-0053     <span class="keyword">else</span>
-0054         x = Mobj.lon;
-0055         y = Mobj.lat;
-0056     <span class="keyword">end</span>
-0057 
-0058     figure
-0059     patch(<span class="string">'Vertices'</span>,[x,y],<span class="string">'Faces'</span>,Mobj.tri,<span class="keyword">...</span>
-0060             <span class="string">'Cdata'</span>,Mobj.h,<span class="string">'edgecolor'</span>,<span class="string">'k'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
-0061     hold on;
-0062     plot(x(SpongeList),y(SpongeList),<span class="string">'wx'</span>)
-0063     axis(<span class="string">'equal'</span>,<span class="string">'tight'</span>)
-0064 <span class="keyword">end</span>
-0065 
-0066 npts = size(SpongeList,2);
-0067 
-0068 <span class="keyword">if</span>(npts == 0)
-0069     fprintf(<span class="string">'No points in given list'</span>)
-0070     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0071     <span class="keyword">return</span>
-0072 <span class="keyword">end</span>
-0073 <span class="keyword">if</span>(ftbverbose)
-0074     fprintf(<span class="string">'%d points provided\n'</span>,npts)
+0049 <span class="comment">% Plot the mesh</span>
+0050 <span class="comment">%------------------------------------------------------------------------------</span>
+0051 
+0052 <span class="keyword">if</span> plotFig == 1
+0053     <span class="keyword">if</span>(lower(Mobj.nativeCoords(1:3)) == <span class="string">'car'</span>)
+0054         x = Mobj.x;
+0055         y = Mobj.y;
+0056     <span class="keyword">else</span>
+0057         x = Mobj.lon;
+0058         y = Mobj.lat;
+0059     <span class="keyword">end</span>
+0060 
+0061     figure
+0062     patch(<span class="string">'Vertices'</span>,[x,y],<span class="string">'Faces'</span>,Mobj.tri,<span class="keyword">...</span>
+0063             <span class="string">'Cdata'</span>,Mobj.h,<span class="string">'edgecolor'</span>,<span class="string">'k'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0064     hold on;
+0065     plot(x(SpongeList),y(SpongeList),<span class="string">'wx'</span>)
+0066     axis(<span class="string">'equal'</span>,<span class="string">'tight'</span>)
+0067 <span class="keyword">end</span>
+0068 
+0069 npts = length(SpongeList);
+0070 
+0071 <span class="keyword">if</span>(npts == 0)
+0072     fprintf(<span class="string">'No points in given list'</span>)
+0073     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0074     <span class="keyword">return</span>
 0075 <span class="keyword">end</span>
-0076 
-0077 <span class="comment">% add to mesh object</span>
-0078 Mobj.nSponge = Mobj.nSponge + 1;
-0079 Mobj.nSpongeNodes(Mobj.nSponge) = npts;
-0080 Mobj.sponge_nodes(Mobj.nSponge,1:npts) = SpongeList;
-0081 Mobj.sponge_name{Mobj.nSponge} = SpongeName;
-0082 Mobj.sponge_rad(Mobj.nSponge) = SpongeRadius;
-0083 Mobj.sponge_fac(Mobj.nSponge) = SpongeCoeff;
-0084 
-0085 <span class="keyword">if</span>(ftbverbose)
-0086   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0087 <span class="keyword">end</span>
-0088 
-0089</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0076 <span class="keyword">if</span>(ftbverbose)
+0077     fprintf(<span class="string">'%d points provided\n'</span>,npts)
+0078 <span class="keyword">end</span>
+0079 
+0080 <span class="comment">% add to mesh object</span>
+0081 Mobj.nSponge = Mobj.nSponge + 1;
+0082 Mobj.nSpongeNodes(Mobj.nSponge) = npts;
+0083 Mobj.sponge_nodes(Mobj.nSponge,1:npts) = SpongeList;
+0084 Mobj.sponge_name{Mobj.nSponge} = SpongeName;
+0085 Mobj.sponge_fac(Mobj.nSponge) = SpongeCoeff;
+0086 
+0087 <span class="keyword">if</span> max(size(SpongeRadius))==1   <span class="comment">% if you have a constant sponge radius</span>
+0088     Mobj.sponge_rad(Mobj.nSponge) = SpongeRadius;
+0089 <span class="keyword">else</span>    <span class="comment">% if you have a variable sponge radius</span>
+0090     Mobj.sponge_rad(Mobj.nSponge,1:npts) = SpongeRadius;
+0091 <span class="keyword">end</span>
+0092 
+0093 <span class="keyword">if</span>(ftbverbose)
+0094     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0095 <span class="keyword">end</span>
+0096</pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

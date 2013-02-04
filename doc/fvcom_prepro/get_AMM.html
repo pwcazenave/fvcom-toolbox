@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_AMM</title>
+  <meta name="keywords" content="get_AMM">
+  <meta name="description" content="Extract boundary forcing information from NOC Operational Tide Surge">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_AMM.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_AMM
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Extract boundary forcing information from NOC Operational Tide Surge</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Mobj] = get_AMM(Mobj,StartDate,EndDate,ModelFolder) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Extract boundary forcing information from NOC Operational Tide Surge
+ Model output output  
+
+ function get_AMM(Mobj,StartDate,EndDate,ModelFolder)
+
+ DESCRIPTION:
+    Extract boundary forcing information from NOC Operational Tide Surge
+    Model output and interpolate to FVCOM open boundary nodes.
+
+ INPUT
+    Mobj          = Matlab mesh object
+    StartDate     = Start date and time for FVCOM run
+    EndDate       = End date and time for FVCOM run
+    ModelFolder   = Location of AMM/S12 hourly outputs
+ 
+ OUTPUT:
+    Mobj.surfaceElevation = Addition to Matlab mesh object
+
+ EXAMPLE USAGE
+    function get_AMM(Mobj,StartDate,EndDate,ModelFolder)
+
+ Author(s):  
+    Karen Thurston (National Oceanography Centre Liverpool)
+
+ Revision history
+    2012-12-04 First version.
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = get_AMM(Mobj,StartDate,EndDate,ModelFolder)</a>
+0002 
+0003 <span class="comment">% Extract boundary forcing information from NOC Operational Tide Surge</span>
+0004 <span class="comment">% Model output output</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% function get_AMM(Mobj,StartDate,EndDate,ModelFolder)</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% DESCRIPTION:</span>
+0009 <span class="comment">%    Extract boundary forcing information from NOC Operational Tide Surge</span>
+0010 <span class="comment">%    Model output and interpolate to FVCOM open boundary nodes.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% INPUT</span>
+0013 <span class="comment">%    Mobj          = Matlab mesh object</span>
+0014 <span class="comment">%    StartDate     = Start date and time for FVCOM run</span>
+0015 <span class="comment">%    EndDate       = End date and time for FVCOM run</span>
+0016 <span class="comment">%    ModelFolder   = Location of AMM/S12 hourly outputs</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% OUTPUT:</span>
+0019 <span class="comment">%    Mobj.surfaceElevation = Addition to Matlab mesh object</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% EXAMPLE USAGE</span>
+0022 <span class="comment">%    function get_AMM(Mobj,StartDate,EndDate,ModelFolder)</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Author(s):</span>
+0025 <span class="comment">%    Karen Thurston (National Oceanography Centre Liverpool)</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Revision history</span>
+0028 <span class="comment">%    2012-12-04 First version.</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">%==============================================================================</span>
+0031 subname = <span class="string">'get_AMM'</span>;
+0032 <span class="keyword">global</span> ftbverbose;
+0033 <span class="keyword">if</span>(ftbverbose);
+0034   fprintf(<span class="string">'\n'</span>)
+0035   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0036 <span class="keyword">end</span>;
+0037 
+0038 <span class="comment">%% Put the open boundary nodes into a single array for convenience</span>
+0039 count = 0;
+0040 ObcNodes = nan(1,sum(Mobj.nObcNodes));
+0041 <span class="keyword">for</span> ob=1:Mobj.nObs
+0042     nObcs = Mobj.nObcNodes(ob);
+0043     <span class="keyword">for</span> j=1:nObcs
+0044         count = count + 1;
+0045         ObcNodes(count) = Mobj.obc_nodes(ob,j);  <span class="comment">% set the open boundary nodes</span>
+0046     <span class="keyword">end</span>
+0047 <span class="keyword">end</span>
+0048 
+0049 <span class="comment">% Create an array of hourly timesteps</span>
+0050 timesteps = datevec(datenum(StartDate):1/24:datenum(EndDate));
+0051 
+0052 <span class="comment">% Initialise an array for the sea surface elevation</span>
+0053 SurfaceElevation = nan(count,size(timesteps,1));
+0054 
+0055 <span class="comment">% For each timestep, find the appropriate AMM/S12 file and extract the</span>
+0056 <span class="comment">% surface elevation</span>
+0057 <span class="keyword">for</span> i=1:size(timesteps,1)
+0058     <span class="comment">% Create AMM/S12 output filename from date</span>
+0059     <span class="comment">% First, accommodate Operational Model idiosyncracy about output times</span>
+0060     <span class="keyword">if</span> timesteps(i,3)==1 &amp;&amp; sum(timesteps(i,4:6)) == 0
+0061         tempdate = datevec(addtodate(datenum(timesteps(i,:)),-1,<span class="string">'month'</span>));
+0062         AMMfile=[ModelFolder,num2str(tempdate(1)),<span class="string">'-'</span>,num2str(tempdate(2),<span class="string">'%02i'</span>),<span class="string">'.nc'</span>];
+0063     <span class="keyword">else</span>
+0064         AMMfile=[ModelFolder,num2str(timesteps(i,1)),<span class="string">'-'</span>,num2str(timesteps(i,2),<span class="string">'%02i'</span>),<span class="string">'.nc'</span>];
+0065     <span class="keyword">end</span>
+0066     
+0067     <span class="comment">% Convert FVCOM timestep into AMM/S12 output (seconds since</span>
+0068     <span class="comment">% 20071101:000000)</span>
+0069     AMM_time = etime(timesteps(i,:),[2007,11,01,0,0,0]);
+0070     
+0071     <span class="comment">% Load the timeseries from the AMM/S12 output file</span>
+0072     AMM_timeseries = ncread(AMMfile,<span class="string">'time'</span>);
+0073     
+0074     <span class="comment">% Locate the appropriate timestep number</span>
+0075     AMM_timestep = find(AMM_timeseries==AMM_time);
+0076 
+0077     <span class="comment">% Load the sea surface elevation ouptut, lat and lon</span>
+0078     AMM_elev = ncread(AMMfile,<span class="string">'zet'</span>,[1 1 AMM_timestep],[Inf Inf 1])';
+0079     AMM_lat = ncread(AMMfile,<span class="string">'lat'</span>);
+0080     AMM_lon = ncread(AMMfile,<span class="string">'lon'</span>);
+0081     
+0082     <span class="comment">% Interpolate the sea surface elevation output to the open boundary</span>
+0083     <span class="comment">% nodes</span>
+0084     [X,Y]=meshgrid(AMM_lon,AMM_lat);
+0085     SurfaceElevation(:,i) = interp2(X,Y,AMM_elev,Mobj.lon(ObcNodes),<span class="keyword">...</span>
+0086         Mobj.lat(ObcNodes));    
+0087 <span class="keyword">end</span>
+0088 
+0089 Mobj.surfaceElevation = SurfaceElevation;
+0090 
+0091 <span class="keyword">if</span>(ftbverbose);
+0092     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>]);
+0093 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

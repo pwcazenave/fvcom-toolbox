@@ -151,7 +151,7 @@ This function is called by:
 0079 <span class="keyword">for</span> i=1:length(Mobj.Components)
 0080     pPos = pInd(strcmp(Mobj.Components{i}, header.Harmonics));
 0081     <span class="keyword">if</span> isempty(pPos)
-0082         warning(<span class="string">'Supplied constituent (%s) is not present in the POLPRED data'</span>) <span class="comment">%#ok&lt;WNTAG&gt;</span>
+0082         warning(<span class="string">'Supplied constituent (%s) is not present in the POLPRED data'</span>, Mobj.Components{i}) <span class="comment">%#ok&lt;WNTAG&gt;</span>
 0083     <span class="keyword">else</span>
 0084         <span class="comment">% Make index start at zero so the multiplication works, but</span>
 0085         <span class="comment">% compensate for that once the offset has been applied. Also add</span>
@@ -227,34 +227,37 @@ This function is called by:
 0155 <span class="comment">% Mobj).</span>
 0156 distance = nan(size(obc_lon));
 0157 point = nan(size(distance));
-0158 amp = nan(length(obc_lon), length(pIndUse));
-0159 phase = nan(size(amp));
-0160 <span class="keyword">for</span> i=1:length(obc_lon)
-0161     radvec = sqrt((obc_lon(i)-data(:,2)).^2 + (obc_lat(i)-data(:,1)).^2);
-0162     [distance(i), point(i)] = min(radvec);
-0163     <span class="comment">% Get the amplitude and phase for each constituent (in order of</span>
-0164     <span class="comment">% Mobj.Components).</span>
-0165     amp(i, :) = data(point(i), pIndUse(:, 1));
-0166     phase(i, :) = data(point(i), pIndUse(:, 2));
-0167 <span class="keyword">end</span>
-0168 
-0169 <span class="comment">% Check for and warn about NaNs (-999.9 in POLPRED data).</span>
-0170 <span class="keyword">if</span> sum(amp(:)==-999.9) &gt; 0
-0171     warning(<span class="string">'NaN values (-999.9 in POLPRED terms) in the amplitude data. Are your boundaries on land?'</span>) <span class="comment">%#ok&lt;WNTAG&gt;</span>
-0172 <span class="keyword">end</span>
-0173 <span class="keyword">if</span> sum(phase(:)==-999.9) &gt; 0
-0174     warning(<span class="string">'NaN values (-999.9 in POLPRED terms) in the phase data. Are your boundaries on land?'</span>) <span class="comment">%#ok&lt;WNTAG&gt;</span>
+0158 <span class="comment">% Omit the NaNs in the indices from POLPRED when calculating the output</span>
+0159 <span class="comment">% array size.</span>
+0160 amp = nan(length(obc_lon), length(pIndUse(~isnan(pIndUse(:, 1)), 1)));
+0161 phase = nan(size(amp));
+0162 <span class="keyword">for</span> i=1:length(obc_lon)
+0163     radvec = sqrt((obc_lon(i)-data(:,2)).^2 + (obc_lat(i)-data(:,1)).^2);
+0164     [distance(i), point(i)] = min(radvec);
+0165     <span class="comment">% Get the amplitude and phase for each constituent (in order of</span>
+0166     <span class="comment">% Mobj.Components). Check for and omit NaNs here (for missing tidal</span>
+0167     <span class="comment">% constituents in the supplied list and what's given in POLPRED).</span>
+0168     amp(i, :) = data(point(i), pIndUse(~isnan(pIndUse(:, 1)), 1));
+0169     phase(i, :) = data(point(i), pIndUse(~isnan(pIndUse(:, 1)), 2));
+0170 <span class="keyword">end</span>
+0171 
+0172 <span class="comment">% Check for and warn about NaNs (-999.9 in POLPRED data).</span>
+0173 <span class="keyword">if</span> sum(amp(:)==-999.9) &gt; 0
+0174     warning(<span class="string">'NaN values (-999.9 in POLPRED terms) in the amplitude data. Are your boundaries on land?'</span>) <span class="comment">%#ok&lt;WNTAG&gt;</span>
 0175 <span class="keyword">end</span>
-0176 
-0177 Mobj.amp = amp;
-0178 Mobj.phase = phase;
+0176 <span class="keyword">if</span> sum(phase(:)==-999.9) &gt; 0
+0177     warning(<span class="string">'NaN values (-999.9 in POLPRED terms) in the phase data. Are your boundaries on land?'</span>) <span class="comment">%#ok&lt;WNTAG&gt;</span>
+0178 <span class="keyword">end</span>
 0179 
-0180 <span class="comment">% Plot the open boundary positions and the closest POLPRED point.</span>
-0181 <span class="comment">% figure(1000)</span>
-0182 <span class="comment">% plot(obc_lon, obc_lat, 'o')</span>
-0183 <span class="comment">% hold on</span>
-0184 <span class="comment">% plot(data(point,2), data(point,1), 'rx')</span>
-0185</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0180 Mobj.amp = amp;
+0181 Mobj.phase = phase;
+0182 
+0183 <span class="comment">% Plot the open boundary positions and the closest POLPRED point.</span>
+0184 <span class="comment">% figure(1000)</span>
+0185 <span class="comment">% plot(obc_lon, obc_lat, 'o')</span>
+0186 <span class="comment">% hold on</span>
+0187 <span class="comment">% plot(data(point,2), data(point,1), 'rx')</span>
+0188</pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

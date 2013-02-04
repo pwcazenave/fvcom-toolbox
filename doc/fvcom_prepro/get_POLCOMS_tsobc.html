@@ -1,0 +1,369 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_POLCOMS_tsobc</title>
+  <meta name="keywords" content="get_POLCOMS_tsobc">
+  <meta name="description" content="Read temperature and salinity from POLCOMS NetCDF model output files and">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_POLCOMS_tsobc.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_POLCOMS_tsobc
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Read temperature and salinity from POLCOMS NetCDF model output files and</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_z) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Read temperature and salinity from POLCOMS NetCDF model output files and
+ interpolate onto the open boundaries in Mobj.
+
+ function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_bathy, varlist)
+
+ DESCRIPTION:
+    Interpolate temperature and salinity values onto the FVCOM open
+    boundaries at all sigma levels.
+
+ INPUT:
+   Mobj        = MATLAB mesh structure which must contain:
+                   - Mobj.siglayz - sigma layer depths for all model
+                   nodes.
+                   - Mobj.lon, Mobj.lat - node coordinates (lat/long).
+                   - Mobj.obc_nodes - list of open boundary node inidices.
+                   - Mobj.nObcNodes - number of nodes in each open
+                   boundary.
+   polcoms_ts  = POLCOMS NetCDF file in which 4D variables of temperature 
+                 and salinity (called 'ETW' and 'x1X') exist. Their shape
+                 should be (y, x, sigma, time).
+   polcoms_z   = POLCOMS NetCDF file in which 4D variables of bathymetry
+                 and sigma layer thickness can be found. They should be
+                 called 'depth' and 'pdepth' respectively.
+ 
+ OUTPUT:
+    Mobj = MATLAB structure in which three new fields (called temperature,
+           salinity and ts_time). temperature and salinity have sizes
+           (sum(Mobj.nObcNodes), sigma, time). The time dimension is
+           determined based on the input NetCDF file. The ts_time variable
+           is just the input file times in Modified Julian Day.
+
+ EXAMPLE USAGE
+    Mobj = get_POLCOMS_forcing(Mobj, polcoms_ts, polcoms_z)
+
+ Author(s):
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+    2013-01-09 First version based on the FVCOM shelf model
+    get_POLCOMS_forcing.m script (i.e. not a function but a plain script).
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_z)</a>
+0002 <span class="comment">% Read temperature and salinity from POLCOMS NetCDF model output files and</span>
+0003 <span class="comment">% interpolate onto the open boundaries in Mobj.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_bathy, varlist)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Interpolate temperature and salinity values onto the FVCOM open</span>
+0009 <span class="comment">%    boundaries at all sigma levels.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT:</span>
+0012 <span class="comment">%   Mobj        = MATLAB mesh structure which must contain:</span>
+0013 <span class="comment">%                   - Mobj.siglayz - sigma layer depths for all model</span>
+0014 <span class="comment">%                   nodes.</span>
+0015 <span class="comment">%                   - Mobj.lon, Mobj.lat - node coordinates (lat/long).</span>
+0016 <span class="comment">%                   - Mobj.obc_nodes - list of open boundary node inidices.</span>
+0017 <span class="comment">%                   - Mobj.nObcNodes - number of nodes in each open</span>
+0018 <span class="comment">%                   boundary.</span>
+0019 <span class="comment">%   polcoms_ts  = POLCOMS NetCDF file in which 4D variables of temperature</span>
+0020 <span class="comment">%                 and salinity (called 'ETW' and 'x1X') exist. Their shape</span>
+0021 <span class="comment">%                 should be (y, x, sigma, time).</span>
+0022 <span class="comment">%   polcoms_z   = POLCOMS NetCDF file in which 4D variables of bathymetry</span>
+0023 <span class="comment">%                 and sigma layer thickness can be found. They should be</span>
+0024 <span class="comment">%                 called 'depth' and 'pdepth' respectively.</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% OUTPUT:</span>
+0027 <span class="comment">%    Mobj = MATLAB structure in which three new fields (called temperature,</span>
+0028 <span class="comment">%           salinity and ts_time). temperature and salinity have sizes</span>
+0029 <span class="comment">%           (sum(Mobj.nObcNodes), sigma, time). The time dimension is</span>
+0030 <span class="comment">%           determined based on the input NetCDF file. The ts_time variable</span>
+0031 <span class="comment">%           is just the input file times in Modified Julian Day.</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">% EXAMPLE USAGE</span>
+0034 <span class="comment">%    Mobj = get_POLCOMS_forcing(Mobj, polcoms_ts, polcoms_z)</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% Author(s):</span>
+0037 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">% Revision history</span>
+0040 <span class="comment">%    2013-01-09 First version based on the FVCOM shelf model</span>
+0041 <span class="comment">%    get_POLCOMS_forcing.m script (i.e. not a function but a plain script).</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">%==========================================================================</span>
+0044 
+0045 subname = <span class="string">'get_POLCOMS_forcing'</span>;
+0046 
+0047 <span class="keyword">global</span> ftbverbose;
+0048 <span class="keyword">if</span> ftbverbose
+0049     fprintf(<span class="string">'\n'</span>)
+0050     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0051 <span class="keyword">end</span>
+0052 
+0053 varlist = {<span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'ETW'</span>, <span class="string">'x1X'</span>, <span class="string">'time'</span>};
+0054 
+0055 <span class="comment">% Get the results</span>
+0056 nc = netcdf.open(polcoms_ts, <span class="string">'NOWRITE'</span>);
+0057 
+0058 <span class="keyword">for</span> var=1:numel(varlist)
+0059     
+0060     getVar = varlist{var};
+0061     varid_pc = netcdf.inqVarID(nc, getVar);
+0062     
+0063     data = netcdf.getVar(nc, varid_pc, <span class="string">'single'</span>);
+0064     pc.(getVar).data = double(data);
+0065     <span class="comment">% Try to get some units (important for the calculation of MJD).</span>
+0066     <span class="keyword">try</span>
+0067         units = netcdf.getAtt(nc,varid_pc,<span class="string">'units'</span>);
+0068     <span class="keyword">catch</span>
+0069         units = [];
+0070     <span class="keyword">end</span>
+0071     pc.(getVar).units = units;
+0072 <span class="keyword">end</span>
+0073 
+0074 netcdf.close(nc)
+0075 
+0076 <span class="comment">% Extract the bathymetry ('pdepth' is cell thickness, 'depth' is cell</span>
+0077 <span class="comment">% centre depth).</span>
+0078 nc = netcdf.open(polcoms_z, <span class="string">'NOWRITE'</span>);
+0079 varid_pc = netcdf.inqVarID(nc, <span class="string">'depth'</span>); 
+0080 pc.depth.data = double(netcdf.getVar(nc, varid_pc, <span class="string">'single'</span>));
+0081 <span class="keyword">try</span>
+0082     pc.depth.units = netcdf.getAtt(nc, varid_pc, <span class="string">'units'</span>);
+0083 <span class="keyword">catch</span>
+0084     pc.depth.units = [];
+0085 <span class="keyword">end</span>
+0086 varid_pc = netcdf.inqVarID(nc, <span class="string">'pdepth'</span>); 
+0087 pc.pdepth.data = double(netcdf.getVar(nc, varid_pc, <span class="string">'single'</span>));
+0088 <span class="keyword">try</span>
+0089     pc.pdepth.units = netcdf.getAtt(nc, varid_pc, <span class="string">'units'</span>);
+0090 <span class="keyword">catch</span>
+0091     pc.pdepth.units = [];
+0092 <span class="keyword">end</span>
+0093 netcdf.close(nc)
+0094 
+0095 <span class="comment">% Data format:</span>
+0096 <span class="comment">%</span>
+0097 <span class="comment">%   pc.ETW.data and pc.x1X.data are y, x, sigma, time</span>
+0098 <span class="comment">%</span>
+0099 [~, ~, nz, nt] = size(pc.ETW.data);
+0100 
+0101 <span class="comment">% Make rectangular arrays for the nearest point lookup.</span>
+0102 [lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
+0103 
+0104 <span class="comment">% Find the nearest POLCOMS point to each point in the FVCOM open boundaries</span>
+0105 fvlon = Mobj.lon(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
+0106 fvlat = Mobj.lat(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
+0107 
+0108 <span class="comment">% Number of boundary nodes</span>
+0109 nf = sum(Mobj.nObcNodes);
+0110 <span class="comment">% Number of sigma layers.</span>
+0111 fz = size(Mobj.siglayz, 2);
+0112 
+0113 <span class="comment">% itemp = nan(nf, nz, nt); % POLCOMS interpolated temperatures</span>
+0114 <span class="comment">% isal = nan(nf, nz, nt); % POLCOMS interpolated salinities</span>
+0115 fvtemp = nan(nf, fz, nt); <span class="comment">% FVCOM interpolated temperatures</span>
+0116 fvsal = nan(nf, fz, nt); <span class="comment">% FVCOM interpolated salinities</span>
+0117 
+0118 <span class="keyword">if</span> ftbverbose
+0119     tic
+0120 <span class="keyword">end</span>
+0121 <span class="keyword">for</span> t = 1:nt
+0122     <span class="comment">% Get the current 3D array of POLCOMS results.</span>
+0123     pctemp3 = pc.ETW.data(:, :, :, t);
+0124     pcsal3 = pc.x1X.data(:, :, :, t);
+0125     
+0126     <span class="comment">% Preallocate the intermediate results arrays.</span>
+0127     itempz = nan(nf, nz);
+0128     isalz = nan(nf, nz);
+0129     idepthz = nan(nf, nz);
+0130     
+0131     <span class="keyword">for</span> j = 1:nz
+0132         <span class="comment">% Now extract the relevant layer from the 3D subsets. Transpose the</span>
+0133         <span class="comment">% data to be (x, y) rather than (y, x).</span>
+0134         pctemp2 = pctemp3(:, :, j)';
+0135         pcsal2 = pcsal3(:, :, j)';
+0136         pcdepth2 = squeeze(pc.depth.data(:, :, j, t))';
+0137        
+0138         <span class="comment">% Create new arrays which will be flattened when masking (below).</span>
+0139         tpctemp2 = pctemp2;
+0140         tpcsal2 = pcsal2;
+0141         tpcdepth2 = pcdepth2;
+0142         tlon = lon;
+0143         tlat = lat;
+0144         
+0145         <span class="comment">% Create and apply a mask to remove values outside the domain. This</span>
+0146         <span class="comment">% inevitably flattens the arrays, but it shouldn't be a problem</span>
+0147         <span class="comment">% since we'll be searching for the closest values in such a manner</span>
+0148         <span class="comment">% as is appropriate for an unstructured grid (i.e. we're assuming</span>
+0149         <span class="comment">% the POLCOMS data is irregularly spaced).</span>
+0150         mask = tpcdepth2 &lt; -20000;
+0151         tpctemp2(mask) = [];
+0152         tpcsal2(mask) = [];
+0153         tpcdepth2(mask) = [];
+0154         <span class="comment">% Also apply the masks to the position arrays so we can't even find</span>
+0155         <span class="comment">% positions outside the domain, effectively meaning if a value is</span>
+0156         <span class="comment">% outside the domain, the nearest value to the boundary node will</span>
+0157         <span class="comment">% be used.</span>
+0158         tlon(mask) = [];
+0159         tlat(mask) = [];
+0160         
+0161         <span class="comment">% Preallocate the intermediate results arrays.</span>
+0162         itempobc = nan(nf, 1);
+0163         isalobc = nan(nf, 1);
+0164         idepthobc = nan(nf, 1);
+0165         
+0166         <span class="comment">% Speed up the tightest loop with a parallelized loop.</span>
+0167         parfor i = 1:nf
+0168             <span class="comment">% Now we can do each position within the 2D layer.</span>
+0169 
+0170             fx = fvlon(i);
+0171             fy = fvlat(i);
+0172 
+0173             [~, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
+0174             <span class="comment">% Get the n nearest nodes from POLCOMS (more? fewer?).</span>
+0175             ixy = ii(1:16);
+0176 
+0177             <span class="comment">% Get the variables into static variables for the</span>
+0178             <span class="comment">% parallelisation.</span>
+0179             plon = tlon(ixy);
+0180             plat = tlat(ixy);
+0181             ptemp = tpctemp2(ixy);
+0182             psal = tpcsal2(ixy);
+0183             pdepth = tpcdepth2(ixy);
+0184             
+0185             <span class="comment">% Use a triangulation to do the horizontal interpolation.</span>
+0186             tritemp = TriScatteredInterp(plon', plat', ptemp', <span class="string">'natural'</span>);
+0187             trisal = TriScatteredInterp(plon', plat', psal', <span class="string">'natural'</span>);
+0188             triz = TriScatteredInterp(plon', plat', pdepth', <span class="string">'natural'</span>);
+0189             itempobc(i) = tritemp(fx, fy);
+0190             isalobc(i) = trisal(fx, fy);
+0191             idepthobc(i) = triz(fx, fy);
+0192             
+0193             <span class="comment">% Check all three, though if one is NaN, they all will be.</span>
+0194             <span class="keyword">if</span> isnan(itempobc(i)) || isnan(isalobc(i)) || isnan(idepthobc(i))
+0195                 warning(<span class="string">'FVCOM boundary node at %f, %f is outside the POLCOMS domain. Setting to the closest POLCOMS value.'</span>, fx, fy)
+0196                 itempobc(i) = tpctemp2(ii(1));
+0197                 isalobc(i) = tpcsal2(ii(1));
+0198                 idepthobc(i) = tpcdepth2(ii(1));
+0199             <span class="keyword">end</span>
+0200         <span class="keyword">end</span>
+0201         
+0202         <span class="comment">% Put the results in this intermediate array.</span>
+0203         itempz(:, j) = itempobc;
+0204         isalz(:, j) = isalobc;
+0205         idepthz(:, j) = idepthobc;
+0206     <span class="keyword">end</span>
+0207 
+0208     <span class="comment">% Now we've interpolated in space, we can interpolate the z-values</span>
+0209     <span class="comment">% to the sigma depths.</span>
+0210     oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);
+0211     <span class="keyword">for</span> zi = 1:fz
+0212 
+0213         <span class="comment">% Preallocate the output arrays</span>
+0214         fvtempz = nan(nf, fz);
+0215         fvsalz = nan(nf, fz);
+0216 
+0217         <span class="keyword">for</span> pp = 1:nf
+0218             <span class="comment">% Get the FVCOM depths at this node</span>
+0219             tfz = Mobj.siglayz(oNodes(pp), :);
+0220             <span class="comment">% Now get the interpolated POLCOMS depth at this node</span>
+0221             tpz = idepthz(pp, :);
+0222 
+0223             <span class="comment">% Get the temperature and salinity values for this node and</span>
+0224             <span class="comment">% interpolate down the water column (from POLCOMS to FVCOM).</span>
+0225             <span class="comment">% TODO: Use csaps for the vertical interplation/subsampling at</span>
+0226             <span class="comment">% each location. Alternatively, the pchip interp1 method seems</span>
+0227             <span class="comment">% to do a decent job of the interpolation; it might be a more</span>
+0228             <span class="comment">% suitable candidate in the absence of csaps. In fact, the demo</span>
+0229             <span class="comment">% of csaps in the MATLAB documentation makes the interpolation</span>
+0230             <span class="comment">% look horrible (shaving off extremes). I think pchip is</span>
+0231             <span class="comment">% better.</span>
+0232             <span class="keyword">if</span> ~isnan(tpz)
+0233                 fvtempz(pp, :) = interp1(tpz, itempz(pp, :), tfz, <span class="string">'linear'</span>, <span class="string">'extrap'</span>);
+0234                 fvsalz(pp, :) = interp1(tpz, isalz(pp, :), tfz, <span class="string">'linear'</span>, <span class="string">'extrap'</span>);
+0235             <span class="keyword">else</span>
+0236                 warning(<span class="string">'Should never see this... '</span>) <span class="comment">% because we test for NaNs when fetching the values.</span>
+0237                 warning(<span class="string">'FVCOM boundary node at %f, %f is outside the POLCOMS domain. Skipping.'</span>, fvlon(pp), fvlat(pp))
+0238                 <span class="keyword">continue</span>
+0239             <span class="keyword">end</span>
+0240         <span class="keyword">end</span>
+0241     <span class="keyword">end</span>
+0242     
+0243     <span class="comment">% The horizontally-interpolated values in the final results array.</span>
+0244 <span class="comment">%     itemp(:, :, t) = itempz;</span>
+0245 <span class="comment">%     isal(:, :, t) = isalz;</span>
+0246     <span class="comment">% The horizontally- and vertically-interpolated values in the final</span>
+0247     <span class="comment">% FVCOM results array.</span>
+0248     fvtemp(:, :, t) = fvtempz;
+0249     fvsal(:, :, t) = fvsalz;
+0250 <span class="keyword">end</span>
+0251 <span class="keyword">if</span> ftbverbose
+0252     toc
+0253 <span class="keyword">end</span>
+0254 
+0255 Mobj.temperature = fvtemp;
+0256 Mobj.salt = fvsal;
+0257 
+0258 <span class="comment">% Do we have to interpolate to the FVCOM time series? Looking at page 325</span>
+0259 <span class="comment">% of the FVCOM manual, it looks like the temperature and salinity are on a</span>
+0260 <span class="comment">% different time sampling from the other example files (14 time steps vs.</span>
+0261 <span class="comment">% 3625 for _wnd.nc or 43922 for _julain_obc.nc (i.e. surface elevation at</span>
+0262 <span class="comment">% the boundary)). That's not to say those files were all used in the same</span>
+0263 <span class="comment">% model run... In the interim, just convert the current times to Modified</span>
+0264 <span class="comment">% Julian Day (this is a bit ugly).</span>
+0265 <span class="comment">% pc.time.yyyymmdd = strtrim(regexp(pc.time.units, 'since', 'split'));</span>
+0266 <span class="comment">% pc.time.yyyymmdd = str2double(regexp(pc.time.yyyymmdd{end}, '-', 'split'));</span>
+0267 <span class="comment">% Mobj.ts_times = greg2mjulian(pc.time.yyyymmdd(1), pc.time.yyyymmdd(2), pc.time.yyyymmdd(3), 0, 0, 0) + (pc.time.data / 3600 / 24);</span>
+0268 
+0269 <span class="comment">% Convert the POLCOMS times to Modified Julian Day (this is a very ugly).</span>
+0270 pc.time.yyyymmdd = strtrim(regexp(pc.time.units, <span class="string">'since'</span>, <span class="string">'split'</span>));
+0271 pc.time.strtime = regexp(pc.time.yyyymmdd{end}, <span class="string">'-'</span>, <span class="string">'split'</span>);
+0272 <span class="comment">% This new version of the time has the year in a weird format (yr.#). We</span>
+0273 <span class="comment">% thus need to split it again to get the decimal year (post-2000 only?).</span>
+0274 pc.time.strtimeyr = regexp(pc.time.strtime, <span class="string">'\.'</span>, <span class="string">'split'</span>);
+0275 pc.time.yyyymmdd = str2double([pc.time.strtimeyr{1}(2), pc.time.strtime{2:3}]);
+0276 pc.time.yyyymmdd(1) = pc.time.yyyymmdd(1) + 2000; <span class="comment">% add full year.</span>
+0277 Mobj.ts_times = greg2mjulian(pc.time.yyyymmdd(1), pc.time.yyyymmdd(2), pc.time.yyyymmdd(3), 0, 0, 0) + (pc.time.data / 3600 / 24);
+0278 
+0279 <span class="keyword">if</span> ftbverbose
+0280     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0281 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of calc_sponge_radius</title>
+  <meta name="keywords" content="calc_sponge_radius">
+  <meta name="description" content="Calculate a variable sponge radius based on distance to the boundary">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; calc_sponge_radius.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>calc_sponge_radius
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Calculate a variable sponge radius based on distance to the boundary</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [spongeRadius] = calc_sponge_radius(Mobj,Nlist) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Calculate a variable sponge radius based on distance to the boundary
+ node's furthest neighbour.
+ (Adapted from Phil Hall's 'produce_netcdf_input_data.py')
+
+ spongeRadius = calc_sponge_radius(Mobj,Nlist) 
+
+ DESCRIPTION
+    Calculates the sponge radius for each node on the open boundary, based
+    on the minimum of either the distance to the node's furthest
+    neighbour, or 100 km.
+
+ INPUT
+    Mobj = Matlab mesh object
+    Nlist = List of nodes
+
+ OUTPUT
+    spongeRadius = List of variable sponge radii
+
+ EXAMPLE USAGE
+    spongeRadius = calc_sponge_radius(Mobj,Nlist)
+
+ Author(s)
+    Karen Thurston (National Oceanography Centre, Liverpool)
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [spongeRadius] = calc_sponge_radius(Mobj,Nlist) </a>
+0002 
+0003 <span class="comment">% Calculate a variable sponge radius based on distance to the boundary</span>
+0004 <span class="comment">% node's furthest neighbour.</span>
+0005 <span class="comment">% (Adapted from Phil Hall's 'produce_netcdf_input_data.py')</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% spongeRadius = calc_sponge_radius(Mobj,Nlist)</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% DESCRIPTION</span>
+0010 <span class="comment">%    Calculates the sponge radius for each node on the open boundary, based</span>
+0011 <span class="comment">%    on the minimum of either the distance to the node's furthest</span>
+0012 <span class="comment">%    neighbour, or 100 km.</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% INPUT</span>
+0015 <span class="comment">%    Mobj = Matlab mesh object</span>
+0016 <span class="comment">%    Nlist = List of nodes</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% OUTPUT</span>
+0019 <span class="comment">%    spongeRadius = List of variable sponge radii</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% EXAMPLE USAGE</span>
+0022 <span class="comment">%    spongeRadius = calc_sponge_radius(Mobj,Nlist)</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Author(s)</span>
+0025 <span class="comment">%    Karen Thurston (National Oceanography Centre, Liverpool)</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">%==========================================================================</span>
+0028 subname = <span class="string">'calc_sponge_radius'</span>;
+0029 <span class="keyword">global</span> ftbverbose
+0030 <span class="keyword">if</span>(ftbverbose)
+0031   fprintf(<span class="string">'\n'</span>)
+0032   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0033 <span class="keyword">end</span>
+0034 
+0035 <span class="comment">%--------------------------------------------------------------------------</span>
+0036 <span class="comment">% Get a unique list and make sure they are in the range of node numbers</span>
+0037 <span class="comment">%--------------------------------------------------------------------------</span>
+0038 Nlist = unique(Nlist);
+0039 
+0040 spongeRadius = 100000+zeros(size(Nlist));
+0041 
+0042 <span class="comment">% For each node on the open boundary</span>
+0043 <span class="keyword">for</span> i =1:length(Nlist)
+0044     <span class="comment">% Find the neighbouring nodes</span>
+0045     [r,c]=find(Mobj.tri==Nlist(i));
+0046     neighbours = unique(Mobj.tri(r,:));
+0047     
+0048     <span class="comment">% Remove the node of interest from the neighbours list</span>
+0049     n = find(neighbours~=Nlist(i));
+0050     neighbours = neighbours(n);
+0051     
+0052     <span class="comment">% Calculate the arc length (in degrees) between the node and its</span>
+0053     <span class="comment">% neighbours</span>
+0054     arclen = distance(Mobj.lat(Nlist(i)),Mobj.lon(Nlist(i)),<span class="keyword">...</span>
+0055         Mobj.lat(neighbours),Mobj.lon(neighbours));
+0056     
+0057     <span class="comment">% Convert from degrees to whole metres</span>
+0058     arclen = ceil(1000*deg2km(arclen));
+0059     
+0060     <span class="comment">% If the smallest distance is less than 100km, keep it</span>
+0061     <span class="keyword">if</span> min(arclen)&lt;spongeRadius(i)
+0062         spongeRadius(i)=min(arclen);
+0063     <span class="keyword">end</span>
+0064 <span class="keyword">end</span>
+0065 
+0066 <span class="keyword">if</span>(ftbverbose)
+0067   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0068 <span class="keyword">end</span>
+0069</pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
