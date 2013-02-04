@@ -40,13 +40,13 @@ end;
 % Parse input arguments
 %------------------------------------------------------------------------------
 if(~exist('z0','var'))
-	error('incorrect usage of gen_z0_file, must provide z0 field')
+	error('incorrect usage of write_FVCOM_z0, must provide z0 field')
 end;
 if(~exist('filename','var'))
-	error('incorrect usage of gen_z0_file, must provide filename')
+	error('incorrect usage of write_FVCOM_z0, must provide filename')
 end;
 if(~exist('mytitle','var'))
-	error('incorrect usage of gen_z0_file, must provide title field')
+	error('incorrect usage of write_FVCOM_z0, must provide title field')
 end;
 
 % check dimensions
