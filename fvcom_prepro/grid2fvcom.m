@@ -1,7 +1,8 @@
 function fvcom = grid2fvcom(Mobj,vars,data)
-% Interpolate regularly gridded wind speed data onto a given FVCOM grid
+% Interpolate regularly gridded surface forcing data onto a given FVCOM
+% grid.
 %
-% grid2fvcom(Mobj,vars,wind,fvcom_forcing_file,infos)
+% grid2fvcom(Mobj,vars,data)
 %
 % DESCRIPTION:
 %   Takes a given NCEP reanalysis grid file and interpolates the U10 and

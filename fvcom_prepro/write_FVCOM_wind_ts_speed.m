@@ -2,7 +2,7 @@ function write_FVCOM_wind_ts_speed(Mobj, WindFile, time, u10, v10)
 
 % Write out time-varying/spatially constant wind forcing as speed.
 %
-% function write_FVCOM_wind_ts_speed
+% function write_FVCOM_wind_ts_speed(Mobj, WindFile, time, u10, v10)
 %
 % DESCRIPTION:
 %    Write a time-varying, spatially constant wind file

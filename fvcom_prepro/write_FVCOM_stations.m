@@ -2,7 +2,7 @@ function [Mobj]  = write_FVCOM_stations(Mobj,filename)
 
 % Add a set of stations at which FVCOM will output time series. 
 %
-% function add_stations_list(Mobj,filename)
+% function write_FVCOM_stations(Mobj,filename)
 %
 % DESCRIPTION:
 %    Given a mesh object with time series positions and names
