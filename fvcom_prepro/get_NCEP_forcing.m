@@ -1,24 +1,24 @@
 function data = get_NCEP_forcing(Mobj, modelTime)
-% Get the required parameters from either NCEP or ERA Interim data to force
-% FVCOM (through any of Casename_wnd.nc, Casename_sst.nc, Casename_hfx.nc
+% Get the required parameters from NCEP OPeNDAP data to force FVCOM
+% (through any of Casename_wnd.nc, Casename_sst.nc, Casename_hfx.nc
 % or Casename_pre_evap.nc).
-% 
+%
 % data = get_NCEP_forcing(Mobj, modelTime)
-% 
+%
 % DESCRIPTION:
 %   Using OPeNDAP, extract the necessary parameters to create an FVCOM
 %   forcing file. Requires the air_sea toolbox and the OPeNDAP toolbox (see
-%   below for where to get them). 
-% 
-% INPUT: 
+%   below for where to get them).
+%
+% INPUT:
 %   Mobj - MATLAB mesh object
 %   modelTime - Modified Julian Date start and end times
-% 
+%
 % OUTPUT:
 %   data - struct of the data necessary to force FVCOM. These can be
 %   interpolated onto an unstructured grid in Mobj using
 %   grid2fvcom_U10V10.m.
-% 
+%
 % The parameters which can be obtained from the NCEP data are:
 %     - u wind component (uwnd)
 %     - v wind component (vwnd)
@@ -31,26 +31,26 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 %     - Latent heat flux (lhtfl)
 %     - Surface heat flux (shtfl)
 %     - Potential evaporation rate (pevpr)
-% 
+%
 % In addition to these, the momentum flux is calculated from wind data.
 % Precipitation is converted from kg/m^2/s to m/s. Evaporation is
 % calculated from the mean daily latent heat net flux (lhtfl) at the
-% surface. 
-% 
+% surface.
+%
 % REQUIRES:
 %   The air_sea toolbox:
 %       http://woodshole.er.usgs.gov/operations/sea-mat/air_sea-html/index.html
 %   The OPeNDAP toolbox:
 %       http://www.opendap.org/pub/contributed/source/ml-toolbox/
-% 
-% 
+%
+%
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %   Ricardo Torres (Plymouth Marine Laboratory)
-% 
+%
 % Revision history:
 %   2012-10-31 First version based on get_NCEP_L4.m.
-% 
+%
 %==========================================================================
 
 subname = 'get_NCEP_forcing';
@@ -116,7 +116,7 @@ for aa=1:length(fields)
     data_time_idx = 1:size(data.time,1);
     data_time_idx = data_time_idx(data_time_mask);
     data.time = data.time(data_time_mask);
-    
+
     % Check the times
     %[yyyy,mm,dd,hh,MM,ss] = mjulian2greg(data.time(1))
     %[yyyy,mm,dd,hh,MM,ss] = mjulian2greg(data.time(end))
@@ -174,7 +174,7 @@ for aa=1:length(fields)
                     data1.(fields{aa}).(fields{aa}).(structfields{ii}) = ...
                         [data1_west.(fields{aa}).(fields{aa}).(structfields{ii});data1_east.(fields{aa}).(fields{aa}).(structfields{ii})];
                 case fields{aa}
-                    % This is the actual data 
+                    % This is the actual data
                     data1.(fields{aa}).(fields{aa}).(structfields{ii}) = ...
                         [data1_west.(fields{aa}).(fields{aa}).(structfields{ii}),data1_east.(fields{aa}).(fields{aa}).(structfields{ii})];
                 otherwise
@@ -227,15 +227,15 @@ end
 data.prate.data = data.prate.data/1000;
 
 % Evaporation can be approximated by:
-% 
+%
 %   E(m/s) = lhtfl/Llv/rho
-% 
+%
 % where:
-% 
+%
 %   lhtfl   = "Mean daily latent heat net flux at the surface"
 %   Llv     = Latent heat of vaporization (approx to 2.5*10^6 J kg^-1)
 %   rho     = 1025 kg/m^3
-% 
+%
 Llv = 2.5*10^6;
 rho = 1025; % using a typical value for seawater.
 Et = data.lhtfl.data/Llv/rho;

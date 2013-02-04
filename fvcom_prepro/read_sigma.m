@@ -1,5 +1,5 @@
 function Mobj = read_sigma(Mobj, sigmafile)
-% Read an FVCOM sigma layers file and output z values into Mobj.sigmaz.
+% Read an FVCOM sigma layers file and output z values into Mobj.
 % 
 % Mobj = read_sigma(Mobj, sigmafile)
 % 
