@@ -56,7 +56,7 @@ function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_z)
 %
 %==========================================================================
 
-subname = 'get_POLCOMS_forcing';
+subname = 'get_POLCOMS_tsobc';
 
 global ftbverbose;
 if ftbverbose
@@ -95,7 +95,7 @@ for ii = 1:todo
         tmp_fn = [basename, ext];
 
         if todo == 1
-            fprintf('%s: extracting file %s\n', subname, tmp_fn)
+            fprintf('%s: extracting file %s... ', subname, tmp_fn)
         else
             fprintf('%s: extracting file %s (%i of %i)... ', subname, tmp_fn, ii, todo)
         end
@@ -140,7 +140,7 @@ for ii = 1:todo
         % Try to get some units (important for the calculation of MJD).
         try
             if ii == 1
-                units = netcdf.getAtt(nc,varid_pc,'units');
+                units = netcdf.getAtt(nc, varid_pc, 'units');
             else
                 % Leave the units values alone so we always use the values
                 % from the first file. This is particularly important for
