@@ -12,7 +12,7 @@ function replace_FVCOM_restart_vars(Mobj, polcoms_ts, polcoms_z, start_date, fv_
 %    long time in order for temperature and salinity to settle within the
 %    model from the atmospheric and boundary forcing, we can use a restart
 %    file to cheat. If we run a model for a week or so (until the
-%    hydrodynamics has stabilised, we can use the restart file generated
+%    hydrodynamics have stabilised, we can use the restart file generated
 %    from that run as the basis for a new run, except we replace the
 %    currently computed temperature and salinity and replace them with data
 %    interpolated from another source (in this case, POLCOMS). 
@@ -435,10 +435,9 @@ for ii = 1:numvars
         end
     end
 
-    % Since the restart file has a number of time values, we'll ramp up
-    % the temperature from some constant to the actual value over the
-    % time steps. So, we need to know how many time steps we actually
-    % have.
+    % Since the restart file has a number of time values, we'll ramp up the
+    % temperature from some constant to the actual value over the time
+    % steps. So, we need to know how many time steps we actually have.
 
     % Get the dimension data ready for the temperature and salinity arrays.
     tIdx = strncmp(dimnames(unlimdimID + 1), currDimsNames, length(dimnames{unlimdimID + 1}));
@@ -450,9 +449,10 @@ for ii = 1:numvars
     nd = currDimsLengths(nIdx);
 
     if strcmpi(varname, 'temp') || strcmpi(varname, 'salinity')
-        % To make the scaling go from the initial value to the POLCOMS value,
-        % we need to take the scale the difference between the end members by
-        % the scaling factor at each time and add to the current time's value.
+        % To make the scaling go from the initial value to the POLCOMS
+        % value, we need to take the scale the difference between the end
+        % members by the scaling factor at each time and add to the current
+        % time's value.
         sfvdata = nan(nd, ns, nt);
         ss = 0:1 / (nt - 1):1; % scale from 0 to 1.
         startdata = squeeze(data(:, :, 1)); % use the first modelled time step
