@@ -165,27 +165,6 @@ end
 Mobj.restart.temp = fvtemp;
 Mobj.restart.salinity = fvsalt;
 
-%--------------------------------------------------------------------------
-% Get the restart data and replace with the interpolated data.
-%--------------------------------------------------------------------------
-
-% if ftbverbose
-%     fprintf('%s : export interpolated data to NetCDF:\n', subname)
-% end
-% 
-% % Create the struct with fieldnames which match the variables to be
-% % replaced in the FVCOM restart file.
-% fvdata.temperature = fvtemp;
-% fvdata.salt = fvsalt;
-% 
-% [pp, nn, ee] = fileparts(fv_restart);
-% out_restart = fullfile(pp, [nn, '_interp', ee]);
-% write_FVCOM_restart(fv_restart, out_restart, fvdata)
-% 
-% if ftbverbose
-%     fprintf('%s : export complete.\n', subname)
-% end
-
 if ftbverbose
     fprintf(['end   : ' subname '\n'])
 end
