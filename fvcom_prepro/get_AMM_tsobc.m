@@ -1,6 +1,6 @@
 function Mobj = get_AMM_tsobc(Mobj, ts)
-% Read temperature and salinity from AMM NetCDF model output files and
-% interpolate onto the open boundaries in Mobj.
+% Read temperature and salinity from the PML POLCOMS-ERSEM NetCDF model
+% output files and interpolate onto the open boundaries in Mobj.
 %
 % function Mobj = get_AMM_tsobc(Mobj, ts, polcoms_bathy, varlist)
 %
@@ -28,10 +28,8 @@ function Mobj = get_AMM_tsobc(Mobj, ts)
 %       time.
 %       - The order of the files given should be chronological.
 % 
-%   - The NetCDF files used here are those from the MyOcean portal
-%   available for free at:
-%
-%       http://www.myocean.eu/web/24-catalogue.php
+%   - The NetCDF files used here are those from the PML POLCOMS-ERSEM model
+%   output.
 %
 % OUTPUT:
 %    Mobj = MATLAB structure in which three new fields (called temperature,
@@ -61,99 +59,12 @@ end
 
 varlist = {'lon', 'lat', 'ETWD', 'x1XD', 'time', 'depth', 'pdepthD'};
 
-% Get the results. Check we have a cell array, and if we don't, assume it's
-% a file name.
-
-if iscell(ts)
-    todo = length(ts);
-else
-    todo = 1;
-end
-
-for ii = 1:todo
-
-    if ftbverbose
-        if iscell(ts)
-            ftn = ts{ii};
-        else
-            ftn = ts;
-        end
-        % Strip path from filename for the verbose output.
-        [~, basename, ext] = fileparts(ftn);
-        tmp_fn = [basename, ext];
-
-        if todo == 1
-            fprintf('%s: extracting file %s... ', subname, tmp_fn)
-        else
-            fprintf('%s: extracting file %s (%i of %i)... ', subname, tmp_fn, ii, todo)
-        end
-    end
-
-    nc = netcdf.open(ftn, 'NOWRITE');
-
-    for var = 1:numel(varlist)
-
-        getVar = varlist{var};
-        varid_amm = netcdf.inqVarID(nc, getVar);
-
-        data = double(netcdf.getVar(nc, varid_amm, 'single'));
-        if ii == 1
-            amm.(getVar).data = data;
-        else
-            if ndims(data) < 4
-                if strcmpi(varlist{var}, 'time')
-                    % If the dimension is time, we need to be a bit more
-                    % clever since we'll need a concatenated time series
-                    % (in which values are continuous and from which we
-                    % can extract a sensible time). As such, we need to add
-                    % the maximum of the existing time. On the first
-                    % iteration, we should save ourselves the base time
-                    % (from the units of the time variable).
-                    amm.(getVar).data = [amm.(getVar).data; data + max(amm.(getVar).data)];
-                else
-                    % This should be a fixed set of values (probably lon or
-                    % lat) in which case we don't need to append them, so
-                    % just replace the existing values with those in the
-                    % current NetCDF file.
-                    amm.(getVar).data = data;
-                end
-            elseif ndims(data) == 4
-                % Assume we're concatenating with time (so along the fourth
-                % dimesnion.
-                amm.(getVar).data = cat(4, amm.(getVar).data, data);
-            else
-                error('Unsupported number of dimensions in AMM data')
-            end
-        end
-        % Try to get some units (important for the calculation of MJD).
-        try
-            if ii == 1
-                units = netcdf.getAtt(nc, varid_amm, 'units');
-            else
-                % Leave the units values alone so we always use the values
-                % from the first file. This is particularly important for
-                % the time calculation later on which is dependent on
-                % knowing the time origin of the first file.
-                continue
-            end
-        catch
-            units = [];
-        end
-        amm.(getVar).units = units;
-    end
-
-    netcdf.close(nc)
-
-    if ftbverbose
-        fprintf('done.\n')
-    end
-
-end
-
 % Data format:
 % 
 %   amm.ETWD.data and amm.x1XD.data are y, x, sigma, time
 % 
+amm = get_AMM_netCDF(ts, varlist);
+
 [~, ~, nz, nt] = size(amm.ETWD.data);
 
 % Make rectangular arrays for the nearest point lookup.
