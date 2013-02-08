@@ -1,8 +1,8 @@
-function write_FVCOM_restart(fv_restart, out_restart, data)
+function write_FVCOM_restart(fv_restart, out_restart, indata)
 % Duplicate an FVCOM restart file, replacing variable values with those
 % specified in the struct data. 
 % 
-% function write_FVCOM_restart(fv_restart, out_restart, data)
+% function write_FVCOM_restart(fv_restart, out_restart, indata)
 % 
 % DESCRIPTION:
 %   Use an existing FVCOM restart file as a template, export all existing
@@ -19,9 +19,9 @@ function write_FVCOM_restart(fv_restart, out_restart, data)
 %   FVCOM restart file.
 % 
 % EXAMPLE USAGE:
-%   data.temp = interpolated_temp;
-%   data.salinity = interpolated_salinity;
-%   write_FVCOM_restart('/tmp/fvcom_restart.nc', data)
+%   indata.temp = interpolated_temp;
+%   indata.salinity = interpolated_salinity;
+%   write_FVCOM_restart('/tmp/fvcom_restart.nc', indata)
 % 
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -41,7 +41,7 @@ end
 
 % Get the fieldnames which must match the variable names to be replaced
 % (case sensitive).
-fnames = fieldnames(data);
+fnames = fieldnames(indata);
 nf = length(fnames);
 
 nc = netcdf.open(fv_restart, 'NOWRITE');
