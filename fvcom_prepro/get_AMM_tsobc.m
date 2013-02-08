@@ -59,7 +59,7 @@ if ftbverbose
     fprintf(['begin : ' subname '\n'])
 end
 
-varlist = {'lon', 'lat', 'ETWD', 'x1XD', 'time', 'bathymetry', 'pdepthD'};
+varlist = {'lon', 'lat', 'ETWD', 'x1XD', 'time', 'depth', 'pdepthD'};
 
 % Get the results. Check we have a cell array, and if we don't, assume it's
 % a file name.
@@ -175,8 +175,8 @@ if ftbverbose
 end
 for t = 1:nt
     % Get the current 3D array of AMM results.
-    pctemp3 = amm.ETWD.data(:, :, :, t);
-    pcsal3 = amm.x1XD.data(:, :, :, t);
+    ammtemp3 = amm.ETWD.data(:, :, :, t);
+    ammsalt3 = amm.x1XD.data(:, :, :, t);
     
     % Preallocate the intermediate results arrays.
     itempz = nan(nf, nz);
@@ -186,16 +186,14 @@ for t = 1:nt
     for j = 1:nz
         % Now extract the relevant layer from the 3D subsets. Transpose the
         % data to be (x, y) rather than (y, x).
-        pctemp2 = pctemp3(:, :, j)';
-        pcsal2 = pcsal3(:, :, j)';
-        % Should we be using the summed pdepths here?
-        %pcdepth2 = squeeze(amm.bathymetry.data(:, :, j, t))';
-        pcdepth2 = amm.bathymetry.data(:, :)';
+        ammtemp2 = ammtemp3(:, :, j)';
+        ammsalt2 = ammsalt3(:, :, j)';
+        ammdepth2 = squeeze(amm.depth.data(:, :, j, t))';
        
         % Create new arrays which will be flattened when masking (below).
-        tpctemp2 = pctemp2;
-        tpcsal2 = pcsal2;
-        tpcdepth2 = pcdepth2;
+        tammtemp2 = ammtemp2;
+        tammsalt2 = ammsalt2;
+        tammdepth2 = ammdepth2;
         tlon = lon;
         tlat = lat;
         
@@ -204,10 +202,10 @@ for t = 1:nt
         % since we'll be searching for the closest values in such a manner
         % as is appropriate for an unstructured grid (i.e. we're assuming
         % the AMM data is irregularly spaced).
-        mask = tpcdepth2 > 20000;
-        tpctemp2(mask) = [];
-        tpcsal2(mask) = [];
-        tpcdepth2(mask) = [];
+        mask = tammdepth2 > 20000;
+        tammtemp2(mask) = [];
+        tammsalt2(mask) = [];
+        tammdepth2(mask) = [];
         % Also apply the masks to the position arrays so we can't even find
         % positions outside the domain, effectively meaning if a value is
         % outside the domain, the nearest value to the boundary node will
@@ -235,9 +233,9 @@ for t = 1:nt
             % parallelisation.
             plon = tlon(ixy);
             plat = tlat(ixy);
-            ptemp = tpctemp2(ixy);
-            psal = tpcsal2(ixy);
-            pdepth = tpcdepth2(ixy);
+            ptemp = tammtemp2(ixy);
+            psal = tammsalt2(ixy);
+            pdepth = tammdepth2(ixy);
             
             % Use a triangulation to do the horizontal interpolation.
             tritemp = TriScatteredInterp(plon', plat', ptemp', 'natural');
@@ -250,9 +248,9 @@ for t = 1:nt
             % Check all three, though if one is NaN, they all will be.
             if isnan(itempobc(i)) || isnan(isalobc(i)) || isnan(idepthobc(i))
                 warning('FVCOM boundary node at %f, %f is outside the AMM domain. Setting to the closest AMM value.', fx, fy)
-                itempobc(i) = tpctemp2(ii(1));
-                isalobc(i) = tpcsal2(ii(1));
-                idepthobc(i) = tpcdepth2(ii(1));
+                itempobc(i) = tammtemp2(ii(1));
+                isalobc(i) = tammsalt2(ii(1));
+                idepthobc(i) = tammdepth2(ii(1));
             end
         end
         
@@ -278,17 +276,19 @@ for t = 1:nt
             tpz = idepthz(pp, :);
 
             % Get the temperature and salinity values for this node and
-            % interpolate down the water column (from AMM to FVCOM).
-            % TODO: Use csaps for the vertical interplation/subsampling at
-            % each location. Alternatively, the pchip interp1 method seems
-            % to do a decent job of the interpolation; it might be a more
-            % suitable candidate in the absence of csaps. In fact, the demo
+            % interpolate down the water column (from AMM to FVCOM). I had
+            % originally planned to use csaps for the vertical
+            % interplation/subsampling at each location. However, the demo
             % of csaps in the MATLAB documentation makes the interpolation
-            % look horrible (shaving off extremes). I think pchip is
-            % better.
+            % look horrible (shaving off extremes). interp1 provides a
+            % range of interpolation schemes, of which pchip seems to do a
+            % decent job of the interpolation (at least qualitatively).
             if ~isnan(tpz)
-                fvtempz(pp, :) = interp1(tpz, itempz(pp, :), tfz, 'linear', 'extrap');
-                fvsalz(pp, :) = interp1(tpz, isalz(pp, :), tfz, 'linear', 'extrap');
+                % POLCOMS (from which these AMM data are derived) starts
+                % its vertical layers from the seabed, FVCOM from the
+                % surface. Flip the POLCOMS data to match FVCOM's scheme.
+                fvtempz(pp, :) = interp1(tpz, fliplr(itempz(pp, :)), tfz, 'linear', 'extrap');
+                fvsalz(pp, :) = interp1(tpz, fliplr(isalz(pp, :)), tfz, 'linear', 'extrap');
             else
                 warning('Should never see this... ') % because we test for NaNs when fetching the values.
                 warning('FVCOM boundary node at %f, %f is outside the AMM domain. Skipping.', fvlon(pp), fvlat(pp))
