@@ -318,7 +318,7 @@ for t = 1:nt
         for pp = 1:nf
             % Get the FVCOM depths at this node
             tfz = Mobj.siglayz(oNodes(pp), :);
-            % Now get the interpolated POLCOMS depth at this node
+            % Now get the interpolated POLCOMS depth at this node.
             tpz = idepthz(pp, :);
 
             % Get the temperature and salinity values for this node and
@@ -331,8 +331,10 @@ for t = 1:nt
             % look horrible (shaving off extremes). I think pchip is
             % better.
             if ~isnan(tpz)
-                fvtempz(pp, :) = interp1(tpz, itempz(pp, :), tfz, 'linear', 'extrap');
-                fvsalz(pp, :) = interp1(tpz, isalz(pp, :), tfz, 'linear', 'extrap');
+                % POLCOMS starts at the seabed, FVCOM starts at the
+                % surface. So, we need to flip the POLCOMS profiles.
+                fvtempz(pp, :) = interp1(tpz, fliplr(itempz(pp, :)), tfz, 'linear', 'extrap');
+                fvsalz(pp, :) = interp1(tpz, fliplr(isalz(pp, :)), tfz, 'linear', 'extrap');
             else
                 warning('Should never see this... ') % because we test for NaNs when fetching the values.
                 warning('FVCOM boundary node at %f, %f is outside the POLCOMS domain. Skipping.', fvlon(pp), fvlat(pp))
