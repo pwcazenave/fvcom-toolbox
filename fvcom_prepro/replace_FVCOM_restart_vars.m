@@ -275,9 +275,12 @@ for xi = 1:nx
             % Now get the POLCOMS depth at this node for the time index
             % identified above.
             tpz = xdepth(yi, :); 
-            ytemp(yi, :) = interp1(tpz, xtemp(yi, :), tfz, 'linear', 'extrap');
+            % POLCOMS starts its vertical layers from the seabed, FVCOM
+            % from the surface. Flip the POLCOMS data to match FVCOM's
+            % scheme.
+            ytemp(yi, :) = interp1(tpz, fliplr(xtemp(yi, :)), tfz, 'linear', 'extrap');
             
-            ysalt(yi, :) = interp1(tpz, xsalt(yi, :), tfz, 'linear', 'extrap');
+            ysalt(yi, :) = interp1(tpz, fliplr(xsalt(yi, :)), tfz, 'linear', 'extrap');
         end
     end
     pctempz(xi, :, :) = ytemp;
