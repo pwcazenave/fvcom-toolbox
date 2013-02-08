@@ -284,11 +284,8 @@ for t = 1:nt
             % range of interpolation schemes, of which pchip seems to do a
             % decent job of the interpolation (at least qualitatively).
             if ~isnan(tpz)
-                % POLCOMS (from which these AMM data are derived) starts
-                % its vertical layers from the seabed, FVCOM from the
-                % surface. Flip the POLCOMS data to match FVCOM's scheme.
-                fvtempz(pp, :) = interp1(tpz, fliplr(itempz(pp, :)), tfz, 'linear', 'extrap');
-                fvsalz(pp, :) = interp1(tpz, fliplr(isalz(pp, :)), tfz, 'linear', 'extrap');
+                fvtempz(pp, :) = interp1(tpz, itempz(pp, :), tfz, 'linear', 'extrap');
+                fvsalz(pp, :) = interp1(tpz, isalz(pp, :), tfz, 'linear', 'extrap');
             else
                 warning('Should never see this... ') % because we test for NaNs when fetching the values.
                 warning('FVCOM boundary node at %f, %f is outside the AMM domain. Skipping.', fvlon(pp), fvlat(pp))

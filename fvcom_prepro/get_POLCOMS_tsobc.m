@@ -331,10 +331,8 @@ for t = 1:nt
             % look horrible (shaving off extremes). I think pchip is
             % better.
             if ~isnan(tpz)
-                % POLCOMS starts at the seabed, FVCOM starts at the
-                % surface. So, we need to flip the POLCOMS profiles.
-                fvtempz(pp, :) = interp1(tpz, fliplr(itempz(pp, :)), tfz, 'linear', 'extrap');
-                fvsalz(pp, :) = interp1(tpz, fliplr(isalz(pp, :)), tfz, 'linear', 'extrap');
+                fvtempz(pp, :) = interp1(tpz, itempz(pp, :), tfz, 'linear', 'extrap');
+                fvsalz(pp, :) = interp1(tpz, isalz(pp, :), tfz, 'linear', 'extrap');
             else
                 warning('Should never see this... ') % because we test for NaNs when fetching the values.
                 warning('FVCOM boundary node at %f, %f is outside the POLCOMS domain. Skipping.', fvlon(pp), fvlat(pp))
