@@ -61,7 +61,7 @@ varlist = {'lon', 'lat', 'ETWD', 'x1XD', 'time', 'depth', 'pdepthD'};
 
 % Data format:
 % 
-%   amm.ETWD.data and amm.x1XD.data are y, x, sigma, time
+%   pc.ETWD.data and pc.x1XD.data are y, x, sigma, time
 % 
 pc = get_POLCOMS_netCDF(ts, varlist);
 
@@ -86,8 +86,8 @@ if ftbverbose
 end
 for t = 1:nt
     % Get the current 3D array of PML POLCOMS-ERSEM results.
-    ammtemp3 = pc.ETWD.data(:, :, :, t);
-    ammsalt3 = pc.x1XD.data(:, :, :, t);
+    pctemp3 = pc.ETWD.data(:, :, :, t);
+    pcsalt3 = pc.x1XD.data(:, :, :, t);
     
     % Preallocate the intermediate results arrays.
     itempz = nan(nf, nz);
@@ -97,14 +97,14 @@ for t = 1:nt
     for j = 1:nz
         % Now extract the relevant layer from the 3D subsets. Transpose the
         % data to be (x, y) rather than (y, x).
-        ammtemp2 = ammtemp3(:, :, j)';
-        ammsalt2 = ammsalt3(:, :, j)';
-        ammdepth2 = squeeze(pc.depth.data(:, :, j, t))';
+        pctemp2 = pctemp3(:, :, j)';
+        pcsalt2 = pcsalt3(:, :, j)';
+        pcdepth2 = squeeze(pc.depth.data(:, :, j, t))';
        
         % Create new arrays which will be flattened when masking (below).
-        tammtemp2 = ammtemp2;
-        tammsalt2 = ammsalt2;
-        tammdepth2 = ammdepth2;
+        tpctemp2 = pctemp2;
+        tpcsalt2 = pcsalt2;
+        tpcdepth2 = pcdepth2;
         tlon = lon;
         tlat = lat;
         
@@ -113,10 +113,10 @@ for t = 1:nt
         % since we'll be searching for the closest values in such a manner
         % as is appropriate for an unstructured grid (i.e. we're assuming
         % the PML POLCOMS-ERSEM data is irregularly spaced).
-        mask = tammdepth2 > 20000;
-        tammtemp2(mask) = [];
-        tammsalt2(mask) = [];
-        tammdepth2(mask) = [];
+        mask = tpcdepth2 > 20000;
+        tpctemp2(mask) = [];
+        tpcsalt2(mask) = [];
+        tpcdepth2(mask) = [];
         % Also apply the masks to the position arrays so we can't even find
         % positions outside the domain, effectively meaning if a value is
         % outside the domain, the nearest value to the boundary node will
@@ -145,9 +145,9 @@ for t = 1:nt
             % parallelisation.
             plon = tlon(ixy);
             plat = tlat(ixy);
-            ptemp = tammtemp2(ixy);
-            psal = tammsalt2(ixy);
-            pdepth = tammdepth2(ixy);
+            ptemp = tpctemp2(ixy);
+            psal = tpcsalt2(ixy);
+            pdepth = tpcdepth2(ixy);
             
             % Use a triangulation to do the horizontal interpolation.
             tritemp = TriScatteredInterp(plon', plat', ptemp', 'natural');
@@ -160,9 +160,9 @@ for t = 1:nt
             % Check all three, though if one is NaN, they all will be.
             if isnan(itempobc(i)) || isnan(isalobc(i)) || isnan(idepthobc(i))
                 warning('FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Setting to the closest PML POLCOMS-ERSEM value.', fx, fy)
-                itempobc(i) = tammtemp2(ii(1));
-                isalobc(i) = tammsalt2(ii(1));
-                idepthobc(i) = tammdepth2(ii(1));
+                itempobc(i) = tpctemp2(ii(1));
+                isalobc(i) = tpcsalt2(ii(1));
+                idepthobc(i) = tpcdepth2(ii(1));
             end
         end
         
