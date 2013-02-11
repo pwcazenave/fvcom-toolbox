@@ -1,9 +1,9 @@
-function Mobj = interp_AMM2FVCOM(Mobj, ts, start_date, varlist)
+function Mobj = interp_POLCOMS2FVCOM(Mobj, ts, start_date, varlist)
 % Use an FVCOM restart file to seed a model run with spatially varying
 % versions of otherwise constant variables (temperature and salinity only
 % for the time being).
 %
-% function interp_AMM2FVCOM(Mobj, ts, start_date, fv_restart, varlist)
+% function interp_POLCOMS2FVCOM(Mobj, ts, start_date, fv_restart, varlist)
 %
 % DESCRIPTION:
 %    FVCOM does not yet support spatially varying temperature and salinity
@@ -32,7 +32,7 @@ function Mobj = interp_AMM2FVCOM(Mobj, ts, start_date, varlist)
 %   temperature).
 %
 % EXAMPLE USAGE
-%   interp_AMM2FVCOM(Mobj, '/tmp/ts.nc', '2006-01-01 00:00:00', ...
+%   interp_POLCOMS2FVCOM(Mobj, '/tmp/ts.nc', '2006-01-01 00:00:00', ...
 %       {'lon', 'lat', 'ETWD', 'x1XD', 'time'})
 %
 % Author(s):
@@ -43,7 +43,7 @@ function Mobj = interp_AMM2FVCOM(Mobj, ts, start_date, varlist)
 %
 %==========================================================================
 
-subname = 'interp_AMM2FVCOM';
+subname = 'interp_POLCOMS2FVCOM';
 
 global ftbverbose;
 if ftbverbose
@@ -57,29 +57,29 @@ end
 
 % Data format:
 % 
-%   amm.ETWD.data and amm.x1XD.data are y, x, sigma, time
+%   pc.ETWD.data and pc.x1XD.data are y, x, sigma, time
 % 
-amm = get_AMM_netCDF(ts, varlist);
+pc = get_POLCOMS_netCDF(ts, varlist);
 
 % Number of sigma layers.
 [fn, fz] = size(Mobj.siglayz);
 
 % Make rectangular arrays for the nearest point lookup.
-[lon, lat] = meshgrid(amm.lon.data, amm.lat.data);
+[lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
 
 % Convert the current times to Modified Julian Day (this is a bit ugly).
-amm.time.all = strtrim(regexp(amm.time.units, 'since', 'split'));
-amm.time.datetime = strtrim(regexp(amm.time.all{end}, ' ', 'split'));
-amm.time.ymd = str2double(strtrim(regexp(amm.time.datetime{1}, '-', 'split')));
-amm.time.hms = str2double(strtrim(regexp(amm.time.datetime{2}, ':', 'split')));
+pc.time.all = strtrim(regexp(pc.time.units, 'since', 'split'));
+pc.time.datetime = strtrim(regexp(pc.time.all{end}, ' ', 'split'));
+pc.time.ymd = str2double(strtrim(regexp(pc.time.datetime{1}, '-', 'split')));
+pc.time.hms = str2double(strtrim(regexp(pc.time.datetime{2}, ':', 'split')));
 
 Mobj.ts_times = greg2mjulian(...
-    amm.time.ymd(1), ...
-    amm.time.ymd(2), ...
-    amm.time.ymd(3), ...
-    amm.time.hms(1), ...
-    amm.time.hms(2), ...
-    amm.time.hms(3)) + (amm.time.data / 3600 / 24);
+    pc.time.ymd(1), ...
+    pc.time.ymd(2), ...
+    pc.time.ymd(3), ...
+    pc.time.hms(1), ...
+    pc.time.hms(2), ...
+    pc.time.hms(3)) + (pc.time.data / 3600 / 24);
 
 % Given our intput time (in start_date), find the nearest time
 % index for the regularly gridded data.
@@ -98,13 +98,13 @@ if ftbverbose
 end
 
 % Permute the arrays to be x by y rather than y by x.
-temperature = permute(squeeze(amm.ETWD.data(:, :, :, tidx)), [2, 1, 3]);
-salinity = permute(squeeze(amm.x1XD.data(:, :, :, tidx)), [2, 1, 3]);
-depth = permute(squeeze(amm.depth.data(:, :, :, tidx)), [2, 1, 3]);
+temperature = permute(squeeze(pc.ETWD.data(:, :, :, tidx)), [2, 1, 3]);
+salinity = permute(squeeze(pc.x1XD.data(:, :, :, tidx)), [2, 1, 3]);
+depth = permute(squeeze(pc.depth.data(:, :, :, tidx)), [2, 1, 3]);
 mask = depth(:, :, end) >= 0; % land is positive.
 
-amm.tempz = grid_vert_interp(Mobj, lon, lat, temperature, depth, mask);
-amm.salz = grid_vert_interp(Mobj, lon, lat, salinity, depth, mask);
+pc.tempz = grid_vert_interp(Mobj, lon, lat, temperature, depth, mask);
+pc.salz = grid_vert_interp(Mobj, lon, lat, salinity, depth, mask);
 
 if ftbverbose
     fprintf('done.\n') 
@@ -125,8 +125,8 @@ fvtemp = nan(fn, fz);
 fvsalt = nan(fn, fz);
 for zi = 1:fz
     % Set up the interpolation object.
-    ft = TriScatteredInterp(lon(:), lat(:), reshape(amm.tempz(:, :, zi), [], 1), 'natural');
-    fs = TriScatteredInterp(lon(:), lat(:), reshape(amm.salz(:, :, zi), [], 1), 'natural');
+    ft = TriScatteredInterp(lon(:), lat(:), reshape(pc.tempz(:, :, zi), [], 1), 'natural');
+    fs = TriScatteredInterp(lon(:), lat(:), reshape(pc.salz(:, :, zi), [], 1), 'natural');
     % Interpolate temperature and salinity onto the unstructured grid.
     fvtemp(:, zi) = ft(Mobj.lon, Mobj.lat);
     fvsalt(:, zi) = fs(Mobj.lon, Mobj.lat);

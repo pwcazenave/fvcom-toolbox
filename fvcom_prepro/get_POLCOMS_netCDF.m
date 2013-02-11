@@ -1,8 +1,8 @@
-function ncdata = get_AMM_netCDF(files, varlist)
+function ncdata = get_POLCOMS_netCDF(files, varlist)
 % Read temperature and salinity from NetCDF model output files and
 % interpolate onto the open boundaries in Mobj.
 %
-% function struct = get_AMM_netCDF(Mobj, files, varlist)
+% function struct = get_POLCOMS_netCDF(Mobj, files, varlist)
 %
 % DESCRIPTION:
 %    Extract variables in varlist to a struct from the files given in
@@ -19,7 +19,7 @@ function ncdata = get_AMM_netCDF(files, varlist)
 %    blank for that variable.
 %
 % EXAMPLE USAGE
-%    S = get_AMM_netCDF({'/tmp/2000.nc', '/tmp/2001.nc', {'temp', 'salt'})
+%    S = get_POLCOMS_netCDF({'/tmp/2000.nc', '/tmp/2001.nc', {'temp', 'salt'})
 %
 % NOTES:
 %
@@ -43,7 +43,7 @@ function ncdata = get_AMM_netCDF(files, varlist)
 %
 %==========================================================================
 
-subname = 'get_AMM_netCDF';
+subname = 'get_POLCOMS_netCDF';
 
 global ftbverbose;
 if ftbverbose
@@ -112,7 +112,7 @@ for ii = 1:todo
                 % a time dimension.
                 ncdata.(getVar).data = cat(ndims(data), ncdata.(getVar).data, data);
             else
-                error('Unsupported number of dimensions in AMM data')
+                error('Unsupported number of dimensions in PML POLCOMS-ERSEM data')
             end
         end
         % Try to get some units (important for the calculation of MJD).

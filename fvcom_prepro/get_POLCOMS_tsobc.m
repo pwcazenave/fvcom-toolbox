@@ -1,40 +1,35 @@
-function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_z)
-% Read temperature and salinity from POLCOMS NetCDF model output files and
-% interpolate onto the open boundaries in Mobj.
+function Mobj = get_POLCOMS_tsobc(Mobj, ts)
+% Read temperature and salinity from the PML POLCOMS-ERSEM NetCDF model
+% output files and interpolate onto the open boundaries in Mobj.
 %
-% function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_bathy, varlist)
+% function Mobj = get_POLCOMS_tsobc(Mobj, ts, polcoms_bathy, varlist)
 %
 % DESCRIPTION:
 %    Interpolate temperature and salinity values onto the FVCOM open
 %    boundaries at all sigma levels.
 %
 % INPUT:
-%   Mobj        = MATLAB mesh structure which must contain:
-%                   - Mobj.siglayz - sigma layer depths for all model
-%                   nodes.
-%                   - Mobj.lon, Mobj.lat - node coordinates (lat/long).
-%                   - Mobj.obc_nodes - list of open boundary node inidices.
-%                   - Mobj.nObcNodes - number of nodes in each open
-%                   boundary.
-%   polcoms_ts  = Cell array of POLCOMS NetCDF file(s) in which 4D
-%                 variables of temperature and salinity (called 'ETW' and
-%                 'x1X') exist. Their shape should be (y, x, sigma, time).
-%   polcoms_z   = Cell array of POLCOMS NetCDF file(s) in which 4D
-%                 variables of bathymetry and sigma layer thickness can be
-%                 found. They should be called 'depth' and 'pdepth'
-%                 respectively.
-% NOTES:
-%   - The POLCOMS NetCDF files should also contain 'time', 'lat' and 'lon'
-%   variables.
+%   Mobj    = MATLAB mesh structure which must contain:
+%               - Mobj.siglayz - sigma layer depths for all model nodes.
+%               - Mobj.lon, Mobj.lat - node coordinates (lat/long).
+%               - Mobj.obc_nodes - list of open boundary node inidices.
+%               - Mobj.nObcNodes - number of nodes in each open boundary.
+%   ts      = Cell array of PML POLCOMS-ERSEM NetCDF file(s) in which 4D
+%             variables of temperature and salinity (called 'ETWD' and
+%             'x1XD') exist. Their shape should be (y, x, sigma, time).
 %
-%   - If you supply multiple files in polcoms_ts, there are a few
-%   assumptions:
+% NOTES:
+%
+%   - If you supply multiple files in ts, there are a few assumptions:
 %
 %       - Variables are only appended if there are 4 dimensions; fewer than
 %       that, and the values are assumed to be static across all the given
 %       files (e.g. longitude, latitude etc.). The fourth dimension is
 %       time.
 %       - The order of the files given should be chronological.
+% 
+%   - The NetCDF files used here are those from the PML POLCOMS-ERSEM model
+%   output.
 %
 % OUTPUT:
 %    Mobj = MATLAB structure in which three new fields (called temperature,
@@ -44,15 +39,13 @@ function Mobj = get_POLCOMS_tsobc(Mobj, polcoms_ts, polcoms_z)
 %           is just the input file times in Modified Julian Day.
 %
 % EXAMPLE USAGE
-%    Mobj = get_POLCOMS_forcing(Mobj, polcoms_ts, polcoms_z)
+%    Mobj = get_POLCOMS_tsobc(Mobj, ts, depth)
 %
 % Author(s):
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
-%    2013-01-09 First version based on the FVCOM shelf model
-%    get_POLCOMS_forcing.m script (i.e. not a function but a plain script).
-%    2013-02-04 Add support for reading in multiple NetCDF files.
+%    2013-02-07 First version based on get_POLCOMS_tsobc.m.
 %
 %==========================================================================
 
@@ -64,147 +57,19 @@ if ftbverbose
     fprintf(['begin : ' subname '\n'])
 end
 
-varlist = {'lon', 'lat', 'ETW', 'x1X', 'time'};
-
-% Get the results. Check we have a cell array, and if we don't, assume it's
-% a file name.
-
-if iscell(polcoms_ts)
-    todo = length(polcoms_ts);
-    todo2 = length(polcoms_z);
-    if todo2 ~= todo
-        error('Supply matching POLCOMS temperature/salinity and depth NetCDF files')
-    end
-    clear todo2
-else
-    todo = 1;
-end
-
-for ii = 1:todo
-
-    if ftbverbose
-        if iscell(polcoms_ts)
-            ftn = polcoms_ts{ii};
-            fzn = polcoms_z{ii};
-        else
-            ftn = polcoms_ts;
-            fzn = polcoms_z;
-        end
-        % Strip path from filename for the verbose output.
-        [~, basename, ext] = fileparts(ftn);
-        tmp_fn = [basename, ext];
-
-        if todo == 1
-            fprintf('%s: extracting file %s... ', subname, tmp_fn)
-        else
-            fprintf('%s: extracting file %s (%i of %i)... ', subname, tmp_fn, ii, todo)
-        end
-    end
-    
-    nc = netcdf.open(ftn, 'NOWRITE');
-
-    for var = 1:numel(varlist)
-
-        getVar = varlist{var};
-        varid_pc = netcdf.inqVarID(nc, getVar);
-
-        data = double(netcdf.getVar(nc, varid_pc, 'single'));
-        if ii == 1
-            pc.(getVar).data = data;
-        else
-            if ndims(data) < 4
-                if strcmpi(varlist{var}, 'time')
-                    % If the dimension is time, we need to be a bit more
-                    % clever since we'll need a concatenated time series
-                    % (in which values are continuous and from which we
-                    % can extract a sensible time). As such, we need to add
-                    % the maximum of the existing time. On the first
-                    % iteration, we should save ourselves the base time
-                    % (from the units of the time variable).
-                    pc.(getVar).data = [pc.(getVar).data; data + max(pc.(getVar).data)];
-                else
-                    % This should be a fixed set of values (probably lon or
-                    % lat) in which case we don't need to append them, so
-                    % just replace the existing values with those in the
-                    % current NetCDF file.
-                    pc.(getVar).data = data;
-                end
-            elseif ndims(data) == 4
-                % Assume we're concatenating with time (so along the fourth
-                % dimesnion.
-                pc.(getVar).data = cat(4, pc.(getVar).data, data);
-            else
-                error('Unsupported number of dimensions in POLCOMS data')
-            end
-        end
-        % Try to get some units (important for the calculation of MJD).
-        try
-            if ii == 1
-                units = netcdf.getAtt(nc, varid_pc, 'units');
-            else
-                % Leave the units values alone so we always use the values
-                % from the first file. This is particularly important for
-                % the time calculation later on which is dependent on
-                % knowing the time origin of the first file.
-                continue
-            end
-        catch
-            units = [];
-        end
-        pc.(getVar).units = units;
-    end
-
-    netcdf.close(nc)
-    
-    % Extract the bathymetry ('pdepth' is cell thickness, 'depth' is cell
-    % centre depth). We still need to append along the fourth dimension
-    % here too (I think depth and pdepth include the tidal component).
-    nc = netcdf.open(fzn, 'NOWRITE');
-    varid_pc = netcdf.inqVarID(nc, 'depth');
-    data = double(netcdf.getVar(nc, varid_pc, 'single'));
-    if ii == 1
-        pc.depth.data = data;
-    else
-        pc.depth.data = cat(4, pc.depth.data, data);
-    end
-    try
-        pc.depth.units = netcdf.getAtt(nc, varid_pc, 'units');
-    catch
-        pc.depth.units = [];
-    end
-    clear data
-
-    varid_pc = netcdf.inqVarID(nc, 'pdepth'); 
-    data = double(netcdf.getVar(nc, varid_pc, 'single'));
-    if ii == 1
-        pc.pdepth.data = data;
-    else
-        pc.pdepth.data = cat(4, pc.pdepth.data, data);
-    end
-    try
-        pc.pdepth.units = netcdf.getAtt(nc, varid_pc, 'units');
-    catch
-        pc.pdepth.units = [];
-    end
-    clear data
-    netcdf.close(nc)
-
-    if ftbverbose
-        fprintf('done.\n')
-    end
-
-end
+varlist = {'lon', 'lat', 'ETWD', 'x1XD', 'time', 'depth', 'pdepthD'};
 
 % Data format:
 % 
-%   pc.ETW.data and pc.x1X.data are y, x, sigma, time
+%   amm.ETWD.data and amm.x1XD.data are y, x, sigma, time
 % 
-[~, ~, nz, nt] = size(pc.ETW.data);
+pc = get_POLCOMS_netCDF(ts, varlist);
+
+[~, ~, nz, nt] = size(pc.ETWD.data);
 
 % Make rectangular arrays for the nearest point lookup.
 [lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
 
-% Find the nearest POLCOMS point to each point in the FVCOM open boundaries
 fvlon = Mobj.lon(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
 fvlat = Mobj.lat(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
 
@@ -220,9 +85,9 @@ if ftbverbose
     tic
 end
 for t = 1:nt
-    % Get the current 3D array of POLCOMS results.
-    pctemp3 = pc.ETW.data(:, :, :, t);
-    pcsal3 = pc.x1X.data(:, :, :, t);
+    % Get the current 3D array of PML POLCOMS-ERSEM results.
+    ammtemp3 = pc.ETWD.data(:, :, :, t);
+    ammsalt3 = pc.x1XD.data(:, :, :, t);
     
     % Preallocate the intermediate results arrays.
     itempz = nan(nf, nz);
@@ -232,14 +97,14 @@ for t = 1:nt
     for j = 1:nz
         % Now extract the relevant layer from the 3D subsets. Transpose the
         % data to be (x, y) rather than (y, x).
-        pctemp2 = pctemp3(:, :, j)';
-        pcsal2 = pcsal3(:, :, j)';
-        pcdepth2 = squeeze(pc.depth.data(:, :, j, t))';
+        ammtemp2 = ammtemp3(:, :, j)';
+        ammsalt2 = ammsalt3(:, :, j)';
+        ammdepth2 = squeeze(pc.depth.data(:, :, j, t))';
        
         % Create new arrays which will be flattened when masking (below).
-        tpctemp2 = pctemp2;
-        tpcsal2 = pcsal2;
-        tpcdepth2 = pcdepth2;
+        tammtemp2 = ammtemp2;
+        tammsalt2 = ammsalt2;
+        tammdepth2 = ammdepth2;
         tlon = lon;
         tlat = lat;
         
@@ -247,11 +112,11 @@ for t = 1:nt
         % inevitably flattens the arrays, but it shouldn't be a problem
         % since we'll be searching for the closest values in such a manner
         % as is appropriate for an unstructured grid (i.e. we're assuming
-        % the POLCOMS data is irregularly spaced).
-        mask = tpcdepth2 < -20000;
-        tpctemp2(mask) = [];
-        tpcsal2(mask) = [];
-        tpcdepth2(mask) = [];
+        % the PML POLCOMS-ERSEM data is irregularly spaced).
+        mask = tammdepth2 > 20000;
+        tammtemp2(mask) = [];
+        tammsalt2(mask) = [];
+        tammdepth2(mask) = [];
         % Also apply the masks to the position arrays so we can't even find
         % positions outside the domain, effectively meaning if a value is
         % outside the domain, the nearest value to the boundary node will
@@ -272,16 +137,17 @@ for t = 1:nt
             fy = fvlat(i);
 
             [~, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
-            % Get the n nearest nodes from POLCOMS (more? fewer?).
+            % Get the n nearest nodes from PML POLCOMS-ERSEM data (more?
+            % fewer?).
             ixy = ii(1:16);
 
             % Get the variables into static variables for the
             % parallelisation.
             plon = tlon(ixy);
             plat = tlat(ixy);
-            ptemp = tpctemp2(ixy);
-            psal = tpcsal2(ixy);
-            pdepth = tpcdepth2(ixy);
+            ptemp = tammtemp2(ixy);
+            psal = tammsalt2(ixy);
+            pdepth = tammdepth2(ixy);
             
             % Use a triangulation to do the horizontal interpolation.
             tritemp = TriScatteredInterp(plon', plat', ptemp', 'natural');
@@ -293,10 +159,10 @@ for t = 1:nt
             
             % Check all three, though if one is NaN, they all will be.
             if isnan(itempobc(i)) || isnan(isalobc(i)) || isnan(idepthobc(i))
-                warning('FVCOM boundary node at %f, %f is outside the POLCOMS domain. Setting to the closest POLCOMS value.', fx, fy)
-                itempobc(i) = tpctemp2(ii(1));
-                isalobc(i) = tpcsal2(ii(1));
-                idepthobc(i) = tpcdepth2(ii(1));
+                warning('FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Setting to the closest PML POLCOMS-ERSEM value.', fx, fy)
+                itempobc(i) = tammtemp2(ii(1));
+                isalobc(i) = tammsalt2(ii(1));
+                idepthobc(i) = tammdepth2(ii(1));
             end
         end
         
@@ -318,24 +184,24 @@ for t = 1:nt
         for pp = 1:nf
             % Get the FVCOM depths at this node
             tfz = Mobj.siglayz(oNodes(pp), :);
-            % Now get the interpolated POLCOMS depth at this node.
+            % Now get the interpolated PML POLCOMS-ERSEM depth at this node
             tpz = idepthz(pp, :);
 
             % Get the temperature and salinity values for this node and
-            % interpolate down the water column (from POLCOMS to FVCOM).
-            % TODO: Use csaps for the vertical interplation/subsampling at
-            % each location. Alternatively, the pchip interp1 method seems
-            % to do a decent job of the interpolation; it might be a more
-            % suitable candidate in the absence of csaps. In fact, the demo
-            % of csaps in the MATLAB documentation makes the interpolation
-            % look horrible (shaving off extremes). I think pchip is
-            % better.
+            % interpolate down the water column (from PML POLCOMS-ERSEM to
+            % FVCOM). I had originally planned to use csaps for the
+            % vertical interplation/subsampling at each location. However,
+            % the demo of csaps in the MATLAB documentation makes the
+            % interpolation look horrible (shaving off extremes). interp1
+            % provides a range of interpolation schemes, of which pchip
+            % seems to do a decent job of the interpolation (at least
+            % qualitatively).
             if ~isnan(tpz)
                 fvtempz(pp, :) = interp1(tpz, itempz(pp, :), tfz, 'linear', 'extrap');
                 fvsalz(pp, :) = interp1(tpz, isalz(pp, :), tfz, 'linear', 'extrap');
             else
                 warning('Should never see this... ') % because we test for NaNs when fetching the values.
-                warning('FVCOM boundary node at %f, %f is outside the POLCOMS domain. Skipping.', fvlon(pp), fvlat(pp))
+                warning('FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Skipping.', fvlon(pp), fvlat(pp))
                 continue
             end
         end
@@ -353,26 +219,19 @@ end
 Mobj.temperature = fvtemp;
 Mobj.salt = fvsal;
 
-% Do we have to interpolate to the FVCOM time series? Looking at page 325
-% of the FVCOM manual, it looks like the temperature and salinity are on a
-% different time sampling from the other example files (14 time steps vs.
-% 3625 for _wnd.nc or 43922 for _julain_obc.nc (i.e. surface elevation at
-% the boundary)). That's not to say those files were all used in the same
-% model run... In the interim, just convert the current times to Modified
-% Julian Day (this is a bit ugly).
-pc.time.yyyymmdd = strtrim(regexp(pc.time.units, 'since', 'split'));
-pc.time.yyyymmdd = str2double(regexp(pc.time.yyyymmdd{end}, '-', 'split'));
-Mobj.ts_times = greg2mjulian(pc.time.yyyymmdd(1), pc.time.yyyymmdd(2), pc.time.yyyymmdd(3), 0, 0, 0) + (pc.time.data / 3600 / 24);
+% Convert the current times to Modified Julian Day (this is a bit ugly).
+pc.time.all = strtrim(regexp(pc.time.units, 'since', 'split'));
+pc.time.datetime = strtrim(regexp(pc.time.all{end}, ' ', 'split'));
+pc.time.ymd = str2double(strtrim(regexp(pc.time.datetime{1}, '-', 'split')));
+pc.time.hms = str2double(strtrim(regexp(pc.time.datetime{2}, ':', 'split')));
 
-% % Convert the POLCOMS times to Modified Julian Day (this is a very ugly).
-% pc.time.yyyymmdd = strtrim(regexp(pc.time.units, 'since', 'split'));
-% pc.time.strtime = regexp(pc.time.yyyymmdd{end}, '-', 'split');
-% % This new version of the time has the year in a weird format (yr.#). We
-% % thus need to split it again to get the decimal year (post-2000 only?).
-% pc.time.strtimeyr = regexp(pc.time.strtime, '\.', 'split');
-% pc.time.yyyymmdd = str2double([pc.time.strtimeyr{1}(2), pc.time.strtime{2:3}]);
-% pc.time.yyyymmdd(1) = pc.time.yyyymmdd(1) + 2000; % add full year.
-% Mobj.ts_times = greg2mjulian(pc.time.yyyymmdd(1), pc.time.yyyymmdd(2), pc.time.yyyymmdd(3), 0, 0, 0) + (pc.time.data / 3600 / 24);
+Mobj.ts_times = greg2mjulian(...
+    pc.time.ymd(1), ...
+    pc.time.ymd(2), ...
+    pc.time.ymd(3), ...
+    pc.time.hms(1), ...
+    pc.time.hms(2), ...
+    pc.time.hms(3)) + (pc.time.data / 3600 / 24);
 
 if ftbverbose
     fprintf(['end   : ' subname '\n'])
