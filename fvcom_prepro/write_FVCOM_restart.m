@@ -161,7 +161,26 @@ for ii = 1:numvars
             end
             % Replace the values with the scaled interpolated values.
             netcdf.putVar(ncout, varid, sfvdata)
-        else
+
+%         % We might also want to replace the time. If so, uncomment these
+%         % lines to replace with an arbitrary time period. We also need an
+%         % additional input argument in this case (start_date).
+%         elseif strcmpi(varname, 'time')
+%             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
+%             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
+%             netcdf.putVar(ncout, varid, tmp_time)
+%         elseif strcmpi(varname, 'Times')
+%             tmp_time = [];
+%             for i = 1:nt;
+%                 tmp_time = [tmp_time, sprintf('%-026s', datestr(datenum(start_date) - 7 + (i - 1), 'yyyy-mm-dd HH:MM:SS.FFF'))];
+%             end
+%             netcdf.putVar(ncout, varid, tmp_time)
+%         elseif strcmpi(varname, 'Itime')
+%             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
+%             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
+%             netcdf.putVar(ncout, varid, floor(tmp_time))
+%         else
+
             % We need to check if the dimension is unlimited, and use a start
             % and end with netcdf.putVar if it is. This is largely because
             % MATLAB can't handle unlimited dimensions in the same way as it
