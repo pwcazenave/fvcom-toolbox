@@ -155,7 +155,7 @@ for ii = 1:numvars
                 if tt == 1
                     sfvdata(:, :, 1) = startdata;
                 else
-                    td = data.(fnames{vv}) - startdata;
+                    td = indata.(fnames{vv}) - startdata;
                     sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
                 end
             end
