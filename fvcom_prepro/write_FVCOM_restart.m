@@ -144,6 +144,9 @@ for ii = 1:numvars
     % variables to be replaced.
     for vv = 1:nf
         if strcmp(varname, fnames{vv})
+            if ftbverbose
+                fprintf('new data... ')
+            end
             % To make the scaling go from the initial value to the POLCOMS
             % value, we need to take the scale the difference between the end
             % members by the scaling factor at each time and add to the current
@@ -151,7 +154,7 @@ for ii = 1:numvars
             sfvdata = nan(nd, ns, nt);
             ss = 0:1 / (nt - 1):1; % scale from 0 to 1.
             startdata = squeeze(data(:, :, 1)); % use the first modelled time step
-            for tt = 1:nt;
+            for tt = 1:nt
                 if tt == 1
                     sfvdata(:, :, 1) = startdata;
                 else
