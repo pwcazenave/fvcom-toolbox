@@ -373,3 +373,7 @@ for i=1:length(suffixes)
     % Close the NetCDF file(s)
     netcdf.close(nc);
 end
+
+if ftbverbose
+    fprintf(['end   : ' subname '\n'])
+end
