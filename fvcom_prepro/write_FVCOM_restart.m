@@ -179,7 +179,7 @@ for ii = 1:numvars
 %             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
 %             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
 %             netcdf.putVar(ncout, varid, floor(tmp_time))
-%         else
+        else
 
             % We need to check if the dimension is unlimited, and use a start
             % and end with netcdf.putVar if it is. This is largely because
