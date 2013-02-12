@@ -90,4 +90,11 @@ for s=1:nPos
     inc = inc + 1;
 end
 
-Mobj.stations = out;
+if ~isempty(out)
+    Mobj.stations = out;
+else
+    Mobj.stations = [];
+    if ftbverbose
+        fprintf('No stations found within the model domain.\n')
+    end
+end

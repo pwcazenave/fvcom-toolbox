@@ -36,7 +36,7 @@ end
 % Parse input arguments
 %--------------------------------------------------------------------------
 if exist('Mobj', 'var') ~= 1 || exist('filename', 'var') ~= 1
-	error('arguments to write_FVCOM_grid are incorrect')
+	error('arguments to %s are incorrect', subname)
 end
 
 %--------------------------------------------------------------------------
