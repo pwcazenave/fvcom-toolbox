@@ -67,6 +67,7 @@ for ii = 1:todo
     else
         ftn = files;
     end
+
     if ftbverbose
         % Strip path from filename for the verbose output.
         [~, basename, ext] = fileparts(ftn);
