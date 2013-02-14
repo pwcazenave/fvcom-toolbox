@@ -16,7 +16,10 @@ function fvcom = grid2fvcom(Mobj,vars,data)
 %       x - x data (probably best in cartesian for the interpolation)
 %       y - y data (probably best in cartesian for the interpolation)
 %       The struct must also contain all the variables defined in vars.
-%       time - time vector (in Modified Julian Days)
+%       time - time vector (in Modified Julian Days). If you're using some
+%       of the NCEP surface products (e.g. relative humitidy, sea level
+%       pressure), you need to supply x and y coordinates for their grids
+%       as .xalt and .yalt).
 %
 % OUTPUT:
 %   fvcom - struct of the interpolated data values at the model nodes and
@@ -45,6 +48,10 @@ function fvcom = grid2fvcom(Mobj,vars,data)
 %   lat/long arrays. Makes invocation a bit cleaner.
 %   2012-11-01 Farmed out the creation of the NetCDF file to
 %   write_FVCOM_forcing.m and made this purely an interpolation script.
+%   2013-02-14 Add support for interpolating data on two different grids
+%   through the .xalt and .yalt fields in the input data structure. This is
+%   handy if you've got data from NCEP from both the Surface and Gaussian
+%   products, each of which are on different grids.
 %
 %==========================================================================
 
@@ -105,7 +112,17 @@ for vv=1:length(vars)
             %fvcom.(vars{vv}).node(:,i) = griddata(wind.x,wind.y,currvar,x,y,'cubic');
             %fvcom.(vars{vv}).data(:,i) = griddata(wind.x,wind.y,currvar,xc,yc,'cubic');
             % TriScatteredInterp way (with natural neighbour interpolation)
-            ftsin = TriScatteredInterp(data.x(:), data.y(:), currvar(:), 'natural');
+            % Use a try/catch to account for the different grids over which
+            % the humidity and sealevel pressure data are sampled.
+            try
+                ftsin = TriScatteredInterp(data.x(:), data.y(:), currvar(:), 'natural');
+            catch err
+                warning([err.identifier, ': Some NCEP data are projected' ...
+                    ' onto a different grid. Check you have specified' ...
+                    ' data.xalt and data.yalt arrays which are on the' ...
+                    ' same grid as the data to be interpolated.'])
+                ftsin = TriScatteredInterp(data.xalt(:), data.yalt(:), currvar(:), 'natural');
+            end
             fvcom.(vars{vv}).node(:,i) = ftsin(x,y);
             fvcom.(vars{vv}).data(:,i) = ftsin(xc,yc);
             nnans(1) = sum(isnan(fvcom.(vars{vv}).node(:,i)));
