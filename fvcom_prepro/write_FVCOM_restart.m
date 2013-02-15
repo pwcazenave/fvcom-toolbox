@@ -31,7 +31,7 @@ function write_FVCOM_restart(fv_restart, out_restart, indata)
 % 
 %==========================================================================
 
-subname = 'write_FVCOM_tsobc';
+subname = 'write_FVCOM_restart';
 
 global ftbverbose
 if ftbverbose
@@ -142,15 +142,19 @@ for ii = 1:numvars
     
     % Iterate through the field names to see if we're on one of the
     % variables to be replaced.
+
+    % Set variable so we know if we've already written this variable to the
+    % output file.
+    writtenAlready = 0;
     for vv = 1:nf
-        if strcmp(varname, fnames{vv})
+        if strcmp(varname, fnames{vv}) && writtenAlready == 0
             if ftbverbose
                 fprintf('new data... ')
             end
             % To make the scaling go from the initial value to the POLCOMS
-            % value, we need to take the scale the difference between the end
-            % members by the scaling factor at each time and add to the current
-            % time's value.
+            % value, we need to take the scale the difference between the
+            % end members by the scaling factor at each time and add to the
+            % current time's value.
             sfvdata = nan(nd, ns, nt);
             ss = 0:1 / (nt - 1):1; % scale from 0 to 1.
             startdata = squeeze(data(:, :, 1)); % use the first modelled time step
@@ -162,8 +166,15 @@ for ii = 1:numvars
                     sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
                 end
             end
-            % Replace the values with the scaled interpolated values.
-            netcdf.putVar(ncout, varid, sfvdata)
+            % Replace the values with the scaled interpolated values,
+            % checking for unlimited dimensions as we go.
+            if wasUnlimited < 0
+                netcdf.putVar(ncout, varid, sfvdata)
+            else
+                netcdf.putVar(ncout, varid, zeros(length(currDimsLengths), 1), currDimsLengths, sfvdata)
+            end
+
+            writtenAlready = 1;
 
 %         % We might also want to replace the time. If so, uncomment these
 %         % lines to replace with an arbitrary time period. We also need an
@@ -182,21 +193,27 @@ for ii = 1:numvars
 %             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
 %             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
 %             netcdf.putVar(ncout, varid, floor(tmp_time))
-        else
+        end
+    end
 
-            % We need to check if the dimension is unlimited, and use a start
-            % and end with netcdf.putVar if it is. This is largely because
-            % MATLAB can't handle unlimited dimensions in the same way as it
-            % does finite dimensions.
-            if wasUnlimited < 0
-                % We can just dump the entire data without specifying over what
-                % indices.
-                netcdf.putVar(ncout, varid, data);
-            else
-                % Use the dimension length we extracted above to output the
-                % data with the valid unlimited dimension format.
-                netcdf.putVar(ncout, varid, zeros(length(currDimsLengths), 1), currDimsLengths, data);
-            end
+    % If writtenAlready is zero, we haven't had one of the variables we're
+    % replacing, so just dump the existing data.
+    if writtenAlready == 0
+        if ftbverbose
+            fprintf('existing data... ')
+        end
+        % We need to check if the dimension is unlimited, and use a
+        % start and end with netcdf.putVar if it is. This is largely
+        % because MATLAB can't handle unlimited dimensions in the same
+        % way as it does finite dimensions.
+        if wasUnlimited < 0
+            % We can just dump the entire data without specifying over
+            % what indices.
+            netcdf.putVar(ncout, varid, data);
+        else
+            % Use the dimension length we extracted above to output the
+            % data with the valid unlimited dimension format.
+            netcdf.putVar(ncout, varid, zeros(length(currDimsLengths), 1), currDimsLengths, data);
         end
     end
 
