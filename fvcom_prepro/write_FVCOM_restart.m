@@ -28,6 +28,8 @@ function write_FVCOM_restart(fv_restart, out_restart, indata)
 % 
 % Revision history:
 %   2013-02-08 First version.
+%   2013-02-15 Fix bug wherein only the last field in the new data would
+%   only be added to the output NetCDF file.
 % 
 %==========================================================================
 
