@@ -323,7 +323,8 @@ data.prate.data = data.prate.data/1000;
 Llv = 2.5*10^6;
 rho = 1025; % using a typical value for seawater.
 Et = data.lhtfl.data/Llv/rho;
-data.P_E.data = Et;
+data.P_E.data = data.prate.data - Et;
+data.Et.data = Et;
 
 % Calculate the momentum flux
 WW = data.uwnd.data + data.vwnd.data * 1i;
@@ -350,3 +351,6 @@ return
 %     axis('equal','tight')
 %     pause(0.1)
 % end
+if ftbverbose;
+    fprintf(['end   : ' subname '\n'])
+end
