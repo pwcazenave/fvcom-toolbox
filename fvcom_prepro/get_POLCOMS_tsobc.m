@@ -39,13 +39,13 @@ function Mobj = get_POLCOMS_tsobc(Mobj, ts)
 %           is just the input file times in Modified Julian Day.
 %
 % EXAMPLE USAGE
-%    Mobj = get_POLCOMS_tsobc(Mobj, ts, depth)
+%    Mobj = get_POLCOMS_tsobc(Mobj, ts)
 %
 % Author(s):
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
-%    2013-02-07 First version based on get_POLCOMS_tsobc.m.
+%    2013-02-07 First version.
 %
 %==========================================================================
 
@@ -85,6 +85,9 @@ if ftbverbose
     tic
 end
 for t = 1:nt
+    if ftbverbose
+        fprintf('%s : %i of %i timesteps... ', subname, t, nt)
+    end
     % Get the current 3D array of PML POLCOMS-ERSEM results.
     pctemp3 = pc.ETWD.data(:, :, :, t);
     pcsalt3 = pc.x1XD.data(:, :, :, t);
@@ -211,6 +214,10 @@ for t = 1:nt
     % FVCOM results array.
     fvtemp(:, :, t) = fvtempz;
     fvsal(:, :, t) = fvsalz;
+    
+    if ftbverbose
+        fprintf('done.\n')
+    end
 end
 if ftbverbose
     toc
