@@ -33,7 +33,7 @@ function Mobj = get_POLCOMS_tsobc(Mobj, ts)
 %
 % OUTPUT:
 %    Mobj = MATLAB structure in which three new fields (called temperature,
-%           salinity and ts_time). temperature and salinity have sizes
+%           salinity and ts_times). temperature and salinity have sizes
 %           (sum(Mobj.nObcNodes), sigma, time). The time dimension is
 %           determined based on the input NetCDF file. The ts_time variable
 %           is just the input file times in Modified Julian Day.
