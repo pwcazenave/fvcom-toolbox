@@ -87,7 +87,7 @@ netcdf.putVar(nc, time_varid, 0, numel(Mobj.mf_times), Mobj.mf_times);
 netcdf.putVar(nc, itime_varid, floor(Mobj.mf_times));
 netcdf.putVar(nc, itime2_varid, 0, numel(Mobj.mf_times), mod(Mobj.mf_times, 1) * 24 * 3600 * 1000);
 netcdf.putVar(nc, nmfcell_varid, Mobj.read_obc_nodes{1});
-netcdf.putVar(nc, dmfqdis_varid, [0, 0], [numel(Mobj.mf_times), numel(Mobj.read_obc_nodes{1})], data);
+netcdf.putVar(nc, dmfqdis_varid, [0, 0], [numel(Mobj.read_obc_nodes{1}), numel(Mobj.mf_times)], data);
 
 netcdf.close(nc);
 
