@@ -7,7 +7,8 @@ function write_FVCOM_meanflow(Mobj, outfile, data)
 %    Setup an FVCOM hydrographic open boundary mean flow forcing file.
 %
 % INPUT:
-%   Mobj    - MATLAB mesh object.
+%   Mobj    - MATLAB mesh object (with fields mf_time, siglay, siglev,
+%               nObcNodes and read_obc_nodes).
 %   outfile - Output file name.
 %   data    - 2D array of mean flow along the open boundary (nobc, time).
 %
@@ -86,7 +87,7 @@ netcdf.putVar(nc, time_varid, 0, numel(Mobj.mf_times), Mobj.mf_times);
 netcdf.putVar(nc, itime_varid, floor(Mobj.mf_times));
 netcdf.putVar(nc, itime2_varid, 0, numel(Mobj.mf_times), mod(Mobj.mf_times, 1) * 24 * 3600 * 1000);
 netcdf.putVar(nc, nmfcell_varid, Mobj.read_obc_nodes{1});
-netcdf.putVar(nc, dmfqdis_varid, [0, 0], [numel(Mobj.mf_times), numel(Mobj.read_obc_nodes{1})], Mobj.velocity);
+netcdf.putVar(nc, dmfqdis_varid, [0, 0], [numel(Mobj.mf_times), numel(Mobj.read_obc_nodes{1})], data);
 
 netcdf.close(nc);
 
