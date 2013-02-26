@@ -27,6 +27,8 @@ function write_FVCOM_meanflow_ascii(Mobj, casename, data)
 %
 % Revision history
 %    2013-02-25 - First version.
+% 
+% TODO: Implement support for multiple open boundaries in all the outputs.
 %
 %==========================================================================
 
@@ -100,9 +102,33 @@ if f < 0
     error('Problem writing to .dat file. Check permissions and try again.')
 end
 % Boundary node IDs
-fprintf(f, '%i\n', numel(Mobj.read_obc_nodes{1}));
-for i = 1:numel(Mobj.read_obc_nodes{1})
-    fprintf(f, '%8i\n', Mobj.read_obc_nodes{1}(i));
+fprintf(f, '%i\n', numel(Mobj.obc_nodes(Mobj.obc_nodes ~= 0)));
+for j = 1:length(Mobj.read_obc_nodes); % number of boundaries
+    for i = 1:numel(Mobj.read_obc_nodes{j})
+        fprintf(f, '%8i\n', Mobj.read_obc_nodes{j}(i));
+    end
+end
+
+fclose(f);
+
+% _tide_cell.dat
+f = fopen([casename, '_tide_cell.dat'], 'w');
+if f < 0
+    error('Problem writing to .dat file. Check permissions and try again.')
+end
+if ~isfield(Mobj, 'read_obc_elements')
+    error('Missing list of boundary element IDs. Run find_boundary_elements and try again.')
+end
+% Boundary element IDs
+ne = 0;
+for j = 1:length(Mobj.read_obc_elements)
+    ne = ne + numel(Mobj.read_obc_elements{j});
+end
+fprintf(f, '%i\n', ne);
+for j = 1:length(Mobj.read_obc_nodes); % number of boundaries
+    for i = 1:numel(Mobj.read_obc_elements{j})
+        fprintf(f, '%8i\n', Mobj.read_obc_elements{j}(i));
+    end
 end
 
 fclose(f);
@@ -137,12 +163,37 @@ end
 
 fclose(f);
 
-% _uv.dat -- boundary velocities?
+% _uv.dat -- boundary velocities? Are these tidal velocities rather than
+% mean flow velocities, though? Hmmm...
 f = fopen([casename, '_uv.dat'], 'w');
 if f < 0
     error('Problem writing to .dat file. Check permissions and try again.')
 end
+if ~isfield(Mobj, 'velocity')
+    error('Missing mean flow velocity. Run get_POLCOMS_meanflow and try again.')
+end
 
+% Number of elements in the boundaries.
+ne = 0;
+for j = 1:length(Mobj.read_obc_elements)
+    ne = ne + numel(Mobj.read_obc_elements{j});
+end
+s = char();
+for ss = 1:ne
+    if ss < ne
+        s = [s, '%.4f\t'];
+    else
+        s = [s, '%.4f\n'];
+    end
+end
 
+for i = 1:ne
+    fprintf(f, s, Mobj.meanflow_u(:, i));
+    fprintf(f, s, Mobj.meanflow_v(:, i));
+end
+
+if ftbverbose
+    fprintf('end   : %s \n', subname)
+end
 
 
