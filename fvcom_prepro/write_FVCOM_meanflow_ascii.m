@@ -95,7 +95,7 @@ end
 fclose(f);
 
 % _tide_node.dat
-f = fopen([casename, '_tide_cell.dat'], 'w');
+f = fopen([casename, '_tide_node.dat'], 'w');
 if f < 0
     error('Problem writing to .dat file. Check permissions and try again.')
 end
@@ -137,7 +137,7 @@ end
 
 fclose(f);
 
-% _uv.dat -- initial boundary velocities?
+% _uv.dat -- boundary velocities?
 f = fopen([casename, '_uv.dat'], 'w');
 if f < 0
     error('Problem writing to .dat file. Check permissions and try again.')
