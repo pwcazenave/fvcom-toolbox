@@ -39,7 +39,7 @@ if ftbverbose
     fprintf('\n'); fprintf(['begin : ' subname '\n']);
 end
 
-% _meanflow.dat
+%% _meanflow.dat
 f = fopen([casename, '_meanflow.dat'], 'w');
 if f < 0
     error('Problem writing to .dat file. Check permissions and try again.')
@@ -83,20 +83,7 @@ end
 
 fclose(f);
 
-% _tide_cell.dat -- What's this? Element IDs?
-f = fopen([casename, '_tide_cell.dat'], 'w');
-if f < 0
-    error('Problem writing to .dat file. Check permissions and try again.')
-end
-% Boundary node IDs
-fprintf(f, '%i\n', numel(Mobj.read_obc_nodes{1}));
-for i = 1:numel(Mobj.read_obc_nodes{1})
-    fprintf(f, '%8i\n', Mobj.read_obc_nodes{1}(i));
-end
-
-fclose(f);
-
-% _tide_node.dat
+%% _tide_node.dat -- nodes along the open boundaries.
 f = fopen([casename, '_tide_node.dat'], 'w');
 if f < 0
     error('Problem writing to .dat file. Check permissions and try again.')
@@ -111,7 +98,7 @@ end
 
 fclose(f);
 
-% _tide_cell.dat
+%% _tide_cell.dat -- elements which have two nodes on an open boundary.
 f = fopen([casename, '_tide_cell.dat'], 'w');
 if f < 0
     error('Problem writing to .dat file. Check permissions and try again.')
@@ -120,10 +107,7 @@ if ~isfield(Mobj, 'read_obc_elements')
     error('Missing list of boundary element IDs. Run find_boundary_elements and try again.')
 end
 % Boundary element IDs
-ne = 0;
-for j = 1:length(Mobj.read_obc_elements)
-    ne = ne + numel(Mobj.read_obc_elements{j});
-end
+ne = Mobj.nObcElements;
 fprintf(f, '%i\n', ne);
 for j = 1:length(Mobj.read_obc_nodes); % number of boundaries
     for i = 1:numel(Mobj.read_obc_elements{j})
@@ -133,7 +117,7 @@ end
 
 fclose(f);
 
-% _tide_el.dat
+%% _tide_el.dat
 f = fopen([casename, '_tide_el.dat'], 'w');
 if f < 0
     error('Problem writing to .dat file. Check permissions and try again.')
@@ -163,9 +147,15 @@ end
 
 fclose(f);
 
-% _uv.dat -- boundary velocities? Are these tidal velocities rather than
-% mean flow velocities, though? Hmmm...
-f = fopen([casename, '_uv.dat'], 'w');
+%% _tide_uv.dat -- boundary velocities
+% The format here is pretty funky. According to Dima's wrf_elj_obc.m
+% script, for each time step, there's lines of depth averaged u and v
+% followed by all the u components at each vertical level, then all the v
+% components at each vertical level. All lines are prefixed with the
+% current time in seconds relative to the start of the model (or mean
+% flow? God knows).
+
+f = fopen([casename, '_tide_uv.dat'], 'w');
 if f < 0
     error('Problem writing to .dat file. Check permissions and try again.')
 end
@@ -174,23 +164,29 @@ if ~isfield(Mobj, 'velocity')
 end
 
 % Number of elements in the boundaries.
-ne = 0;
-for j = 1:length(Mobj.read_obc_elements)
-    ne = ne + numel(Mobj.read_obc_elements{j});
-end
-s = char();
-for ss = 1:ne
-    if ss < ne
-        s = [s, '%.4f\t'];
-    else
-        s = [s, '%.4f\n'];
-    end
-end
+ne = Mobj.nObcElements;
 
-for i = 1:ne
+% Number of time steps.
+[~, nt] = size(Mobj.surfaceElevation);
+
+% Do the depth averaged u then v for all nodes prefixed by the current
+% time. So, wrap the whole shebang in a loop through time.
+for t = 1:nt
+    
+    % Create a format string for the current time plus the number of
+    % boundary elements.
+    s = '%i';
+    for ss = 1:ne
+        if ss < ne
+            s = [s, '%.4f\t'];
+        else
+            s = [s, '%.4f\n'];
+        end
+    end
+
+    % Dump the time and mean u and then mean v vectors.
     fprintf(f, s, Mobj.meanflow_u(:, i));
     fprintf(f, s, Mobj.meanflow_v(:, i));
-end
 
 if ftbverbose
     fprintf('end   : %s \n', subname)
