@@ -97,7 +97,7 @@ netcdf.putVar(nc, nmfcell_varid, Mobj.read_obc_elements{1});
 % MFDIST is calculated here as the diff of the sigma levels. This should
 % work for uniform and gaussian etc. distributions so long as Mobj.siglev
 % has the right values in it.
-netcdf.putVar(nc, mfdist_varid, repmat(abs(diff(Mobj.siglev)), [numel(Mobj.read_obc_elements{1}), 1])');
+netcdf.putVar(nc, mfdist_varid, repmat(abs(diff(Mobj.siglev)), [numel([Mobj.read_obc_elements{:}]), 1])');
 netcdf.putVar(nc, dmfqdis_varid, [0, 0], [numel(Mobj.read_obc_elements{1}), numel(Mobj.mf_times)], data);
 
 netcdf.close(nc);
