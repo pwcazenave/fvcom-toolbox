@@ -266,7 +266,7 @@ Mobj.meanflow_ubar = squeeze(mean(Mobj.meanflow_u, 2));
 Mobj.meanflow_vbar = squeeze(mean(Mobj.meanflow_v, 2));
 
 % Depth averaged velocity
-Mobj.velocity = mean(sqrt(Mobj.meanflow_u(:, :, end).^2 + Mobj.meanflow_v(:, :, end).^2), 2);
+Mobj.velocity = squeeze(mean(sqrt(Mobj.meanflow_u.^2 + Mobj.meanflow_v.^2), 2));
 
 % Convert the current times to Modified Julian Day (this is a bit ugly).
 pc.time.all = strtrim(regexp(pc.time.units, 'since', 'split'));
@@ -309,7 +309,7 @@ end
 %
 %     % Add the current element's position and value as a scatter point to
 %     % the map plot.
-%     scatter(fvlon(i), fvlat(i), 50, Mobj.velocity(i), 'filled')
+%     scatter(fvlon(i), fvlat(i), 50, Mobj.velocity(i, end), 'filled')
 %
 %     % Do vertical profiles of u, v and velocity.
 %     figure(2)
@@ -368,7 +368,7 @@ end
 %     % The interpolated POLCOMS vertical profile (last time step only)
 %     plot(sqrt(iuz(i, :).^2 + ivz(i, :).^2), izz(i, :), 'g')
 %     % The depth-averaged velocity (again, last time step only)
-%     fvvelbar = Mobj.velocity(i);
+%     fvvelbar = Mobj.velocity(i, end);
 %     plot([fvvelbar, fvvelbar], [min(fvz), max(fvz)], 'k')
 %     xlim([-0.1, 0.2])
 %     ylim([-100, 0])
