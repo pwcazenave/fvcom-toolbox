@@ -15,7 +15,9 @@ function Mobj = find_boundary_elements(Mobj)
 % 
 % OUTPUT:
 %   Mobj - new field of a cell array read_obc_elements which contains the
-%          IDs of the elements which fall on the model open boundaries.
+%          IDs of the elements which fall on the model open boundaries and
+%          nObcElements which is the total number of boundary elements
+%          along each boundary.
 % 
 % NOTES:
 %   This will be pretty slow if your unstructured grid has an enormous
@@ -31,6 +33,8 @@ function Mobj = find_boundary_elements(Mobj)
 % 
 % Revision history:
 %   2013-02-26 First version.
+%   2013-02-28 Add new field to the output (total number of boundary
+%   elements as nObcElements).
 % 
 %==========================================================================
 
@@ -46,6 +50,7 @@ ne = length(Mobj.tri); % number of elements
 nb = length(Mobj.read_obc_nodes); % number of boundaries
 
 obc_elems = cell(nb, 1);
+nObcElements = nan(nb, 1);
 
 for i = 1:nb
 
@@ -67,9 +72,11 @@ for i = 1:nb
             end
         end
     end
+    nObcElements(i) = numel(obc_elems{i}(:));
 end
 
 Mobj.read_obc_elements = obc_elems;
+Mobj.nObcElements = nObcElements;
 
 % Check it's worked for the first model boundary.
 % xc = nodes2elems(Mobj.x, Mobj);
