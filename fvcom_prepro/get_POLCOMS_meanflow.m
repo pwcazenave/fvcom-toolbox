@@ -11,8 +11,9 @@ function Mobj = get_POLCOMS_meanflow(Mobj, files)
 % INPUT:
 %   Mobj    = MATLAB mesh structure which must contain:
 %               - Mobj.lon, Mobj.lat - node coordinates (lat/long).
-%               - Mobj.obc_nodes - list of open boundary node inidices.
-%               - Mobj.nObcNodes - number of nodes in each open boundary.
+%               - Mobj.obc_elements - list of open boundary element
+%               inidices.
+%               - Mobj.nObcElements - number of elements in each open boundary.
 %   files   = Cell array of PML POLCOMS-ERSEM NetCDF file(s) in which 4D
 %             variables of u and v velocity components (called 'ucurD' and
 %             'vcurD') exist. Their shape should be (y, x, sigma, time).
@@ -55,6 +56,11 @@ function Mobj = get_POLCOMS_meanflow(Mobj, files)
 %    FVCOM depths. This means the full profile structure is maintained in
 %    the resulting FVCOM boundary input despite the differing depths at the
 %    FVCOM boundary node.
+%    2013-02-28 Change the interpolation to occur on the open boundary
+%    elements rather than on the open boundary nodes. This requires a
+%    couple of extra steps in the pre-processing (notably running
+%    find_boundary_elements) as well as transferring the sigma depths to
+%    the element centres.
 %
 %==========================================================================
 
@@ -74,16 +80,32 @@ pc = get_POLCOMS_netCDF(files, varlist);
 
 [lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
 
-fvlon = Mobj.lon(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
-fvlat = Mobj.lat(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
+% We need positions of the open boundary element centroids (i.e. the MCE
+% centroid) at which to calculate the mean flow velocity. As such, we need
+% to first calculate a number of parameters at the element centres from the
+% nodal values we typically collect (e.g. positions, sigma layers etc.). Do
+% all that here.
+lonc = nodes2elems(Mobj.lon, Mobj);
+latc = nodes2elems(Mobj.lat, Mobj);
+% For the sigma levels, we need to wrap the conversion in a loop.
+siglayzc = nan([Mobj.nElems, size(Mobj.siglayz, 2)]);
+for zz = 1:size(Mobj.siglayz, 2)
+    siglayzc(:, zz) = nodes2elems(Mobj.siglayz(:, zz), Mobj);
+end
 
-% Number of open boundary nodes
-nf = sum(Mobj.nObcNodes);
+oElements = [Mobj.read_obc_elements{:}];
+
+% Find the FVCOM positions for all the open boundary elements.
+fvlon = lonc(oElements);
+fvlat = latc(oElements);
+
+% Number of open boundary elements
+ne = sum(Mobj.nObcElements);
 % Number of sigma layers.
-fz = size(Mobj.siglayz, 2);
+fz = size(siglayzc, 2);
 
-fvmfu = nan(nf, fz, nt); % FVCOM interpolated flow vector components
-fvmfv = nan(nf, fz, nt); % FVCOM interpolated flow vector components
+fvmfu = nan(ne, fz, nt); % FVCOM interpolated flow vector components
+fvmfv = nan(ne, fz, nt); % FVCOM interpolated flow vector components
 
 if ftbverbose
     tic
@@ -99,9 +121,9 @@ for t = 1:nt
     pcz3 = pc.depth.data(:, :, :, t);
 
     % Preallocate the intermediate results arrays.
-    iuz = nan(nf, nz);
-    ivz = nan(nf, nz);
-    izz = nan(nf, nz);
+    iuz = nan(ne, nz);
+    ivz = nan(ne, nz);
+    izz = nan(ne, nz);
 
     % We need to create a mask to eliminate land values and apply it to the
     % depth averaged values.
@@ -130,19 +152,19 @@ for t = 1:nt
         pcz2(mask) = [];
 
         % Preallocate the intermediate results arrays.
-        iuobc = nan(nf, 1);
-        ivobc = nan(nf, 1);
-        izobc = nan(nf, 1);
+        iuobc = nan(ne, 1);
+        ivobc = nan(ne, 1);
+        izobc = nan(ne, 1);
 
-        % Speed up the tightest loop with a parallelized loop.
-        parfor i = 1:nf
+        % Speed up the tightest loops with a parallelized loop.
+        parfor i = 1:ne
             % Now we can do each position within the current depth layer.
 
             fx = fvlon(i);
             fy = fvlat(i);
 
             [~, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
-            % Get the n nearest nodes from PML POLCOMS-ERSEM data (more?
+            % Get the n nearest elements from PML POLCOMS-ERSEM data (more?
             % fewer?).
             ixy = ii(1:16);
 
@@ -165,7 +187,7 @@ for t = 1:nt
             % Check if we have NaNs (mostly if the position is outside the
             % model domain).
             if isnan(iuobc(i)) || isnan(ivobc(i))
-                warning('FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Setting to the closest PML POLCOMS-ERSEM value.', fx, fy)
+                warning('FVCOM boundary element at %f, %f is outside the PML POLCOMS-ERSEM domain. Setting to the closest PML POLCOMS-ERSEM value.', fx, fy)
                 iuobc(i) = pcu2(ii(1));
                 ivobc(i) = pcv2(ii(1));
                 izobc(i) = pcz2(ii(1));
@@ -180,21 +202,20 @@ for t = 1:nt
 
     % Now we've interpolated in space, we can interpolate the z-values
     % to the sigma depths.
-    oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);
 
     % Preallocate the output arrays
-    fvuz = nan(nf, fz);
-    fvvz = nan(nf, fz);
+    fvuz = nan(ne, fz);
+    fvvz = nan(ne, fz);
 
-    for pp = 1:nf
-        % Get the FVCOM depths at this node
-        tfz = Mobj.siglayz(oNodes(pp), :);
-        % Now get the interpolated PML POLCOMS-ERSEM depth at this node
+    for pp = 1:ne
+        % Get the FVCOM depths at this element
+        tfz = siglayzc(oElements(pp), :);
+        % Now get the interpolated PML POLCOMS-ERSEM depth at this element
         tpz = izz(pp, :);
 
         % To ensure we get the full vertical expression of the vertical
         % profiles, we need to normalise the POLCOMS-ERSEM depths to the
-        % FVCOM range for the current node. This is because in instances
+        % FVCOM range for the current element. This is because in instances
         % where FVCOM depths are shallower (e.g. in coastal regions), if we
         % don't normalise the depths, we end up truncating the vertical
         % profile. This approach ensures we always use the full vertical
@@ -205,7 +226,7 @@ for t = 1:nt
         D = min(tfz);
         norm_tpz = (((D - C) * (tpz - A)) / (B - A)) + C;
 
-        % Get the u and v velocity values for this node and interpolate
+        % Get the u and v velocity values for this elment and interpolate
         % down the water column (from PML POLCOMS-ERSEM to FVCOM). I
         % had originally planned to use csaps for the vertical
         % interplation/subsampling at each location. However, the demo
@@ -218,7 +239,7 @@ for t = 1:nt
             fvvz(pp, :) = interp1(norm_tpz, ivz(pp, :), tfz, 'linear', 'extrap');
         else
             warning('Should never see this... ') % because we test for NaNs when fetching the values.
-            warning('FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Skipping.', fvlon(pp), fvlat(pp))
+            warning('FVCOM boundary element at %f, %f is outside the PML POLCOMS-ERSEM domain. Skipping.', fvlon(pp), fvlat(pp))
             continue
         end
     end
@@ -270,8 +291,28 @@ end
 % the profiles won't match perfectly in these plots. This is because the
 % interpolated FVCOM profiles use the full water column from the POLCOMS
 % data rather than truncating it at the FVCOM depth.
-% for i = 1:nf
-%     figure(1)
+
+% % Map the open boundaries with the depth averaged velocity as a background
+% figure(1)
+% clf
+% imagesc(pc.lon.data, pc.lat.data, mean(sqrt(pcu3.^2 + pcv3.^2), 3)')
+% shading flat
+% axis('equal', 'tight')
+% set(gca,'YDir','normal')
+% colorbar
+% caxis([0, 0.05])
+% hold on
+% plot(fvlon, fvlat, 'wo')
+% axis([min(fvlon) - 0.1, max(fvlon) + 0.1, min(fvlat) - 0.1, max(fvlat) + 0.1])
+%
+% for i = 1:ne
+%
+%     % Add the current element's position and value as a scatter point to
+%     % the map plot.
+%     scatter(fvlon(i), fvlat(i), 50, Mobj.velocity(i), 'filled')
+%
+%     % Do vertical profiles of u, v and velocity.
+%     figure(2)
 %     clf
 %
 %     subplot(3,1,1)
@@ -279,7 +320,7 @@ end
 %     % corresponding POLCOMS data isn't stored as a function of time (i.e.
 %     % iuz, ivz and izz are all for the last time step only).
 %     fvuz = Mobj.meanflow_u(i, :, end);
-%     fvz = Mobj.siglayz(oNodes(i), :);
+%     fvz = siglayzc(oElements(i), :);
 %     plot(fvuz, fvz)
 %     hold on
 %     % The interpolated POLCOMS vertical profile (last time step only)
@@ -287,7 +328,7 @@ end
 %     % The depth-averaged velocity (again, last time step only)
 %     fvubar = Mobj.meanflow_ubar(i, end);
 %     plot([fvubar, fvubar], [min(fvz), max(fvz)], 'k')
-%     xlim([-0.05, 0.1])
+%     xlim([-0.1, 0.2])
 %     ylim([-100, 0])
 %     xlabel('Mean flow u-velocity (m^{3}s^{-1})')
 %     ylabel('Depth (m)')
@@ -300,7 +341,7 @@ end
 %     % corresponding POLCOMS data isn't stored as a function of time (i.e.
 %     % iuz, ivz and izz are all for the last time step only).
 %     fvvz = Mobj.meanflow_v(i, :, end);
-%     fvz = Mobj.siglayz(oNodes(i), :);
+%     fvz = siglayzc(oElements(i), :);
 %     plot(fvvz, fvz)
 %     hold on
 %     % The interpolated POLCOMS vertical profile (last time step only)
@@ -308,7 +349,7 @@ end
 %     % The depth-averaged velocity (again, last time step only)
 %     fvvbar = Mobj.meanflow_vbar(i, end);
 %     plot([fvvbar, fvvbar], [min(fvz), max(fvz)], 'k')
-%     xlim([-0.05, 0.1])
+%     xlim([-0.1, 0.2])
 %     ylim([-100, 0])
 %     xlabel('Mean flow v-velocity (m^{3}s^{-1})')
 %     ylabel('Depth (m)')
@@ -321,7 +362,7 @@ end
 %     % corresponding POLCOMS data isn't stored as a function of time (i.e.
 %     % iuz, ivz and izz are all for the last time step only).
 %     fvvelz = sqrt(Mobj.meanflow_u(i, :, end).^2 + Mobj.meanflow_v(i, :, end).^2);
-%     fvz = Mobj.siglayz(oNodes(i), :);
+%     fvz = siglayzc(oElements(i), :);
 %     plot(fvvelz, fvz)
 %     hold on
 %     % The interpolated POLCOMS vertical profile (last time step only)
@@ -329,7 +370,7 @@ end
 %     % The depth-averaged velocity (again, last time step only)
 %     fvvelbar = Mobj.velocity(i);
 %     plot([fvvelbar, fvvelbar], [min(fvz), max(fvz)], 'k')
-%     xlim([-0.05, 0.1])
+%     xlim([-0.1, 0.2])
 %     ylim([-100, 0])
 %     xlabel('Mean flow velocity (m^{3}s^{-1})')
 %     ylabel('Depth (m)')
