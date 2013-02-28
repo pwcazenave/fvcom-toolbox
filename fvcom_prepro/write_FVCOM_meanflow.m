@@ -1,16 +1,17 @@
 function write_FVCOM_meanflow(Mobj, ncfile, data)
 % Export mean flow forcing at the open boundary to NetCDF.
 %
-% function write_FVCOM_meanflow(Mobj, ncfile, datfile, data)
+% function write_FVCOM_meanflow(Mobj, ncfile, data)
 %
 % DESCRIPTION:
 %    Setup an FVCOM hydrographic open boundary mean flow forcing file.
 %
 % INPUT:
 %   Mobj    - MATLAB mesh object (with fields mf_time, siglay, siglev,
-%               nObcNodes and read_obc_nodes).
+%               nObcElements and read_obc_elements).
 %   ncfile  - Output NetCDF file name.
-%   data    - 2D array of mean flow along the open boundary (nobc, time).
+%   data    - 2D array of mean flow along the open boundary sized
+%               (nobcelems, time).
 %
 % OUTPUT:
 %    FVCOM mean flow values along the FVCOM open boundary in a NETCDF file
@@ -19,8 +20,14 @@ function write_FVCOM_meanflow(Mobj, ncfile, data)
 % Author(s):
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
+% TODO: 
+%    Add support for multiple open boundaries (currently hard limit of
+%    one).
+%
 % Revision history
 %    2013-02-20 - First version.
+%    2013-02-28 - Change output of velocities to be at the boundary element
+%    centres rather than the boundary nodes.
 %
 %==========================================================================
 
@@ -42,7 +49,7 @@ netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'filename', ncfile)
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'Conventions', 'CF-1.0')
 
 % define dimensions
-nmfcell_dimid = netcdf.defDim(nc, 'nmfcell', Mobj.nObcNodes);
+nmfcell_dimid = netcdf.defDim(nc, 'nmfcell', Mobj.nObcElements);
 time_dimid = netcdf.defDim(nc, 'time', netcdf.getConstant('NC_UNLIMITED'));
 siglay_dimid = netcdf.defDim(nc, 'siglay', size(Mobj.siglay, 2));
 siglev_dimid = netcdf.defDim(nc, 'siglev', size(Mobj.siglev, 2));
@@ -86,12 +93,12 @@ netcdf.endDef(nc);
 netcdf.putVar(nc, time_varid, 0, numel(Mobj.mf_times), Mobj.mf_times);
 netcdf.putVar(nc, itime_varid, floor(Mobj.mf_times));
 netcdf.putVar(nc, itime2_varid, 0, numel(Mobj.mf_times), mod(Mobj.mf_times, 1) * 24 * 3600 * 1000);
-netcdf.putVar(nc, nmfcell_varid, Mobj.read_obc_nodes{1});
+netcdf.putVar(nc, nmfcell_varid, Mobj.read_obc_elements{1});
 % MFDIST is calculated here as the diff of the sigma levels. This should
 % work for uniform and gaussian etc. distributions so long as Mobj.siglev
 % has the right values in it.
-netcdf.putVar(nc, mfdist_varid, repmat(abs(diff(Mobj.siglev)), [numel(Mobj.read_obc_nodes{1}), 1])');
-netcdf.putVar(nc, dmfqdis_varid, [0, 0], [numel(Mobj.read_obc_nodes{1}), numel(Mobj.mf_times)], data);
+netcdf.putVar(nc, mfdist_varid, repmat(abs(diff(Mobj.siglev)), [numel(Mobj.read_obc_elements{1}), 1])');
+netcdf.putVar(nc, dmfqdis_varid, [0, 0], [numel(Mobj.read_obc_elements{1}), numel(Mobj.mf_times)], data);
 
 netcdf.close(nc);
 
