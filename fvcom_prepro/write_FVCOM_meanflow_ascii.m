@@ -1,4 +1,4 @@
-function write_FVCOM_meanflow_ascii(Mobj, casename, data)
+function write_FVCOM_meanflow_ascii(Mobj, casename)
 % Export mean flow forcing files hard-coded into mod_obcs2.F.
 %
 % function write_FVCOM_meanflow_ascii(Mobj, datfile, data)
@@ -9,6 +9,9 @@ function write_FVCOM_meanflow_ascii(Mobj, casename, data)
 % INPUT:
 %   Mobj     - MATLAB mesh object (with fields mf_time, siglay, siglev,
 %               nObcNodes and read_obc_nodes).
+%            - Also requires two fields called meanflow_u and meanflow_v
+%               which are arrays of u and v of sizes (nObcElements,
+%               length(siglay), length(mf_times)).
 %   casename - Output file prefix. Output files will be
 %               /path/to/casename_suffix.dat, where suffix is one of:
 %                   - meanflow
@@ -40,6 +43,10 @@ if ftbverbose
 end
 
 %% _meanflow.dat
+
+% Create depth averaged velocity from the 3D velocity data in Mobj.
+velocity = squeeze(mean(sqrt(Mobj.meanflow_u.^2 + Mobj.meanflow_v.^2), 2));
+
 f = fopen([casename, '_meanflow.dat'], 'w');
 if f < 0
     error('Problem writing to .dat file. Check permissions and try again.')
@@ -64,7 +71,7 @@ for i = 1:numel(Mobj.read_obc_nodes{1})
 end
 
 % Number of times and boundary points
-[nb, nt] = size(Mobj.velocity);
+[nb, nt] = size(velocity);
 
 % Add the number of time steps
 fprintf(f, '%i\n', nt);
@@ -77,8 +84,8 @@ for ss = 1:nb
         s = [s, '%.4f\n'];
     end
 end
-for i = 1:size(Mobj.velocity, 2)
-    fprintf(f, s, [i - 1, Mobj.velocity(:, i)']);
+for i = 1:size(velocity, 2)
+    fprintf(f, s, [i - 1, velocity(:, i)']);
 end
 
 fclose(f);
@@ -159,34 +166,48 @@ f = fopen([casename, '_tide_uv.dat'], 'w');
 if f < 0
     error('Problem writing to .dat file. Check permissions and try again.')
 end
-if ~isfield(Mobj, 'velocity')
-    error('Missing mean flow velocity. Run get_POLCOMS_meanflow and try again.')
-end
 
 % Number of elements in the boundaries.
 ne = Mobj.nObcElements;
 
 % Number of time steps.
-[~, nt] = size(Mobj.surfaceElevation);
+nt = length(Mobj.mf_times);
+
+% Number of vertical layers.
+nz = length(Mobj.siglay);
+
+% Create a format string for the each time step plus the number of boundary
+% elements.
+s = '%i\t';
+for ss = 1:ne
+    
+    if ss < ne
+        s = [s, '%.4f\t'];
+    else
+        s = [s, '%.4f\n'];
+    end
+end
 
 % Do the depth averaged u then v for all nodes prefixed by the current
 % time. So, wrap the whole shebang in a loop through time.
 for t = 1:nt
     
-    % Create a format string for the current time plus the number of
-    % boundary elements.
-    s = '%i';
-    for ss = 1:ne
-        if ss < ne
-            s = [s, '%.4f\t'];
-        else
-            s = [s, '%.4f\n'];
-        end
-    end
-
+    % Time since the start of the time series (in seconds).
+    iint = (Mobj.mf_times(t) - Mobj.mf_times(1)) * 24 * 3600;
+    
     % Dump the time and mean u and then mean v vectors.
-    fprintf(f, s, Mobj.meanflow_u(:, i));
-    fprintf(f, s, Mobj.meanflow_v(:, i));
+    fprintf(f, s, [iint; mean(Mobj.meanflow_u(:, :, t), 2)]);
+    fprintf(f, s, [iint; mean(Mobj.meanflow_v(:, :, t), 2)]);
+    
+    % Now, for each vertical layer, dump the u and v vectors, prefixed with
+    % time.
+    for zz = 1:nz
+        fprintf(f, s, [iint; Mobj.meanflow_u(:, zz, t)]);
+        fprintf(f, s, [iint; Mobj.meanflow_v(:, zz, t)]);
+    end
+end
+
+fclose(f);
 
 if ftbverbose
     fprintf('end   : %s \n', subname)
