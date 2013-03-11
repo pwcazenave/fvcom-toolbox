@@ -9,7 +9,7 @@ function [x0,y0,a] = centroid(x,y)
 
 [m1,n1] = size(x); [m2,n2] = size(y);
 n = max(m1,n1);
-if [m1,n1] ~= [m2,n2] || min(m1,n1) ~= 1 || n <= 1
+if (m1 ~= m2 && n1 ~= n2) || min(m1,n1) ~= 1 || n <= 1
     error('Args must be equal-sized non-scalar vectors')
 end
 x = x(:); y = y(:);
