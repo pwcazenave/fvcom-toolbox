@@ -19,7 +19,7 @@ function write_SMS_2dm(file, tri, x, y, bnd)
 %   file - ASCII file in SMS 2dm format.
 % 
 % EXAMPLE USAGE:
-%   write_SMS_2dm(file, tri, x, y)
+%   write_SMS_2dm('/tmp/test.2dm', Mobj.tri, Mobj.x, Mobj.y)
 % 
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -50,7 +50,7 @@ end
 nt = size(tri, 1);
 
 % Header
-fprintf(f, 'MESH2D\nMESHNAME "test"\n');
+fprintf(f, 'MESH2D\nMESHNAME "mesh"\n');
 
 % Add the connectivity table
 for t = 1:nt
