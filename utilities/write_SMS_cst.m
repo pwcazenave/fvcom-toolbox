@@ -18,7 +18,7 @@ function write_SMS_cst(file, x, y)
 %   file - ASCII file in SMS CST format.
 % 
 % EXAMPLE USAGE:
-%   write_SMS_cst(file, x, y)
+%   write_SMS_cst('/tmp/test.cst', x, y)
 % 
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
