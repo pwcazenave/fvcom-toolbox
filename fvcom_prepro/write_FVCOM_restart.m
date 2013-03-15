@@ -1,4 +1,4 @@
-function write_FVCOM_restart(fv_restart, out_restart, indata)
+function write_FVCOM_restart(fv_restart, out_restart, indata, start_date)
 % Duplicate an FVCOM restart file, replacing variable values with those
 % specified in the struct data. 
 % 
@@ -12,8 +12,10 @@ function write_FVCOM_restart(fv_restart, out_restart, indata)
 % INPUT:
 %   fv_restart  = full path to an existing FVCOM restart file.
 %   out_restart = full path to the restart file to be created.
-%   data        = struct whose field names are the variable names to be
+%   indata      = struct whose field names are the variable names to be
 %   replaced.
+%   start_date  = [optional] reset the restart file times to this date
+%   ([YYYY, MM, DD, HH, MM, SS]).
 % 
 % OUTPUT:
 %   FVCOM restart file.
@@ -21,7 +23,8 @@ function write_FVCOM_restart(fv_restart, out_restart, indata)
 % EXAMPLE USAGE:
 %   indata.temp = interpolated_temp;
 %   indata.salinity = interpolated_salinity;
-%   write_FVCOM_restart('/tmp/fvcom_restart.nc', indata)
+%   write_FVCOM_restart('/tmp/fvcom_restart.nc', ...
+%       '/tmp/fvcom_restart_interp.nc', indata)
 % 
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -30,6 +33,7 @@ function write_FVCOM_restart(fv_restart, out_restart, indata)
 %   2013-02-08 First version.
 %   2013-02-15 Fix bug wherein only the last field in the new data would
 %   only be added to the output NetCDF file.
+%   2013-03-13 Make the time rewriting optional and not just commented out.
 % 
 %==========================================================================
 
@@ -154,8 +158,8 @@ for ii = 1:numvars
                 fprintf('new data... ')
             end
             % To make the scaling go from the initial value to the POLCOMS
-            % value, we need to take the scale the difference between the
-            % end members by the scaling factor at each time and add to the
+            % value, we need to scale the difference between the end
+            % members by the scaling factor at each time and add to the
             % current time's value.
             sfvdata = nan(nd, ns, nt);
             ss = 0:1 / (nt - 1):1; % scale from 0 to 1.
@@ -164,6 +168,8 @@ for ii = 1:numvars
                 if tt == 1
                     sfvdata(:, :, 1) = startdata;
                 else
+                    size(indata.(fnames{vv}))
+                    size(startdata)
                     td = indata.(fnames{vv}) - startdata;
                     sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
                 end
@@ -178,23 +184,26 @@ for ii = 1:numvars
 
             writtenAlready = 1;
 
-%         % We might also want to replace the time. If so, uncomment these
-%         % lines to replace with an arbitrary time period. We also need an
-%         % additional input argument in this case (start_date).
-%         elseif strcmpi(varname, 'time')
-%             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
-%             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
-%             netcdf.putVar(ncout, varid, tmp_time)
-%         elseif strcmpi(varname, 'Times')
-%             tmp_time = [];
-%             for i = 1:nt;
-%                 tmp_time = [tmp_time, sprintf('%-026s', datestr(datenum(start_date) - 7 + (i - 1), 'yyyy-mm-dd HH:MM:SS.FFF'))];
-%             end
-%             netcdf.putVar(ncout, varid, tmp_time)
-%         elseif strcmpi(varname, 'Itime')
-%             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
-%             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
-%             netcdf.putVar(ncout, varid, floor(tmp_time))
+        % We might also want to replace the time. If so, supply a fourth
+        % argument (start_date) to replace the times in the existing
+        % restart file with an arbitrary time period.
+        elseif strcmpi(varname, 'time') && nargin == 4
+            warning('Replacing times in the restart file')
+            tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
+            tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
+            netcdf.putVar(ncout, varid, tmp_time)
+        elseif strcmpi(varname, 'Times') && nargin == 4
+            warning('Replacing times in the restart file')
+            tmp_time = [];
+            for i = 1:nt;
+                tmp_time = [tmp_time, sprintf('%-026s', datestr(datenum(start_date) - 7 + (i - 1), 'yyyy-mm-dd HH:MM:SS.FFF'))];
+            end
+            netcdf.putVar(ncout, varid, tmp_time)
+        elseif strcmpi(varname, 'Itime') && nargin == 4
+            warning('Replacing times in the restart file')
+            tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
+            tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
+            netcdf.putVar(ncout, varid, floor(tmp_time))
         end
     end
 
