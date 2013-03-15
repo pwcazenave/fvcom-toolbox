@@ -80,12 +80,12 @@ if nargin == 5
 
             % Increment the counter.
             c = c + 1;
-
             if c == 1
-                fprintf(f, 'NS ');
-            elseif c > 1 && c <= 10
+                % Add the nodestring line prefix and the current node ID.
+                fprintf(f, 'NS %i ', node_id);
+            elseif c > 0 && c < 10
                 fprintf(f, '%i ', node_id);
-            elseif c > 10 || ns == length(nodestring);
+            elseif c >= 10 || ns == length(nodestring);
                 fprintf(f, '%i\n', node_id);
                 c = 0;
             end
@@ -95,7 +95,7 @@ if nargin == 5
     end
 end
 
-% Dump all the footer information.
+% Dump all the (apparently ignored) footer information.
 fprintf(f, 'BEGPARAMDEF\nGM  "Mesh"\nSI  0\nDY  0\nTU  ""\nTD  0  0\nNUME  3\nBCPGC  0\nBEDISP  0 0 0 0 1 0 1 0 0 0 0 1\nBEFONT  0 2\nBEDISP  1 0 0 0 1 0 1 0 0 0 0 1\nBEFONT  1 2\nBEDISP  2 0 0 0 1 0 1 0 0 0 0 1\nBEFONT  2 2\nENDPARAMDEF\nBEG2DMBC\nMAT  1 "material 01"\nEND2DMBC\n');
 
 fclose(f);
