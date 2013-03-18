@@ -39,7 +39,7 @@ function write_FVCOM_wind_ts_speed(Mobj, WindFile, time, u10, v10)
 %   vectors vary in time and space.
 %
 %==============================================================================
-warning off
+%warning off
 subname = 'example_FVCOM_wind_ts_speed';
 global ftbverbose;
 if(ftbverbose);

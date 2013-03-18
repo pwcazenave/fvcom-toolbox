@@ -33,7 +33,7 @@ function write_FVCOM_river(RiverFile,RiverName,nRivnodes,time,flux,temp,salt,Riv
 % Revision history
 %   
 %==============================================================================
-warning off;
+%warning off;
 
 global ftbverbose;
 if(ftbverbose);

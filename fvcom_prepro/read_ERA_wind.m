@@ -33,7 +33,7 @@ function era = read_ERA_wind(year, datadir, varlist)
 % datadir = '/users/modellers/pica/Data/ECMWF/2006';
 % varlist = {'u10', 'v10'};
 
-warning off
+%warning off
 
 if nargin ~= 3
     error('Incorrect number of arguments')

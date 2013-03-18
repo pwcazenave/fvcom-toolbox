@@ -24,7 +24,7 @@ function example_FVCOM_wind_ts_speed
 % Revision history
 %   
 %==============================================================================
-warning off
+%warning off
 subname = 'example_FVCOM_wind_ts';
 fprintf('\n')
 fprintf(['begin : ' subname '\n'])

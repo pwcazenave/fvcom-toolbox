@@ -29,7 +29,7 @@ function write_FVCOM_z0(z0,filename,mytitle)
 %    MATLAB 2010a or higher.
 %
 %==============================================================================
-warning off
+%warning off
 subname = 'write_FVCOM_z0';
 global ftbverbose;
 if(ftbverbose);

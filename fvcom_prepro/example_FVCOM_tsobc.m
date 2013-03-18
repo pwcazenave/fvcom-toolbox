@@ -27,7 +27,7 @@ function example_FVCOM_tsobc(basename,time,nSiglay)
 % 
 %==============================================================================
 
-warning off;
+%warning off;
 
 
 subname = 'example_FVCOM_tsobc';
