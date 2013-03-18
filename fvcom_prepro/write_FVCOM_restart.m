@@ -168,8 +168,6 @@ for ii = 1:numvars
                 if tt == 1
                     sfvdata(:, :, 1) = startdata;
                 else
-                    size(indata.(fnames{vv}))
-                    size(startdata)
                     td = indata.(fnames{vv}) - startdata;
                     sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
                 end
@@ -187,23 +185,41 @@ for ii = 1:numvars
         % We might also want to replace the time. If so, supply a fourth
         % argument (start_date) to replace the times in the existing
         % restart file with an arbitrary time period.
-        elseif strcmpi(varname, 'time') && nargin == 4
-            warning('Replacing times in the restart file')
+        elseif strcmpi(varname, 'time') && writtenAlready == 0 && nargin == 4
+            if ftbverbose
+                fprintf('new data... ')
+            end
+%             warning('Replacing times in the restart file')
             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
             netcdf.putVar(ncout, varid, tmp_time)
-        elseif strcmpi(varname, 'Times') && nargin == 4
-            warning('Replacing times in the restart file')
+
+            writtenAlready = 1;
+
+        elseif strcmpi(varname, 'Times') && writtenAlready == 0 && nargin == 4
+            if ftbverbose
+                fprintf('new data... ')
+            end
+%             warning('Replacing times in the restart file')
             tmp_time = [];
             for i = 1:nt;
                 tmp_time = [tmp_time, sprintf('%-026s', datestr(datenum(start_date) - 7 + (i - 1), 'yyyy-mm-dd HH:MM:SS.FFF'))];
             end
             netcdf.putVar(ncout, varid, tmp_time)
-        elseif strcmpi(varname, 'Itime') && nargin == 4
-            warning('Replacing times in the restart file')
+
+            writtenAlready = 1;
+
+        elseif strcmpi(varname, 'Itime') && writtenAlready == 0 && nargin == 4
+            if ftbverbose
+                fprintf('new data... ')
+            end
+%             warning('Replacing times in the restart file')
             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
             netcdf.putVar(ncout, varid, floor(tmp_time))
+
+            writtenAlready = 1;
+
         end
     end
 
