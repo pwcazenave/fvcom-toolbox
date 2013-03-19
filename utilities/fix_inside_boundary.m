@@ -1,7 +1,7 @@
-function [adjx, adjy] = fix_inside_boundary(x, y, node_ids)
+function [adjx, adjy] = fix_inside_boundary(x, y, node_ids, ang_thresh)
 % Fix unstructured grid points inside the given boundary.
-% 
-% [adjx, adjy] = fix_inside_boundary(Mobj, node_ids)
+%
+% [adjx, adjy] = fix_inside_boundary(x, y, node_ids, ang_thresh)
 % 
 % DESCRIPTION:
 %   Find the coordinates of points which are normal to the open boundary
@@ -10,35 +10,38 @@ function [adjx, adjy] = fix_inside_boundary(x, y, node_ids)
 %   adjacent boundary element lengths. Once the 'ideal' position has been
 %   identified, find the closest existing nodal position and change it to
 %   the 'ideal' position.
-% 
+%
 %   The resulting x2 and y2 coordinates can be exported to 2dm to be
 %   checked in SMS for mesh quality with the fvcom-toolbox function
 %   write_SMS_2dm.
-% 
+%
 % INPUT:
 %   x, y - Unstructured grid coordinates.
 %   node_ids - List of IDs of the nodes within the grid which are on the
 %              open boundary of interest.
-% 
+%   ang_thresh - [optional] Specify a minimum angle in degrees between the
+%                two adjacent nodal positions to deal with corners better.
+%
 % OUTPUT:
 %   adjx, adjy - New unstructured grid coordinate pairs in which the points
 %                just inside the open boundary have been adjusted so as to
 %                bisect the angle formed by the two adjacent boundary
 %                faces.
-% 
+%
 % EXAMPLE USAGE:
-%   [adjx, adjy] = fix_inside_boundary(x, y, node_ids)
-% 
+%   [adjx, adjy] = fix_inside_boundary(Mobj.x, Mobj.y, Mobj.read_obc_nodes{1}, 90)
+%
 % NOTES:
 %   This works best with cartesian coordinates but will work with spherical
 %   too, although the angles for large elements will be incorrect.
-% 
+%
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
-% 
+%
 % Revision history:
 %   2013-03-11 First version.
-% 
+%   2013-03-19 Add optional minimum angle support.
+%
 %==========================================================================
 
 subname = 'fix_inside_boundary';
@@ -54,6 +57,12 @@ if length(x) ~= length(y)
 else
     % Set the number of points in the boundary
     np = length(x(node_ids));
+end
+
+if nargin == 4
+    minAng = true;
+else
+    minAng = false;
 end
 
 normx = nan(np, 1);
@@ -96,7 +105,15 @@ for pp = 1:np
     % 180 degrees).
     ang1 = real(acosd((ln1^2 + ln2^2 - ln3^2) / (2 * ln1 * ln2)));
     ang1b = ang1 / 2; % bisect the angle
-    
+
+    % Check if we've been given a threshold minimum angle and skip this
+    % open boundary point if we have.
+    if minAng
+        if ang1 < ang_thresh
+            continue
+        end
+    end
+
     % Find the angle to the horizontal for the current node and one of the
     % other points.
     ang2 = atan2((py1 - boundy(pp)), (px1 - boundx(pp))) * (180 / pi);
