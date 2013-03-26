@@ -39,7 +39,7 @@ subname = 'write_FVCOM_meanflow_ascii';
 
 global ftbverbose
 if ftbverbose
-    fprintf('\n'); fprintf(['begin : ' subname '\n']);
+    fprintf(['\nbegin : ' subname '\n'])
 end
 
 %% _meanflow.dat -- mean flow velocities at the open boundary elements (?).
