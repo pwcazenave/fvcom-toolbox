@@ -41,10 +41,10 @@ end
 % open new NetCDF file
 nc = netcdf.create(ncfile, 'clobber');
 
-% define dimensions
+% define global attributes
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'type', 'FVCOM MEANFLOW TIME SERIES FILE')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'title', 'FVCOM MEANFLOW TIME SERIES data for open boundary')
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'history', 'File created using the write_FVCOM_meanflow.m from the MATLAB fvcom-toolbox')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'history', 'File created using write_FVCOM_meanflow.m from the MATLAB fvcom-toolbox')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'filename', ncfile)
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'Conventions', 'CF-1.0')
 
@@ -54,6 +54,7 @@ time_dimid = netcdf.defDim(nc, 'time', netcdf.getConstant('NC_UNLIMITED'));
 siglay_dimid = netcdf.defDim(nc, 'siglay', size(Mobj.siglay, 2));
 siglev_dimid = netcdf.defDim(nc, 'siglev', size(Mobj.siglev, 2));
 
+% define variables
 time_varid = netcdf.defVar(nc, 'time', 'NC_FLOAT', time_dimid);
 netcdf.putAtt(nc, time_varid, 'long_name', 'time');
 netcdf.putAtt(nc, time_varid, 'units', 'days since 1858-11-17 00:00:00');
