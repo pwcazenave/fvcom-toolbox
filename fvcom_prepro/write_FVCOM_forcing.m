@@ -124,7 +124,7 @@ for i=1:length(suffixes)
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','FVCOM Forcing File')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'institution','Plymouth Marine Laboratory')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','FVCOM grid (unstructured) surface forcing')
-    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history',['File created on ', datestr(now, 'yyyy-mm-dd HH:MM:SS'), ' with write_FVCOM_forcing.m from the fvcom-toolbox (https://github.com/pwcazenave/fvcom-toolbox)'])
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history',['File created on ', datestr(now, 'yyyy-mm-dd HH:MM:SS'), ' with write_FVCOM_forcing.m from the MATLAB fvcom-toolbox (https://github.com/pwcazenave/fvcom-toolbox)'])
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'references','http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'Conventions','CF-1.0')
 %     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'infos',infos)
@@ -262,6 +262,11 @@ for i=1:length(suffixes)
                     used_fnames = [used_fnames, {'uwnd', 'vwnd', 'uwnd', 'vwnd'}];
                     used_dims = [used_dims, {'nElems', 'nElems', 'nElems', 'nElems'}];
                 end
+                
+            case {'vwnd', 'v10'}
+                % We dealt with these in the u component section above, so
+                % just pass silently.
+                true;
 
             case 'slp'
                 if strcmpi(suffixes{i}, '_air_press') || ~multi_out
@@ -382,7 +387,7 @@ for i=1:length(suffixes)
 
             otherwise
                 if(ftbverbose)
-                    warning('Unknown or unused input data type: %s', fnames{vv})
+                    warning('Unknown or possibly unused input data type: %s', fnames{vv})
                 end
         end
     end
@@ -464,7 +469,9 @@ for i=1:length(suffixes)
             fprintf('done.\n')
         end
     end
-    if hf_done ~= 4
+    if hf_done < 4
+        % hf_done might be higher than four, but unless it is at least
+        % four, we haven't got everything we need.
         warning('Did not have all the required heat flux parameters. Need ''shtfl'', ''lhtfl'', ''nlwrs'' and ''nwsrs''.')
     end
 
