@@ -34,6 +34,10 @@ function [adjx, adjy] = fix_inside_boundary(x, y, node_ids, ang_thresh)
 % NOTES:
 %   This works best with cartesian coordinates but will work with spherical
 %   too, although the angles for large elements will be incorrect.
+%   Secondly, this will sometimes place put points outside the model domain
+%   (though I'm not yet sure why). The net result is that you have to
+%   re-edit the grid SMS by deleting that particular node and recreating
+%   the triangulation manually.
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
