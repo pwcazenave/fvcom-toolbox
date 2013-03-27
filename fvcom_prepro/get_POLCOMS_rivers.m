@@ -9,7 +9,7 @@ function Mobj = get_POLCOMS_rivers(Mobj, polcoms_file, polcoms_ij, polcoms_grid,
 %
 % INPUT:
 %   Mobj - MATLAB mesh object containing:
-%       * x, y or lon, lat - positions for the unstructured grid.
+%       * lon, lat - positions for the unstructured grid.
 %   polcoms_file - flow data file(s) from POLCOMS. For multiple files, give
 %       in chronological order as a cell array of file names.
 %   polcoms_ij - indices in the POLCOMS grid at which each river is
@@ -27,7 +27,7 @@ function Mobj = get_POLCOMS_rivers(Mobj, polcoms_file, polcoms_ij, polcoms_grid,
 %   Mobj.river_time - time series for the river discharge data
 %
 % EXAMPLE USAGE:
-%   Mobj = get_POLCOMS_river(Mobj, 'polcoms.flw', 'polcoms.index', ...
+%   Mobj = get_POLCOMS_rivers(Mobj, 'polcoms.flw', 'polcoms.index', ...
 %       'polcoms.nc', 0.025)
 % 
 % Author(s):
@@ -87,7 +87,7 @@ end
 %   ...
 %   idn i j Namen
 
-fidx = fopen(polcoms_ij,'r');
+fidx = fopen(polcoms_ij, 'r');
 if fidx < 0
     error('file: %s does not exist', polcoms_ij);
 end
@@ -176,7 +176,7 @@ pc_riv_lonlat = [pc_lon(pc_idx(:, 2), 1), pc_lat(1, pc_idx(:, 3))'];
 vc = 0; % valid FVCOM boundary node counter
 
 % We need to find the coastline nodes and exclude the open boundary nodes
-% from them. This will be out list of potential candidates for the river
+% from them. This will be our list of potential candidates for the river
 % nodes.
 [~, ~, ~, bnd] = connectivity([Mobj.lon, Mobj.lat], Mobj.tri);
 boundary_nodes = 1:Mobj.nVerts;
@@ -211,12 +211,12 @@ for pp = 1:pc_nr
     % see a more sensible approach than this, though.
     if ~ismember(coast_nodes(idx), fv_obc)
         vc = vc + 1;
-        if ftbverbose
-            fprintf('added.\n')
-        end
         fv_obc(vc) = coast_nodes(idx);
         fv_names{vc} = pc_name{pp};
         fv_riv_idx(vc) = pp;
+        if ftbverbose
+            fprintf('added.\n')
+        end
     else
         if ftbverbose
             fprintf('skipped.\n')
@@ -268,3 +268,7 @@ Mobj.river_names = fv_names;
 % axis([min(Mobj.lon), max(Mobj.lon), min(Mobj.lat), max(Mobj.lat)])
 % legend('POLCOMS nodes', 'Grid boundary', 'Land nodes', 'Selected nodes', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')
 % legend('BoxOff')
+
+if ftbverbose
+    fprintf(['end   : ' subname '\n'])
+end
