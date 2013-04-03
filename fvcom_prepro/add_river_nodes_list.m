@@ -1,9 +1,9 @@
-function [Mobj]  = add_river_nodes(Mobj,Nlist,RiverName)
+function [Mobj] = add_river_nodes_list(Mobj,Nlist,RiverName)
 
 % Add a set of river nodes comprising a single river to Mesh structure  
 % Using a set of user-defined nodes
 %
-% [Mobj] = add_river_nodes(Mobj)
+% [Mobj] = add_river_nodes(Mobj,Nlist,RiverName)
 %
 % DESCRIPTION:
 %    Select using ginput the set of nodes comprising a river
@@ -16,7 +16,7 @@ function [Mobj]  = add_river_nodes(Mobj,Nlist,RiverName)
 %    Mobj = Matlab mesh object with an additional river nodelist
 %
 % EXAMPLE USAGE
-%    Mobj = add_river_nodes(Mobj,'Potomac')
+%    Mobj = add_river_nodes(Mobj, [146, 3004], 'Potomac')
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
@@ -27,54 +27,54 @@ function [Mobj]  = add_river_nodes(Mobj,Nlist,RiverName)
 %
 % Revision history
 %   
-%==============================================================================
-subname = 'add_river_nodes';
+%==========================================================================
+subname = 'add_river_nodes_list';
 global ftbverbose
-if(ftbverbose)
-  fprintf('\n')
-  fprintf(['begin : ' subname '\n'])
-end;
+if ftbverbose
+    fprintf('\n')
+    fprintf(['begin : ' subname '\n'])
+end
 
-%------------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Get a unique list and make sure they are in the range of node numbers 
-%------------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 Nlist = unique(Nlist);
 
-if(max(Nlist) > Mobj.nVerts);
-  fprintf('your river node number(s) exceed the total number of nodes in the domain\n');
-  fprintf('stop screwing around\n');
-  error('stopping...\n')
-end;
+if max(Nlist) > Mobj.nVerts
+    fprintf('your river node number(s) exceed the total number of nodes in the domain\n');
+    fprintf('stop screwing around\n');
+    error('stopping...\n')
+end
 
-%------------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Plot the mesh 
-%------------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
-if(lower(Mobj.nativeCoords(1:3)) == 'car')
-        x = Mobj.x;
-        y = Mobj.y;
+if strcmpi(Mobj.nativeCoords(1:3), 'car')
+    x = Mobj.x;
+    y = Mobj.y;
 else
-        x = Mobj.lon;
-        y = Mobj.lat;
-end;
+    x = Mobj.lon;
+    y = Mobj.lat;
+end
 
 figure
-patch('Vertices',[x,y],'Faces',Mobj.tri,...
-        'Cdata',Mobj.h,'edgecolor','k','facecolor','interp');
-hold on;
+patch('Vertices', [x,y], 'Faces', Mobj.tri,...
+        'Cdata', Mobj.h, 'edgecolor', 'k', 'facecolor', 'interp');
+hold on
 
-plot(x(Nlist),y(Nlist),'ro');
-title('river nodes');
+plot(x(Nlist), y(Nlist), 'ro')
+title('river nodes')
 
 % add to mesh object
 npts = numel(Nlist);
 Mobj.nRivers = Mobj.nRivers + 1;
 Mobj.nRivNodes(Mobj.nRivers) = npts;
-Mobj.riv_nodes(Mobj.nRivers,1:npts) = Nlist;
+Mobj.riv_nodes(Mobj.nRivers, 1:npts) = Nlist;
 Mobj.riv_name{Mobj.nRivers} = RiverName;
 
 
-if(ftbverbose)
-  fprintf(['end   : ' subname '\n'])
-end;
+if ftbverbose
+    fprintf(['end   : ' subname '\n'])
+end
 

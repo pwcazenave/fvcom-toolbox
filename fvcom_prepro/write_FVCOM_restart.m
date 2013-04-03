@@ -1,4 +1,4 @@
-function write_FVCOM_restart(fv_restart, out_restart, indata)
+function write_FVCOM_restart(fv_restart, out_restart, indata, start_date)
 % Duplicate an FVCOM restart file, replacing variable values with those
 % specified in the struct data. 
 % 
@@ -12,8 +12,10 @@ function write_FVCOM_restart(fv_restart, out_restart, indata)
 % INPUT:
 %   fv_restart  = full path to an existing FVCOM restart file.
 %   out_restart = full path to the restart file to be created.
-%   data        = struct whose field names are the variable names to be
+%   indata      = struct whose field names are the variable names to be
 %   replaced.
+%   start_date  = [optional] reset the restart file times to this date
+%   ([YYYY, MM, DD, HH, MM, SS]).
 % 
 % OUTPUT:
 %   FVCOM restart file.
@@ -21,17 +23,21 @@ function write_FVCOM_restart(fv_restart, out_restart, indata)
 % EXAMPLE USAGE:
 %   indata.temp = interpolated_temp;
 %   indata.salinity = interpolated_salinity;
-%   write_FVCOM_restart('/tmp/fvcom_restart.nc', indata)
+%   write_FVCOM_restart('/tmp/fvcom_restart.nc', ...
+%       '/tmp/fvcom_restart_interp.nc', indata)
 % 
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 % 
 % Revision history:
 %   2013-02-08 First version.
+%   2013-02-15 Fix bug wherein only the last field in the new data would
+%   only be added to the output NetCDF file.
+%   2013-03-13 Make the time rewriting optional and not just commented out.
 % 
 %==========================================================================
 
-subname = 'write_FVCOM_tsobc';
+subname = 'write_FVCOM_restart';
 
 global ftbverbose
 if ftbverbose
@@ -142,16 +148,23 @@ for ii = 1:numvars
     
     % Iterate through the field names to see if we're on one of the
     % variables to be replaced.
+
+    % Set variable so we know if we've already written this variable to the
+    % output file.
+    writtenAlready = 0;
     for vv = 1:nf
-        if strcmp(varname, fnames{vv})
+        if strcmp(varname, fnames{vv}) && writtenAlready == 0
+            if ftbverbose
+                fprintf('new data... ')
+            end
             % To make the scaling go from the initial value to the POLCOMS
-            % value, we need to take the scale the difference between the end
-            % members by the scaling factor at each time and add to the current
-            % time's value.
+            % value, we need to scale the difference between the end
+            % members by the scaling factor at each time and add to the
+            % current time's value.
             sfvdata = nan(nd, ns, nt);
             ss = 0:1 / (nt - 1):1; % scale from 0 to 1.
             startdata = squeeze(data(:, :, 1)); % use the first modelled time step
-            for tt = 1:nt;
+            for tt = 1:nt
                 if tt == 1
                     sfvdata(:, :, 1) = startdata;
                 else
@@ -159,41 +172,75 @@ for ii = 1:numvars
                     sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
                 end
             end
-            % Replace the values with the scaled interpolated values.
-            netcdf.putVar(ncout, varid, sfvdata)
-
-%         % We might also want to replace the time. If so, uncomment these
-%         % lines to replace with an arbitrary time period. We also need an
-%         % additional input argument in this case (start_date).
-%         elseif strcmpi(varname, 'time')
-%             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
-%             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
-%             netcdf.putVar(ncout, varid, tmp_time)
-%         elseif strcmpi(varname, 'Times')
-%             tmp_time = [];
-%             for i = 1:nt;
-%                 tmp_time = [tmp_time, sprintf('%-026s', datestr(datenum(start_date) - 7 + (i - 1), 'yyyy-mm-dd HH:MM:SS.FFF'))];
-%             end
-%             netcdf.putVar(ncout, varid, tmp_time)
-%         elseif strcmpi(varname, 'Itime')
-%             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
-%             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
-%             netcdf.putVar(ncout, varid, floor(tmp_time))
-%         else
-
-            % We need to check if the dimension is unlimited, and use a start
-            % and end with netcdf.putVar if it is. This is largely because
-            % MATLAB can't handle unlimited dimensions in the same way as it
-            % does finite dimensions.
+            % Replace the values with the scaled interpolated values,
+            % checking for unlimited dimensions as we go.
             if wasUnlimited < 0
-                % We can just dump the entire data without specifying over what
-                % indices.
-                netcdf.putVar(ncout, varid, data);
+                netcdf.putVar(ncout, varid, sfvdata)
             else
-                % Use the dimension length we extracted above to output the
-                % data with the valid unlimited dimension format.
-                netcdf.putVar(ncout, varid, zeros(length(currDimsLengths), 1), currDimsLengths, data);
+                netcdf.putVar(ncout, varid, zeros(length(currDimsLengths), 1), currDimsLengths, sfvdata)
             end
+
+            writtenAlready = 1;
+
+        % We might also want to replace the time. If so, supply a fourth
+        % argument (start_date) to replace the times in the existing
+        % restart file with an arbitrary time period.
+        elseif strcmpi(varname, 'time') && writtenAlready == 0 && nargin == 4
+            if ftbverbose
+                fprintf('new data... ')
+            end
+%             warning('Replacing times in the restart file')
+            tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
+            tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
+            netcdf.putVar(ncout, varid, tmp_time)
+
+            writtenAlready = 1;
+
+        elseif strcmpi(varname, 'Times') && writtenAlready == 0 && nargin == 4
+            if ftbverbose
+                fprintf('new data... ')
+            end
+%             warning('Replacing times in the restart file')
+            tmp_time = [];
+            for i = 1:nt;
+                tmp_time = [tmp_time, sprintf('%-026s', datestr(datenum(start_date) - 7 + (i - 1), 'yyyy-mm-dd HH:MM:SS.FFF'))];
+            end
+            netcdf.putVar(ncout, varid, tmp_time)
+
+            writtenAlready = 1;
+
+        elseif strcmpi(varname, 'Itime') && writtenAlready == 0 && nargin == 4
+            if ftbverbose
+                fprintf('new data... ')
+            end
+%             warning('Replacing times in the restart file')
+            tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
+            tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
+            netcdf.putVar(ncout, varid, floor(tmp_time))
+
+            writtenAlready = 1;
+
+        end
+    end
+
+    % If writtenAlready is zero, we haven't had one of the variables we're
+    % replacing, so just dump the existing data.
+    if writtenAlready == 0
+        if ftbverbose
+            fprintf('existing data... ')
+        end
+        % We need to check if the dimension is unlimited, and use a
+        % start and end with netcdf.putVar if it is. This is largely
+        % because MATLAB can't handle unlimited dimensions in the same
+        % way as it does finite dimensions.
+        if wasUnlimited < 0
+            % We can just dump the entire data without specifying over
+            % what indices.
+            netcdf.putVar(ncout, varid, data);
+        else
+            % Use the dimension length we extracted above to output the
+            % data with the valid unlimited dimension format.
+            netcdf.putVar(ncout, varid, zeros(length(currDimsLengths), 1), currDimsLengths, data);
         end
     end
 

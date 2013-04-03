@@ -62,12 +62,13 @@ end
 
 for ii = 1:todo
 
+    if iscell(files)
+        ftn = files{ii};
+    else
+        ftn = files;
+    end
+
     if ftbverbose
-        if iscell(files)
-            ftn = files{ii};
-        else
-            ftn = files;
-        end
         % Strip path from filename for the verbose output.
         [~, basename, ext] = fileparts(ftn);
         tmp_fn = [basename, ext];

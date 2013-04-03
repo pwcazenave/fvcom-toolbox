@@ -24,7 +24,7 @@ function example_FVCOM_wind_ts
 % Revision history
 %   
 %==============================================================================
-warning off
+%warning off
 subname = 'example_FVCOM_wind_ts';
 global ftbverbose;
 if(ftbverbose);

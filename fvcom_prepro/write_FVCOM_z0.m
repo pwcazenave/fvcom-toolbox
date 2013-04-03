@@ -29,7 +29,7 @@ function write_FVCOM_z0(z0,filename,mytitle)
 %    MATLAB 2010a or higher.
 %
 %==============================================================================
-warning off
+%warning off
 subname = 'write_FVCOM_z0';
 global ftbverbose;
 if(ftbverbose);
@@ -65,6 +65,7 @@ end;
 nc = netcdf.create(filename,'clobber');
 
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title',mytitle)
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', 'File created using write_FVCOM_z0.m from the MATLAB fvcom-toolbox')
 
 % dimensions
 nele_dimid=netcdf.defDim(nc,'nele',nElems);

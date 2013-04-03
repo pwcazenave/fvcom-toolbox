@@ -31,7 +31,7 @@ function add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
 %   
 %==============================================================================
 
-warning off
+%warning off
 
 subname = 'add_var_FVCOM_river';
 global ftbverbose;

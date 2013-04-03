@@ -33,19 +33,25 @@ function Mobj = get_POLCOMS_tsobc(Mobj, ts)
 %
 % OUTPUT:
 %    Mobj = MATLAB structure in which three new fields (called temperature,
-%           salinity and ts_time). temperature and salinity have sizes
+%           salinity and ts_times). temperature and salinity have sizes
 %           (sum(Mobj.nObcNodes), sigma, time). The time dimension is
 %           determined based on the input NetCDF file. The ts_time variable
 %           is just the input file times in Modified Julian Day.
 %
 % EXAMPLE USAGE
-%    Mobj = get_POLCOMS_tsobc(Mobj, ts, depth)
+%    Mobj = get_POLCOMS_tsobc(Mobj, ts)
 %
 % Author(s):
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
-%    2013-02-07 First version based on get_POLCOMS_tsobc.m.
+%    2013-02-07 First version.
+%    2013-02-27 Change the vertical interpolation to be scaled within the
+%    POLCOMS-ERSEM depth range for the current node. The net result is that
+%    the vertical profiles are squashed or stretched to fit within the
+%    FVCOM depths. This means the full profile structure is maintained in
+%    the resulting FVCOM boundary input despite the differing depths at the
+%    FVCOM boundary node.
 %
 %==========================================================================
 
@@ -85,6 +91,9 @@ if ftbverbose
     tic
 end
 for t = 1:nt
+    if ftbverbose
+        fprintf('%s : %i of %i timesteps... ', subname, t, nt)
+    end
     % Get the current 3D array of PML POLCOMS-ERSEM results.
     pctemp3 = pc.ETWD.data(:, :, :, t);
     pcsalt3 = pc.x1XD.data(:, :, :, t);
@@ -175,35 +184,47 @@ for t = 1:nt
     % Now we've interpolated in space, we can interpolate the z-values
     % to the sigma depths.
     oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);
-    for zi = 1:fz
 
-        % Preallocate the output arrays
-        fvtempz = nan(nf, fz);
-        fvsalz = nan(nf, fz);
+    % Preallocate the output arrays
+    fvtempz = nan(nf, fz);
+    fvsalz = nan(nf, fz);
 
-        for pp = 1:nf
-            % Get the FVCOM depths at this node
-            tfz = Mobj.siglayz(oNodes(pp), :);
-            % Now get the interpolated PML POLCOMS-ERSEM depth at this node
-            tpz = idepthz(pp, :);
+    for pp = 1:nf
+        % Get the FVCOM depths at this node
+        tfz = Mobj.siglayz(oNodes(pp), :);
+        % Now get the interpolated PML POLCOMS-ERSEM depth at this node
+        tpz = idepthz(pp, :);
 
-            % Get the temperature and salinity values for this node and
-            % interpolate down the water column (from PML POLCOMS-ERSEM to
-            % FVCOM). I had originally planned to use csaps for the
-            % vertical interplation/subsampling at each location. However,
-            % the demo of csaps in the MATLAB documentation makes the
-            % interpolation look horrible (shaving off extremes). interp1
-            % provides a range of interpolation schemes, of which pchip
-            % seems to do a decent job of the interpolation (at least
-            % qualitatively).
-            if ~isnan(tpz)
-                fvtempz(pp, :) = interp1(tpz, itempz(pp, :), tfz, 'linear', 'extrap');
-                fvsalz(pp, :) = interp1(tpz, isalz(pp, :), tfz, 'linear', 'extrap');
-            else
-                warning('Should never see this... ') % because we test for NaNs when fetching the values.
-                warning('FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Skipping.', fvlon(pp), fvlat(pp))
-                continue
-            end
+        % To ensure we get the full vertical expression of the vertical
+        % profiles, we need to normalise the POLCOMS-ERSEM and FVCOM
+        % depths to the same range. This is because in instances where
+        % FVCOM depths are shallower (e.g. in coastal regions), if we
+        % don't normalise the depths, we end up truncating the vertical
+        % profile. This approach ensures we always use the full
+        % vertical profile, but we're potentially squeezing it into a
+        % smaller depth.
+        A = max(tpz);
+        B = min(tpz);
+        C = max(tfz);
+        D = min(tfz);
+        norm_tpz = (((D - C) * (tpz - A)) / (B - A)) + C;
+
+        % Get the temperature and salinity values for this node and
+        % interpolate down the water column (from PML POLCOMS-ERSEM to
+        % FVCOM). I had originally planned to use csaps for the
+        % vertical interplation/subsampling at each location. However,
+        % the demo of csaps in the MATLAB documentation makes the
+        % interpolation look horrible (shaving off extremes). interp1
+        % provides a range of interpolation schemes, of which pchip
+        % seems to do a decent job of the interpolation (at least
+        % qualitatively).
+        if ~isnan(tpz)
+            fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, :), tfz, 'linear', 'extrap');
+            fvsalz(pp, :) = interp1(norm_tpz, isalz(pp, :), tfz, 'linear', 'extrap');
+        else
+            warning('Should never see this... ') % because we test for NaNs when fetching the values.
+            warning('FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Skipping.', fvlon(pp), fvlat(pp))
+            continue
         end
     end
     
@@ -211,6 +232,10 @@ for t = 1:nt
     % FVCOM results array.
     fvtemp(:, :, t) = fvtempz;
     fvsal(:, :, t) = fvsalz;
+    
+    if ftbverbose
+        fprintf('done.\n')
+    end
 end
 if ftbverbose
     toc

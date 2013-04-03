@@ -84,7 +84,7 @@ for i=1:nComponents
     end
 end
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'components',ComponentsOut)
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','FILE CREATED using write_FVCOM_spectide')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','File created using write_FVCOM_spectide.m from the MATLAB fvcom-toolbox')
 
 % define dimensions
 one_dimid=netcdf.defDim(nc,'one',1);
