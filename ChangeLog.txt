@@ -1,5 +1,128 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20130403
+--------
+
+fvcom_prepro:
+    add_river_nodes_list.m
+        * Minor changes to code style.
+    add_sponge_nodes_list.m
+        * Fix bug which ignores constant sponge radius.
+    add_stations_list.m
+        * Add message about the outcome if no stations were within the domain.
+    add_var_FVCOM_river.m
+        * Turn warnings back on.
+    example_FVCOM_tsobc.m
+        * Add the global NetCDF history variable which includes a reference to
+        the FVCOM toolbox.
+    example_FVCOM_wind_ts.m
+        * Turn warnings back on.
+    example_FVCOM_wind_ts_speed.m
+        * Turn warnings back on.
+    example_init_lag.m
+        * Turn warnings back on.
+    get_FVCOM_rivers.m
+        * Extract positions from the FVCOM-adapted POLCOMS rivers files. The
+        POLCOMS positions are too coarse (12km) to be useful for FVCOM. As
+        such, this function reads an ASCII file of positions and extracts the
+        station's discharge data from the POLCOMS file.
+    get_NCEP_forcing.m
+        * Adds support for MATLAB's native OPeNDAP tools. Also fixes the
+        calculation of net surface heat flux.
+    get_POLCOMS_meanflow.m
+        * Interpolate mean flow from POLCOMS output at the FVCOM open
+        boundaries.
+    get_POLCOMS_netCDF.m
+        * More code outside the verbose section so it is executed even if
+        verbose output is disabled.
+    get_POLCOMS_rivers.m
+        * Parse the POLCOMS rivers data file.
+    get_POLCOMS_tsobc.m
+        * Change the vertical interpolation to be scaled within the
+        POLCOMS depth range for the current node. The net result is that the
+        vertical profiles are squashed or stretched to fit within the FVCOM
+        depths. This means the full profile structure is maintained in the
+        resulting FVCOM boundary input despite the differing depths at the
+        FVCOM boundary node.
+    nodes2elems.m
+        * Minor changes to coding style.
+    read_ERA_wind.m
+        * Turn warnings back on.
+    read_NCEP_wind.m
+        * Turn warnings back on.
+    write_FVCOM_bedflag.m
+        * Turn warnings back on.
+    write_FVCOM_elevtide.m
+        * Minor changes to coding style.
+    write_FVCOM_forcing.m
+        * Export of the surface forcing can now use a precomputed surface heat
+        flux rather than having to interpolate the four components only to
+        merge them (see write_FVCOM_forcing.m)
+    write_FVCOM_meanflow.m
+        * Preliminary support for mean flow at the open boundaries. At the
+        moment, the mean flow is interpolated from POLCOMS daily mean flow
+        values. The necessary tools to write out the FVCOM ASCII mean flow
+        files have been created, but I have not yet managed to successfully
+        run a model with mean flow. Consider it a work in progress.
+    write_FVCOM_meanflow_ascii.m
+        * Outputs the results of write_FVCOM_meanflow.m to ASCII for use in
+        FVCOM.
+    write_FVCOM_obs_TS.m
+        * Add the global NetCDF history variable which includes a reference to
+        the FVCOM toolbox.
+    write_FVCOM_restart.m
+        * The routine to replace variables within an FVCOM restart file now
+        includes the ability to adjust the times for which the restart file is
+        applicable. This is useful if you have a restart file for a model
+        domain, but wish to use it for a different time.
+    write_FVCOM_river.m
+        * The existing river functions have been updated to reflect the
+        changes needed in the latest versions of FVCOM (3.1.x). This has also
+        been updated to use MATLAB's native NetCDF routines.
+    write_FVCOM_river_nml.m
+        * New function to write out the name list for the rivers in the model
+        domain.
+    write_FVCOM_spectide.m
+        * Add the global NetCDF history variable which includes a reference to
+        the FVCOM toolbox.
+    write_FVCOM_sponge.m
+        * Fix bug which ignores constant sponge radius.
+    write_FVCOM_stations.m
+        * Minor change to the error message for the incorrect number of
+        arguments.
+    write_FVCOM_tsobc.m
+        * Add the global NetCDF history variable which includes a reference to
+        the FVCOM toolbox. Also enable warnings.
+    write_FVCOM_wind_ts_speed.m
+        * Add the global NetCDF history variable which includes a reference to
+        the FVCOM toolbox. Also enable warnings.
+    write_FVCOM_z0.m
+        * Add the global NetCDF history variable which includes a reference to
+        the FVCOM toolbox. Also enable warnings.
+
+utilities:
+    centroid.m
+        * Fix problem with checking the input arguments.
+    find_boundary_elements.m
+        * New utility to find the element numbers which run along the open
+        boundary (needed for the mean flow).
+    fix_inside_boundary.m
+        * A new function to reorganise open boundary elements to have an edge
+        approximately normal to the open boundary has been added
+        (fix_inside_boundary.m). The routine is somewhat brute force, and can
+        result in invalid unstructured grids. As such, any changes should be
+        reviewed in SMS prior to being used in a model run.
+    grid2fvcom.m
+        * Improve the documentation.
+    write_SMS_2dm.m
+        * Export unstructured grid data from MATLAB to SMS format.
+    write_SMS_cst.m
+        * Export open boundary from MATLAB to SMS format.
+
+
+20130204
+--------
+
 fvcom-prepro:
 
     add_obc_nodes_graphic.m:
