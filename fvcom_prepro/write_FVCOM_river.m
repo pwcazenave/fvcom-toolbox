@@ -39,6 +39,8 @@ function write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,RiverInfo1,Ri
 %   number of nodes). I removed the sediment stuff as the manual makes no
 %   mention of this in the river input file. Also added support for writing
 %   to NetCDF using MATLAB's native tools.
+%   2013-03-21 Transpose the river data arrays to the correct shape for the
+%   NetCDF file.
 %
 %==========================================================================
 
@@ -129,9 +131,9 @@ netcdf.putVar(nc, river_names_varid, rString);
 netcdf.putVar(nc, time_varid, 0, nTimes, time);
 netcdf.putVar(nc, itime_varid, 0, nTimes, floor(time));
 netcdf.putVar(nc, itime2_varid, 0, nTimes, mod(time, 1)*24*3600*1000);
-netcdf.putVar(nc, river_flux_varid, flux);
-netcdf.putVar(nc, river_temp_varid, temp);
-netcdf.putVar(nc, river_salt_varid, salt);
+netcdf.putVar(nc, river_flux_varid, flux');
+netcdf.putVar(nc, river_temp_varid, temp');
+netcdf.putVar(nc, river_salt_varid, salt');
 
 % build the time string and output to NetCDF.
 nStringOut = char();
