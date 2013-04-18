@@ -156,7 +156,7 @@ for ff = 1:fv_nr
     fv_riv_idx(vc) = ff;
     fv_flow(:, vc) = polcoms_flow(:, ff);
     if ftbverbose
-        fprintf('added.\n')
+        fprintf('added (%f, %f).\n', Mobj.lon(fv_obc(vc)), Mobj.lat(fv_obc(vc)))
     end
 end
 
