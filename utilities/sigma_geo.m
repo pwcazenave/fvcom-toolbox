@@ -23,7 +23,7 @@ function dist = sigma_geo(nlev, p_sigma)
 %
 % Revision history
 %   2013-04-23 Added help on the function and reformatted the code to
-%   remove to FORTRAN in the else block.
+%   remove the FORTRAN in the else block.
 
 dist = nan(1, nlev);
 

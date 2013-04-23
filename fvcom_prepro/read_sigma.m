@@ -25,7 +25,7 @@ function Mobj = read_sigma(Mobj, sigmafile)
 % 
 % Revision history
 %   2013-01-08 Based on the code in show_sigma.m but instead of calculating
-%   sigma layer along a user-defined line, the depths are calculated for
+%   sigma layers along a user-defined line, the depths are calculated for
 %   each node in the unstructured grid.
 %   2013-01-10 Added two new outputs to the returned Mobj (siglay and
 %   siglev). They're useful in write_FVCOM_tsobc.m.
