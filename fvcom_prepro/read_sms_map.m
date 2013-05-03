@@ -6,10 +6,8 @@ function data = read_sms_map(file)
 % DESCRIPTION:
 %   Reads a map file from SMS consisting of node coordinates for boundary
 %   lines. Each different arc is read into a different cell array (e.g. if
-%   you have multiple islands).
-%
-%   Note: this script does not read polygons if they exists in the map
-%   file.
+%   you have multiple islands). Ensure that the polygons are built in SMS 
+%   to make handling islands easier.
 %
 % INPUT:
 %   file - file name to read from.
