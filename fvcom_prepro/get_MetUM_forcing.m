@@ -91,6 +91,7 @@ stash = [2, 3, 407, 408, 409, 4222, 9229, 16004];
 vars = {'uwnd', 'uwnd', 'vwnd', 'vwnd', 'slp_rho', 'slp_theta', ...
     'surface_air_pressure', 'air_sw', 'air_lw', ...
     'rhum', 'prate', 'temp_model', 'temp_press'};
+
 ns = length(stash);
 
 % From where will we be downloading the data?
@@ -259,5 +260,24 @@ cd(remote, URL);
 nf = length(files);
 for i = 1:nf
     tmpdata = mget(remote, files{i});
+    ftpdata.(vars{i}).data = 
 end
 
+
+function pp2nc(file, convsh)
+% Child function to call the convsh program to convert the obscure pp
+% format to a sensible NetCDF which we can more easily read.
+
+% Assume convsh is in /usr/local unless otherwise told.
+if nargin == 1
+    convsh = '/usr/local/bin/convsh';
+end
+
+if exist(file, 'file') ~= 2
+    error('File %s not found', file)
+end
+
+[path, name, ext] = fileparts(file);
+out = fullfile(path, [name, '.nc']);
+
+system([convsh, '-i ', 
