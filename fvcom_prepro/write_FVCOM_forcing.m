@@ -61,6 +61,11 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   longwave radiation variable and add support for a new field in the
 %   input struct ('nshf') which contains the pre-computed net surface heat
 %   flux.
+%   2013-05-13 - Fix the evaporation to use the correct variable from NCEP
+%   (pevpr rather than P_E which is actually the precipitation minus the
+%   evaporation in Et). The data in Et are calcaulated from lhtfl whereas
+%   pevpr comes directly from NCEP and to me it seems more sensible to use
+%   that to maintain consistency.
 %
 % KJT Revision history:
 %   2013-01-16 - Added support for output of sea level pressure.
@@ -79,9 +84,8 @@ end
 subname = 'write_FVCOM_forcing';
 
 global ftbverbose;
-if(ftbverbose)
-  fprintf('\n')
-  fprintf(['begin : ' subname '\n'])
+if ftbverbose
+	fprintf('\nbegin : %s \n', subname)
 end
 
 tri = Mobj.tri;
@@ -89,7 +93,7 @@ nNodes = Mobj.nVerts;
 nElems = Mobj.nElems;
 ntimes = numel(data.time);
 
-if strcmpi(Mobj.nativeCoords,'cartesian')
+if strcmpi(Mobj.nativeCoords, 'cartesian')
     x = Mobj.x;
     y = Mobj.y;
 else
@@ -227,35 +231,6 @@ for i=1:length(suffixes)
                     netcdf.putAtt(nc,vwind_varid,'grid','fvcom_grid');
                     netcdf.putAtt(nc,vwind_varid,'type','data');
 
-                    % On the nodes
-%                     u10_node_varid=netcdf.defVar(nc,'U10','NC_FLOAT',[node_dimid, time_dimid]);
-%                     netcdf.putAtt(nc,u10_node_varid,'long_name','Eastward 10-m Velocity');
-%                     netcdf.putAtt(nc,u10_node_varid,'standard_name','Eastward Wind Speed');
-%                     netcdf.putAtt(nc,u10_node_varid,'units','m/s');
-%                     netcdf.putAtt(nc,u10_node_varid,'grid','fvcom_grid');
-%                     netcdf.putAtt(nc,u10_node_varid,'type','data');
-%                     netcdf.putAtt(nc,u10_node_varid,'coordinates',coordString);
-%
-%                     v10_node_varid=netcdf.defVar(nc,'V10','NC_FLOAT',[node_dimid, time_dimid]);
-%                     netcdf.putAtt(nc,v10_node_varid,'long_name','Northward 10-m Velocity');
-%                     netcdf.putAtt(nc,v10_node_varid,'standard_name','Northward Wind Speed');
-%                     netcdf.putAtt(nc,v10_node_varid,'units','m/s');
-%                     netcdf.putAtt(nc,v10_node_varid,'grid','fvcom_grid');
-%                     netcdf.putAtt(nc,v10_node_varid,'type','data');
-%                     netcdf.putAtt(nc,v10_node_varid,'coordinates',coordString);
-
-%                     % Both node and element centred
-%                     used_varids = [used_varids, {'u10_varid', 'v10_varid', 'u10_node_varid', 'v10_node_varid'}];
-%                     used_fnames = [used_fnames, {'uwnd', 'vwnd', 'uwnd', 'vwnd'}];
-%                     used_dims = [used_dims, {'nElems', 'nElems', 'nNodes', 'nNodes'}];
-%                     % Only on the nodes
-%                     used_varids = [used_varids, {'u10_node_varid', 'v10_node_varid'}];
-%                     used_fnames = [used_fnames, {'uwnd', 'vwnd'}];
-%                     used_dims = [used_dims, {'nNodes', 'nNodes'}];
-                    % Only on the elements
-%                     used_varids = [used_varids, {'u10_varid', 'v10_varid'}];
-%                     used_fnames = [used_fnames, {'uwnd', 'vwnd'}];
-%                     used_dims = [used_dims, {'nElems', 'nElems'}];
                     % Only on the elements (both U10/V10 and uwind_speed and
                     % vwind_speed).
                     used_varids = [used_varids, {'u10_varid', 'v10_varid', 'uwind_varid', 'vwind_varid'}];
@@ -283,18 +258,18 @@ for i=1:length(suffixes)
                     used_dims = [used_dims, 'nNodes'];
                 end
 
-            case 'P_E'
+            case 'pevpr'
                 if strcmpi(suffixes{i}, '_evap') || ~multi_out
                     % Evaporation
-                    pe_varid=netcdf.defVar(nc,'evap','NC_FLOAT',[node_dimid, time_dimid]);
-                    netcdf.putAtt(nc,pe_varid,'long_name','Evaporation');
-                    netcdf.putAtt(nc,pe_varid,'description','Evaporation, ocean lose water is negative');
-                    netcdf.putAtt(nc,pe_varid,'units','m s-1');
-                    netcdf.putAtt(nc,pe_varid,'grid','fvcom_grid');
-                    netcdf.putAtt(nc,pe_varid,'coordinates',coordString);
-                    netcdf.putAtt(nc,pe_varid,'type','data');
+                    pevpr_varid=netcdf.defVar(nc,'evap','NC_FLOAT',[node_dimid, time_dimid]);
+                    netcdf.putAtt(nc,pevpr_varid,'long_name','Evaporation');
+                    netcdf.putAtt(nc,pevpr_varid,'description','Evaporation, ocean lose water is negative');
+                    netcdf.putAtt(nc,pevpr_varid,'units','m s-1');
+                    netcdf.putAtt(nc,pevpr_varid,'grid','fvcom_grid');
+                    netcdf.putAtt(nc,pevpr_varid,'coordinates',coordString);
+                    netcdf.putAtt(nc,pevpr_varid,'type','data');
 
-                    used_varids = [used_varids, 'pe_varid'];
+                    used_varids = [used_varids, 'pevpr_varid'];
                     used_fnames = [used_fnames, fnames{vv}];
                     used_dims = [used_dims, 'nNodes'];
                 end
@@ -386,7 +361,7 @@ for i=1:length(suffixes)
                 continue
 
             otherwise
-                if(ftbverbose)
+                if ftbverbose
                     warning('Unknown or possibly unused input data type: %s', fnames{vv})
                 end
         end
@@ -422,8 +397,13 @@ for i=1:length(suffixes)
             fprintf('write : %s... ', used_fnames{ff})
         end
         if strcmpi(used_fnames{ff}, 'shtfl') || strcmpi(used_fnames{ff}, 'lhtfl') || strcmpi(used_fnames{ff}, 'nlwrs') || strcmpi(used_fnames{ff}, 'nswrs')
+
             hf_done = hf_done + 1;
+
             if hf_done == 4 && nshf == 0
+                if ftbverbose
+                    fprintf('combining heat flux ... ')
+                end
                 % We've got all four heat parameters, so dump them into the
                 % file. We have to flip the signs of the net fluxes and
                 % subtract the latent and sensible heat fluxes because
@@ -450,6 +430,9 @@ for i=1:length(suffixes)
                 % Essentially this loop just does hf_done = hf_done + 1.
             end
         elseif strcmpi(used_fnames{ff}, 'nshf') && nshf == 1
+            if ftbverbose
+                fprintf('existing combined heat flux ... ')
+            end
             % We have pre-computed net surface heat flux, in which case set
             % hf_done to 4 and put the data into the netCDF. Also set the
             % nshf variable 1 to stop the net surface heat flux variable
@@ -480,5 +463,5 @@ for i=1:length(suffixes)
 end
 
 if ftbverbose
-    fprintf(['end   : ' subname '\n'])
+    fprintf('end   : %s \n', subname)
 end
