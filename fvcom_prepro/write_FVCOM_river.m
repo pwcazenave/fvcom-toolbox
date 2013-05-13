@@ -12,12 +12,12 @@ function write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,RiverInfo1,Ri
 % INPUT
 %    RiverFile  : FVCOM 3.x NetCDF river forcing file
 %    RiverName  : Name of the actual River
-%    time       : timestamp in modified Julian day 
+%    time       : Timestamp array in modified Julian day
 %    flux       : Total river flux in m^3/s (dimensions [time, nRivernodes])
-%    temp       : temperature in C (dimensions [time, nRivernodes])
-%    salt       : salinity in PSU (dimensions [time, nRivernodes])
-%    RiverInfo1 : global attribute title of file
-%    RiverInfo2 : global attribute info of file
+%    temp       : Temperature in C (dimensions [time, nRivernodes])
+%    salt       : Salinity in PSU (dimensions [time, nRivernodes])
+%    RiverInfo1 : Global attribute title of file
+%    RiverInfo2 : Global attribute info of file
 %
 % OUTPUT:
 %    FVCOM NetCDF river file with flux, temperature and salinity.
