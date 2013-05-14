@@ -1,14 +1,19 @@
 function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 % Write data out to FVCOM NetCDF forcing file.
 %
-% write_FVCOM_forcing(fvcom_forcing_file, data, infos, fver)
+% write_FVCOM_forcing(Mobj, fvcom_forcing_file, data, infos, fver)
 %
 % DESCRIPTION:
 %   Takes the given interpolated data (e.g. from grid2fvcom) and writes out
 %   to a NetCDF file.
 %
 % INPUT:
-%   Mobj - MATLAB mesh object
+%   Mobj - MATLAB mesh object containing fields:
+%       tri - triangulation table for the unstructured grid
+%       nVerts - number of grid vertices (nodes)
+%       nElems - number of grid elements
+%       nativeCoords - model coordinate type ('cartesian' or 'spherical')
+%       x, y or lon, lat - node positions (depending on nativeCoords value)
 %   fileprefix - Output NetCDF file prefix (plus path) will be
 %       fileprefix_{wnd,hfx,evap}.nc if fver is '3.1.0', otherwise output
 %       files will be fileprefix_wnd.nc.
@@ -48,6 +53,11 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 % OUTPUT:
 %   FVCOM wind speed forcing NetCDF file(s)
 %
+% EXAMPLE USAGE:
+%   windBase = '/path/to/output/casename_wnd.nc';
+%   write_FVCOM_forcing(Mobj, windBase, data, ...
+%       'FVCOM atmospheric forcing data', '3.1.6');
+%
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %   Karen Thurston (National Oceanography Centre, Liverpool)
@@ -66,6 +76,8 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   evaporation in Et). The data in Et are calcaulated from lhtfl whereas
 %   pevpr comes directly from NCEP and to me it seems more sensible to use
 %   that to maintain consistency.
+%   2013-05-14 - Add example usage to the help and specify which fields are
+%   required in Mobj.
 %
 % KJT Revision history:
 %   2013-01-16 - Added support for output of sea level pressure.
@@ -258,7 +270,7 @@ for i=1:length(suffixes)
                     used_dims = [used_dims, 'nNodes'];
                 end
 
-            case 'pevpr'
+            case {'pevpr', 'Et'}
                 if strcmpi(suffixes{i}, '_evap') || ~multi_out
                     % Evaporation
                     pevpr_varid=netcdf.defVar(nc,'evap','NC_FLOAT',[node_dimid, time_dimid]);
@@ -274,7 +286,7 @@ for i=1:length(suffixes)
                     used_dims = [used_dims, 'nNodes'];
                 end
 
-            case 'prate'
+            case {'prate', 'P_E'}
                 if strcmpi(suffixes{i}, '_evap') || ~multi_out
                     % Precipitation
                     prate_varid=netcdf.defVar(nc,'precip','NC_FLOAT',[node_dimid, time_dimid]);
