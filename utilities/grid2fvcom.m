@@ -9,9 +9,14 @@ function fvcom = grid2fvcom(Mobj,vars,data)
 %   V10 values onto the specified FVCOM grid file.
 %
 % INPUT:
-%   Mobj - MATLAB mesh object
-%   vars - a cell array of the variables to be interpolated on the FVCOM
-%   grid in Mobj (e.g. uwnd, U10, vwnd, V10 etc.).
+%   Mobj - MATLAB mesh object with the following fields:
+%       x, y, lon, lat - cartesian and spherical node coordinates. These
+%       are transferred to the NetCDF file only and are not used in the
+%       interpolation at all.
+%       nVerts - number of vertices (nodes) in the unstructured grid.
+%       nElems - number of elements in the unstructured grid.
+%   vars - a cell array of the variable names to be interpolated on the
+%       FVCOM grid in Mobj (e.g. uwnd, U10, vwnd, V10 etc.).
 %   data - a struct which contains the following arrays:
 %       x - x data (probably best in cartesian for the interpolation)
 %       y - y data (probably best in cartesian for the interpolation)
@@ -23,8 +28,13 @@ function fvcom = grid2fvcom(Mobj,vars,data)
 %
 % OUTPUT:
 %   fvcom - struct of the interpolated data values at the model nodes and
-%   element centres. Also includes any variables which were in the input
-%   struct but which have not been interpolated (e.g. time).
+%       element centres. Also includes any variables which were in the
+%       input struct but which have not been interpolated (e.g. time).
+%
+% EXAMPLE USAGE:
+%   interpfields = {'uwnd', 'vwnd', 'slp', 'nshf', 'nlwrs', 'nswrs', ...
+%       'P_E', 'Et', 'time', 'lon', 'lat', 'x', 'y'};
+%   forcing_interp = grid2fvcom(Mobj, interpfields, forcing);
 %
 % NOTE:
 %   The shape of the returned arrays for rhum and slp (via
@@ -32,6 +42,8 @@ function fvcom = grid2fvcom(Mobj,vars,data)
 %   (they appear to be projected onto a different grid). Unless you
 %   desperately need them, I would suggest omitting them from the
 %   interpolation here as this assumes the arrays are all the same size.
+%   Alternatively, give data.xalt and data.yalt to specify the alternative
+%   grid.
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -62,9 +74,8 @@ end
 subname = 'grid2fvcom';
 
 global ftbverbose;
-if(ftbverbose)
-  fprintf('\n')
-  fprintf(['begin : ' subname '\n'])
+if ftbverbose
+    fprintf('\nbegin : %s \n', subname)
 end
 
 %--------------------------------------------------------------------------
@@ -139,5 +150,5 @@ for vv=1:length(vars)
 end
 
 if ftbverbose;
-    fprintf(['end   : ' subname '\n'])
+    fprintf('end   : %s \n', subname)
 end
