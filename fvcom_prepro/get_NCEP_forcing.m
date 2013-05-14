@@ -11,7 +11,10 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 %   below for where to get them).
 %
 % INPUT:
-%   Mobj - MATLAB mesh object
+%   Mobj - MATLAB mesh object. Must contain fields:
+%       lon, lat    - array of longitude and latitudes.
+%       have_lonlat - boolean to signify whether coordinates are spherical
+%                   or cartesian.
 %   modelTime - Modified Julian Date start and end times
 %
 % OUTPUT:
