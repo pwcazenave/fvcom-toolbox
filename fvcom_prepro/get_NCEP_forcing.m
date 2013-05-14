@@ -40,6 +40,9 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 % calculated from the mean daily latent heat net flux (lhtfl) at the
 % surface.
 %
+% EXAMPLE USAGE:
+%   forcing = get_NCEP_forcing(Mobj, [51345, 51376]);
+%
 % REQUIRES:
 %   The air_sea toolbox:
 %       http://woodshole.er.usgs.gov/operations/sea-mat/air_sea-html/index.html
