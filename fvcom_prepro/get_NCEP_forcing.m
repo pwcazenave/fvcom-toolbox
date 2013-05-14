@@ -299,8 +299,8 @@ for aa=1:length(fields)
     datatmp = squeeze(data1.(fields{aa}).(fields{aa}).(fields{aa}));
     datatmp = (datatmp * data_attributes.(fields{aa}).(fields{aa}).scale_factor) + data_attributes.(fields{aa}).(fields{aa}).add_offset;
 
-    data.(fields{aa}).data =  datatmp;
-    data.(fields{aa}).time =data.time;
+    data.(fields{aa}).data = datatmp;
+    data.(fields{aa}).time = data.time;
     %     data.(fields{aa}).time = cat(1, data.(fields{aa}).time, squeeze(data1.(fields{aa}).(fields{aa}).time));
     %     data.(fields{aa}).lat = squeeze(data1.(fields{aa}).(fields{aa}).lat);
     %     data.(fields{aa}).lon = squeeze(data1.(fields{aa}).(fields{aa}).lon);
