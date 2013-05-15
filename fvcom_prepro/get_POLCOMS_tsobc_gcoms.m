@@ -66,11 +66,11 @@ varlistdmeaneco3d = {'depth', 'pdepth'};
 % 
 %   pc.ETWD.data and pc.x1XD.data are y, x, sigma, time
 % 
-pc = get_POLCOMS_netCDF(ts{1}, varlist);
-pcdmean = get_POLCOMS_netCDF(ts{2}, varlistdmeaneco3d);
-dump=catstruct(pc,pcdmean);
-pc=dump;
-clear pcdmean dump
+pc = get_POLCOMS_netCDF(ts(1:2:end), varlist);
+pcdmean = get_POLCOMS_netCDF(ts(2:2:end), varlistdmeaneco3d);
+pc=catstruct(pc,pcdmean);
+
+clear pcdmean
 [~, ~, nz, nt] = size(pc.ETW.data);
 
 % Make rectangular arrays for the nearest point lookup.
