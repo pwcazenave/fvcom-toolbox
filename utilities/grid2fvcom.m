@@ -64,6 +64,9 @@ function fvcom = grid2fvcom(Mobj,vars,data)
 %   through the .xalt and .yalt fields in the input data structure. This is
 %   handy if you've got data from NCEP from both the Surface and Gaussian
 %   products, each of which are on different grids.
+%   2013-05-16 Add parallel for loops if the Parallel Computing Toolbox is
+%   available (MATLAB parfor loops fail gracefully to for loops if it is
+%   not available, in which case no harm, no foul).
 %
 %==========================================================================
 
@@ -78,17 +81,29 @@ if ftbverbose
     fprintf('\nbegin : %s \n', subname)
 end
 
+% Run jobs on multiple workers if we have that functionality. Not sure if
+% it's necessary, but check we have the Parallel Toolbox first.
+wasOpened = false;
+if license('test', 'Distrib_Computing_Toolbox')
+    % We have the Parallel Computing Toolbox, so launch a bunch of workers.
+    if matlabpool('size') == 0
+        % Force pool to be local in case we have remote pools available.
+        matlabpool open local
+        wasOpened = true;
+    end
+end
+
 %--------------------------------------------------------------------------
 % Get the relevant bits from the FVCOM mesh object
 %--------------------------------------------------------------------------
-x   = Mobj.x;
-y   = Mobj.y;
+x = Mobj.x;
+y = Mobj.y;
 nVerts = Mobj.nVerts;
 nElems = Mobj.nElems;
-if(ftbverbose);
+if ftbverbose
     fprintf('info for FVCOM domain\n');
-    fprintf('number of nodes: %d\n',nVerts);
-    fprintf('number of elems: %d\n',nElems);
+    fprintf('number of nodes: %d\n', nVerts);
+    fprintf('number of elems: %d\n', nElems);
 end
 
 xc = nodes2elems(x, Mobj);
@@ -103,7 +118,7 @@ end
 % Interpolate supplied regularly gridded data to FVCOM mesh. Use
 % TriScatteredInterp to do the interpolation instead of griddata (should be
 % faster).
-for vv=1:length(vars)
+for vv = 1:length(vars)
     if strcmpi(vars{vv}, 'time')
         fprintf('transferring variable %s as is\n', vars{vv})
         fvcom.(vars{vv}) = data.(vars{vv});
@@ -112,16 +127,30 @@ for vv=1:length(vars)
         fprintf('reassigning variable %s from unstructured grid\n', vars{vv})
         fvcom.(vars{vv}) = Mobj.(vars{vv});
     else
-        % Preallocate the output arrays
-        fvcom.(vars{vv}).data = zeros(nElems,ntimes);
-        fvcom.(vars{vv}).node = zeros(nVerts,ntimes);
+        % Preallocate the output arrays.
+        % Serial version:
+        % fvcom.(vars{vv}).data = zeros(nElems, ntimes);
+        % fvcom.(vars{vv}).node = zeros(nVerts, ntimes);
+        % Also create temporary arrays for the inner loop to be
+        % parallelisable (is that a word?):
+        tmp_fvcom_data = zeros(nElems, ntimes);
+        tmp_fvcom_node = zeros(nVerts, ntimes);
+        tmp_data_data = data.(vars{vv}).data; % input to the interpolation
 
-        for i=1:ntimes
+        % Use a parallel loop for the number of time steps we're
+        % interpolating (should be quicker, but will use more memory...).
+        parfor i = 1:ntimes
             fprintf('interpolating %s, frame %d of %d\n', vars{vv}, i, ntimes);
-            currvar = data.(vars{vv}).data(:, :, i);
+
+            % Serial version:
+            % currvar = data.(vars{vv}).data(:, :, i);
+            % Parallel version:
+            currvar = tmp_data_data(:, :, i);
+
             % griddata way (cubic interpolation)
             %fvcom.(vars{vv}).node(:,i) = griddata(wind.x,wind.y,currvar,x,y,'cubic');
             %fvcom.(vars{vv}).data(:,i) = griddata(wind.x,wind.y,currvar,xc,yc,'cubic');
+
             % TriScatteredInterp way (with natural neighbour interpolation)
             % Use a try/catch to account for the different grids over which
             % the humidity and sealevel pressure data are sampled.
@@ -134,21 +163,37 @@ for vv=1:length(vars)
                     ' same grid as the data to be interpolated.'])
                 ftsin = TriScatteredInterp(data.xalt(:), data.yalt(:), currvar(:), 'natural');
             end
-            fvcom.(vars{vv}).node(:,i) = ftsin(x,y);
-            fvcom.(vars{vv}).data(:,i) = ftsin(xc,yc);
-            nnans(1) = sum(isnan(fvcom.(vars{vv}).node(:,i)));
-            nnans(2) = sum(isnan(fvcom.(vars{vv}).data(:,i)));
-            if  nnans(1) > 0
+            % Serial version:
+            % fvcom.(vars{vv}).node(:,i) = ftsin(x,y);
+            % fvcom.(vars{vv}).data(:,i) = ftsin(xc,yc);
+            % nnans(1) = sum(isnan(fvcom.(vars{vv}).node(:,i)));
+            % nnans(2) = sum(isnan(fvcom.(vars{vv}).data(:,i)));
+            % Parallel version:
+            tmp_fvcom_node(:, i) = ftsin(x,y);
+            tmp_fvcom_data(:, i) = ftsin(xc,yc);
+            nnans1 = sum(isnan(tmp_fvcom_node(:, i)));
+            nnans2 = sum(isnan(tmp_fvcom_data(:, i)));
+            if  nnans1 > 0
                 warning('%i NaNs in the interpolated node data. This won''t work with FVCOM.', nnans(1))
             end
-            if nnans(2) > 0
+            if nnans2 > 0
                 warning('%i NaNs in the interpolated element data. This won''t work with FVCOM.', nnans(2))
             end
         end
+        % Transfer the temporary arrays back to the relevant struct and
+        % clear out the temporary arrays.
+        fvcom.(vars{vv}).node = tmp_fvcom_node;
+        fvcom.(vars{vv}).data = tmp_fvcom_data;
+        clear nnans* tmp_*
+
         fprintf('interpolation of %s complete\n', vars{vv});
     end
 end
 
-if ftbverbose;
+if wasOpened
+    matlabpool close
+end
+
+if ftbverbose
     fprintf('end   : %s \n', subname)
 end
