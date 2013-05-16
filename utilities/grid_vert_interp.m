@@ -1,9 +1,6 @@
 function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask)
 % Child function to interpolate a given 3D array (x by y by sigma) values
 % to the unstructured grid vertical layers.
-
-% versions of otherwise constant variables (temperature and salinity only
-% for the time being).
 %
 % function grid_vert_interp(Mobj, lon, lat, data, depth, mask)
 %
@@ -11,8 +8,9 @@ function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask)
 %    Interpolate the regularly gridded data described by lon, lat, data
 %    (whose size should be x by y for the lon and lat arrays, and x by y by
 %    z for the data array) to the unstructured grid vertical layers defined
-%    in Mobj.siglayz. The closest unstructured grid node is used for the
-%    vertical interpolation of each regularly gridded node. 
+%    in Mobj.siglayz. The depths in depth are used to make sure the profile
+%    is interpolated the right way up. The closest unstructured grid node
+%    is used for the vertical interpolation of each regularly gridded node.
 %
 % INPUT:
 %   Mobj        = MATLAB mesh structure which must contain:
@@ -41,6 +39,8 @@ function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask)
 %
 % Revision history
 %   2013-02-08 First version.
+%   2013-05-16 Add support for parallel for-loops (not mandatory, but
+%   enabled if the Parallel Computing Toolbox is available).
 %
 %==========================================================================
 
@@ -64,21 +64,34 @@ if sum(size(lon) ~= size(data(:, :, 1))) ~= 0 || sum(size(lat) ~= size(data(:, :
     error('Size of the longitude or latitude arrays do not match the supplied data array')
 end
 
+wasOpened = false;
+if license('test', 'Distrib_Computing_Toolbox')
+    % We have the Parallel Computing Toolbox, so launch a bunch of workers.
+    if matlabpool('size') == 0
+        % Force pool to be local in case we have remote pools available.
+        matlabpool open local
+        wasOpened = true;
+    end
+end
+
 [~, fz] = size(Mobj.siglayz);
 [nx, ny, ~, ~] = size(data);
 
 % Preallocate the output arrays
 dataz = nan(nx, ny, fz);
 
-for xi = 1:nx
+if ftbverbose
+    tic
+end
+
+parfor xi = 1:nx
     % Get all the y and z dimension data for the current x position
-    % (temperature, salinity and depth). N.B. The POLCOMS data is stored y,
-    % x, z, t (first two dimensions the wrong way around).
+    % (temperature, salinity and depth).
     xdata = squeeze(data(xi, :, :));
     xdepth = squeeze(depth(xi, :, :));
     xmask = mask(xi, :);
     
-    % Preallocate the arrays for the inner loop
+    % Preallocate the arrays for the inner loop.
     ydata = nan(ny, fz);
     for yi = 1:ny
         if xmask(yi)
@@ -101,16 +114,24 @@ for xi = 1:nx
             
             % Get the FVCOM depths closest to this POLCOMS grid position.
             tfz = Mobj.siglayz(mi, :);
-            % Now get the POLCOMS depth at this node for the time index
-            % identified above.
+            % Now get the POLCOMS depths at this node for all the vertical
+            % layers and linearly interpolate through the water column onto
+            % the FVCOM vertical profile.
             tpz = xdepth(yi, :);
             ydata(yi, :) = interp1(tpz, xdata(yi, :), tfz, 'linear', 'extrap');
         end
     end
     dataz(xi, :, :) = ydata;
 end
-% Tidy up the namespace a bit.
-clear ytemp ysalt tfz tpz md mi xtemp xsalt xdepth xi yi zi
+
+% Close the MATLAB pool if we opened it.
+if wasOpened
+    matlabpool close
+end
+
+if ftbverbose
+    toc
+end
 
 if ftbverbose
     fprintf(['end   : ' subname '\n'])
