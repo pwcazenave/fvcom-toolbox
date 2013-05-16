@@ -40,6 +40,8 @@ function Mobj = interp_POLCOMS2FVCOM(Mobj, ts, start_date, varlist)
 %
 % Revision history
 %   2013-02-08 First version.
+%   2013-05-16 Add support for parallel for-loops (not mandatory, but
+%   enabled if the Parallel Computing Toolbox is available).
 %
 %==========================================================================
 
@@ -47,8 +49,19 @@ subname = 'interp_POLCOMS2FVCOM';
 
 global ftbverbose;
 if ftbverbose
-    fprintf('\n')
-    fprintf(['begin : ' subname '\n'])
+    fprintf('\nbegin : %s\n', subname)
+end
+
+% Run jobs on multiple workers if we have that functionality. Not sure if
+% it's necessary, but check we have the Parallel Toolbox first.
+wasOpened = false;
+if license('test', 'Distrib_Computing_Toolbox')
+    % We have the Parallel Computing Toolbox, so launch a bunch of workers.
+    if matlabpool('size') == 0
+        % Force pool to be local in case we have remote pools available.
+        matlabpool open local
+        wasOpened = true;
+    end
 end
 
 %--------------------------------------------------------------------------
@@ -123,8 +136,10 @@ end
 
 fvtemp = nan(fn, fz);
 fvsalt = nan(fn, fz);
-for zi = 1:fz
-    % Set up the interpolation object.
+
+tic
+parfor zi = 1:fz
+    % Set up the interpolation objects.
     ft = TriScatteredInterp(lon(:), lat(:), reshape(pc.tempz(:, :, zi), [], 1), 'natural');
     fs = TriScatteredInterp(lon(:), lat(:), reshape(pc.salz(:, :, zi), [], 1), 'natural');
     % Interpolate temperature and salinity onto the unstructured grid.
@@ -146,7 +161,10 @@ end
 fvidx = 1:fn;
 fvnanidx = fvidx(isnan(fvtemp(:, 1)));
 fvfinidx = fvidx(~isnan(fvtemp(:, 1)));
-for ni = 1:length(fvnanidx);
+
+% Can't parallelise this one (easily). It shouldn't be a big part of the
+% run time if your source data covers the domain sufficiently.
+for ni = 1:length(fvnanidx)
     % Current position
     xx = Mobj.lon(fvnanidx(ni));
     yy = Mobj.lat(fvnanidx(ni));
@@ -160,11 +178,17 @@ end
 
 if ftbverbose
     fprintf('done.\n') 
+    toc
 end
 
 Mobj.restart.temp = fvtemp;
 Mobj.restart.salinity = fvsalt;
 
+% Close the MATLAB pool if we opened it.
+if wasOpened
+    matlabpool close
+end
+
 if ftbverbose
-    fprintf(['end   : ' subname '\n'])
+    fprintf('end   : %s\n', subname)
 end
