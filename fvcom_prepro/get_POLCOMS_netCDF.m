@@ -47,13 +47,11 @@ subname = 'get_POLCOMS_netCDF';
 
 global ftbverbose;
 if ftbverbose
-    fprintf('\n')
-    fprintf(['begin : ' subname '\n'])
+    fprintf('\nbegin : %s\n', subname)
 end
 
 % Get the results. Check we have a cell array, and if we don't, assume it's
 % a file name.
-
 if iscell(files)
     todo = length(files);
 else
