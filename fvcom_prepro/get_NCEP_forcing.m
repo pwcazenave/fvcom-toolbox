@@ -68,9 +68,8 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 subname = 'get_NCEP_forcing';
 
 global ftbverbose;
-if(ftbverbose);
-    fprintf('\n')
-    fprintf(['begin : ' subname '\n'])
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
 end
 
 % Get the extent of the model domain (in spherical)
@@ -118,7 +117,7 @@ ncep.pevpr  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanaly
 
 fields = fieldnames(ncep);
 
-for aa=1:length(fields)
+for aa = 1:length(fields)
     data.(fields{aa}).data = [];
     data.(fields{aa}).time = [];
     data.(fields{aa}).lat = [];
@@ -344,8 +343,6 @@ data.lon = data.(fields{1}).lon;
 data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
 data.lat = data.(fields{1}).lat;
 
-return
-
 % Have a look at some data.
 % [X, Y] = meshgrid(data.lon, data.lat);
 % for i=1:size(data.uwnd.data, 3)
@@ -357,6 +354,9 @@ return
 %     axis('equal','tight')
 %     pause(0.1)
 % end
-if ftbverbose;
+
+if ftbverbose
     fprintf(['end   : ' subname '\n'])
 end
+
+return
