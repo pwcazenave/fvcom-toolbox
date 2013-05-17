@@ -174,10 +174,10 @@ for vv = 1:length(vars)
             nnans1 = sum(isnan(tmp_fvcom_node(:, i)));
             nnans2 = sum(isnan(tmp_fvcom_data(:, i)));
             if  nnans1 > 0
-                warning('%i NaNs in the interpolated node data. This won''t work with FVCOM.', nnans(1))
+                warning('%i NaNs in the interpolated node data. This won''t work with FVCOM.', nnans1)
             end
             if nnans2 > 0
-                warning('%i NaNs in the interpolated element data. This won''t work with FVCOM.', nnans(2))
+                warning('%i NaNs in the interpolated element data. This won''t work with FVCOM.', nnans2)
             end
         end
         % Transfer the temporary arrays back to the relevant struct and
