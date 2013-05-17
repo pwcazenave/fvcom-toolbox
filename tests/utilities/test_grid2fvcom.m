@@ -32,7 +32,7 @@ addpath('/users/modellers/pica/Code/fvcom-toolbox/fvcom_prepro/')
 addpath('/tmp/pica/fvcom-toolbox/fvcom_prepro/')
 addpath('/tmp/pica/fvcom-toolbox/utilities/')
 
-load('/tmp/pica/fvcom-toolbox/tests/mat/grid2fvcom_data.mat');
+load('/tmp/pica/fvcom-toolbox/tests/data/grid2fvcom_data.mat');
 
 interpfields = {'uwnd', 'vwnd', 'slp', 'nshf', 'nlwrs', 'nswrs', 'P_E', ...
     'Et', 'time', 'lon', 'lat', 'x', 'y'};
@@ -107,7 +107,7 @@ for ff = 1:length(fnames)
             end
             if results.(fnames{ff}).nNodeTimes == ...
                     results.(fnames{ff}).origNodeTimes
-                results.(fnames{ff}).numNodeTimes = 'PASS'
+                results.(fnames{ff}).numNodeTimes = 'PASS';
             end
             if results.(fnames{ff}).nElementTimes == ...
                     results.(fnames{ff}).origElementTimes
@@ -125,13 +125,17 @@ for ff = 1:length(fnames)
                 forcing_interp.(fnames{ff}).data - ...
                 forcing_interp_new.(fnames{ff}).data;
 
-            results.(fnames{ff}).nodeRange = max(nodeDiff(:)) - min(nodeDiff(:));
-            results.(fnames{ff}).elemRange = max(elemDiff(:)) - min(elemDiff(:));
+            results.(fnames{ff}).nodeRange = ...
+                max(results.(fnames{ff}).nodeDiff(:)) - ...
+                min(results.(fnames{ff}).nodeDiff(:));
+            results.(fnames{ff}).elemRange = ...
+                max(results.(fnames{ff}).elemDiff(:)) - ...
+                min(results.(fnames{ff}).elemDiff(:));
 
-            if nodeRange == 0
+            if results.(fnames{ff}).nodeRange == 0
                 results.(fnames{ff}).nodeValues = 'PASS';
             end
-            if elemRange == 0;
+            if results.(fnames{ff}).elemRange == 0;
                 results.(fnames{ff}).elementValues = 'PASS';
             end
     end
