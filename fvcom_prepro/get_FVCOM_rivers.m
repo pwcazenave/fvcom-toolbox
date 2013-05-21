@@ -14,13 +14,18 @@ function Mobj = get_FVCOM_rivers(Mobj, dist_thresh)
 %
 % INPUT:
 %   Mobj - MATLAB mesh object containing:
+%       * have_lonlat - boolean to check for spherical coordinates.
 %       * lon, lat - positions for the unstructured grid.
-%       * rivers.year - start year of the river data time series.
-%       * xy - river positions in lon, lat.
-%       * names - list of river names (whose order must match the positions 
-%           in xy).
-%       * flow - river discharge data (again, order of columns must match
-%           the positions in fvcom_xy).
+%       * tri - triangulation table for the unstructured grid.
+%       * nVerts - number of nodes in the grid.
+%       * read_obc_nodes - open boundary node IDs.
+%       * rivers - river data struct with the following fields:
+%           - year - start year of the river data time series.
+%           - positions - river positions in lon, lat.
+%           - names - list of river names (whose order must match the
+%               positions in xy).
+%           - discharge - river discharge data (again, order of columns
+%               must match the positions in Mobj.rivers.positions).
 %   dist_thresh - [optional] maximum distance away from a river node beyond
 %       which the search for an FVCOM node is abandoned. Units in degrees.
 %
@@ -47,6 +52,13 @@ function Mobj = get_FVCOM_rivers(Mobj, dist_thresh)
 %   finding the closest locations and the summing of discharges (if
 %   necessary). The downside is the order of the discharges (columns) must
 %   match the position arrays.
+%   2013-05-21 - Add check to avoid setting nodes as river nodes when that
+%   node is part of only one element. If this is not added, then the model
+%   fills up the element without moving the water out of that element,
+%   eventually leading to a crash, which is obviously not ideal. The fix
+%   searches for another node in the element which is part of at least two
+%   elements, thereby avoiding the "element filling" issue. Also updated
+%   the help to list all the required fields in the Mobj.
 %
 %==========================================================================
 
@@ -116,11 +128,13 @@ vc = 0; % valid FVCOM boundary node counter
 
 % We need to find the unstructured grid boundary nodes and exclude the open
 % boundary nodes from them. This will be our list of potential candidates
-% for the river nodes (i.e. the land coastlin).
+% for the river nodes (i.e. the land coastline).
 [~, ~, ~, bnd] = connectivity([Mobj.lon, Mobj.lat], Mobj.tri);
 boundary_nodes = 1:Mobj.nVerts;
 boundary_nodes = boundary_nodes(bnd);
 coast_nodes = boundary_nodes(~ismember(boundary_nodes, [Mobj.read_obc_nodes{:}]));
+tlon = Mobj.lon(coast_nodes);
+tlat = Mobj.lat(coast_nodes);
 
 fv_obc = nan;
 fvcom_names = cell(0);
@@ -143,9 +157,62 @@ for ff = 1:fv_nr
         end
     end
 
-    % Add it to the list of valid rivers
     vc = vc + 1;
 
+    % We need to make sure the element in which this node occurs does not
+    % have two land boundaries (otherwise the model sometimes just fills up
+    % that element without releasing the water into the adjacent element).
+    
+    % Find the other nodes which are joined to the node we've just found.
+    % We don't need the column to get the other nodes in the element, only
+    % the row is required.
+    [row, ~] = find(Mobj.tri == coast_nodes(idx));
+    
+    if length(row) == 1
+        % This is a bad node because it is a part of only one element. The
+        % rivers need two adjacent elements to work reliably (?). So, we
+        % need to repeat the process above until we find a node that's
+        % connected to two elements. We'll try the other nodes in the
+        % current element before searching the rest of the coastline (which
+        % is computationally expensive).
+        
+        % Remove the current node index from the list of candidates (i.e.
+        % leave only the two other nodes in the element).
+        mask = Mobj.tri(row, :) ~= coast_nodes(idx);
+        n_tri = Mobj.tri(row, mask);
+        
+        % Remove values which aren't coastline values (we don't want to set
+        % the river node to an open water node).
+        n_tri = intersect(n_tri, coast_nodes);
+
+        % Of the remaining nodes in the element, find the closest one to
+        % the original river location (in fvcom_xy).
+        [~, n_idx] = sort(sqrt( ...
+            (fvcom_xy(ff, 1) - tlon(n_tri)).^2 ...
+            + (fvcom_xy(ff, 2) - tlat(n_tri)).^2));
+
+        [row_2, ~] = find(Mobj.tri == n_tri(n_idx(1)));
+        if length(n_idx) > 1
+            [row_3, ~] = find(Mobj.tri == n_tri(n_idx(2)));
+        end
+        % Closest first
+        if length(row_2) > 1
+            idx = find(coast_nodes == n_tri(n_idx(1)));
+        % The other one (only if we have more than one node to consider).
+        elseif length(n_idx) > 1 && length(row_3) > 1
+            idx = find(coast_nodes == n_tri(n_idx(2)));
+        % OK, we need to search across all the other coastline nodes.
+        else
+            % TODO: Implement a search of all the other coastline nodes.
+            % My testing indicates that we never get here (at least for the
+            % grids I've tested). I'd be interested to see the mesh which
+            % does get here...
+            continue
+        end
+        
+    end
+
+    % Add it to the list of valid rivers
     fv_obc(vc) = coast_nodes(idx);
 
     % We are assuming that the river discharge data array y-dimension is
