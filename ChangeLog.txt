@@ -1,5 +1,77 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20130421
+--------
+
+fvcom_prepro:
+    get_FVCOM_rivers.m
+        * Function now finds river nodes more intellgently. Also separated out
+        the POLCOMS specific code to get_POLCOMS_river_positions.m and
+        get_POLCOMS_river_discharge.m) to make the code more reusable if you
+        have a different source of river data.
+    get_NCEP_forcing.m
+        * Expand the help a little.
+    get_MetUM_forcing.m
+        * New (incomplete) function. As yet unfinished function to download
+        forcing data from the Met Office FTP server.
+    get_POLCOMS_river_discharge.m
+        * New function formerly part of get_FVCOM_rivers.m, but now extracts
+        discharges from POLCOMS flow files only.
+    get_POLCOMS_river_positions.m
+        * New function formerly part of get_FVCOM_rivers.m, but now simply
+        finds the coordinates of the rivers in a POLCOMS model grid.
+    get_POLCOMS_tsobc.m
+        * Open the MATLAB Parallel workers pool to make full use of the
+        parallel capability in MATLAB (previously the parfor loop was running
+        suboptimally).
+    get_POLCOMS_tsobc_gcoms.m
+        * New function to be used if the POLCOMS depths are stored in a second
+        NetCDF file rather than with the temperature and salinity arrays.
+    interp_POLCOMS2FVCOM.m
+        * Parallelise the interpolation of the data onto the unstructured
+        grid. This requires the Parallel Computing Toolbox (although if it is
+        not available, the code still runs, albeit slower!).
+    read_sigma.m
+        * Updated to include better support for non-uniform sigma coordinates
+        (e.g. geometric distributions). See sigma_gen.m, sigma_geo.m and
+        sigma_tanh.m for more information.
+    read_sms_map.m
+        * New function to read an SMS .map file and import the coastline into
+        MATLAB.
+    mjul2str_noyear.m
+        * Deleted this empty function.
+    write_FVCOM_forcing.m
+        * Fix the evaporation and precipitation arrays being used (should be
+        in correct units now).
+
+utilities:
+    catstruct.m
+        * MATLAB Central function to concatenate two structs.
+    grid2fvcom.m
+        * Parallelise the code. This requires the Parallel Computing Toolbox,
+        but offers significant speed improvements if available.
+    grid_vert_interp.m
+        * Parallelise the vertical interpolation. As before, this requires the
+        Parallel Computing Toolbox.
+    sigma_gen.m
+    sigma_geo.m
+    sigma_tanh.m
+
+tests:
+    utilities:
+        test_grid2fvcom.m
+            * Unit test to ensure changes in grid2fvcom.m do not break its
+            functionality (i.e. the modifications don't change the output
+            values). This is obviously not valid if grid2fvcom.m is found to
+            have a bug!
+        test_get_POLCOMS_tsobc.m
+            * Unit test to check get_POLCOMS_tsobc.m results don't change
+            following changes to the script.
+    data:
+        * Directory in which data files are kept which are used by the unit
+        test scripts.
+
+
 20130403
 --------
 
