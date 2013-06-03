@@ -193,7 +193,11 @@ for t = 1:nt
 
     % Now we've interpolated in space, we can interpolate the z-values
     % to the sigma depths.
-    oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);
+    %oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);
+    % Change the way the nodes are listed to match the order in the
+    % Casename_obc.dat file.
+    tmpObcNodes = Mobj.obc_nodes';
+    oNodes = tmpObcNodes(tmpObcNodes ~= 0)';
 
     % Preallocate the output arrays
     fvtempz = nan(nf, fz);
@@ -276,3 +280,49 @@ end
 if ftbverbose
     fprintf(['end   : ' subname '\n'])
 end
+
+%%
+
+% close all
+% 
+% % Plot a vertical profile for a boundary node (for my Irish Sea case, this
+% % is one of the ones along the Celtic Sea boundary).
+% nn = 75;
+% 
+% % Get the corresponding indices for the POLCOMS data
+% [~, xidx] = min(abs(lon(1, :) - fvlon(nn)));
+% [~, yidx] = min(abs(lat(:, 1) - fvlat(nn)));
+% 
+% figure(10)
+% subplot(1,2,1)
+% % plot(Mobj.temperature(nn, :, 1), Mobj.siglayz(nn, :), 'x-')
+% plot(Mobj.temperature(nn, :, 1), 1:fz, 'x-')
+% % set(gca,'YDir','reverse');
+% xlabel('Temperature (^{\circ}C)')
+% % ylabel('Depth (m)')
+% ylabel('Array index')
+% 
+% subplot(1,2,2)
+% plot(squeeze(pc.ETWD.data(yidx, xidx, :, 1)), 1:nz, 'rx-')
+% % set(gca,'YDir','reverse');
+% xlabel('Temperature (^{\circ}C)')
+% ylabel('Array index')
+% 
+% 
+% % Figure to check everything's as we'd expect. Plot first time step with
+% % the POLCOMS surface temperature as a background with the interpolated
+% % boundary node surface values on top.
+% 
+% figure(20)
+% tt = 3;
+% pcolor(pc.lon.data, pc.lat.data, squeeze(pc.ETWD.data(:, :, 1, tt))')
+% shading flat
+% axis('equal', 'tight')
+% hold on
+% scatter(Mobj.lon(oNodes), Mobj.lat(oNodes), repmat(40, size(Mobj.x(oNodes))), Mobj.temperature(:, 1, tt), 'filled', 'MarkerEdgeColor', 'k')
+% axis([min(Mobj.lon(oNodes)), max(Mobj.lon(oNodes)), min(Mobj.lat(oNodes)), max(Mobj.lat(oNodes))])
+% caxis([8, 15])
+% plot(lon(yidx, xidx), lat(yidx, xidx), 'rs') % POLCOMS is all backwards
+% plot(Mobj.lon(oNodes(nn)), Mobj.lat(oNodes(nn)), 'ro')
+% colorbar
+% 
