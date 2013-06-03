@@ -96,11 +96,17 @@ if f < 0
     error('Problem writing to _tide_node.dat file. Check permissions and try again.')
 end
 % Boundary node IDs
-fprintf(f, '%8d\n', numel(Mobj.obc_nodes(Mobj.obc_nodes ~= 0)));
-for j = 1:length(Mobj.read_obc_nodes); % number of boundaries
-    for i = 1:numel(Mobj.read_obc_nodes{j})
-        fprintf(f, '%8i\n', Mobj.read_obc_nodes{j}(i));
-    end
+
+% Get a list of the open boundary nodes. Transpose Mobj.obc_nodes so the
+% order of the boundary nodes is preserved.
+tmpObcNodes = Mobj.obc_nodes';
+% Flip it back so it's the same shape as it would have been using the old
+% code.
+ObcNodes = tmpObcNodes(tmpObcNodes ~= 0)';
+
+fprintf(f, '%8d\n', numel(ObcNodes));
+for i = 1:numel(ObcNodes(i))
+    fprintf(f, '%8i\n', ObcNodes(i));
 end
 
 fclose(f);
@@ -116,7 +122,7 @@ end
 % Boundary element IDs
 ne = Mobj.nObcElements;
 fprintf(f, '%8d\n', ne);
-for j = 1:length(Mobj.read_obc_nodes); % number of boundaries
+for j = 1:Mobj.nObs; % number of open boundaries
     for i = 1:numel(Mobj.read_obc_elements{j})
         fprintf(f, '%8i\n', Mobj.read_obc_elements{j}(i));
     end
