@@ -24,8 +24,7 @@ function Mobj = get_POLCOMS_tsobc(Mobj, ts)
 %
 %       - Variables are only appended if there are 4 dimensions; fewer than
 %       that, and the values are assumed to be static across all the given
-%       files (e.g. longitude, latitude etc.). The fourth dimension is
-%       time.
+%       files (e.g. longitude, latitude). The fourth dimension is time.
 %       - The order of the files given should be chronological.
 % 
 %   - The NetCDF files used here are those from the PML POLCOMS-ERSEM model
@@ -52,6 +51,14 @@ function Mobj = get_POLCOMS_tsobc(Mobj, ts)
 %    FVCOM depths. This means the full profile structure is maintained in
 %    the resulting FVCOM boundary input despite the differing depths at the
 %    FVCOM boundary node.
+%    2013-06-03 Fix some bugs in the way the open boundary node values were
+%    stored (the order in which they were stored did not match the order of
+%    the nodes in Casename_obc.dat). Also fix the order of the vertically
+%    interpolated values so that FVCOM starts at the surface instead of
+%    mirroring POLCOMS' approach (where the first value is the seabed). The
+%    effect of these two fixes (nodes and vertical) should match what FVCOM
+%    expects. Also add a set of figures (commented out) at the end for
+%    diagnostic purposes.
 %
 %==========================================================================
 
@@ -86,8 +93,14 @@ pc = get_POLCOMS_netCDF(ts, varlist);
 % Make rectangular arrays for the nearest point lookup.
 [lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
 
-fvlon = Mobj.lon(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
-fvlat = Mobj.lat(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
+%oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);
+% Change the way the nodes are listed to match the order in the
+% Casename_obc.dat file.
+tmpObcNodes = Mobj.obc_nodes';
+oNodes = tmpObcNodes(tmpObcNodes ~= 0)';
+
+fvlon = Mobj.lon(oNodes);
+fvlat = Mobj.lat(oNodes);
 
 % Number of boundary nodes
 nf = sum(Mobj.nObcNodes);
@@ -108,25 +121,31 @@ for t = 1:nt
     pctemp3 = pc.ETWD.data(:, :, :, t);
     pcsalt3 = pc.x1XD.data(:, :, :, t);
     
+    % Flip the vertical layer dimension to make the POLCOMS data go from
+    % surface to seabed to match its depth data and to match how FVCOM
+    % works.
+    pctemp3 = flipdim(pctemp3, 3);
+    pcsalt3 = flipdim(pcsalt3, 3);
+
     % Preallocate the intermediate results arrays.
     itempz = nan(nf, nz);
     isalz = nan(nf, nz);
     idepthz = nan(nf, nz);
-    
+
     for j = 1:nz
         % Now extract the relevant layer from the 3D subsets. Transpose the
         % data to be (x, y) rather than (y, x).
         pctemp2 = pctemp3(:, :, j)';
         pcsalt2 = pcsalt3(:, :, j)';
         pcdepth2 = squeeze(pc.depth.data(:, :, j, t))';
-       
+
         % Create new arrays which will be flattened when masking (below).
         tpctemp2 = pctemp2;
         tpcsalt2 = pcsalt2;
         tpcdepth2 = pcdepth2;
         tlon = lon;
         tlat = lat;
-        
+
         % Create and apply a mask to remove values outside the domain. This
         % inevitably flattens the arrays, but it shouldn't be a problem
         % since we'll be searching for the closest values in such a manner
@@ -142,12 +161,12 @@ for t = 1:nt
         % be used.
         tlon(mask) = [];
         tlat(mask) = [];
-        
+
         % Preallocate the intermediate results arrays.
         itempobc = nan(nf, 1);
         isalobc = nan(nf, 1);
         idepthobc = nan(nf, 1);
-        
+
         % Speed up the tightest loop with a parallelized loop.
         parfor i = 1:nf
             % Now we can do each position within the 2D layer.
@@ -167,7 +186,7 @@ for t = 1:nt
             ptemp = tpctemp2(ixy);
             psal = tpcsalt2(ixy);
             pdepth = tpcdepth2(ixy);
-            
+
             % Use a triangulation to do the horizontal interpolation.
             tritemp = TriScatteredInterp(plon', plat', ptemp', 'natural');
             trisal = TriScatteredInterp(plon', plat', psal', 'natural');
@@ -175,7 +194,7 @@ for t = 1:nt
             itempobc(i) = tritemp(fx, fy);
             isalobc(i) = trisal(fx, fy);
             idepthobc(i) = triz(fx, fy);
-            
+
             % Check all three, though if one is NaN, they all will be.
             if isnan(itempobc(i)) || isnan(isalobc(i)) || isnan(idepthobc(i))
                 warning('FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Setting to the closest PML POLCOMS-ERSEM value.', fx, fy)
@@ -184,20 +203,16 @@ for t = 1:nt
                 idepthobc(i) = tpcdepth2(ii(1));
             end
         end
-        
-        % Put the results in this intermediate array.
+
+        % Put the results in the intermediate array.
         itempz(:, j) = itempobc;
         isalz(:, j) = isalobc;
         idepthz(:, j) = idepthobc;
+
     end
 
     % Now we've interpolated in space, we can interpolate the z-values
     % to the sigma depths.
-    %oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);
-    % Change the way the nodes are listed to match the order in the
-    % Casename_obc.dat file.
-    tmpObcNodes = Mobj.obc_nodes';
-    oNodes = tmpObcNodes(tmpObcNodes ~= 0)';
 
     % Preallocate the output arrays
     fvtempz = nan(nf, fz);
@@ -233,20 +248,20 @@ for t = 1:nt
         % seems to do a decent job of the interpolation (at least
         % qualitatively).
         if ~isnan(tpz)
-            fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, :), tfz, 'linear', 'extrap');
-            fvsalz(pp, :) = interp1(norm_tpz, isalz(pp, :), tfz, 'linear', 'extrap');
+            fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, :), tfz, 'pchip', 'extrap');
+            fvsalz(pp, :) = interp1(norm_tpz, isalz(pp, :), tfz, 'pchip', 'extrap');
         else
             warning('Should never see this... ') % because we test for NaNs when fetching the values.
             warning('FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Skipping.', fvlon(pp), fvlat(pp))
             continue
         end
     end
-    
+
     % The horizontally- and vertically-interpolated values in the final
     % FVCOM results array.
     fvtemp(:, :, t) = fvtempz;
     fvsal(:, :, t) = fvsalz;
-    
+
     if ftbverbose
         fprintf('done.\n')
     end
@@ -281,48 +296,68 @@ if ftbverbose
     fprintf(['end   : ' subname '\n'])
 end
 
-%%
 
-% close all
-% 
+%%
 % % Plot a vertical profile for a boundary node (for my Irish Sea case, this
-% % is one of the ones along the Celtic Sea boundary).
-% nn = 75;
-% 
+% % is one of the ones along the Celtic Sea boundary). Also plot the
+% % distribution of interpolated values over the POLCOMS data. Add the
+% % location of the vertical profile (both FVCOM and POLCOMS) to the plot.
+% nn = 55;   % open boundary index
+% tt = 1;     % time index
+%
 % % Get the corresponding indices for the POLCOMS data
 % [~, xidx] = min(abs(lon(1, :) - fvlon(nn)));
 % [~, yidx] = min(abs(lat(:, 1) - fvlat(nn)));
-% 
-% figure(10)
-% subplot(1,2,1)
-% % plot(Mobj.temperature(nn, :, 1), Mobj.siglayz(nn, :), 'x-')
-% plot(Mobj.temperature(nn, :, 1), 1:fz, 'x-')
-% % set(gca,'YDir','reverse');
+%
+% % close all
+%
+% figure
+% clf
+% subplot(2,2,1)
+% plot(Mobj.temperature(nn, :, 1), Mobj.siglayz(oNodes(nn), :), 'x-')
 % xlabel('Temperature (^{\circ}C)')
-% % ylabel('Depth (m)')
-% ylabel('Array index')
-% 
-% subplot(1,2,2)
-% plot(squeeze(pc.ETWD.data(yidx, xidx, :, 1)), 1:nz, 'rx-')
-% % set(gca,'YDir','reverse');
+% ylabel('Depth (m)')
+% title('FVCOM')
+%
+% subplot(2,2,2)
+% % Although POLCOMS stores its temperature values from seabed to surface,
+% % the depths are stored surface to seabed. Nice.
+% plot(squeeze(pc.ETWD.data(xidx, yidx, :, 1)), flipud(squeeze(pc.depth.data(xidx, yidx, :, 1))), 'rx-')
+% xlabel('Temperature (^{\circ}C)')
+% ylabel('Depth (m)')
+% title('POLCOMS')
+%
+% subplot(2,2,3)
+% plot(Mobj.temperature(nn, :, tt), 1:fz, 'x-')
 % xlabel('Temperature (^{\circ}C)')
 % ylabel('Array index')
-% 
-% 
+% title('FVCOM')
+%
+% subplot(2,2,4)
+% plot(squeeze(pc.ETWD.data(xidx, yidx, :, tt)), 1:nz, 'rx-')
+% xlabel('Temperature (^{\circ}C)')
+% ylabel('Array index')
+% title('POLCOMS')
+%
 % % Figure to check everything's as we'd expect. Plot first time step with
 % % the POLCOMS surface temperature as a background with the interpolated
 % % boundary node surface values on top.
-% 
-% figure(20)
-% tt = 3;
-% pcolor(pc.lon.data, pc.lat.data, squeeze(pc.ETWD.data(:, :, 1, tt))')
+%
+% figure
+% clf
+% % Plot POLCOMS surface data (last sigma layer)
+% dx = mean(diff(pc.lon.data));
+% dy = mean(diff(pc.lat.data));
+% pcolor(pc.lon.data - (dx / 2), pc.lat.data - (dy / 2), ...
+%     squeeze(pc.ETWD.data(:, :, end, tt))')
 % shading flat
 % axis('equal', 'tight')
+% daspect([1.5, 1, 1])
 % hold on
-% scatter(Mobj.lon(oNodes), Mobj.lat(oNodes), repmat(40, size(Mobj.x(oNodes))), Mobj.temperature(:, 1, tt), 'filled', 'MarkerEdgeColor', 'k')
+% % Add the interpolated surface data (first sigma layer)
+% scatter(Mobj.lon(oNodes), Mobj.lat(oNodes), repmat(40, size(Mobj.lon(oNodes))), Mobj.temperature(:, 1, tt), 'filled', 'MarkerEdgeColor', 'k')
 % axis([min(Mobj.lon(oNodes)), max(Mobj.lon(oNodes)), min(Mobj.lat(oNodes)), max(Mobj.lat(oNodes))])
-% caxis([8, 15])
-% plot(lon(yidx, xidx), lat(yidx, xidx), 'rs') % POLCOMS is all backwards
-% plot(Mobj.lon(oNodes(nn)), Mobj.lat(oNodes(nn)), 'ro')
+% caxis([6, 12])
+% plot(lon(yidx, xidx), lat(yidx, xidx), 'rs') % polcoms is all backwards
+% plot(Mobj.lon(oNodes(nn)), Mobj.lat(oNodes(nn)), 'wo')
 % colorbar
-% 
