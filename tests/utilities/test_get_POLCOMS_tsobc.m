@@ -49,6 +49,9 @@ for ff = 1:length(fnames)
     end
 end
 
+% Clear out fields which don't exist in both Mobj and Mobj_new.
+fnames = intersect(fnames, fieldnames(Mobj));
+
 %%
 
 results = struct();
@@ -58,12 +61,12 @@ for ff = 1:length(fnames)
     results.(fnames{ff}) = struct();
 
     switch fnames{ff}
-        case {'time', 'lon', 'lat', 'x', 'y'}
+        case {'siglayz', 'lon', 'lat', 'obc_nodes', 'nObcNodes', 'ts_times'}
 
             results.(fnames{ff}).vectorValues = 'FAIL';
 
             results.(fnames{ff}).check = ...
-                forcing_interp.(fnames{ff}) - forcing_interp_new.(fnames{ff});
+                Mobj.(fnames{ff}) - Mobj_new.(fnames{ff});
             checkDiff = max(results.(fnames{ff}).check) - ...
                 min(results.(fnames{ff}).check);
             if checkDiff == 0
@@ -79,38 +82,24 @@ for ff = 1:length(fnames)
             results.(fnames{ff}).nodeNumber = 'FAIL';
             results.(fnames{ff}).elementNumber = 'FAIL';
             results.(fnames{ff}).numNodeTimes = 'FAIL';
-            results.(fnames{ff}).numElementTimes = 'FAIL';
             results.(fnames{ff}).nodeValues = 'FAIL';
-            results.(fnames{ff}).elementValues = 'FAIL';
 
             %--------------------------------------------------------------
             % Check we have the same number of points and time steps in the
             % new interpolation as in the original.
             %--------------------------------------------------------------
             [~, results.(fnames{ff}).origNodeTimes] = ...
-                size(forcing_interp.(fnames{ff}).node);
-            [~, results.(fnames{ff}).origElementTimes] = ...
-                size(forcing_interp.(fnames{ff}).data);
+                size(Mobj.(fnames{ff}));
             [results.(fnames{ff}).nNodes, ...
                 results.(fnames{ff}).nNodeTimes] = ...
-                size(forcing_interp_new.(fnames{ff}).node);
-            [results.(fnames{ff}).nElems, ...
-                results.(fnames{ff}).nElementTimes] = ...
-                size(forcing_interp_new.(fnames{ff}).data);
+                size(Mobj_new.(fnames{ff}));
 
             if results.(fnames{ff}).nNodes == Mobj.nVerts
                 results.(fnames{ff}).nodeNumber = 'PASS';
             end
-            if results.(fnames{ff}).nElems == Mobj.nElems
-                results.(fnames{ff}).elementNumber = 'PASS';
-            end
             if results.(fnames{ff}).nNodeTimes == ...
                     results.(fnames{ff}).origNodeTimes
                 results.(fnames{ff}).numNodeTimes = 'PASS';
-            end
-            if results.(fnames{ff}).nElementTimes == ...
-                    results.(fnames{ff}).origElementTimes
-                results.(fnames{ff}).numElementTimes = 'PASS';
             end
 
             %--------------------------------------------------------------
@@ -118,20 +107,15 @@ for ff = 1:length(fnames)
             % reference values.
             %--------------------------------------------------------------
             results.(fnames{ff}).nodeDiff = ...
-                forcing_interp.(fnames{ff}).node - ...
-                forcing_interp_new.(fnames{ff}).node;
-            results.(fnames{ff}).elemDiff = ...
-                forcing_interp.(fnames{ff}).data - ...
-                forcing_interp_new.(fnames{ff}).data;
+                Mobj.(fnames{ff}) - ...
+                Mobj_new.(fnames{ff});
 
-            results.(fnames{ff}).nodeRange = max(nodeDiff(:)) - min(nodeDiff(:));
-            results.(fnames{ff}).elemRange = max(elemDiff(:)) - min(elemDiff(:));
+            results.(fnames{ff}).nodeRange = ...
+                max(results.(fnames{ff}).nodeDiff(:)) - ...
+                min(results.(fnames{ff}).nodeDiff(:));
 
             if nodeRange == 0
                 results.(fnames{ff}).nodeValues = 'PASS';
-            end
-            if elemRange == 0;
-                results.(fnames{ff}).elementValues = 'PASS';
             end
     end
 end
