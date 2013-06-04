@@ -132,68 +132,69 @@ This function is called by:
 0055 nc = netcdf.create(filename,<span class="string">'clobber'</span>);
 0056 
 0057 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,mytitle)
-0058 
-0059 <span class="comment">% define dimensions</span>
-0060 ksl_dimid=netcdf.defDim(nc,<span class="string">'ksl'</span>,ksl);
-0061 node_dimid=netcdf.defDim(nc,<span class="string">'ksl'</span>,nverts);
-0062 time_dimid=netcdf.defDim(nc,<span class="string">'ksl'</span>,netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
-0063 
-0064 <span class="comment">% define variables and attributes</span>
-0065 time_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,time_dimid);
-0066 netcdf.putAtt(nc,time_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
-0067 netcdf.putAtt(nc,time_varid,<span class="string">'units'</span>,<span class="string">'days since 0.0'</span>);
-0068 netcdf.putAtt(nc,time_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
-0069 
-0070 itime_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_INT'</span>,time_dimid);
-0071 netcdf.putAtt(nc,itime_varid,<span class="string">'units'</span>,<span class="string">'days since 0.0'</span>);
-0072 netcdf.putAtt(nc,itime_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
-0073 
-0074 itime2_varid=netcdf.defVar(nc,<span class="string">'Itime'</span>,<span class="string">'NC_INT'</span>,time_dimid);
-0075 netcdf.putAtt(nc,itime2_varid,<span class="string">'units'</span>,<span class="string">'msec since 00:00:00'</span>);
-0076 netcdf.putAtt(nc,itime2_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
-0077 
-0078 zsl_varid=netcdf.defVar(nc,<span class="string">'Itime2'</span>,<span class="string">'NC_FLOAT'</span>,ksl_dimid);
-0079 netcdf.putAtt(nc,zsl_varid,<span class="string">'long_name'</span>,<span class="string">'standard z levels positive up'</span>);
-0080 netcdf.putAtt(nc,zsl_varid,<span class="string">'units'</span>,<span class="string">'m'</span>);
-0081 
-0082 <span class="comment">% TODO: Check order of dimensions here</span>
-0083 ssl_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,[time_dimid,ksl_dimid,node_dimid]);
-0084 netcdf.putAtt(nc,ssl_varid,<span class="string">'long_name'</span>,<span class="string">'observed_salinity_profile'</span>);
-0085 netcdf.putAtt(nc,ssl_varid,<span class="string">'units'</span>,<span class="string">'PSU'</span>);
-0086 
-0087 tsl_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,[time_dimid,ksl_dimid,node_dimid]);
-0088 netcdf.putAtt(nc,tsl_varid,<span class="string">'long_name'</span>,<span class="string">'observed_temperature_profile'</span>);
-0089 netcdf.putAtt(nc,tsl_varid,<span class="string">'units'</span>,<span class="string">'C'</span>);
-0090 
-0091 <span class="comment">% end definitions</span>
-0092 netcdf.endDef(nc);
-0093 
+0058 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'File created with the write_FVCOM_obs_TS.m from the MATLAB fvcom-toolbox'</span>)
+0059 
+0060 <span class="comment">% define dimensions</span>
+0061 ksl_dimid=netcdf.defDim(nc,<span class="string">'ksl'</span>,ksl);
+0062 node_dimid=netcdf.defDim(nc,<span class="string">'ksl'</span>,nverts);
+0063 time_dimid=netcdf.defDim(nc,<span class="string">'ksl'</span>,netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0064 
+0065 <span class="comment">% define variables and attributes</span>
+0066 time_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,time_dimid);
+0067 netcdf.putAtt(nc,time_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
+0068 netcdf.putAtt(nc,time_varid,<span class="string">'units'</span>,<span class="string">'days since 0.0'</span>);
+0069 netcdf.putAtt(nc,time_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
+0070 
+0071 itime_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0072 netcdf.putAtt(nc,itime_varid,<span class="string">'units'</span>,<span class="string">'days since 0.0'</span>);
+0073 netcdf.putAtt(nc,itime_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
+0074 
+0075 itime2_varid=netcdf.defVar(nc,<span class="string">'Itime'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0076 netcdf.putAtt(nc,itime2_varid,<span class="string">'units'</span>,<span class="string">'msec since 00:00:00'</span>);
+0077 netcdf.putAtt(nc,itime2_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
+0078 
+0079 zsl_varid=netcdf.defVar(nc,<span class="string">'Itime2'</span>,<span class="string">'NC_FLOAT'</span>,ksl_dimid);
+0080 netcdf.putAtt(nc,zsl_varid,<span class="string">'long_name'</span>,<span class="string">'standard z levels positive up'</span>);
+0081 netcdf.putAtt(nc,zsl_varid,<span class="string">'units'</span>,<span class="string">'m'</span>);
+0082 
+0083 <span class="comment">% TODO: Check order of dimensions here</span>
+0084 ssl_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,[time_dimid,ksl_dimid,node_dimid]);
+0085 netcdf.putAtt(nc,ssl_varid,<span class="string">'long_name'</span>,<span class="string">'observed_salinity_profile'</span>);
+0086 netcdf.putAtt(nc,ssl_varid,<span class="string">'units'</span>,<span class="string">'PSU'</span>);
+0087 
+0088 tsl_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,[time_dimid,ksl_dimid,node_dimid]);
+0089 netcdf.putAtt(nc,tsl_varid,<span class="string">'long_name'</span>,<span class="string">'observed_temperature_profile'</span>);
+0090 netcdf.putAtt(nc,tsl_varid,<span class="string">'units'</span>,<span class="string">'C'</span>);
+0091 
+0092 <span class="comment">% end definitions</span>
+0093 netcdf.endDef(nc);
 0094 
-0095 <span class="comment">% write vars</span>
-0096 netcdf.putVar(nc,time_varid,time*ones(1,nverts));
-0097 netcdf.putVar(nc,itime_varid,floor(time)*ones(1,nverts));
-0098 netcdf.putVar(nc,itime2_varid,(mod(time,1)*24*3600*1000)*ones(1,nverts));
-0099 netcdf.putVar(nc,zsl_varid,zsl);
-0100 
+0095 
+0096 <span class="comment">% write vars</span>
+0097 netcdf.putVar(nc,time_varid,time*ones(1,nverts));
+0098 netcdf.putVar(nc,itime_varid,floor(time)*ones(1,nverts));
+0099 netcdf.putVar(nc,itime2_varid,(mod(time,1)*24*3600*1000)*ones(1,nverts));
+0100 netcdf.putVar(nc,zsl_varid,zsl);
 0101 
-0102 <span class="keyword">for</span> i=1:numel(time)
-0103     <span class="keyword">for</span> k=1:ksl
-0104         nc{<span class="string">'tsl'</span>}(i,k,:) = tsl(k); 
-0105     <span class="keyword">end</span>;
-0106 <span class="keyword">end</span>;
-0107 
-0108 <span class="keyword">for</span> i=1:numel(time)
-0109     <span class="keyword">for</span> k=1:ksl
-0110         nc{<span class="string">'ssl'</span>}(i,k,:) = ssl(k);
-0111     <span class="keyword">end</span>;
-0112 <span class="keyword">end</span>;
-0113 
-0114 ierr = close(nc);
-0115 
+0102 
+0103 <span class="keyword">for</span> i=1:numel(time)
+0104     <span class="keyword">for</span> k=1:ksl
+0105         nc{<span class="string">'tsl'</span>}(i,k,:) = tsl(k); 
+0106     <span class="keyword">end</span>;
+0107 <span class="keyword">end</span>;
+0108 
+0109 <span class="keyword">for</span> i=1:numel(time)
+0110     <span class="keyword">for</span> k=1:ksl
+0111         nc{<span class="string">'ssl'</span>}(i,k,:) = ssl(k);
+0112     <span class="keyword">end</span>;
+0113 <span class="keyword">end</span>;
+0114 
+0115 ierr = close(nc);
 0116 
 0117 
 0118 
-0119</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0119 
+0120</pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -1,0 +1,340 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_FVCOM_restart</title>
+  <meta name="keywords" content="write_FVCOM_restart">
+  <meta name="description" content="Duplicate an FVCOM restart file, replacing variable values with those">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_FVCOM_restart.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_FVCOM_restart
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Duplicate an FVCOM restart file, replacing variable values with those</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_FVCOM_restart(fv_restart, out_restart, indata, start_date) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Duplicate an FVCOM restart file, replacing variable values with those
+ specified in the struct data. 
+ 
+ function write_FVCOM_restart(fv_restart, out_restart, indata)
+ 
+ DESCRIPTION:
+   Use an existing FVCOM restart file as a template, export all existing
+   data except for variables whose names match the data in the struct
+   'data'. 
+ 
+ INPUT:
+   fv_restart  = full path to an existing FVCOM restart file.
+   out_restart = full path to the restart file to be created.
+   indata      = struct whose field names are the variable names to be
+   replaced.
+   start_date  = [optional] reset the restart file times to this date
+   ([YYYY, MM, DD, HH, MM, SS]).
+ 
+ OUTPUT:
+   FVCOM restart file.
+ 
+ EXAMPLE USAGE:
+   indata.temp = interpolated_temp;
+   indata.salinity = interpolated_salinity;
+   write_FVCOM_restart('/tmp/fvcom_restart.nc', ...
+       '/tmp/fvcom_restart_interp.nc', indata)
+ 
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+ 
+ Revision history:
+   2013-02-08 First version.
+   2013-02-15 Fix bug wherein only the last field in the new data would
+   only be added to the output NetCDF file.
+   2013-03-13 Make the time rewriting optional and not just commented out.
+ 
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_restart(fv_restart, out_restart, indata, start_date)</a>
+0002 <span class="comment">% Duplicate an FVCOM restart file, replacing variable values with those</span>
+0003 <span class="comment">% specified in the struct data.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function write_FVCOM_restart(fv_restart, out_restart, indata)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%   Use an existing FVCOM restart file as a template, export all existing</span>
+0009 <span class="comment">%   data except for variables whose names match the data in the struct</span>
+0010 <span class="comment">%   'data'.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% INPUT:</span>
+0013 <span class="comment">%   fv_restart  = full path to an existing FVCOM restart file.</span>
+0014 <span class="comment">%   out_restart = full path to the restart file to be created.</span>
+0015 <span class="comment">%   indata      = struct whose field names are the variable names to be</span>
+0016 <span class="comment">%   replaced.</span>
+0017 <span class="comment">%   start_date  = [optional] reset the restart file times to this date</span>
+0018 <span class="comment">%   ([YYYY, MM, DD, HH, MM, SS]).</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% OUTPUT:</span>
+0021 <span class="comment">%   FVCOM restart file.</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% EXAMPLE USAGE:</span>
+0024 <span class="comment">%   indata.temp = interpolated_temp;</span>
+0025 <span class="comment">%   indata.salinity = interpolated_salinity;</span>
+0026 <span class="comment">%   write_FVCOM_restart('/tmp/fvcom_restart.nc', ...</span>
+0027 <span class="comment">%       '/tmp/fvcom_restart_interp.nc', indata)</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Author(s):</span>
+0030 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% Revision history:</span>
+0033 <span class="comment">%   2013-02-08 First version.</span>
+0034 <span class="comment">%   2013-02-15 Fix bug wherein only the last field in the new data would</span>
+0035 <span class="comment">%   only be added to the output NetCDF file.</span>
+0036 <span class="comment">%   2013-03-13 Make the time rewriting optional and not just commented out.</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">%==========================================================================</span>
+0039 
+0040 subname = <span class="string">'write_FVCOM_restart'</span>;
+0041 
+0042 <span class="keyword">global</span> ftbverbose
+0043 <span class="keyword">if</span> ftbverbose
+0044     fprintf(<span class="string">'\n'</span>)
+0045     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="comment">% Get the fieldnames which must match the variable names to be replaced</span>
+0049 <span class="comment">% (case sensitive).</span>
+0050 fnames = fieldnames(indata);
+0051 nf = length(fnames);
+0052 
+0053 nc = netcdf.open(fv_restart, <span class="string">'NOWRITE'</span>);
+0054 ncout = netcdf.create(out_restart, <span class="string">'clobber'</span>);
+0055 
+0056 [numdims, numvars, numglobatts, unlimdimID] = netcdf.inq(nc);
+0057 
+0058 <span class="comment">% Define the dimensions for all variables.</span>
+0059 dimid = nan(numdims, 1);
+0060 dimnames = cell(numdims, 1);
+0061 dimlengths = nan(numdims, 1);
+0062 <span class="keyword">for</span> ii = 1:numdims
+0063     [dimname, dimlen] = netcdf.inqDim(nc, ii - 1);
+0064     <span class="keyword">if</span> ii ~= unlimdimID + 1 <span class="comment">% NetCDF indices start at zero</span>
+0065         dimid(ii) = netcdf.defDim(ncout, dimname, dimlen);
+0066     <span class="keyword">else</span>
+0067         dimid(ii) = netcdf.defDim(ncout, dimname, netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0068     <span class="keyword">end</span>
+0069     dimnames{ii} = dimname;
+0070     dimlengths(ii) = dimlen;
+0071 <span class="keyword">end</span>
+0072 
+0073 <span class="comment">% Now define the variables and attributes.</span>
+0074 <span class="keyword">for</span> ii = 1:numvars
+0075 
+0076     <span class="comment">% Find name of the current variable.</span>
+0077     [varname, xtype, varDimIDs, varAtts] = netcdf.inqVar(nc, ii - 1);
+0078 
+0079     <span class="comment">% Create the variables.</span>
+0080     varid = netcdf.defVar(ncout, varname, xtype, varDimIDs);
+0081 
+0082     <span class="comment">% Get each attribute and add it to the current variable.</span>
+0083     <span class="keyword">for</span> j = 1:varAtts
+0084 
+0085         attname = netcdf.inqAttName(nc, varid, j - 1);
+0086         attval = netcdf.getAtt(nc, varid, attname);
+0087 
+0088         netcdf.putAtt(ncout, varid, attname, attval);
+0089     <span class="keyword">end</span>
+0090 <span class="keyword">end</span>
+0091 
+0092 <span class="comment">% Do the global attributes</span>
+0093 <span class="keyword">for</span> ii = 1:numglobatts
+0094     
+0095     <span class="comment">% Find the current global attribute's name and value.</span>
+0096     gattname = netcdf.inqAttName(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), ii - 1);
+0097     gattval = netcdf.getAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), gattname);
+0098     
+0099     <span class="comment">% Put that back into the output NetCDF file.</span>
+0100     netcdf.putAtt(ncout, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), gattname, gattval);
+0101 <span class="keyword">end</span>
+0102 
+0103 netcdf.endDef(ncout);
+0104 
+0105 <span class="comment">% Get the existing data and output to the new NetCDF file, except for</span>
+0106 <span class="comment">% variables which match the fieldnames in the data struct.</span>
+0107 <span class="keyword">for</span> ii = 1:numvars
+0108 
+0109     [varname, ~, varDimIDs, ~] = netcdf.inqVar(nc, ii - 1);
+0110     varid = netcdf.inqVarID(nc, varname);
+0111 
+0112     <span class="keyword">if</span> ftbverbose
+0113         fprintf(<span class="string">'\tvariable %s... '</span>, varname)
+0114     <span class="keyword">end</span>
+0115 
+0116     <span class="comment">% We need the data irrespective of whether we're replacing it or not,</span>
+0117     <span class="comment">% so grab it outside the if statement below.</span>
+0118     data = netcdf.getVar(nc, varid);
+0119 
+0120     <span class="comment">% Get the size of the data and the dimension names.</span>
+0121     currDimsNames = dimnames(varDimIDs + 1);
+0122     currDimsLengths = dimlengths(varDimIDs + 1);
+0123 
+0124     <span class="comment">% Find whether we've got an unlimited dimension in this data.</span>
+0125     wasUnlimited = -1;
+0126     <span class="keyword">for</span> jj = varDimIDs
+0127         <span class="keyword">if</span> numel(unlimdimID) &gt; 1
+0128             error(<span class="string">'Do not currently support multiple unlimited dimensions.'</span>)
+0129         <span class="keyword">end</span>
+0130         <span class="keyword">if</span> strcmpi(dimnames(jj + 1), dimnames(unlimdimID + 1))
+0131             wasUnlimited = jj;
+0132         <span class="keyword">end</span>
+0133     <span class="keyword">end</span>
+0134 
+0135     <span class="comment">% Since the restart file has a number of time values, we'll ramp up the</span>
+0136     <span class="comment">% replacement data from the existing start condition to the actual</span>
+0137     <span class="comment">% value over the time steps. So, we need to know how many time steps we</span>
+0138     <span class="comment">% actually have.</span>
+0139 
+0140     <span class="comment">% Get the dimension data ready for the replacement arrays.</span>
+0141     tIdx = strncmp(dimnames(unlimdimID + 1), currDimsNames, length(dimnames{unlimdimID + 1}));
+0142     <span class="comment">% Not sure about the hardcoded strings below...</span>
+0143     sIdx = strncmp(<span class="string">'siglay'</span>, currDimsNames, length(dimnames{unlimdimID + 1}));
+0144     nIdx = strncmp(<span class="string">'node'</span>, currDimsNames, length(dimnames{unlimdimID + 1}));
+0145     nt = currDimsLengths(tIdx);
+0146     ns = currDimsLengths(sIdx);
+0147     nd = currDimsLengths(nIdx);
+0148     
+0149     <span class="comment">% Iterate through the field names to see if we're on one of the</span>
+0150     <span class="comment">% variables to be replaced.</span>
+0151 
+0152     <span class="comment">% Set variable so we know if we've already written this variable to the</span>
+0153     <span class="comment">% output file.</span>
+0154     writtenAlready = 0;
+0155     <span class="keyword">for</span> vv = 1:nf
+0156         <span class="keyword">if</span> strcmp(varname, fnames{vv}) &amp;&amp; writtenAlready == 0
+0157             <span class="keyword">if</span> ftbverbose
+0158                 fprintf(<span class="string">'new data... '</span>)
+0159             <span class="keyword">end</span>
+0160             <span class="comment">% To make the scaling go from the initial value to the POLCOMS</span>
+0161             <span class="comment">% value, we need to scale the difference between the end</span>
+0162             <span class="comment">% members by the scaling factor at each time and add to the</span>
+0163             <span class="comment">% current time's value.</span>
+0164             sfvdata = nan(nd, ns, nt);
+0165             ss = 0:1 / (nt - 1):1; <span class="comment">% scale from 0 to 1.</span>
+0166             startdata = squeeze(data(:, :, 1)); <span class="comment">% use the first modelled time step</span>
+0167             <span class="keyword">for</span> tt = 1:nt
+0168                 <span class="keyword">if</span> tt == 1
+0169                     sfvdata(:, :, 1) = startdata;
+0170                 <span class="keyword">else</span>
+0171                     td = indata.(fnames{vv}) - startdata;
+0172                     sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
+0173                 <span class="keyword">end</span>
+0174             <span class="keyword">end</span>
+0175             <span class="comment">% Replace the values with the scaled interpolated values,</span>
+0176             <span class="comment">% checking for unlimited dimensions as we go.</span>
+0177             <span class="keyword">if</span> wasUnlimited &lt; 0
+0178                 netcdf.putVar(ncout, varid, sfvdata)
+0179             <span class="keyword">else</span>
+0180                 netcdf.putVar(ncout, varid, zeros(length(currDimsLengths), 1), currDimsLengths, sfvdata)
+0181             <span class="keyword">end</span>
+0182 
+0183             writtenAlready = 1;
+0184 
+0185         <span class="comment">% We might also want to replace the time. If so, supply a fourth</span>
+0186         <span class="comment">% argument (start_date) to replace the times in the existing</span>
+0187         <span class="comment">% restart file with an arbitrary time period.</span>
+0188         <span class="keyword">elseif</span> strcmpi(varname, <span class="string">'time'</span>) &amp;&amp; writtenAlready == 0 &amp;&amp; nargin == 4
+0189             <span class="keyword">if</span> ftbverbose
+0190                 fprintf(<span class="string">'new data... '</span>)
+0191             <span class="keyword">end</span>
+0192 <span class="comment">%             warning('Replacing times in the restart file')</span>
+0193             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
+0194             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
+0195             netcdf.putVar(ncout, varid, tmp_time)
+0196 
+0197             writtenAlready = 1;
+0198 
+0199         <span class="keyword">elseif</span> strcmpi(varname, <span class="string">'Times'</span>) &amp;&amp; writtenAlready == 0 &amp;&amp; nargin == 4
+0200             <span class="keyword">if</span> ftbverbose
+0201                 fprintf(<span class="string">'new data... '</span>)
+0202             <span class="keyword">end</span>
+0203 <span class="comment">%             warning('Replacing times in the restart file')</span>
+0204             tmp_time = [];
+0205             <span class="keyword">for</span> i = 1:nt;
+0206                 tmp_time = [tmp_time, sprintf(<span class="string">'%-026s'</span>, datestr(datenum(start_date) - 7 + (i - 1), <span class="string">'yyyy-mm-dd HH:MM:SS.FFF'</span>))];
+0207             <span class="keyword">end</span>
+0208             netcdf.putVar(ncout, varid, tmp_time)
+0209 
+0210             writtenAlready = 1;
+0211 
+0212         <span class="keyword">elseif</span> strcmpi(varname, <span class="string">'Itime'</span>) &amp;&amp; writtenAlready == 0 &amp;&amp; nargin == 4
+0213             <span class="keyword">if</span> ftbverbose
+0214                 fprintf(<span class="string">'new data... '</span>)
+0215             <span class="keyword">end</span>
+0216 <span class="comment">%             warning('Replacing times in the restart file')</span>
+0217             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
+0218             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
+0219             netcdf.putVar(ncout, varid, floor(tmp_time))
+0220 
+0221             writtenAlready = 1;
+0222 
+0223         <span class="keyword">end</span>
+0224     <span class="keyword">end</span>
+0225 
+0226     <span class="comment">% If writtenAlready is zero, we haven't had one of the variables we're</span>
+0227     <span class="comment">% replacing, so just dump the existing data.</span>
+0228     <span class="keyword">if</span> writtenAlready == 0
+0229         <span class="keyword">if</span> ftbverbose
+0230             fprintf(<span class="string">'existing data... '</span>)
+0231         <span class="keyword">end</span>
+0232         <span class="comment">% We need to check if the dimension is unlimited, and use a</span>
+0233         <span class="comment">% start and end with netcdf.putVar if it is. This is largely</span>
+0234         <span class="comment">% because MATLAB can't handle unlimited dimensions in the same</span>
+0235         <span class="comment">% way as it does finite dimensions.</span>
+0236         <span class="keyword">if</span> wasUnlimited &lt; 0
+0237             <span class="comment">% We can just dump the entire data without specifying over</span>
+0238             <span class="comment">% what indices.</span>
+0239             netcdf.putVar(ncout, varid, data);
+0240         <span class="keyword">else</span>
+0241             <span class="comment">% Use the dimension length we extracted above to output the</span>
+0242             <span class="comment">% data with the valid unlimited dimension format.</span>
+0243             netcdf.putVar(ncout, varid, zeros(length(currDimsLengths), 1), currDimsLengths, data);
+0244         <span class="keyword">end</span>
+0245     <span class="keyword">end</span>
+0246 
+0247     <span class="keyword">if</span> ftbverbose
+0248         fprintf(<span class="string">'done.\n'</span>)
+0249     <span class="keyword">end</span>
+0250 <span class="keyword">end</span>
+0251 
+0252 netcdf.close(nc)
+0253 netcdf.close(ncout)
+0254 
+0255 <span class="keyword">if</span> ftbverbose
+0256     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0257 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

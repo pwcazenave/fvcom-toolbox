@@ -1,0 +1,492 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_POLCOMS_meanflow</title>
+  <meta name="keywords" content="get_POLCOMS_meanflow">
+  <meta name="description" content="Read mean flow from the PML POLCOMS-ERSEM NetCDF AMM model output files">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_POLCOMS_meanflow.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_POLCOMS_meanflow
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Read mean flow from the PML POLCOMS-ERSEM NetCDF AMM model output files</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Mobj = get_POLCOMS_meanflow(Mobj, files) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Read mean flow from the PML POLCOMS-ERSEM NetCDF AMM model output files
+ and interpolate onto the open boundaries in Mobj.
+
+ function Mobj = get_POLCOMS_meanflow(Mobj, ts, polcoms_bathy, varlist)
+
+ DESCRIPTION:
+    Interpolate u and v flow vectors to calculate daily mean flow at the
+    FVCOM open boundaries at all sigma levels.
+
+ INPUT:
+   Mobj    = MATLAB mesh structure which must contain:
+               - Mobj.lon, Mobj.lat - node coordinates (lat/long).
+               - Mobj.obc_elements - list of open boundary element
+               inidices.
+               - Mobj.nObcElements - number of elements in each open boundary.
+   files   = Cell array of PML POLCOMS-ERSEM NetCDF file(s) in which 4D
+             variables of u and v velocity components (called 'ucurD' and
+             'vcurD') exist. Their shape should be (y, x, sigma, time).
+
+ NOTES:
+
+   - If you supply multiple files in files, there are a few assumptions:
+
+       - Variables are only appended if there are 4 dimensions; fewer than
+       that, and the values are assumed to be static across all the given
+       files (e.g. longitude, latitude etc.). The fourth dimension is
+       time.
+       - The order of the files given should be chronological.
+ 
+   - The NetCDF files used here are those from the PML POLCOMS-ERSEM model
+   output.
+
+ OUTPUT:
+    Mobj = MATLAB structure in which six new fields (mf_time, meanflow_u,
+           meanflow_v, meanflow_ubar, meanflow_ubar and velocity).
+           meanflow_ubar, meanflow_vbar and velocity have sizes of
+           (sum(Mobj.nObcNodes), time); meanflow_u and meanflow_v have
+           sizes (sum(Mobj.nObcNodes), siglay, time). The time dimension
+           is determined based on the input NetCDF file. The mf_times
+           variable is just the input file times in Modified Julian Day.
+
+ EXAMPLE USAGE
+    Mobj = get_POLCOMS_meanflow(Mobj, files)
+
+ Author(s):
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+    2013-02-20 First version.
+    2013-02-26 Add interpolation of the u and v vectors separately and
+    then calculate the interpolated velocity at the end.
+    2013-02-27 Change the vertical interpolation to be scaled within the
+    POLCOMS-ERSEM depth range for the current node. The net result is that
+    the vertical profiles are squashed or stretched to fit within the
+    FVCOM depths. This means the full profile structure is maintained in
+    the resulting FVCOM boundary input despite the differing depths at the
+    FVCOM boundary node.
+    2013-02-28 Change the interpolation to occur on the open boundary
+    elements rather than on the open boundary nodes. This requires a
+    couple of extra steps in the pre-processing (notably running
+    find_boundary_elements) as well as transferring the sigma depths to
+    the element centres.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_POLCOMS_netCDF.html" class="code" title="function ncdata = get_POLCOMS_netCDF(files, varlist)">get_POLCOMS_netCDF</a>	Read temperature and salinity from NetCDF model output files and</li><li><a href="nodes2elems.html" class="code" title="function [fieldout] = nodes2elems(fieldin,Mobj)">nodes2elems</a>	Transfer a field from vertices to elements</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = get_POLCOMS_meanflow(Mobj, files)</a>
+0002 <span class="comment">% Read mean flow from the PML POLCOMS-ERSEM NetCDF AMM model output files</span>
+0003 <span class="comment">% and interpolate onto the open boundaries in Mobj.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function Mobj = get_POLCOMS_meanflow(Mobj, ts, polcoms_bathy, varlist)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Interpolate u and v flow vectors to calculate daily mean flow at the</span>
+0009 <span class="comment">%    FVCOM open boundaries at all sigma levels.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT:</span>
+0012 <span class="comment">%   Mobj    = MATLAB mesh structure which must contain:</span>
+0013 <span class="comment">%               - Mobj.lon, Mobj.lat - node coordinates (lat/long).</span>
+0014 <span class="comment">%               - Mobj.obc_elements - list of open boundary element</span>
+0015 <span class="comment">%               inidices.</span>
+0016 <span class="comment">%               - Mobj.nObcElements - number of elements in each open boundary.</span>
+0017 <span class="comment">%   files   = Cell array of PML POLCOMS-ERSEM NetCDF file(s) in which 4D</span>
+0018 <span class="comment">%             variables of u and v velocity components (called 'ucurD' and</span>
+0019 <span class="comment">%             'vcurD') exist. Their shape should be (y, x, sigma, time).</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% NOTES:</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">%   - If you supply multiple files in files, there are a few assumptions:</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%       - Variables are only appended if there are 4 dimensions; fewer than</span>
+0026 <span class="comment">%       that, and the values are assumed to be static across all the given</span>
+0027 <span class="comment">%       files (e.g. longitude, latitude etc.). The fourth dimension is</span>
+0028 <span class="comment">%       time.</span>
+0029 <span class="comment">%       - The order of the files given should be chronological.</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">%   - The NetCDF files used here are those from the PML POLCOMS-ERSEM model</span>
+0032 <span class="comment">%   output.</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% OUTPUT:</span>
+0035 <span class="comment">%    Mobj = MATLAB structure in which six new fields (mf_time, meanflow_u,</span>
+0036 <span class="comment">%           meanflow_v, meanflow_ubar, meanflow_ubar and velocity).</span>
+0037 <span class="comment">%           meanflow_ubar, meanflow_vbar and velocity have sizes of</span>
+0038 <span class="comment">%           (sum(Mobj.nObcNodes), time); meanflow_u and meanflow_v have</span>
+0039 <span class="comment">%           sizes (sum(Mobj.nObcNodes), siglay, time). The time dimension</span>
+0040 <span class="comment">%           is determined based on the input NetCDF file. The mf_times</span>
+0041 <span class="comment">%           variable is just the input file times in Modified Julian Day.</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">% EXAMPLE USAGE</span>
+0044 <span class="comment">%    Mobj = get_POLCOMS_meanflow(Mobj, files)</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">% Author(s):</span>
+0047 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">% Revision history</span>
+0050 <span class="comment">%    2013-02-20 First version.</span>
+0051 <span class="comment">%    2013-02-26 Add interpolation of the u and v vectors separately and</span>
+0052 <span class="comment">%    then calculate the interpolated velocity at the end.</span>
+0053 <span class="comment">%    2013-02-27 Change the vertical interpolation to be scaled within the</span>
+0054 <span class="comment">%    POLCOMS-ERSEM depth range for the current node. The net result is that</span>
+0055 <span class="comment">%    the vertical profiles are squashed or stretched to fit within the</span>
+0056 <span class="comment">%    FVCOM depths. This means the full profile structure is maintained in</span>
+0057 <span class="comment">%    the resulting FVCOM boundary input despite the differing depths at the</span>
+0058 <span class="comment">%    FVCOM boundary node.</span>
+0059 <span class="comment">%    2013-02-28 Change the interpolation to occur on the open boundary</span>
+0060 <span class="comment">%    elements rather than on the open boundary nodes. This requires a</span>
+0061 <span class="comment">%    couple of extra steps in the pre-processing (notably running</span>
+0062 <span class="comment">%    find_boundary_elements) as well as transferring the sigma depths to</span>
+0063 <span class="comment">%    the element centres.</span>
+0064 <span class="comment">%</span>
+0065 <span class="comment">%==========================================================================</span>
+0066 
+0067 subname = <span class="string">'get_POLCOMS_meanflow'</span>;
+0068 
+0069 <span class="keyword">global</span> ftbverbose;
+0070 <span class="keyword">if</span> ftbverbose
+0071     fprintf(<span class="string">'\n'</span>)
+0072     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0073 <span class="keyword">end</span>
+0074 
+0075 varlist = {<span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'ucurD'</span>, <span class="string">'vcurD'</span>, <span class="string">'time'</span>, <span class="string">'depth'</span>, <span class="string">'pdepthD'</span>};
+0076 
+0077 pc = <a href="get_POLCOMS_netCDF.html" class="code" title="function ncdata = get_POLCOMS_netCDF(files, varlist)">get_POLCOMS_netCDF</a>(files, varlist);
+0078 
+0079 [~, ~, nz, nt] = size(pc.ucurD.data);
+0080 
+0081 [lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
+0082 
+0083 <span class="comment">% We need positions of the open boundary element centroids (i.e. the MCE</span>
+0084 <span class="comment">% centroid) at which to calculate the mean flow velocity. As such, we need</span>
+0085 <span class="comment">% to first calculate a number of parameters at the element centres from the</span>
+0086 <span class="comment">% nodal values we typically collect (e.g. positions, sigma layers etc.). Do</span>
+0087 <span class="comment">% all that here.</span>
+0088 lonc = <a href="nodes2elems.html" class="code" title="function [fieldout] = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.lon, Mobj);
+0089 latc = <a href="nodes2elems.html" class="code" title="function [fieldout] = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.lat, Mobj);
+0090 <span class="comment">% For the sigma levels, we need to wrap the conversion in a loop.</span>
+0091 siglayzc = nan([Mobj.nElems, size(Mobj.siglayz, 2)]);
+0092 <span class="keyword">for</span> zz = 1:size(Mobj.siglayz, 2)
+0093     siglayzc(:, zz) = <a href="nodes2elems.html" class="code" title="function [fieldout] = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.siglayz(:, zz), Mobj);
+0094 <span class="keyword">end</span>
+0095 
+0096 oElements = [Mobj.read_obc_elements{:}];
+0097 
+0098 <span class="comment">% Find the FVCOM positions for all the open boundary elements.</span>
+0099 fvlon = lonc(oElements);
+0100 fvlat = latc(oElements);
+0101 
+0102 <span class="comment">% Number of open boundary elements</span>
+0103 ne = sum(Mobj.nObcElements);
+0104 <span class="comment">% Number of sigma layers.</span>
+0105 fz = size(siglayzc, 2);
+0106 
+0107 fvmfu = nan(ne, fz, nt); <span class="comment">% FVCOM interpolated flow vector components</span>
+0108 fvmfv = nan(ne, fz, nt); <span class="comment">% FVCOM interpolated flow vector components</span>
+0109 
+0110 <span class="keyword">if</span> ftbverbose
+0111     tic
+0112 <span class="keyword">end</span>
+0113 
+0114 <span class="keyword">for</span> t = 1:nt
+0115     <span class="keyword">if</span> ftbverbose
+0116         fprintf(<span class="string">'%s : %i of %i timesteps... '</span>, subname, t, nt)
+0117     <span class="keyword">end</span>
+0118     <span class="comment">% Get the current 3D array of PML POLCOMS-ERSEM results.</span>
+0119     pcu3 = pc.ucurD.data(:, :, :, t);
+0120     pcv3 = pc.vcurD.data(:, :, :, t);
+0121     pcz3 = pc.depth.data(:, :, :, t);
+0122 
+0123     <span class="comment">% Preallocate the intermediate results arrays.</span>
+0124     iuz = nan(ne, nz);
+0125     ivz = nan(ne, nz);
+0126     izz = nan(ne, nz);
+0127 
+0128     <span class="comment">% We need to create a mask to eliminate land values and apply it to the</span>
+0129     <span class="comment">% depth averaged values.</span>
+0130     mask = squeeze(pc.depth.data(:, :, <span class="keyword">end</span>, t))' &gt;= 0;
+0131 
+0132     <span class="comment">% Mask the longitude and latitude here (since it's depth independent,</span>
+0133     <span class="comment">% there's no point doing it inside the next loop).</span>
+0134     tlon = lon;
+0135     tlat = lat;
+0136     tlon(mask) = [];
+0137     tlat(mask) = [];
+0138 
+0139     <span class="keyword">for</span> z = 1:nz
+0140         <span class="comment">% Turns out we do need vertical velocity for the mean flow, so</span>
+0141         <span class="comment">% iterate through each vertical layer before interpolating</span>
+0142         <span class="comment">% horizontally. The vertical interpolation happens after the</span>
+0143         <span class="comment">% horizontal has been completed. Transpose the arrays to be (x, y)</span>
+0144         <span class="comment">% rather than (y, x).</span>
+0145         pcu2 = pcu3(:, :, z)';
+0146         pcv2 = pcv3(:, :, z)';
+0147         pcz2 = pcz3(:, :, z)';
+0148 
+0149         <span class="comment">% Flatten the arrays through the masking.</span>
+0150         pcu2(mask) = [];
+0151         pcv2(mask) = [];
+0152         pcz2(mask) = [];
+0153 
+0154         <span class="comment">% Preallocate the intermediate results arrays.</span>
+0155         iuobc = nan(ne, 1);
+0156         ivobc = nan(ne, 1);
+0157         izobc = nan(ne, 1);
+0158 
+0159         <span class="comment">% Speed up the tightest loops with a parallelized loop.</span>
+0160         parfor i = 1:ne
+0161             <span class="comment">% Now we can do each position within the current depth layer.</span>
+0162 
+0163             fx = fvlon(i);
+0164             fy = fvlat(i);
+0165 
+0166             [~, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
+0167             <span class="comment">% Get the n nearest elements from PML POLCOMS-ERSEM data (more?</span>
+0168             <span class="comment">% fewer?).</span>
+0169             ixy = ii(1:16);
+0170 
+0171             <span class="comment">% Get the variables into static variables for the</span>
+0172             <span class="comment">% parallelisation.</span>
+0173             plon = tlon(ixy);
+0174             plat = tlat(ixy);
+0175             pu = pcu2(ixy);
+0176             pv = pcv2(ixy);
+0177             pz = pcz2(ixy);
+0178 
+0179             <span class="comment">% Use a triangulation to do the horizontal interpolation.</span>
+0180             triu = TriScatteredInterp(plon', plat', pu', <span class="string">'natural'</span>);
+0181             triv = TriScatteredInterp(plon', plat', pv', <span class="string">'natural'</span>);
+0182             triz = TriScatteredInterp(plon', plat', pz', <span class="string">'natural'</span>);
+0183             iuobc(i) = triu(fx, fy);
+0184             ivobc(i) = triv(fx, fy);
+0185             izobc(i) = triz(fx, fy);
+0186 
+0187             <span class="comment">% Check if we have NaNs (mostly if the position is outside the</span>
+0188             <span class="comment">% model domain).</span>
+0189             <span class="keyword">if</span> isnan(iuobc(i)) || isnan(ivobc(i))
+0190                 warning(<span class="string">'FVCOM boundary element at %f, %f is outside the PML POLCOMS-ERSEM domain. Setting to the closest PML POLCOMS-ERSEM value.'</span>, fx, fy)
+0191                 iuobc(i) = pcu2(ii(1));
+0192                 ivobc(i) = pcv2(ii(1));
+0193                 izobc(i) = pcz2(ii(1));
+0194             <span class="keyword">end</span>
+0195         <span class="keyword">end</span>
+0196 
+0197         <span class="comment">% Put the results in this intermediate array.</span>
+0198         iuz(:, z) = iuobc;
+0199         ivz(:, z) = ivobc;
+0200         izz(:, z) = izobc;
+0201     <span class="keyword">end</span>
+0202 
+0203     <span class="comment">% Now we've interpolated in space, we can interpolate the z-values</span>
+0204     <span class="comment">% to the sigma depths.</span>
+0205 
+0206     <span class="comment">% Preallocate the output arrays</span>
+0207     fvuz = nan(ne, fz);
+0208     fvvz = nan(ne, fz);
+0209 
+0210     <span class="keyword">for</span> pp = 1:ne
+0211         <span class="comment">% Get the FVCOM depths at this element</span>
+0212         tfz = siglayzc(oElements(pp), :);
+0213         <span class="comment">% Now get the interpolated PML POLCOMS-ERSEM depth at this element</span>
+0214         tpz = izz(pp, :);
+0215 
+0216         <span class="comment">% To ensure we get the full vertical expression of the vertical</span>
+0217         <span class="comment">% profiles, we need to normalise the POLCOMS-ERSEM depths to the</span>
+0218         <span class="comment">% FVCOM range for the current element. This is because in instances</span>
+0219         <span class="comment">% where FVCOM depths are shallower (e.g. in coastal regions), if we</span>
+0220         <span class="comment">% don't normalise the depths, we end up truncating the vertical</span>
+0221         <span class="comment">% profile. This approach ensures we always use the full vertical</span>
+0222         <span class="comment">% profile, but we're potentially squeezing it into a smaller depth.</span>
+0223         A = max(tpz);
+0224         B = min(tpz);
+0225         C = max(tfz);
+0226         D = min(tfz);
+0227         norm_tpz = (((D - C) * (tpz - A)) / (B - A)) + C;
+0228 
+0229         <span class="comment">% Get the u and v velocity values for this elment and interpolate</span>
+0230         <span class="comment">% down the water column (from PML POLCOMS-ERSEM to FVCOM). I</span>
+0231         <span class="comment">% had originally planned to use csaps for the vertical</span>
+0232         <span class="comment">% interplation/subsampling at each location. However, the demo</span>
+0233         <span class="comment">% of csaps in the MATLAB documentation makes the interpolation</span>
+0234         <span class="comment">% look horrible (shaving off extremes). interp1 provides a</span>
+0235         <span class="comment">% range of interpolation schemes, of which pchip seems to do a</span>
+0236         <span class="comment">% decent job of the interpolation (at least qualitatively).</span>
+0237         <span class="keyword">if</span> ~isnan(tpz)
+0238             fvuz(pp, :) = interp1(norm_tpz, iuz(pp, :), tfz, <span class="string">'linear'</span>, <span class="string">'extrap'</span>);
+0239             fvvz(pp, :) = interp1(norm_tpz, ivz(pp, :), tfz, <span class="string">'linear'</span>, <span class="string">'extrap'</span>);
+0240         <span class="keyword">else</span>
+0241             warning(<span class="string">'Should never see this... '</span>) <span class="comment">% because we test for NaNs when fetching the values.</span>
+0242             warning(<span class="string">'FVCOM boundary element at %f, %f is outside the PML POLCOMS-ERSEM domain. Skipping.'</span>, fvlon(pp), fvlat(pp))
+0243             <span class="keyword">continue</span>
+0244         <span class="keyword">end</span>
+0245     <span class="keyword">end</span>
+0246 
+0247     <span class="comment">% The horizontally- and vertically-interpolated values in the final</span>
+0248     <span class="comment">% FVCOM results array.</span>
+0249     fvmfu(:, :, t) = fvuz;
+0250     fvmfv(:, :, t) = fvvz;
+0251 
+0252     <span class="keyword">if</span> ftbverbose
+0253         fprintf(<span class="string">'done.\n'</span>)
+0254     <span class="keyword">end</span>
+0255 <span class="keyword">end</span>
+0256 <span class="keyword">if</span> ftbverbose
+0257     toc
+0258 <span class="keyword">end</span>
+0259 
+0260 <span class="comment">% Stick the values in the mesh structure.</span>
+0261 Mobj.meanflow_u = fvmfu;
+0262 Mobj.meanflow_v = fvmfv;
+0263 
+0264 <span class="comment">% Now we have the 3D arrays, create depth averaged velocities too</span>
+0265 Mobj.meanflow_ubar = squeeze(mean(Mobj.meanflow_u, 2));
+0266 Mobj.meanflow_vbar = squeeze(mean(Mobj.meanflow_v, 2));
+0267 
+0268 <span class="comment">% Depth averaged velocity</span>
+0269 Mobj.velocity = squeeze(mean(sqrt(Mobj.meanflow_u.^2 + Mobj.meanflow_v.^2), 2));
+0270 
+0271 <span class="comment">% Convert the current times to Modified Julian Day (this is a bit ugly).</span>
+0272 pc.time.all = strtrim(regexp(pc.time.units, <span class="string">'since'</span>, <span class="string">'split'</span>));
+0273 pc.time.datetime = strtrim(regexp(pc.time.all{end}, <span class="string">' '</span>, <span class="string">'split'</span>));
+0274 pc.time.ymd = str2double(strtrim(regexp(pc.time.datetime{1}, <span class="string">'-'</span>, <span class="string">'split'</span>)));
+0275 pc.time.hms = str2double(strtrim(regexp(pc.time.datetime{2}, <span class="string">':'</span>, <span class="string">'split'</span>)));
+0276 
+0277 Mobj.mf_times = greg2mjulian(<span class="keyword">...</span>
+0278     pc.time.ymd(1), <span class="keyword">...</span>
+0279     pc.time.ymd(2), <span class="keyword">...</span>
+0280     pc.time.ymd(3), <span class="keyword">...</span>
+0281     pc.time.hms(1), <span class="keyword">...</span>
+0282     pc.time.hms(2), <span class="keyword">...</span>
+0283     pc.time.hms(3)) + (pc.time.data / 3600 / 24);
+0284 
+0285 <span class="keyword">if</span> ftbverbose
+0286     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0287 <span class="keyword">end</span>
+0288 
+0289 <span class="comment">% Check the interpolation along the boundary at the last time step. N.B.</span>
+0290 <span class="comment">% Since the depths are scaled from the POLCOMS range to the FVCOM range,</span>
+0291 <span class="comment">% the profiles won't match perfectly in these plots. This is because the</span>
+0292 <span class="comment">% interpolated FVCOM profiles use the full water column from the POLCOMS</span>
+0293 <span class="comment">% data rather than truncating it at the FVCOM depth.</span>
+0294 
+0295 <span class="comment">% % Map the open boundaries with the depth averaged velocity as a background</span>
+0296 <span class="comment">% figure(1)</span>
+0297 <span class="comment">% clf</span>
+0298 <span class="comment">% imagesc(pc.lon.data, pc.lat.data, mean(sqrt(pcu3.^2 + pcv3.^2), 3)')</span>
+0299 <span class="comment">% shading flat</span>
+0300 <span class="comment">% axis('equal', 'tight')</span>
+0301 <span class="comment">% set(gca,'YDir','normal')</span>
+0302 <span class="comment">% colorbar</span>
+0303 <span class="comment">% caxis([0, 0.05])</span>
+0304 <span class="comment">% hold on</span>
+0305 <span class="comment">% plot(fvlon, fvlat, 'wo')</span>
+0306 <span class="comment">% axis([min(fvlon) - 0.1, max(fvlon) + 0.1, min(fvlat) - 0.1, max(fvlat) + 0.1])</span>
+0307 <span class="comment">%</span>
+0308 <span class="comment">% for i = 1:ne</span>
+0309 <span class="comment">%</span>
+0310 <span class="comment">%     % Add the current element's position and value as a scatter point to</span>
+0311 <span class="comment">%     % the map plot.</span>
+0312 <span class="comment">%     scatter(fvlon(i), fvlat(i), 50, Mobj.velocity(i, end), 'filled')</span>
+0313 <span class="comment">%</span>
+0314 <span class="comment">%     % Do vertical profiles of u, v and velocity.</span>
+0315 <span class="comment">%     figure(2)</span>
+0316 <span class="comment">%     clf</span>
+0317 <span class="comment">%</span>
+0318 <span class="comment">%     subplot(3,1,1)</span>
+0319 <span class="comment">%     % FVCOM vertical profile. Has to be (i, :, end) because the</span>
+0320 <span class="comment">%     % corresponding POLCOMS data isn't stored as a function of time (i.e.</span>
+0321 <span class="comment">%     % iuz, ivz and izz are all for the last time step only).</span>
+0322 <span class="comment">%     fvuz = Mobj.meanflow_u(i, :, end);</span>
+0323 <span class="comment">%     fvz = siglayzc(oElements(i), :);</span>
+0324 <span class="comment">%     plot(fvuz, fvz)</span>
+0325 <span class="comment">%     hold on</span>
+0326 <span class="comment">%     % The interpolated POLCOMS vertical profile (last time step only)</span>
+0327 <span class="comment">%     plot(iuz(i, :), izz(i, :), 'g')</span>
+0328 <span class="comment">%     % The depth-averaged velocity (again, last time step only)</span>
+0329 <span class="comment">%     fvubar = Mobj.meanflow_ubar(i, end);</span>
+0330 <span class="comment">%     plot([fvubar, fvubar], [min(fvz), max(fvz)], 'k')</span>
+0331 <span class="comment">%     xlim([-0.1, 0.2])</span>
+0332 <span class="comment">%     ylim([-100, 0])</span>
+0333 <span class="comment">%     xlabel('Mean flow u-velocity (m^{3}s^{-1})')</span>
+0334 <span class="comment">%     ylabel('Depth (m)')</span>
+0335 <span class="comment">%     title('u-component')</span>
+0336 <span class="comment">%     legend('FVCOM', 'POLCOMS', 'Mean FVCOM', 'Location', 'SouthEast')</span>
+0337 <span class="comment">%     legend('boxoff')</span>
+0338 <span class="comment">%</span>
+0339 <span class="comment">%     subplot(3,1,2)</span>
+0340 <span class="comment">%     % FVCOM vertical profile. Has to be (i, :, end) because the</span>
+0341 <span class="comment">%     % corresponding POLCOMS data isn't stored as a function of time (i.e.</span>
+0342 <span class="comment">%     % iuz, ivz and izz are all for the last time step only).</span>
+0343 <span class="comment">%     fvvz = Mobj.meanflow_v(i, :, end);</span>
+0344 <span class="comment">%     fvz = siglayzc(oElements(i), :);</span>
+0345 <span class="comment">%     plot(fvvz, fvz)</span>
+0346 <span class="comment">%     hold on</span>
+0347 <span class="comment">%     % The interpolated POLCOMS vertical profile (last time step only)</span>
+0348 <span class="comment">%     plot(ivz(i, :), izz(i, :), 'g')</span>
+0349 <span class="comment">%     % The depth-averaged velocity (again, last time step only)</span>
+0350 <span class="comment">%     fvvbar = Mobj.meanflow_vbar(i, end);</span>
+0351 <span class="comment">%     plot([fvvbar, fvvbar], [min(fvz), max(fvz)], 'k')</span>
+0352 <span class="comment">%     xlim([-0.1, 0.2])</span>
+0353 <span class="comment">%     ylim([-100, 0])</span>
+0354 <span class="comment">%     xlabel('Mean flow v-velocity (m^{3}s^{-1})')</span>
+0355 <span class="comment">%     ylabel('Depth (m)')</span>
+0356 <span class="comment">%     title('v-component')</span>
+0357 <span class="comment">%     legend('FVCOM', 'POLCOMS', 'Mean FVCOM', 'Location', 'SouthEast')</span>
+0358 <span class="comment">%     legend('boxoff')</span>
+0359 <span class="comment">%</span>
+0360 <span class="comment">%     subplot(3,1,3)</span>
+0361 <span class="comment">%     % FVCOM vertical profile. Has to be (i, :, end) because the</span>
+0362 <span class="comment">%     % corresponding POLCOMS data isn't stored as a function of time (i.e.</span>
+0363 <span class="comment">%     % iuz, ivz and izz are all for the last time step only).</span>
+0364 <span class="comment">%     fvvelz = sqrt(Mobj.meanflow_u(i, :, end).^2 + Mobj.meanflow_v(i, :, end).^2);</span>
+0365 <span class="comment">%     fvz = siglayzc(oElements(i), :);</span>
+0366 <span class="comment">%     plot(fvvelz, fvz)</span>
+0367 <span class="comment">%     hold on</span>
+0368 <span class="comment">%     % The interpolated POLCOMS vertical profile (last time step only)</span>
+0369 <span class="comment">%     plot(sqrt(iuz(i, :).^2 + ivz(i, :).^2), izz(i, :), 'g')</span>
+0370 <span class="comment">%     % The depth-averaged velocity (again, last time step only)</span>
+0371 <span class="comment">%     fvvelbar = Mobj.velocity(i, end);</span>
+0372 <span class="comment">%     plot([fvvelbar, fvvelbar], [min(fvz), max(fvz)], 'k')</span>
+0373 <span class="comment">%     xlim([-0.1, 0.2])</span>
+0374 <span class="comment">%     ylim([-100, 0])</span>
+0375 <span class="comment">%     xlabel('Mean flow velocity (m^{3}s^{-1})')</span>
+0376 <span class="comment">%     ylabel('Depth (m)')</span>
+0377 <span class="comment">%     title('velocity')</span>
+0378 <span class="comment">%     legend('FVCOM', 'POLCOMS', 'Mean FVCOM', 'Location', 'SouthEast')</span>
+0379 <span class="comment">%     legend('boxoff')</span>
+0380 <span class="comment">%     pause(0.1)</span>
+0381 <span class="comment">% end</span>
+0382</pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -29,23 +29,23 @@
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Write an FVCOM surface elevation time series forcing file 
 
- write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
+ write_FVCOM_elevtide(Mobj, MJD, ElevationFile, MyTitle)
 
  DESCRIPTION:
     Write an FVCOM NetCDF surface elevation forcing file
 
  INPUT:
-   Mobj         = Matlab mesh object.
-   MJD          = list of modified Modified Julian Dates of size [times]
-                   (defined as unlimited in the NetCDF file).
-   ElevationFile    = name of NetCDF file.
-   MyTitle      = casename title, written as global attribute of NetCDF file.
+   Mobj = Matlab mesh object.
+   MJD = list of modified Modified Julian Dates of size [times] (defined 
+         as unlimited in the NetCDF file).
+   ElevationFile = name of NetCDF file.
+   MyTitle = casename title, written as global attribute of NetCDF file.
 
  OUTPUT:
     ElevationFile, A NetCDF FVCOM surface elevations tide forcing file
 
  EXAMPLE USAGE
-    write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
+    write_FVCOM_elevtide(Mobj, MJD, '/tmp/elevtide.nc, 'Shelf tides')
 
  Author(s):  
     Pierre Cazenave (Plymouth Marine Laboratory)
@@ -53,13 +53,13 @@
  
  Revision history
     2012-08-08 (PWC) First version.
-    2012-11-14 (PWC) Updated to expect Modified Julian Day rather than doing 
-    the conversion in here. Also put the pieces in set_elevtide in here to
-    simplify the process of writing out an elevation input file.
+    2012-11-14 (PWC) Updated to expect Modified Julian Day rather than
+    doing the conversion in here. Also put the pieces in set_elevtide in
+    here to simplify the process of writing out an elevation input file.
     2012-12-04 (KJT) Updated to use surface elevation and open boundary 
     nodes from Mobj.
    
-==============================================================================</pre></div>
+==========================================================================</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -77,23 +77,23 @@ This function is called by:
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)</a>
 0002 <span class="comment">% Write an FVCOM surface elevation time series forcing file</span>
 0003 <span class="comment">%</span>
-0004 <span class="comment">% write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)</span>
+0004 <span class="comment">% write_FVCOM_elevtide(Mobj, MJD, ElevationFile, MyTitle)</span>
 0005 <span class="comment">%</span>
 0006 <span class="comment">% DESCRIPTION:</span>
 0007 <span class="comment">%    Write an FVCOM NetCDF surface elevation forcing file</span>
 0008 <span class="comment">%</span>
 0009 <span class="comment">% INPUT:</span>
-0010 <span class="comment">%   Mobj         = Matlab mesh object.</span>
-0011 <span class="comment">%   MJD          = list of modified Modified Julian Dates of size [times]</span>
-0012 <span class="comment">%                   (defined as unlimited in the NetCDF file).</span>
-0013 <span class="comment">%   ElevationFile    = name of NetCDF file.</span>
-0014 <span class="comment">%   MyTitle      = casename title, written as global attribute of NetCDF file.</span>
+0010 <span class="comment">%   Mobj = Matlab mesh object.</span>
+0011 <span class="comment">%   MJD = list of modified Modified Julian Dates of size [times] (defined</span>
+0012 <span class="comment">%         as unlimited in the NetCDF file).</span>
+0013 <span class="comment">%   ElevationFile = name of NetCDF file.</span>
+0014 <span class="comment">%   MyTitle = casename title, written as global attribute of NetCDF file.</span>
 0015 <span class="comment">%</span>
 0016 <span class="comment">% OUTPUT:</span>
 0017 <span class="comment">%    ElevationFile, A NetCDF FVCOM surface elevations tide forcing file</span>
 0018 <span class="comment">%</span>
 0019 <span class="comment">% EXAMPLE USAGE</span>
-0020 <span class="comment">%    write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)</span>
+0020 <span class="comment">%    write_FVCOM_elevtide(Mobj, MJD, '/tmp/elevtide.nc, 'Shelf tides')</span>
 0021 <span class="comment">%</span>
 0022 <span class="comment">% Author(s):</span>
 0023 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
@@ -101,15 +101,15 @@ This function is called by:
 0025 <span class="comment">%</span>
 0026 <span class="comment">% Revision history</span>
 0027 <span class="comment">%    2012-08-08 (PWC) First version.</span>
-0028 <span class="comment">%    2012-11-14 (PWC) Updated to expect Modified Julian Day rather than doing</span>
-0029 <span class="comment">%    the conversion in here. Also put the pieces in set_elevtide in here to</span>
-0030 <span class="comment">%    simplify the process of writing out an elevation input file.</span>
+0028 <span class="comment">%    2012-11-14 (PWC) Updated to expect Modified Julian Day rather than</span>
+0029 <span class="comment">%    doing the conversion in here. Also put the pieces in set_elevtide in</span>
+0030 <span class="comment">%    here to simplify the process of writing out an elevation input file.</span>
 0031 <span class="comment">%    2012-12-04 (KJT) Updated to use surface elevation and open boundary</span>
 0032 <span class="comment">%    nodes from Mobj.</span>
 0033 <span class="comment">%</span>
-0034 <span class="comment">%==============================================================================</span>
+0034 <span class="comment">%==========================================================================</span>
 0035 
-0036 <span class="keyword">global</span> ftbverbose 
+0036 <span class="keyword">global</span> ftbverbose
 0037 report = false;
 0038 <span class="keyword">if</span>(ftbverbose); report = true; <span class="keyword">end</span>
 0039 subname = <span class="string">'write_FVCOM_elevtide'</span>;
@@ -123,9 +123,9 @@ This function is called by:
 0047 <span class="comment">% code.</span>
 0048 ObcNodes = tmpObcNodes(tmpObcNodes~=0)';
 0049 
-0050 <span class="comment">%------------------------------------------------------------------------------</span>
+0050 <span class="comment">%--------------------------------------------------------------------------</span>
 0051 <span class="comment">% Sanity check on input and dimensions</span>
-0052 <span class="comment">%------------------------------------------------------------------------------</span>
+0052 <span class="comment">%--------------------------------------------------------------------------</span>
 0053 nTimes = numel(MJD);
 0054 <span class="keyword">if</span>(report); fprintf(<span class="string">'Number of time steps %d\n'</span>,nTimes); <span class="keyword">end</span>
 0055 
@@ -142,16 +142,16 @@ This function is called by:
 0066 <span class="keyword">end</span>
 0067 
 0068 <span class="comment">%%</span>
-0069 <span class="comment">%------------------------------------------------------------------------------</span>
+0069 <span class="comment">%--------------------------------------------------------------------------</span>
 0070 <span class="comment">% Dump the file</span>
-0071 <span class="comment">%------------------------------------------------------------------------------</span>
+0071 <span class="comment">%--------------------------------------------------------------------------</span>
 0072 
 0073 nc=netcdf.create(ElevationFile,<span class="string">'clobber'</span>);
 0074 
 0075 <span class="comment">% define global attributes</span>
 0076 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM TIME SERIES ELEVATION FORCING FILE'</span>)
 0077 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,MyTitle)
-0078 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'FILE CREATED using write_FVCOM_elevtide'</span>)
+0078 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'File created using write_FVCOM_elevtide from the MATLAB fvcom-toolbox'</span>)
 0079 
 0080 <span class="comment">% define dimensions</span>
 0081 nobc_dimid=netcdf.defDim(nc,<span class="string">'nobc'</span>,nObcs);
@@ -223,6 +223,6 @@ This function is called by:
 0147 
 0148 <span class="keyword">if</span>(report); fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>]); <span class="keyword">end</span>;
 0149</pre></div>
-<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

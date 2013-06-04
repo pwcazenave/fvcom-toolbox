@@ -1,0 +1,319 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_FVCOM_meanflow_ascii</title>
+  <meta name="keywords" content="write_FVCOM_meanflow_ascii">
+  <meta name="description" content="Export mean flow forcing files hard-coded into mod_obcs2.F.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_FVCOM_meanflow_ascii.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_FVCOM_meanflow_ascii
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Export mean flow forcing files hard-coded into mod_obcs2.F.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_FVCOM_meanflow_ascii(Mobj, casename) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Export mean flow forcing files hard-coded into mod_obcs2.F.
+
+ function write_FVCOM_meanflow_ascii(Mobj, datfile, data)
+
+ DESCRIPTION:
+    Setup an FVCOM hydrographic open boundary mean flow forcing file.
+
+ INPUT:
+   Mobj     - MATLAB mesh object (with fields mf_time, siglay, siglev,
+               nObcNodes and read_obc_nodes).
+            - Also requires two fields called meanflow_u and meanflow_v
+               which are arrays of u and v of sizes (nObcElements,
+               length(siglay), length(mf_times)).
+   casename - Output file prefix. Output files will be
+               /path/to/casename_suffix.dat, where suffix is one of:
+                   - meanflow
+                   - tide_cell
+                   - tide_node
+                   - tide_el
+                   - tide_uv
+   data     - 2D array of mean flow along the open boundary (nobc, time).
+
+ OUTPUT:
+    FVCOM mean flow values along the FVCOM open boundary in a NETCDF file
+    named ncfile.
+
+ Author(s):
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+    2013-02-25 - First version.
+ 
+ TODO: Implement support for multiple open boundaries in all the outputs.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_meanflow_ascii(Mobj, casename)</a>
+0002 <span class="comment">% Export mean flow forcing files hard-coded into mod_obcs2.F.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function write_FVCOM_meanflow_ascii(Mobj, datfile, data)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Setup an FVCOM hydrographic open boundary mean flow forcing file.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT:</span>
+0010 <span class="comment">%   Mobj     - MATLAB mesh object (with fields mf_time, siglay, siglev,</span>
+0011 <span class="comment">%               nObcNodes and read_obc_nodes).</span>
+0012 <span class="comment">%            - Also requires two fields called meanflow_u and meanflow_v</span>
+0013 <span class="comment">%               which are arrays of u and v of sizes (nObcElements,</span>
+0014 <span class="comment">%               length(siglay), length(mf_times)).</span>
+0015 <span class="comment">%   casename - Output file prefix. Output files will be</span>
+0016 <span class="comment">%               /path/to/casename_suffix.dat, where suffix is one of:</span>
+0017 <span class="comment">%                   - meanflow</span>
+0018 <span class="comment">%                   - tide_cell</span>
+0019 <span class="comment">%                   - tide_node</span>
+0020 <span class="comment">%                   - tide_el</span>
+0021 <span class="comment">%                   - tide_uv</span>
+0022 <span class="comment">%   data     - 2D array of mean flow along the open boundary (nobc, time).</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% OUTPUT:</span>
+0025 <span class="comment">%    FVCOM mean flow values along the FVCOM open boundary in a NETCDF file</span>
+0026 <span class="comment">%    named ncfile.</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Author(s):</span>
+0029 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Revision history</span>
+0032 <span class="comment">%    2013-02-25 - First version.</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% TODO: Implement support for multiple open boundaries in all the outputs.</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">%==========================================================================</span>
+0037 
+0038 subname = <span class="string">'write_FVCOM_meanflow_ascii'</span>;
+0039 
+0040 <span class="keyword">global</span> ftbverbose
+0041 <span class="keyword">if</span> ftbverbose
+0042     fprintf([<span class="string">'\nbegin : '</span> subname <span class="string">'\n'</span>])
+0043 <span class="keyword">end</span>
+0044 
+0045 <span class="comment">%% _meanflow.dat -- mean flow velocities at the open boundary elements (?).</span>
+0046 
+0047 <span class="comment">% Create depth averaged velocity from the 3D velocity data in Mobj.</span>
+0048 velocity = squeeze(mean(sqrt(Mobj.meanflow_u.^2 + Mobj.meanflow_v.^2), 2));
+0049 
+0050 f = fopen([casename, <span class="string">'_meanflow.dat'</span>], <span class="string">'w'</span>);
+0051 <span class="keyword">if</span> f &lt; 0
+0052     error(<span class="string">'Problem writing to _meanflow.dat file. Check permissions and try again.'</span>)
+0053 <span class="keyword">end</span>
+0054 <span class="comment">% Number of boundary nodes</span>
+0055 fprintf(f, <span class="string">'%8d\n'</span>, Mobj.nObcNodes);
+0056 <span class="comment">% Boundary node IDs</span>
+0057 <span class="keyword">for</span> i = 1:Mobj.nObcNodes
+0058     fprintf(f, <span class="string">'%8d\n'</span>, Mobj.read_obc_nodes{1}(i));
+0059 <span class="keyword">end</span>
+0060 <span class="comment">% Sigma level distribution</span>
+0061 s = <span class="string">'%8d'</span>;
+0062 <span class="keyword">for</span> ss = 1:length(Mobj.siglay)
+0063     <span class="keyword">if</span> ss &lt; length(Mobj.siglay)
+0064         s = [s, <span class="string">'%8.4f'</span>];
+0065     <span class="keyword">else</span>
+0066         s = [s, <span class="string">'%8.4f\n'</span>];
+0067     <span class="keyword">end</span>
+0068 <span class="keyword">end</span>
+0069 <span class="keyword">for</span> i = 1:numel(Mobj.read_obc_nodes{1})
+0070     fprintf(f, s, [i, abs(diff(Mobj.siglev))]);
+0071 <span class="keyword">end</span>
+0072 
+0073 <span class="comment">% Number of times and boundary points</span>
+0074 [nb, nt] = size(velocity);
+0075 
+0076 <span class="comment">% Add the number of time steps</span>
+0077 fprintf(f, <span class="string">'%i\n'</span>, nt);
+0078 
+0079 s = <span class="string">'%8.4f\n'</span>;
+0080 <span class="keyword">for</span> ss = 1:nb
+0081     <span class="keyword">if</span> ss &lt; nb
+0082         s = [s, <span class="string">'%8.4f'</span>];
+0083     <span class="keyword">else</span>
+0084         s = [s, <span class="string">'%8.4f\n'</span>];
+0085     <span class="keyword">end</span>
+0086 <span class="keyword">end</span>
+0087 <span class="keyword">for</span> i = 1:size(velocity, 2)
+0088     fprintf(f, s, [i - 1, velocity(:, i)']);
+0089 <span class="keyword">end</span>
+0090 
+0091 fclose(f);
+0092 
+0093 <span class="comment">%% _tide_node.dat -- nodes along the open boundaries.</span>
+0094 f = fopen([casename, <span class="string">'_tide_node.dat'</span>], <span class="string">'w'</span>);
+0095 <span class="keyword">if</span> f &lt; 0
+0096     error(<span class="string">'Problem writing to _tide_node.dat file. Check permissions and try again.'</span>)
+0097 <span class="keyword">end</span>
+0098 <span class="comment">% Boundary node IDs</span>
+0099 
+0100 <span class="comment">% Get a list of the open boundary nodes. Transpose Mobj.obc_nodes so the</span>
+0101 <span class="comment">% order of the boundary nodes is preserved.</span>
+0102 tmpObcNodes = Mobj.obc_nodes';
+0103 <span class="comment">% Flip it back so it's the same shape as it would have been using the old</span>
+0104 <span class="comment">% code.</span>
+0105 ObcNodes = tmpObcNodes(tmpObcNodes ~= 0)';
+0106 
+0107 fprintf(f, <span class="string">'%8d\n'</span>, numel(ObcNodes));
+0108 <span class="keyword">for</span> i = 1:numel(ObcNodes(i))
+0109     fprintf(f, <span class="string">'%8i\n'</span>, ObcNodes(i));
+0110 <span class="keyword">end</span>
+0111 
+0112 fclose(f);
+0113 
+0114 <span class="comment">%% _tide_cell.dat -- elements which have two nodes on an open boundary.</span>
+0115 f = fopen([casename, <span class="string">'_tide_cell.dat'</span>], <span class="string">'w'</span>);
+0116 <span class="keyword">if</span> f &lt; 0
+0117     error(<span class="string">'Problem writing to _tide_cell.dat file. Check permissions and try again.'</span>)
+0118 <span class="keyword">end</span>
+0119 <span class="keyword">if</span> ~isfield(Mobj, <span class="string">'read_obc_elements'</span>)
+0120     error(<span class="string">'Missing list of boundary element IDs. Run find_boundary_elements and try again.'</span>)
+0121 <span class="keyword">end</span>
+0122 <span class="comment">% Boundary element IDs</span>
+0123 ne = Mobj.nObcElements;
+0124 fprintf(f, <span class="string">'%8d\n'</span>, ne);
+0125 <span class="keyword">for</span> j = 1:Mobj.nObs; <span class="comment">% number of open boundaries</span>
+0126     <span class="keyword">for</span> i = 1:numel(Mobj.read_obc_elements{j})
+0127         fprintf(f, <span class="string">'%8i\n'</span>, Mobj.read_obc_elements{j}(i));
+0128     <span class="keyword">end</span>
+0129 <span class="keyword">end</span>
+0130 
+0131 fclose(f);
+0132 
+0133 <span class="comment">%% _tide_el.dat -- surface elevations with time.</span>
+0134 f = fopen([casename, <span class="string">'_tide_el.dat'</span>], <span class="string">'w'</span>);
+0135 <span class="keyword">if</span> f &lt; 0
+0136     error(<span class="string">'Problem writing to _tide_el.dat file. Check permissions and try again.'</span>)
+0137 <span class="keyword">end</span>
+0138 <span class="comment">% Boundary node IDs</span>
+0139 <span class="keyword">if</span> ~isfield(Mobj, <span class="string">'surfaceElevation'</span>)
+0140     error(<span class="string">'Missing predicted surface elevation necessary for mean flow.'</span>)
+0141 <span class="keyword">end</span>
+0142 <span class="keyword">if</span> ~isfield(Mobj, <span class="string">'el_time'</span>)
+0143     error(<span class="string">'Missing predicted surface elevation time series necessary for mean flow.'</span>)
+0144 <span class="keyword">end</span>
+0145 
+0146 [nb, nt] = size(Mobj.surfaceElevation);
+0147 
+0148 s = <span class="string">'%8d'</span>;
+0149 <span class="keyword">for</span> ss = 1:nb
+0150     <span class="keyword">if</span> ss &lt; nb
+0151         s = [s, <span class="string">'%8.4f'</span>];
+0152     <span class="keyword">else</span>
+0153         s = [s, <span class="string">'%8.4f\n'</span>];
+0154     <span class="keyword">end</span>
+0155 <span class="keyword">end</span>
+0156 
+0157 <span class="keyword">for</span> i = 1:nt
+0158     fprintf(f, s', [round(Mobj.el_time(i)), Mobj.surfaceElevation(:, i)']);
+0159 <span class="keyword">end</span>
+0160 
+0161 fclose(f);
+0162 
+0163 <span class="comment">%% _tide_uv.dat -- boundary velocities</span>
+0164 <span class="comment">% The format here is pretty funky. According to Dima's wrt_elj_obc.m</span>
+0165 <span class="comment">% script, for each time step, there's lines of depth averaged u and v</span>
+0166 <span class="comment">% followed by all the u and v components at each vertical level. All lines</span>
+0167 <span class="comment">% are prefixed with the current time in seconds relative to the start of</span>
+0168 <span class="comment">% the model (or mean flow time series? God knows).</span>
+0169 
+0170 f = fopen([casename, <span class="string">'_tide_uv.dat'</span>], <span class="string">'w'</span>);
+0171 <span class="keyword">if</span> f &lt; 0
+0172     error(<span class="string">'Problem writing to _tide_uv.dat file. Check permissions and try again.'</span>)
+0173 <span class="keyword">end</span>
+0174 
+0175 <span class="comment">% Number of elements in the boundaries.</span>
+0176 ne = Mobj.nObcElements;
+0177 
+0178 <span class="comment">% Number of time steps.</span>
+0179 nt = length(Mobj.mf_times);
+0180 
+0181 <span class="comment">% Number of vertical layers.</span>
+0182 nz = length(Mobj.siglay);
+0183 
+0184 <span class="comment">% Create a format string for the each time step plus the number of boundary</span>
+0185 <span class="comment">% elements.</span>
+0186 s = <span class="string">'%8d'</span>;
+0187 <span class="keyword">for</span> ss = 1:ne
+0188     
+0189     <span class="keyword">if</span> ss &lt; ne
+0190         s = [s, <span class="string">'%8.4f'</span>];
+0191     <span class="keyword">else</span>
+0192         s = [s, <span class="string">'%8.4f\n'</span>];
+0193     <span class="keyword">end</span>
+0194 <span class="keyword">end</span>
+0195 
+0196 <span class="comment">% Do the depth averaged u then v for all nodes prefixed by the current</span>
+0197 <span class="comment">% time. So, wrap the whole shebang in a loop through time.</span>
+0198 <span class="keyword">for</span> t = 1:nt
+0199     
+0200     <span class="comment">% Time since the start of the time series (in seconds).</span>
+0201     iint = (Mobj.mf_times(t) - Mobj.mf_times(1)) * 24 * 3600;
+0202     
+0203     <span class="comment">% Dump the time and mean u and then mean v vectors.</span>
+0204     fprintf(f, s, [iint; mean(Mobj.meanflow_u(:, :, t), 2)]);
+0205     fprintf(f, s, [iint; mean(Mobj.meanflow_v(:, :, t), 2)]);
+0206     
+0207     <span class="comment">% Now, for each vertical layer, dump the u and v vectors, prefixed with</span>
+0208     <span class="comment">% time.</span>
+0209     <span class="keyword">for</span> zz = 1:nz
+0210         fprintf(f, s, [iint; Mobj.meanflow_u(:, zz, t)]);
+0211         fprintf(f, s, [iint; Mobj.meanflow_v(:, zz, t)]);
+0212     <span class="keyword">end</span>
+0213 <span class="keyword">end</span>
+0214 
+0215 fclose(f);
+0216 
+0217 <span class="comment">%% _elj_obc.dat -- surface elevation time series at open boundary nodes.</span>
+0218 
+0219 <span class="comment">% This is almost identical to _tide_el.dat but lacks the time stamp in the</span>
+0220 <span class="comment">% first column.</span>
+0221 
+0222 f = fopen([casename, <span class="string">'_elj_obc.dat'</span>], <span class="string">'w'</span>);
+0223 <span class="keyword">if</span> f &lt; 0
+0224     error(<span class="string">'Problem writing to _elj_obc.dat file. Check permissions and try again.'</span>)
+0225 <span class="keyword">end</span>
+0226 
+0227 nt = size(Mobj.surfaceElevation, 2);
+0228 
+0229 <span class="keyword">for</span> t = 1:nt
+0230     fprintf(f, <span class="string">'%8.4f'</span>, Mobj.surfaceElevation(:, t));
+0231     fprintf(f, <span class="string">'\n'</span>);
+0232 <span class="keyword">end</span>
+0233 
+0234 <span class="keyword">if</span> ftbverbose
+0235     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0236 <span class="keyword">end</span>
+0237 
+0238</pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

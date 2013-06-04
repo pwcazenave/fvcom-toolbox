@@ -1,0 +1,163 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of read_sms_map</title>
+  <meta name="keywords" content="read_sms_map">
+  <meta name="description" content="Reads a .map file from SMS">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; read_sms_map.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>read_sms_map
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Reads a .map file from SMS</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function data = read_sms_map(file) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Reads a .map file from SMS
+
+  data = read_sms_map(filename)
+
+ DESCRIPTION:
+   Reads a map file from SMS consisting of node coordinates for boundary
+   lines. Each different arc is read into a different cell array (e.g. if
+   you have multiple islands). Ensure that the polygons are built in SMS 
+   to make handling islands easier.
+
+ INPUT:
+   file - file name to read from.
+
+ OUTPUT:
+   data.arc - cell array of coordinate pairs for the boundaries and
+       elevation
+   data.arcID - cell array of SMS ARC IDs
+   data.arcN - cell array of number of nodes in each arc cell array
+
+ EXAMPLE USAGE:
+  arc = read_sms_map('/home/user/data/sms_project_v1.map')
+
+ Author(s):
+   Ricardo Torres (Plymouth Marine Laboratory)
+
+ Revision history:
+   2013-05-03 First version.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function data = read_sms_map(file)</a>
+0002 <span class="comment">% Reads a .map file from SMS</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">%  data = read_sms_map(filename)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Reads a map file from SMS consisting of node coordinates for boundary</span>
+0008 <span class="comment">%   lines. Each different arc is read into a different cell array (e.g. if</span>
+0009 <span class="comment">%   you have multiple islands). Ensure that the polygons are built in SMS</span>
+0010 <span class="comment">%   to make handling islands easier.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% INPUT:</span>
+0013 <span class="comment">%   file - file name to read from.</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% OUTPUT:</span>
+0016 <span class="comment">%   data.arc - cell array of coordinate pairs for the boundaries and</span>
+0017 <span class="comment">%       elevation</span>
+0018 <span class="comment">%   data.arcID - cell array of SMS ARC IDs</span>
+0019 <span class="comment">%   data.arcN - cell array of number of nodes in each arc cell array</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% EXAMPLE USAGE:</span>
+0022 <span class="comment">%  arc = read_sms_map('/home/user/data/sms_project_v1.map')</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Author(s):</span>
+0025 <span class="comment">%   Ricardo Torres (Plymouth Marine Laboratory)</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Revision history:</span>
+0028 <span class="comment">%   2013-05-03 First version.</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">%==========================================================================</span>
+0031 
+0032 subname = <span class="string">'read_sms_map'</span>;
+0033 
+0034 <span class="keyword">global</span> ftbverbose
+0035 <span class="keyword">if</span> ftbverbose
+0036     fprintf(<span class="string">'\n'</span>); fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>]);
+0037 <span class="keyword">end</span>
+0038 f = fopen(file, <span class="string">'rt'</span>);
+0039 <span class="keyword">if</span> f &lt; 0
+0040     error(<span class="string">'Unable to open output file (check permissions?)'</span>)
+0041 <span class="keyword">end</span>
+0042 frewind(f)
+0043 loopnode = 0;
+0044 looparc = 0;
+0045 data = [];
+0046 <span class="keyword">while</span> ~feof(f)
+0047     <span class="comment">% Read NODES found</span>
+0048     line=fgetl(f);
+0049     <span class="keyword">while</span> ~(strcmpi(line,<span class="string">'ARC'</span>) | strcmpi(line,<span class="string">'NODE'</span>))
+0050         
+0051         line=fgetl(f);
+0052         <span class="keyword">if</span>  feof(f);fclose (f); <span class="keyword">return</span>; <span class="keyword">end</span>
+0053     <span class="keyword">end</span>
+0054     <span class="keyword">switch</span> line
+0055         <span class="keyword">case</span> <span class="string">'NODE'</span>
+0056             
+0057             loopnode = loopnode + 1;
+0058             line = fgetl(f);
+0059             data.node(loopnode) = textscan(line, <span class="string">'%*s %f %f %*f'</span>, <span class="string">'CollectOutput'</span>, 1);
+0060             line = fgetl(f);
+0061             data.nodeID(loopnode) = textscan(line, <span class="string">'%*s %u'</span>);
+0062             line = fgetl(f);
+0063             
+0064         <span class="keyword">case</span> <span class="string">'ARC'</span>
+0065 
+0066             looparc = looparc + 1;
+0067             
+0068             line=fgetl(f);
+0069             data.arcID{looparc} = textscan(line, <span class="string">'%*s %u'</span>);
+0070             <span class="comment">% skip two lines</span>
+0071             dump = fgetl(f); line = fgetl(f);
+0072             data.arcnode(looparc) = textscan(line, <span class="string">'%*s %u %u'</span>, <span class="string">'CollectOutput'</span>, 1);
+0073             line = fgetl(f);
+0074             <span class="keyword">if</span> strcmpi(line, <span class="string">'END'</span>) ; <span class="keyword">break</span>; <span class="keyword">end</span>
+0075             <span class="comment">% read number of vertices in ARC</span>
+0076             data.arcN(looparc) = textscan(line, <span class="string">'%*s %u'</span>);
+0077             data.arc(looparc) = textscan(f, <span class="string">'%f %f %*f'</span>, data.arcN{looparc}, <span class="string">'CollectOutput'</span>, 1, <span class="string">'Delimiter'</span>, <span class="string">'\n'</span>);
+0078         <span class="keyword">otherwise</span>
+0079             
+0080     <span class="keyword">end</span>
+0081 <span class="keyword">end</span>
+0082 fclose(f)
+0083 
+0084 <span class="keyword">if</span> ftbverbose;
+0085     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0086 <span class="keyword">end</span>
+0087 
+0088 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of grid_vert_interp</title>
+  <meta name="keywords" content="grid_vert_interp">
+  <meta name="description" content="Child function to interpolate a given 3D array (x by y by sigma) values">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; grid_vert_interp.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>grid_vert_interp
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Child function to interpolate a given 3D array (x by y by sigma) values</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Child function to interpolate a given 3D array (x by y by sigma) values
+ to the unstructured grid vertical layers.
+
+ function grid_vert_interp(Mobj, lon, lat, data, depth, mask)
+
+ DESCRIPTION:
+    Interpolate the regularly gridded data described by lon, lat, data
+    (whose size should be x by y for the lon and lat arrays, and x by y by
+    z for the data array) to the unstructured grid vertical layers defined
+    in Mobj.siglayz. The depths in depth are used to make sure the profile
+    is interpolated the right way up. The closest unstructured grid node
+    is used for the vertical interpolation of each regularly gridded node.
+
+ INPUT:
+   Mobj        = MATLAB mesh structure which must contain:
+                   - Mobj.siglayz - sigma layer depths for all model
+                   nodes.
+                   - Mobj.lon, Mobj.lat - node coordinates (long/lat).
+   lon, lat    = Rectangular arrays of longitude and latitude (see
+   meshgrid).
+   data, depth = x by y by z (where z is vertical layers) grids of the
+   data and water depths to be interpolated onto the vertical grid defined
+   by Mobj.siglayz.
+   mesh        = logical array of positions outside the regularly gridded
+   domain (e.g. if the regular data contains NaNs or other undefined
+   values, create a logical array of those positions so they can be
+   omitted quickly).
+   
+ OUTPUT:
+   x by y by z array of vertically interpolated values at each regular
+   grid location.
+
+ EXAMPLE USAGE
+   grid_vert_interp(Mobj, lon, lat, data, depth, mask)
+ 
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+   2013-02-08 First version.
+   2013-05-16 Add support for parallel for-loops (not mandatory, but
+   enabled if the Parallel Computing Toolbox is available).
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask)</a>
+0002 <span class="comment">% Child function to interpolate a given 3D array (x by y by sigma) values</span>
+0003 <span class="comment">% to the unstructured grid vertical layers.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function grid_vert_interp(Mobj, lon, lat, data, depth, mask)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Interpolate the regularly gridded data described by lon, lat, data</span>
+0009 <span class="comment">%    (whose size should be x by y for the lon and lat arrays, and x by y by</span>
+0010 <span class="comment">%    z for the data array) to the unstructured grid vertical layers defined</span>
+0011 <span class="comment">%    in Mobj.siglayz. The depths in depth are used to make sure the profile</span>
+0012 <span class="comment">%    is interpolated the right way up. The closest unstructured grid node</span>
+0013 <span class="comment">%    is used for the vertical interpolation of each regularly gridded node.</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% INPUT:</span>
+0016 <span class="comment">%   Mobj        = MATLAB mesh structure which must contain:</span>
+0017 <span class="comment">%                   - Mobj.siglayz - sigma layer depths for all model</span>
+0018 <span class="comment">%                   nodes.</span>
+0019 <span class="comment">%                   - Mobj.lon, Mobj.lat - node coordinates (long/lat).</span>
+0020 <span class="comment">%   lon, lat    = Rectangular arrays of longitude and latitude (see</span>
+0021 <span class="comment">%   meshgrid).</span>
+0022 <span class="comment">%   data, depth = x by y by z (where z is vertical layers) grids of the</span>
+0023 <span class="comment">%   data and water depths to be interpolated onto the vertical grid defined</span>
+0024 <span class="comment">%   by Mobj.siglayz.</span>
+0025 <span class="comment">%   mesh        = logical array of positions outside the regularly gridded</span>
+0026 <span class="comment">%   domain (e.g. if the regular data contains NaNs or other undefined</span>
+0027 <span class="comment">%   values, create a logical array of those positions so they can be</span>
+0028 <span class="comment">%   omitted quickly).</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">% OUTPUT:</span>
+0031 <span class="comment">%   x by y by z array of vertically interpolated values at each regular</span>
+0032 <span class="comment">%   grid location.</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% EXAMPLE USAGE</span>
+0035 <span class="comment">%   grid_vert_interp(Mobj, lon, lat, data, depth, mask)</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">% Author(s):</span>
+0038 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% Revision history</span>
+0041 <span class="comment">%   2013-02-08 First version.</span>
+0042 <span class="comment">%   2013-05-16 Add support for parallel for-loops (not mandatory, but</span>
+0043 <span class="comment">%   enabled if the Parallel Computing Toolbox is available).</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">%==========================================================================</span>
+0046 
+0047 subname = <span class="string">'grid_vert_interp'</span>;
+0048 
+0049 <span class="keyword">global</span> ftbverbose
+0050 <span class="keyword">if</span> ftbverbose
+0051     fprintf(<span class="string">'\n'</span>)
+0052     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0053 <span class="keyword">end</span>
+0054 
+0055 <span class="keyword">if</span> ~isfield(Mobj, <span class="string">'siglayz'</span>)
+0056     error(<span class="string">'Error: missing required sigma layer depth values for the unstructured grid.'</span>)
+0057 <span class="keyword">end</span>
+0058 
+0059 <span class="keyword">if</span> ~Mobj.have_lonlat
+0060     error(<span class="string">'Need spherical coordinates'</span>)
+0061 <span class="keyword">end</span>
+0062 
+0063 <span class="keyword">if</span> sum(size(lon) ~= size(data(:, :, 1))) ~= 0 || sum(size(lat) ~= size(data(:, :, 1))) ~= 0
+0064     error(<span class="string">'Size of the longitude or latitude arrays do not match the supplied data array'</span>)
+0065 <span class="keyword">end</span>
+0066 
+0067 wasOpened = false;
+0068 <span class="keyword">if</span> license(<span class="string">'test'</span>, <span class="string">'Distrib_Computing_Toolbox'</span>)
+0069     <span class="comment">% We have the Parallel Computing Toolbox, so launch a bunch of workers.</span>
+0070     <span class="keyword">if</span> matlabpool(<span class="string">'size'</span>) == 0
+0071         <span class="comment">% Force pool to be local in case we have remote pools available.</span>
+0072         matlabpool open local
+0073         wasOpened = true;
+0074     <span class="keyword">end</span>
+0075 <span class="keyword">end</span>
+0076 
+0077 [~, fz] = size(Mobj.siglayz);
+0078 [nx, ny, ~, ~] = size(data);
+0079 
+0080 <span class="comment">% Preallocate the output arrays</span>
+0081 dataz = nan(nx, ny, fz);
+0082 
+0083 <span class="keyword">if</span> ftbverbose
+0084     tic
+0085 <span class="keyword">end</span>
+0086 
+0087 parfor xi = 1:nx
+0088     <span class="comment">% Get all the y and z dimension data for the current x position</span>
+0089     <span class="comment">% (temperature, salinity and depth).</span>
+0090     xdata = squeeze(data(xi, :, :));
+0091     xdepth = squeeze(depth(xi, :, :));
+0092     xmask = mask(xi, :);
+0093     
+0094     <span class="comment">% Preallocate the arrays for the inner loop.</span>
+0095     ydata = nan(ny, fz);
+0096     <span class="keyword">for</span> yi = 1:ny
+0097         <span class="keyword">if</span> xmask(yi)
+0098             <span class="keyword">continue</span>
+0099         <span class="keyword">end</span>
+0100 
+0101         <span class="comment">% Find the nearest sigma layer z values from the unstructured grid.</span>
+0102         [md, mi] = min(sqrt((Mobj.lon - lon(xi, yi)).^2 + (Mobj.lat - lat(xi, yi)).^2));
+0103 
+0104         <span class="comment">% Skip data point if the closest FVCOM node is more than 10 minutes</span>
+0105         <span class="comment">% away.</span>
+0106         <span class="keyword">if</span> md &gt; 10 / 60
+0107 <span class="comment">%             if ftbverbose</span>
+0108 <span class="comment">%                 fprintf('%s : skipping %f, %f (more than 10 minutes from the nearest unstructured grid node),\n', subname, lon(yi, xi), lat(yi, xi))</span>
+0109 <span class="comment">%             end</span>
+0110             <span class="keyword">continue</span>
+0111         <span class="keyword">else</span>
+0112             <span class="comment">% Use the FVCOM node's sigma depths to interpolate this POLCOMS</span>
+0113             <span class="comment">% position's temperature and salinity data.</span>
+0114             
+0115             <span class="comment">% Get the FVCOM depths closest to this POLCOMS grid position.</span>
+0116             tfz = Mobj.siglayz(mi, :);
+0117             <span class="comment">% Now get the POLCOMS depths at this node for all the vertical</span>
+0118             <span class="comment">% layers and linearly interpolate through the water column onto</span>
+0119             <span class="comment">% the FVCOM vertical profile.</span>
+0120             tpz = xdepth(yi, :);
+0121             ydata(yi, :) = interp1(tpz, xdata(yi, :), tfz, <span class="string">'linear'</span>, <span class="string">'extrap'</span>);
+0122         <span class="keyword">end</span>
+0123     <span class="keyword">end</span>
+0124     dataz(xi, :, :) = ydata;
+0125 <span class="keyword">end</span>
+0126 
+0127 <span class="comment">% Close the MATLAB pool if we opened it.</span>
+0128 <span class="keyword">if</span> wasOpened
+0129     matlabpool close
+0130 <span class="keyword">end</span>
+0131 
+0132 <span class="keyword">if</span> ftbverbose
+0133     toc
+0134 <span class="keyword">end</span>
+0135 
+0136 <span class="keyword">if</span> ftbverbose
+0137     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0138 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

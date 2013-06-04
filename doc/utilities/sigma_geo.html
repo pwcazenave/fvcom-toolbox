@@ -4,7 +4,7 @@
 <head>
   <title>Description of sigma_geo</title>
   <meta name="keywords" content="sigma_geo">
-  <meta name="description" content="">
+  <meta name="description" content="Generate a geometric sigma coordinate distribution.">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
   <meta name="robots" content="index, follow">
@@ -21,13 +21,37 @@
 </h1>
 
 <h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong></strong></div>
+<div class="box"><strong>Generate a geometric sigma coordinate distribution.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function dist = sigma_geo(nlev,p_sigma) </strong></div>
+<div class="box"><strong>function dist = sigma_geo(nlev, p_sigma) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"></pre></div>
+<div class="fragment"><pre class="comment"> Generate a geometric sigma coordinate distribution.
+
+ Mobj = sigma_gen(nlev, p_sigma)
+
+ DESCRIPTION:
+   Generate a geometric vertical sigma coordinate distribution.
+
+ INPUT:
+   nlev:       Number of sigma levels (layers + 1)
+   p_sigma:    1 for uniform sigma layers, 2 for parabolic function. See
+               page 308-309 in the FVCOM manual for examples.
+
+ OUTPUT:
+   dist:       Geometric vertical sigma coordinate distribution.
+
+ EXAMPLE USAGE:
+   Mobj = read_sigma(21, 2.0)
+
+ Author(s):
+   Geoff Cowles (University of Massachusetts Dartmouth)
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+   2013-04-23 Added help on the function and reformatted the code to
+   remove the FORTRAN in the else block.</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -42,22 +66,49 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function dist = sigma_geo(nlev,p_sigma)</a>
-0002 
-0003 kb = nlev;
-0004 <span class="keyword">if</span>(p_sigma ==1)
-0005   <span class="keyword">for</span> k=1:nlev
-0006     dist(k) = -((k-1)/float(kb-1))^p_sigma;
-0007   <span class="keyword">end</span>;
-0008 <span class="keyword">else</span>
-0009   <span class="keyword">for</span> k=1:(kb+1)/2
-0010     dist(k) = -((k-1)/float((kb+1)/2-1))^p_sigma/2;
-0011   <span class="keyword">end</span>;
-0012   do k=(kb+1)/2+1:kb   
-0013     dist(k) = ((kb-k)/float((kb+1)/2-1))^p_sigma/2-1.0;
-0014   <span class="keyword">end</span>;
-0015 <span class="keyword">end</span>;
-0016</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function dist = sigma_geo(nlev, p_sigma)</a>
+0002 <span class="comment">% Generate a geometric sigma coordinate distribution.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Mobj = sigma_gen(nlev, p_sigma)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Generate a geometric vertical sigma coordinate distribution.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT:</span>
+0010 <span class="comment">%   nlev:       Number of sigma levels (layers + 1)</span>
+0011 <span class="comment">%   p_sigma:    1 for uniform sigma layers, 2 for parabolic function. See</span>
+0012 <span class="comment">%               page 308-309 in the FVCOM manual for examples.</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% OUTPUT:</span>
+0015 <span class="comment">%   dist:       Geometric vertical sigma coordinate distribution.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% EXAMPLE USAGE:</span>
+0018 <span class="comment">%   Mobj = read_sigma(21, 2.0)</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Author(s):</span>
+0021 <span class="comment">%   Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0022 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Revision history</span>
+0025 <span class="comment">%   2013-04-23 Added help on the function and reformatted the code to</span>
+0026 <span class="comment">%   remove the FORTRAN in the else block.</span>
+0027 
+0028 dist = nan(1, nlev);
+0029 
+0030 kb = nlev;
+0031 
+0032 <span class="keyword">if</span> p_sigma == 1
+0033     <span class="keyword">for</span> k = 1:nlev
+0034         dist(k) = -((k-1)/(kb-1))^p_sigma;
+0035     <span class="keyword">end</span>
+0036 <span class="keyword">else</span>
+0037     <span class="keyword">for</span> k = 1:(kb+1)/2
+0038         dist(k) = -((k-1)/((kb+1)/2-1))^p_sigma/2;
+0039     <span class="keyword">end</span>
+0040     <span class="keyword">for</span> k = (kb+1)/2+1:kb
+0041         dist(k) = ((kb-k)/((kb+1)/2-1))^p_sigma/2-1.0;
+0042     <span class="keyword">end</span>
+0043 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

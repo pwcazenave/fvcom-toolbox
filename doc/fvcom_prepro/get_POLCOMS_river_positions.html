@@ -1,0 +1,205 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_POLCOMS_river_positions</title>
+  <meta name="keywords" content="get_POLCOMS_river_positions">
+  <meta name="description" content="Parse the POLCOMS rivers data file.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_POLCOMS_river_positions.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_POLCOMS_river_positions
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Parse the POLCOMS rivers data file.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Mobj = get_POLCOMS_river_positions(Mobj, polcoms_grid, polcoms_ij) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Parse the POLCOMS rivers data file.
+
+ get_POLCOMS_rivers(Mobj, polcoms_file, polcoms_grid, polcoms_ij)
+
+ DESCRIPTION:
+   Takes POLCOMS grid and index files and returns the positions and names
+   of the rivers within the index file.
+
+ INPUT:
+   Mobj - MATLAB mesh object into which the outputs will be added.
+   polcoms_grid - NetCDF file of the POLCOMS grid.
+   polcoms_ij - indices in the POLCOMS grid at which each river is
+       located.
+ 
+ OUTPUT:
+   Mobj.river_xy - array of lon/lat positions of the POLCOMS rivers.
+   Mobj.river_polcoms_names - names for the rivers in the positions array.
+
+ EXAMPLE USAGE:
+   Mobj = get_POLCOMS_rivers(Mobj, 'polcoms.nc', 'polcoms.index')
+ 
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history:
+   2013-04-15 - First version from the original get_POLCOMS_rivers.m.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = get_POLCOMS_river_positions(Mobj, polcoms_grid, polcoms_ij)</a>
+0002 <span class="comment">% Parse the POLCOMS rivers data file.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% get_POLCOMS_rivers(Mobj, polcoms_file, polcoms_grid, polcoms_ij)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Takes POLCOMS grid and index files and returns the positions and names</span>
+0008 <span class="comment">%   of the rivers within the index file.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   Mobj - MATLAB mesh object into which the outputs will be added.</span>
+0012 <span class="comment">%   polcoms_grid - NetCDF file of the POLCOMS grid.</span>
+0013 <span class="comment">%   polcoms_ij - indices in the POLCOMS grid at which each river is</span>
+0014 <span class="comment">%       located.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%   Mobj.river_xy - array of lon/lat positions of the POLCOMS rivers.</span>
+0018 <span class="comment">%   Mobj.river_polcoms_names - names for the rivers in the positions array.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% EXAMPLE USAGE:</span>
+0021 <span class="comment">%   Mobj = get_POLCOMS_rivers(Mobj, 'polcoms.nc', 'polcoms.index')</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Author(s):</span>
+0024 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Revision history:</span>
+0027 <span class="comment">%   2013-04-15 - First version from the original get_POLCOMS_rivers.m.</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">%==========================================================================</span>
+0030 
+0031 subname = <span class="string">'get_POLCOMS_river_positions'</span>;
+0032 
+0033 <span class="keyword">global</span> ftbverbose;
+0034 <span class="keyword">if</span> ftbverbose
+0035     fprintf([<span class="string">'\nbegin : '</span> subname <span class="string">'\n'</span>])
+0036 <span class="keyword">end</span>
+0037 
+0038 <span class="comment">% Check inputs</span>
+0039 <span class="keyword">if</span> exist(polcoms_grid, <span class="string">'file'</span>) ~= 2
+0040     error(<span class="string">'file: %s does not exist or is not readable.'</span>, polcoms_grid)
+0041 <span class="keyword">end</span>
+0042 <span class="keyword">if</span> exist(polcoms_ij, <span class="string">'file'</span>) ~= 2
+0043     error(<span class="string">'file: %s does not exist or is not readable.'</span>, polcoms_ij)
+0044 <span class="keyword">end</span>
+0045 
+0046 <span class="comment">% Get the positions for each river from the NetCDF grid and the index file.</span>
+0047 <span class="comment">% Format is:</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">% n</span>
+0050 <span class="comment">%   id1 i j Name1</span>
+0051 <span class="comment">%   id2 i j Name2</span>
+0052 <span class="comment">%   ...</span>
+0053 <span class="comment">%   idn i j Namen</span>
+0054 fidx = fopen(polcoms_ij, <span class="string">'r'</span>);
+0055 <span class="keyword">if</span> fidx &lt; 0
+0056     error(<span class="string">'Error opening index file (%s).'</span>, polcoms_ij);
+0057 <span class="keyword">end</span>
+0058 
+0059 c = 0; <span class="comment">% line counter</span>
+0060 <span class="keyword">while</span> ~feof(fidx)
+0061     line = fgetl(fidx);
+0062     <span class="keyword">if</span> isempty(line) || ~ischar(line)
+0063         <span class="keyword">continue</span>
+0064     <span class="keyword">else</span>
+0065         c = c + 1;
+0066     <span class="keyword">end</span>
+0067     
+0068     <span class="keyword">if</span> c == 1
+0069         <span class="comment">% First (valid) line should be number of rivers</span>
+0070         nridx = str2double(strtrim(line));
+0071         <span class="comment">% Preallocate the output arrays on the basis of this value. If the</span>
+0072         <span class="comment">% file happens to have more lines, that shouldn't matter. Too few,</span>
+0073         <span class="comment">% however, and you'll end up with NaNs at the end of your array. I</span>
+0074         <span class="comment">% should probably remove them later...</span>
+0075         pc_idx = nan(nridx, 3);
+0076         pc_name = cell(nridx, 1);
+0077     <span class="keyword">else</span>
+0078         <span class="comment">% We're in the data.</span>
+0079         S = regexpi(strtrim(line), <span class="string">' +'</span>, <span class="string">'split'</span>);
+0080         pc_idx(c - 1, :) = [str2double(S{1}), str2double(S{2}), str2double(S{3})];
+0081         pc_name{c - 1} = S{end};
+0082     <span class="keyword">end</span>
+0083 <span class="keyword">end</span>
+0084 clear S line c
+0085 
+0086 fclose(fidx);
+0087 
+0088 <span class="comment">% Now read in the NetCDF file and grab the real coordinates of those</span>
+0089 <span class="comment">% positions.</span>
+0090 nc = netcdf.open(polcoms_grid, <span class="string">'NOWRITE'</span>);
+0091 [~, numvars, ~, ~] = netcdf.inq(nc);
+0092 
+0093 <span class="keyword">for</span> ii = 1:numvars
+0094     
+0095     [varname, ~, ~, ~] = netcdf.inqVar(nc, ii - 1);
+0096     varid = netcdf.inqVarID(nc, varname);
+0097 
+0098     <span class="keyword">if</span> ftbverbose
+0099         fprintf(<span class="string">'\tvariable %s... '</span>, varname)
+0100     <span class="keyword">end</span>
+0101  
+0102     <span class="keyword">switch</span> varname
+0103         <span class="keyword">case</span> <span class="string">'lon'</span>
+0104             pc_lon = netcdf.getVar(nc, varid);
+0105             
+0106         <span class="keyword">case</span> <span class="string">'lat'</span>
+0107             pc_lat = netcdf.getVar(nc, varid);
+0108 
+0109     <span class="keyword">end</span>
+0110     
+0111     <span class="keyword">if</span> ftbverbose
+0112         fprintf(<span class="string">'done.\n'</span>)
+0113     <span class="keyword">end</span>
+0114 
+0115 <span class="keyword">end</span>
+0116 
+0117 clear numdims numvars dimnames 
+0118 
+0119 netcdf.close(nc)
+0120 
+0121 <span class="comment">% Use the indices from the polcoms_ij file to get the real positions of the</span>
+0122 <span class="comment">% river nodes.</span>
+0123 pc_riv_lonlat = [pc_lon(pc_idx(:, 2), 1), pc_lat(1, pc_idx(:, 3))'];
+0124 
+0125 <span class="comment">% Return the positions and names to the Mobj.</span>
+0126 Mobj.rivers.positions = pc_riv_lonlat;
+0127 Mobj.rivers.names = pc_name;
+0128 
+0129 <span class="keyword">if</span> ftbverbose
+0130     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0131 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

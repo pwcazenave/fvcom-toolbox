@@ -97,7 +97,7 @@ This function is called by:
 0027 <span class="comment">%</span>
 0028 <span class="comment">%==============================================================================</span>
 0029 
-0030 warning off;
+0030 <span class="comment">%warning off;</span>
 0031 
 0032 
 0033 subname = <span class="string">'example_FVCOM_tsobc'</span>;
@@ -197,7 +197,7 @@ This function is called by:
 0127 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM RIVER FORCING FILE'</span>)
 0128 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,<span class="string">'simple open boundary hydrography test'</span>)
 0129 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM TIME SERIES OBC TS FILE'</span>)
-0130 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'generated using the fvcom-toolbox'</span>)
+0130 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'File generated using example_FVCOM_tsobc.m from the MATLAB fvcom-toolbox'</span>)
 0131 
 0132 
 0133 <span class="comment">% define dimensions</span>
@@ -276,6 +276,6 @@ This function is called by:
 0206 netcdf.close(nc);
 0207 
 0208 <span class="keyword">if</span>(ftbverbose); fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>]);<span class="keyword">end</span>;</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

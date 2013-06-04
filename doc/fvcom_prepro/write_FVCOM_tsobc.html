@@ -4,7 +4,7 @@
 <head>
   <title>Description of write_FVCOM_tsobc</title>
   <meta name="keywords" content="write_FVCOM_tsobc">
-  <meta name="description" content="example file for dumping a file to force temperature and salinity at the open b.">
+  <meta name="description" content="Export temperature and salinity forcing at the open boundary.">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
   <meta name="robots" content="index, follow">
@@ -21,13 +21,13 @@
 </h1>
 
 <h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>example file for dumping a file to force temperature and salinity at the open b.</strong></div>
+<div class="box"><strong>Export temperature and salinity forcing at the open boundary.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="box"><strong>function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"> example file for dumping a file to force temperature and salinity at the open b.
+<div class="fragment"><pre class="comment"> Export temperature and salinity forcing at the open boundary.
 
  function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
 
@@ -81,7 +81,7 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj)</a>
-0002 <span class="comment">% example file for dumping a file to force temperature and salinity at the open b.</span>
+0002 <span class="comment">% Export temperature and salinity forcing at the open boundary.</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)</span>
 0005 <span class="comment">%</span>
@@ -255,7 +255,7 @@ This function is called by:
 0173 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM RIVER FORCING FILE'</span>)
 0174 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,<span class="string">'simple open boundary hydrography test'</span>)
 0175 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM TIME SERIES OBC TS FILE'</span>)
-0176 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'generated using the fvcom-toolbox'</span>)
+0176 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'File generated using write_FVCOM_tsobc.m from the MATLAB fvcom-toolbox'</span>)
 0177 
 0178 
 0179 <span class="comment">% define dimensions</span>
@@ -330,6 +330,6 @@ This function is called by:
 0248 netcdf.close(nc);
 0249 
 0250 <span class="keyword">if</span>(ftbverbose); fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>]);<span class="keyword">end</span>;</pre></div>
-<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

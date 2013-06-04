@@ -65,7 +65,8 @@
    arguments to the function call (time and u and v vectors). u and v
    vectors vary in time and space.
 
-==============================================================================</pre></div>
+==============================================================================
+warning off</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -121,7 +122,7 @@ This function is called by:
 0039 <span class="comment">%   vectors vary in time and space.</span>
 0040 <span class="comment">%</span>
 0041 <span class="comment">%==============================================================================</span>
-0042 warning off
+0042 <span class="comment">%warning off</span>
 0043 subname = <span class="string">'example_FVCOM_wind_ts_speed'</span>;
 0044 <span class="keyword">global</span> ftbverbose;
 0045 <span class="keyword">if</span>(ftbverbose);
@@ -143,7 +144,7 @@ This function is called by:
 0061 <span class="comment">% netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','single-point time-dependent surface forcing')</span>
 0062 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'source'</span>,<span class="string">'fvcom grid (unstructured) surface forcing'</span>)
 0063 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'institution'</span>,<span class="string">'Plymouth Marine Laboratory'</span>)
-0064 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'Generated using the fvcom-toolbox'</span>)
+0064 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'File generated using the write_FVCOM_wind_ts_speed.m from the MATLAB fvcom-toolbox'</span>)
 0065 
 0066 <span class="comment">% dimensions</span>
 0067 nele_dimid=netcdf.defDim(nc,<span class="string">'nele'</span>,nElems);
@@ -199,6 +200,6 @@ This function is called by:
 0117 
 0118 
 0119</pre></div>
-<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

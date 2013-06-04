@@ -118,7 +118,7 @@ This function is called by:
 0050     Total_Sponge = sum(Mobj.nSpongeNodes(1:Mobj.nSponge));
 0051     fprintf(fid,<span class="string">'Sponge Node Number = %d\n'</span>,Total_Sponge);
 0052     <span class="keyword">for</span> i=1:Mobj.nSponge
-0053         <span class="keyword">if</span> max(size(Mobj.sponge_rad))==1   <span class="comment">% if you have a constant sponge radius</span>
+0053         <span class="keyword">if</span> numel(unique(Mobj.sponge_rad)) == 1   <span class="comment">% if you have a constant sponge radius</span>
 0054             <span class="keyword">for</span> j=1:Mobj.nSpongeNodes(i)
 0055                 fprintf(fid,<span class="string">'%d %f %f \n'</span>,Mobj.sponge_nodes(i,j),Mobj.sponge_rad(i),Mobj.sponge_fac(i));
 0056             <span class="keyword">end</span>;
@@ -135,6 +135,6 @@ This function is called by:
 0067   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
 0068 <span class="keyword">end</span>;
 0069</pre></div>
-<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
