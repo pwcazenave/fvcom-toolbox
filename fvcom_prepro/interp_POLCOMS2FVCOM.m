@@ -122,11 +122,13 @@ end
 % seabed to match its depth data and to match how FVCOM works.
 temperature = flipdim(permute(squeeze(pc.ETWD.data(:, :, :, tidx)), [2, 1, 3]), 3);
 salinity = flipdim(permute(squeeze(pc.x1XD.data(:, :, :, tidx)), [2, 1, 3]), 3);
+density = flipdim(permute(squeeze(pc.rholocalD.data(:, :, :, tidx)), [2, 1, 3]), 3);
 depth = permute(squeeze(pc.depth.data(:, :, :, tidx)), [2, 1, 3]);
 mask = depth(:, :, end) >= 0; % land is positive.
 
 pc.tempz = grid_vert_interp(Mobj, lon, lat, temperature, depth, mask);
 pc.salz = grid_vert_interp(Mobj, lon, lat, salinity, depth, mask);
+pc.denz = grid_vert_interp(Mobj, lon, lat, density, depth, mask);
 
 if ftbverbose
     fprintf('done.\n') 
@@ -145,16 +147,29 @@ end
 
 fvtemp = nan(fn, fz);
 fvsalt = nan(fn, fz);
+fvdens = nan(fn, fz);
+
+plon = lon(:);
+plat = lat(:);
+flon = Mobj.lon;
+flat = Mobj.lat;
+ptempz = pc.tempz;
+psalz = pc.salz;
+pdenz = pc.denz;
 
 tic
 parfor zi = 1:fz
     % Set up the interpolation objects.
-    ft = TriScatteredInterp(lon(:), lat(:), reshape(pc.tempz(:, :, zi), [], 1), 'natural');
-    fs = TriScatteredInterp(lon(:), lat(:), reshape(pc.salz(:, :, zi), [], 1), 'natural');
+    ft = TriScatteredInterp(plon, plat, reshape(ptempz(:, :, zi), [], 1), 'natural');
+    fs = TriScatteredInterp(plon, plat, reshape(psalz(:, :, zi), [], 1), 'natural');
+    fd = TriScatteredInterp(plon, plat, reshape(pdenz(:, :, zi), [], 1), 'natural');
     % Interpolate temperature and salinity onto the unstructured grid.
-    fvtemp(:, zi) = ft(Mobj.lon, Mobj.lat);
-    fvsalt(:, zi) = fs(Mobj.lon, Mobj.lat);
+    fvtemp(:, zi) = ft(flon, flat);
+    fvsalt(:, zi) = fs(flon, flat);
+    fvdens(:, zi) = fd(flon, flat);
 end
+
+clear plon plat flon flat ptempz psalz pdenz
 
 % Unfortunately, TriScatteredInterp won't extrapolate, returning instead
 % NaNs outside the original data's extents. So, for each NaN position, find
@@ -164,6 +179,7 @@ end
 
 % We can assume that all layers will have NaNs in the same place
 % (horizontally), so just use the surface layer (1) for the identification
+
 % of NaNs. Also store the finite values so we can find the nearest real
 % value to the current NaN node and use its temperature and salinity
 % values.
@@ -183,6 +199,7 @@ for ni = 1:length(fvnanidx)
     % current NaN position with the closest non-nan value.
     fvtemp(fvnanidx(ni), :) = fvtemp(fvfinidx(di), :);
     fvsalt(fvnanidx(ni), :) = fvsalt(fvfinidx(di), :);
+    fvdens(fvnanidx(ni), :) = fvdens(fvfinidx(di), :);
 end
 
 if ftbverbose
@@ -192,6 +209,7 @@ end
 
 Mobj.restart.temp = fvtemp;
 Mobj.restart.salinity = fvsalt;
+Mobj.restart.rho1 = fvdens;
 
 % Close the MATLAB pool if we opened it.
 if wasOpened
