@@ -44,8 +44,11 @@ function Mobj = interp_POLCOMS2FVCOM(Mobj, ts, start_date, varlist)
 %   2013-02-08 First version.
 %   2013-05-16 Add support for parallel for-loops (not mandatory, but
 %   enabled if the Parallel Computing Toolbox is available).
-%   2013-06-06 Make the date an optional setting (set to NaN to skip
-%   changing the date).
+%   2013-06-06 Fix the vertical ordering of the POLCOMS data. POLCOMS'
+%   scalar values (temperature, salinity etc.) are stored seabed to
+%   surface; its depths are stored surface to seabed; FVCOM stores
+%   everything surface to seabed. As such, the POLCOMS scalar values need
+%   to be flipped upside down to match everything else.
 %
 %==========================================================================
 
