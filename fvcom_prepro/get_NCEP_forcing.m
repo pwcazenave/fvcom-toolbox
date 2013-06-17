@@ -29,7 +29,6 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 %     - Air temperature (air)
 %     - Relative humidity (rhum)
 %     - Precipitation rate (prate)
-%     - Evaporation rate (pevpr)
 %     - Sea level pressure (slp)
 %     - Latent heat flux (lhtfl)
 %     - Surface heat flux (shtfl)
@@ -62,6 +61,11 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 %   m^{-2} to ms^{-1}, use the latent heat flux at the surface with the
 %   density of water and the latent heat of vaporisation to estimate
 %   evaporation rate in ms^{-1}.
+%   2013-06-17 Remove the 'pevpr' variable from the data fetched from NCEP.
+%   The 'pevpr' data only covers land (and is therefore largely useless for
+%   the toolbox's need. Also, we're not actually using 'pevpr' for the
+%   calculation of evaporation since we're estimating that from the latent
+%   heat net flux ('lhtfl'), so it's superfluous anyway.
 %
 %==========================================================================
 
@@ -105,7 +109,7 @@ ncep.prate  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanaly
 ncep.slp    = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface/slp.',num2str(year),'.nc'];
 ncep.lhtfl  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/lhtfl.sfc.gauss.',num2str(year),'.nc'];
 ncep.shtfl  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/shtfl.sfc.gauss.',num2str(year),'.nc'];
-ncep.pevpr  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/pevpr.sfc.gauss.',num2str(year),'.nc'];
+% ncep.pevpr  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/pevpr.sfc.gauss.',num2str(year),'.nc'];
 
 % The fields below can be used to create the net shortwave and longwave
 % fluxes if the data you're using don't include net fluxes. Subtract the
@@ -306,6 +310,18 @@ for aa = 1:length(fields)
     %     data.(fields{aa}).time = cat(1, data.(fields{aa}).time, squeeze(data1.(fields{aa}).(fields{aa}).time));
     %     data.(fields{aa}).lat = squeeze(data1.(fields{aa}).(fields{aa}).lat);
     %     data.(fields{aa}).lon = squeeze(data1.(fields{aa}).(fields{aa}).lon);
+
+    % Replace values outside the specified actual range with NaNs. For the
+    % majority of the variables, this shouldn't ever really generate values
+    % of NaN since the coverage is global (land and sea). This did crop up
+    % as a problem with the pevpr data (which is land only). In some ways,
+    % if something fails later on (e.g. the interpolation) because there's
+    % NaNs, that should be a wakeup call to check what's going on with the
+    % data.
+    actual_min = data_attributes.(fields{aa}).(fields{aa}).actual_range(1);
+    actual_max = data_attributes.(fields{aa}).(fields{aa}).actual_range(2);
+    mask = data.(fields{aa}).data <= actual_min | data.(fields{aa}).data >= actual_max;
+    data.(fields{aa}).data(mask) = NaN;
 end
 
 % Now we have some data, we need to create some additional parameters
@@ -329,7 +345,10 @@ Llv = 2.5*10^6;
 rho = 1025; % using a typical value for seawater.
 Et = data.lhtfl.data/Llv/rho;
 data.P_E.data = data.prate.data - Et;
-data.Et.data = Et;
+% Evaporation and precipitation need to have the same sign for FVCOM (ocean
+% losing water is negative in both instances). So, flip the evaporation
+% here.
+data.Et.data = -Et;
 
 % Calculate the momentum flux
 WW = data.uwnd.data + data.vwnd.data * 1i;
