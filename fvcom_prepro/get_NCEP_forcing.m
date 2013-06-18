@@ -320,7 +320,7 @@ for aa = 1:length(fields)
     % data.
     actual_min = data_attributes.(fields{aa}).(fields{aa}).actual_range(1);
     actual_max = data_attributes.(fields{aa}).(fields{aa}).actual_range(2);
-    mask = data.(fields{aa}).data <= actual_min | data.(fields{aa}).data >= actual_max;
+    mask = data.(fields{aa}).data < actual_min | data.(fields{aa}).data > actual_max;
     data.(fields{aa}).data(mask) = NaN;
 end
 
