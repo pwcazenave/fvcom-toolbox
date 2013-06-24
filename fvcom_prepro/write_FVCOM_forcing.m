@@ -25,24 +25,24 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %
 % The fields in data may be called any of:
 %     - 'u10', 'v10', 'uwnd', 'vwnd' - wind components
-%     - 'slp'       - sea level pressure
-%     - 'pevpr'     - evaporation
-%     - 'prate'     - precipitation
-%     - 'slp'       - sea level pressure
-%     - 'nlwrs'     - net longwave radiation*,**
-%     - 'nswrs'     - net shortwave radiation*,**
-%     - 'shtfl'     - sensible heat net flux*,**
-%     - 'lhtfl'     - latent heat net flux*,**
-%     - 'lon'       - longitude (vector)
-%     - 'lat'       - latitude (vector)
-%     - 'x'         - eastings (vector)
-%     - 'y'         - northings (vector)
-%     - 'nshf'      - pre-computed net surface heat flux**
+%     - 'slp'               - sea level pressure
+%     - 'Et'                - evaporation
+%     - 'prate' or 'P_E'    - precipitation
+%     - 'slp'               - sea level pressure
+%     - 'nlwrs'             - net longwave radiation*,**
+%     - 'nswrs'             - net shortwave radiation*,**
+%     - 'shtfl'             - sensible heat net flux*,**
+%     - 'lhtfl'             - latent heat net flux*,**
+%     - 'lon'               - longitude (vector)
+%     - 'lat'               - latitude (vector)
+%     - 'x'                 - eastings (vector)
+%     - 'y'                 - northings (vector)
+%     - 'nshf'              - pre-computed net surface heat flux**
 %
 % Fields marked with an * are combined to form the "surface net heat flux"
 % (nshf) as follows:
 %
-%   nshf = -nlwrs + -nswrs - lhtfl - shtfl;
+%   nshf = -(nlwrs + nswrs + lhtfl + shtfl);
 %
 % ** Alternatively, a new field 'nshf' (net surface heat flux) can be
 % supplied, in which case shtfl and lhtfl are not necessary as their only
@@ -78,6 +78,9 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   that to maintain consistency.
 %   2013-05-14 - Add example usage to the help and specify which fields are
 %   required in Mobj.
+%   2013-06-21 - Remove support for pevpr (pevpr is in W/m^{2} from the
+%   NCEP Reanalysis 2 data (FVCOM wants evaporation in m/s). Update the
+%   help accordingly.
 %
 % KJT Revision history:
 %   2013-01-16 - Added support for output of sea level pressure.
@@ -196,8 +199,8 @@ for i=1:length(suffixes)
     netcdf.putAtt(nc,times_varid,'format','String: Calendar Time');
     netcdf.putAtt(nc,times_varid,'time_zone','UTC');
 
-    % Since we have a dynamic number of variables in the struct, try to be a
-    % bit clever about how to create the output variables.
+    % Since we have a dynamic number of variables in the struct, try to be
+    % a bit clever about how to create the output variables.
     fnames = fieldnames(data);
     used_varids = cell(0);
     used_fnames = cell(0);
@@ -270,7 +273,7 @@ for i=1:length(suffixes)
                     used_dims = [used_dims, 'nNodes'];
                 end
 
-            case {'pevpr', 'Et'}
+            case 'Et'
                 if strcmpi(suffixes{i}, '_evap') || ~multi_out
                     % Evaporation
                     pevpr_varid=netcdf.defVar(nc,'evap','NC_FLOAT',[node_dimid, time_dimid]);
@@ -338,11 +341,11 @@ for i=1:length(suffixes)
                 % above. Instead, we need to use the latent heat flux
                 % variables as the triggers for the net heat flux.
                 % We also need to check for the existence of the "net
-                % surface heat flux ('nshf')" field which can be created before
-                % calling grid2fvcom. This approach means there's fewer
-                % calls to the (expensive) interpolation as the net surface
-                % heat flux is calculated before being interpolated onto
-                % the FVCOM grid. Set the nshf variable accordingly.
+                % surface heat flux ('nshf')" field which can be created
+                % before calling grid2fvcom. This approach means there's
+                % fewer calls to the (expensive) interpolation as the net
+                % surface heat flux is calculated before being interpolated
+                % onto the FVCOM grid. Set the nshf variable accordingly.
                 if strcmpi(fnames{vv}, 'nshf')
                     nshf = 1;
                 end
@@ -362,8 +365,8 @@ for i=1:length(suffixes)
                     end
                 end
                 if strcmpi(suffixes{i}, '_hfx') || ~multi_out
-                    % We need to save the current variable name even if we've
-                    % already made its attribute.
+                    % We need to save the current variable name even if
+                    % we've already made its attribute.
                     used_varids = [used_varids, 'nhf_varid'];
                     used_fnames = [used_fnames, fnames{vv}];
                     used_dims = [used_dims, 'nNodes'];
@@ -417,14 +420,9 @@ for i=1:length(suffixes)
                     fprintf('combining heat flux ... ')
                 end
                 % We've got all four heat parameters, so dump them into the
-                % file. We have to flip the signs of the net fluxes and
-                % subtract the latent and sensible heat fluxes because
-                % NCEP's convention is positive upwards (out of the ocean)
-                % and negative downwards (into the ocean), whereas FVCOM is
-                % positive downwards (into the ocean) and negative upwards
-                % (out of the ocean).
-                hf = -data.nlwrs.node + -data.nswrs.node - data.lhtfl.node - data.shtfl.node;
-                %hf = data.shtfl.node + data.lhtfl.node + data.nlwrs.node + data.nswrs.node;
+                % file.
+                hf = -(data.shtfl.node + data.lhtfl.node + ...
+                    data.nlwrs.node + data.nswrs.node);
                 netcdf.putVar(nc,nhf_varid,[0,0],[nNodes,ntimes],hf)
             elseif strcmpi(used_fnames{ff}, 'nswrs') || strcmpi(used_fnames{ff}, 'nlwrs')
                 % We've already done the net surface heat flux but we're on
