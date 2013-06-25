@@ -111,6 +111,10 @@ ncep.lhtfl  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanaly
 ncep.shtfl  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/shtfl.sfc.gauss.',num2str(year),'.nc'];
 % ncep.pevpr  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/pevpr.sfc.gauss.',num2str(year),'.nc'];
 
+% Possible future data to use?
+% Skin temperature
+% ncep.skt    = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/skt.sfc.gauss.',num2str(year),'.nc'];
+
 % The fields below can be used to create the net shortwave and longwave
 % fluxes if the data you're using don't include net fluxes. Subtract the
 % downward from upward fluxes to get net fluxes.
@@ -326,6 +330,14 @@ end
 
 % Now we have some data, we need to create some additional parameters
 % required by FVCOM.
+
+% FVCOM's sign convention is the opposite of the NCEP data for heat fluxes
+% (FVCOM: positive = downward flux = ocean heating, negative = upward flux
+% = ocean cooling. NCEP: positive = upward flux = ocean cooling, negative =
+% downward flux = ocean heating). So, rather than do the corrections in
+% create_files.m or wherever, do them here instead.
+% data.nlwrs.data = -data.nlwrs.data;
+% data.nswrs.data = -data.nswrs.data;
 
 % Convert precipitation from kg/m^2/s to m/s (required by FVCOM) by
 % dividing by freshwater density (kg/m^3).
