@@ -9,7 +9,7 @@ function pp2nc(file, convsh, pp2nc_tcl)
 % Follow the installation instructions for your platform (Linux, Windows,
 % Mac etc.) prior to running this function.
 % 
-% This uses the pp2nc.tcl script in the utilities subdirectory of the
+% This requires the pp2nc.tcl script in the utilities subdirectory of the
 % MATLAB fvcom-toolbox.
 % 
 % INPUT:
@@ -21,15 +21,19 @@ function pp2nc(file, convsh, pp2nc_tcl)
 % OUTPUT:
 %   NetCDF files in the same directory as the input PP files but with a .nc
 %   file extension.
+%
+% Author(s):
+%    Pierre Cazenave (Plymouth Marine Laboratory)
+%    Karen Amoudry (National Oceanography Centre, Liverpool)
 % 
-% Revision history:
+% PWC Revision history:
 %   2013-06-24 Extracted version from the get_MetUM_forcing.m script and
 %   set as standalone version.
-
-
-if nargin == 1
-    convsh = '/usr/local/bin/convsh';
-end
+%
+% KJA Revision history:
+%   2013-06-25 Added support for paths with spaces in. Also added support
+%   for creation of NetCDF files in Windows (convsh will only take a .nc
+%   filename, not a whole path).
 
 nf = length(file);
 
@@ -40,8 +44,15 @@ for ff = 1:nf
         end
 
         [path, name, ~] = fileparts(file{ff});
-        out = fullfile(path, [name, '.nc']);
+        out = [name, '.nc'];
 
-        system([convsh, ' ', pp2nc_tcl, ' -i ', file{ff}, ' -o ', out]);
+        goback = pwd;
+        cd(path)
+        % Warn if it failed for some reason
+        [res, msg] = system([convsh, ' "', pp2nc_tcl, '" -i "', file{ff}, '" -o ', out]);
+        cd(goback)
+        if res ~= 0
+            warning('Converion of %s to NetCDF failed. Conversion output:\n%s', file{ff}, msg)
+        end
     end
 end
