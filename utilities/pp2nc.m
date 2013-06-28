@@ -49,7 +49,7 @@ for ff = 1:nf
         goback = pwd;
         cd(path)
         % Warn if it failed for some reason
-        [res, msg] = system([convsh, ' "', pp2nc_tcl, '" -i "', file{ff}, '" -o ', out]);
+        [res, msg] = system([convsh, ' "', pp2nc_tcl, '" -i "', file{ff}, '" -o "', out, '"']);
         cd(goback)
         if res ~= 0
             warning('Converion of %s to NetCDF failed. Conversion output:\n%s', file{ff}, msg)
