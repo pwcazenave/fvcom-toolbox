@@ -26,11 +26,11 @@ function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType,plotFig)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %    Karen Amoudry (National Oceanography Centre, Liverpool)
 %
-%
 % Revision history:
 %    2012-11-26 Add ability to turn off the figures.
-%    2013-01-02 KJA bug fix: amended usage of 'unique' in line 50 to
-%    prevent it from sorting the values it returns.
+%    2013-01-02 KJA bug fix: amended usage of 'unique' in line 53 to
+%    prevent it from sorting the values it returns. Amended by Pierre to
+%    support pre-2012 versions of MATLAB whilst giving the same result.
 %   
 %==========================================================================
 subname = 'add_obc_nodes';
@@ -48,7 +48,10 @@ end
 %--------------------------------------------------------------------------
 % Get a unique list and make sure they are in the range of node numbers 
 %--------------------------------------------------------------------------
-Nlist = unique(Nlist,'stable');
+% Make this works in versions of MATLAB older than 2012a (newer versions
+% can just use unique(A, 'stable'), but checking versions is a pain).
+[~, Nidx] = unique(Nlist);
+Nlist = Nlist(sort(Nidx));
 
 if(max(Nlist) > Mobj.nVerts);
   fprintf('your open boundary node number exceed the total number of nodes in the domain\n');

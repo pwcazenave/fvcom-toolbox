@@ -23,10 +23,12 @@ function [spongeRadius] = calc_sponge_radius(Mobj,Nlist)
 %
 % Author(s)
 %    Karen Amoudry (National Oceanography Centre, Liverpool)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history:
 %    2013-01-02 KJA bug fix: amended usage of 'unique' to prevent it from
-%    sorting the values it returns.
+%    sorting the values it returns. Amended by Pierre to support pre-2012
+%    versions of MATLAB whilst giving the same result.
 %
 %==========================================================================
 subname = 'calc_sponge_radius';
@@ -39,7 +41,10 @@ end
 %--------------------------------------------------------------------------
 % Get a unique list and make sure they are in the range of node numbers 
 %--------------------------------------------------------------------------
-Nlist = unique(Nlist,'stable');
+% Make this works in versions of MATLAB older than 2012a (newer versions
+% can just use unique(A, 'stable'), but checking versions is a pain).
+[~, Nidx] = unique(Nlist);
+Nlist = Nlist(sort(Nidx));
 
 spongeRadius = 100000+zeros(size(Nlist));
 

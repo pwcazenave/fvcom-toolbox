@@ -28,7 +28,8 @@ function [Mobj] = add_river_nodes_list(Mobj,Nlist,RiverName)
 %
 % Revision history
 %    2013-01-02 KJA bug fix: amended usage of 'unique' to prevent it from
-%    sorting the values it returns.
+%    sorting the values it returns. Amended by Pierre to support pre-2012
+%    versions of MATLAB whilst giving the same result.
 %   
 %==========================================================================
 subname = 'add_river_nodes_list';
@@ -41,7 +42,10 @@ end
 %--------------------------------------------------------------------------
 % Get a unique list and make sure they are in the range of node numbers 
 %--------------------------------------------------------------------------
-Nlist = unique(Nlist,'stable');
+% Make this works in versions of MATLAB older than 2012a (newer versions
+% can just use unique(A, 'stable'), but checking versions is a pain).
+[~, Nidx] = unique(Nlist);
+Nlist = Nlist(sort(Nidx));
 
 if max(Nlist) > Mobj.nVerts
     fprintf('your river node number(s) exceed the total number of nodes in the domain\n');
