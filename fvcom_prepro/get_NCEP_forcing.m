@@ -66,10 +66,20 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 %   the toolbox's need. Also, we're not actually using 'pevpr' for the
 %   calculation of evaporation since we're estimating that from the latent
 %   heat net flux ('lhtfl'), so it's superfluous anyway.
+%   2013-06-28 Changed the way the Matlab version is determiend. Now using
+%   release data rather then version number. For example version 7.13 >
+%   verion 7.7 but 7.13 is not greater than 7.7.
 %
 %==========================================================================
 
 subname = 'get_NCEP_forcing';
+
+% Define date that matlab version 7.14 was released.
+% OPeNDAP was included in version 7.14
+% see http://en.wikipedia.org/wiki/MATLAB and
+% https://publicwiki.deltares.nl/display/OET/OPeNDAP+access+with+Matlab
+version_7_14_date = datenum(2012,3,1);
+%version_7_13_date = datenum(2011,9,1);
 
 global ftbverbose;
 if ftbverbose
@@ -136,7 +146,7 @@ for aa = 1:length(fields)
     % libraries to load the OPeNDAP data, otherwise we need the relevant
     % third-party toolbox.
     out = ver('MATLAB');
-    if str2double(out.Version) > 7.13
+    if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
 
         %ncid_info = ncinfo(ncep.(fields{aa}));
         ncid = netcdf.open(ncep.(fields{aa}));
@@ -212,7 +222,7 @@ for aa = 1:length(fields)
     if iscell(index_lon)
         data.(fields{aa}).lon = data_lon.lon(cat(1,index_lon{:}));
 
-        if str2double(out.Version) > 7.13
+        if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
             % varidlon = netcdf.inqVarID(ncid,'lon');
             % varidtime = netcdf.inqVarID(ncid,'time');
             % varidlat = netcdf.inqVarID(ncid,'lat');
@@ -286,7 +296,7 @@ for aa = 1:length(fields)
         % We have a straightforward data extraction
         data.(fields{aa}).lon = data_lon.lon(index_lon);
 
-        if str2double(out.Version) > 7.13
+        if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
             varid = netcdf.inqVarID(ncid,(fields{aa}));
             % [varname,xtype,dimids,natts] = netcdf.inqVar(ncid,varid);
             % [~,length1] = netcdf.inqDim(ncid,dimids(1))
