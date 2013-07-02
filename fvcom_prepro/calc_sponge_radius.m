@@ -22,7 +22,11 @@ function [spongeRadius] = calc_sponge_radius(Mobj,Nlist)
 %    spongeRadius = calc_sponge_radius(Mobj,Nlist)
 %
 % Author(s)
-%    Karen Thurston (National Oceanography Centre, Liverpool)
+%    Karen Amoudry (National Oceanography Centre, Liverpool)
+%
+% Revision history:
+%    2013-01-02 KJA bug fix: amended usage of 'unique' to prevent it from
+%    sorting the values it returns.
 %
 %==========================================================================
 subname = 'calc_sponge_radius';
@@ -35,7 +39,7 @@ end
 %--------------------------------------------------------------------------
 % Get a unique list and make sure they are in the range of node numbers 
 %--------------------------------------------------------------------------
-Nlist = unique(Nlist);
+Nlist = unique(Nlist,'stable');
 
 spongeRadius = 100000+zeros(size(Nlist));
 
@@ -43,7 +47,7 @@ spongeRadius = 100000+zeros(size(Nlist));
 for i =1:length(Nlist)
     % Find the neighbouring nodes
     [r,c]=find(Mobj.tri==Nlist(i));
-    neighbours = unique(Mobj.tri(r,:));
+    neighbours = unique(Mobj.tri(r,:),'stable');
     
     % Remove the node of interest from the neighbours list
     n = find(neighbours~=Nlist(i));

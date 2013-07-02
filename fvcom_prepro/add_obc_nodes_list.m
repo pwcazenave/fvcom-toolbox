@@ -24,10 +24,13 @@ function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType,plotFig)
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
+%    Karen Amoudry (National Oceanography Centre, Liverpool)
 %
 %
 % Revision history:
 %    2012-11-26 Add ability to turn off the figures.
+%    2013-01-02 KJA bug fix: amended usage of 'unique' in line 50 to
+%    prevent it from sorting the values it returns.
 %   
 %==========================================================================
 subname = 'add_obc_nodes';
@@ -45,7 +48,7 @@ end
 %--------------------------------------------------------------------------
 % Get a unique list and make sure they are in the range of node numbers 
 %--------------------------------------------------------------------------
-Nlist = unique(Nlist);
+Nlist = unique(Nlist,'stable');
 
 if(max(Nlist) > Mobj.nVerts);
   fprintf('your open boundary node number exceed the total number of nodes in the domain\n');
