@@ -1,8 +1,8 @@
-function data = get_MetUM_forcing(Mobj, modelTime, credentials)
+function met_files = get_MetUM_pp(Mobj, modelTime, credentials)
 % Get the required parameters from the Met Office Unified Model (TM)
 % (hereafter MetUM) to use in FVCOM surface forcing.
 %
-% data = get_MetUM_forcing(Mobj, modelTime, credentials)
+% data = get_MetUM_pp(Mobj, modelTime, credentials)
 %
 % DESCRIPTION:
 %   Using FTP access, extract the necessary parameters to create an FVCOM
@@ -16,10 +16,9 @@ function data = get_MetUM_forcing(Mobj, modelTime, credentials)
 %   FTP server.
 %
 % OUTPUT:
-%   data - struct of the data necessary to force FVCOM. These can be
-%   interpolated onto an unstructured grid in Mobj using grid2fvcom.m.
+%   met_files - cell array of file names downloaded from the BADC servers.
 %
-% The required parameters which can be obtained are:
+% The PP files downloaded give:
 %     - surface_net_downward_shortwave_flux (W m-2)
 %     - surface_downwelling_shortwave_flux_in_air (W m-2)
 %     - surface_net_downward_longwave_flux (W m-2)
@@ -37,69 +36,94 @@ function data = get_MetUM_forcing(Mobj, modelTime, credentials)
 % Precipitation is converted from kg/m^2/s to m/s. Evaporation is
 % calculated from the mean daily latent heat net flux (lhtfl) at the
 % surface.
+% 
+% EXAMPLE USAGE:
+%   metum_forcing = get_MetUM_pp(Mobj, [51725, 51757], ...
+%       {'username', 'password'});
 %
-% REQUIRES:
-%   The air_sea toolbox:
-%       http://woodshole.er.usgs.gov/operations/sea-mat/air_sea-html/index.html
+% TODO:
+%   Add support for the AP directories on the FTP server.
 %
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history:
 %   2013-05-07 First version.
+%   2013-06-24 Update some of the code to correctly separate the different
+%   directories (e.g. am vs mn in 2010). Also farm out the FTP and
+%   conversion from PP format to NetCDF to separate functions
+%   (get_BADC_data.m and pp2nc.m, respectively). Renamed the function from
+%   get_MetUM_forcing to get_MetUM_pp to better reflect what it does.
 %
 %==========================================================================
 subname = 'get_MetUM_forcing';
 
-global ftbverbose;
-if ftbverbose;
+global ftbverbose
+if ftbverbose
     fprintf('\nbegin : %s \n', subname)
 end
 
-% Get the extent of the model domain (in spherical)
-if ~Mobj.have_lonlat
-    error('Need spherical coordinates to extract the forcing data')
-else
-    % Add a 1 degree buffer to make sure the model domain is fully covered
-    % by the extracted data.
-    [dx, dy] = deal(1, 1);
-    extents = [min(Mobj.lon(:))-(2*dx), max(Mobj.lon(:))+(2*dx), min(Mobj.lat(:))-dy, max(Mobj.lat(:))+dy];
-end
-
-nt = modelTime(end) - modelTime(1);
+nt = ceil(modelTime(end)) - floor(modelTime(1));
 if nt > 365
     error('Can''t (yet) process more than a year at a time.')
 end
 
-[yearStart, monthStart, dayStart] = mjulian2greg(modelTime(1));
-[yearEnd, monthEnd, dayEnd] = mjulian2greg(modelTime(end));
+yearStart = mjulian2greg(modelTime(1));
+yearEnd = mjulian2greg(modelTime(end));
+
+% Four times daily outputs at 0000, 0600, 1200 and 1800
 t = modelTime(1):1/4:modelTime(end);
 
-if yearEnd ~= yearStart
-    error('Can''t (yet) process across a year boundary.')
-end
+assert(yearEnd == yearStart, 'Can''t (yet) process across a year boundary.')
+assert(yearStart >= 2006 && yearEnd <= 2012, 'The MetUM repository does not contain data earlier than 2006 and later than 2012')
 
-if yearStart < 2006 || yearEnd > 2012
-    error('The MetUM repository does not contain data earlier than 2006 and later than 2012')
-end
-
-% For the pre-2006 data, we need to download several files with unique
-% names. The names are based on the STASH numbers and the date:
+% For the pre-2010 data, we need to download several files with
+% unique names. The names are based on the STASH numbers and the date:
 %   naamYYYYMMDDHH_STASH#_00.pp
 % The numbers we're interested in are stored in stash.
-stash = [2, 3, 407, 408, 409, 4222, 9229, 16004];
-vars = {'uwnd', 'uwnd', 'vwnd', 'vwnd', 'slp_rho', 'slp_theta', ...
-    'surface_air_pressure', 'air_sw', 'air_lw', ...
-    'rhum', 'prate', 'temp_model', 'temp_press'};
+stash = [2, 3, 407, 408, 409, 4222, 9229, 16004, ...
+    1201, 1235, 2207, 2201, 3217, 3225, 3226, 3234, 3236, 3237, 3245, ...
+    5216, 16222, 20004];
+% The stash numbers, and their corresponding forcing type:
+%
+% |---------|-------------------------------------------|
+% | stash # | forcing type                              |
+% |-----------------------------------------------------|
+% |                         AM                          |
+% |-----------------------------------------------------|
+% | 2       | eastward_wind / x_wind                    |
+% | 3       | northward_wind / y_wind                   |
+% | 407     | air_pressure                              |
+% | 408     | air_pressure                              |
+% | 409     | surface_air_pressure                      |
+% | 4222    | RAILFALL RATE OUT OF MODEL LEVELS         |
+% | 9229    | RELATIVE HUMIDITY AFTER MAIN CLOUD        |
+% | 16004   | air_temperature                           |
+% |-----------------------------------------------------|
+% |                         AP                          |
+% |-----------------------------------------------------|
+% | 1201    | surface_net_downward_shortwave_flux       |
+% | 1235    | surface_downwelling_shortwave_flux_in_air |
+% | 2207    | surface_downwelling_longwave_flux_in_air  |
+% | 2201    | surface_net_downward_longwave_flux        |
+% | 3217    | surface_upward_sensible_heat_flux         |
+% | 3225    | eastward_wind / x_wind                    |
+% | 3226    | northward_wind / y_wind                   |
+% | 3234    | surface_upward_latenet_heat_flux          |
+% | 3236    | air_temperature                           |
+% | 3237    | specific_humidity                         |
+% | 3245    | relative_humidity                         |
+% | 5216    | precipitation_flux                        |
+% | 16222   | air_pressure_at_sea_level                 |
+% | 20004   | [RIVER OUTFLOW]                           |
+% |---------|-------------------------------------------|
+%
 
 ns = length(stash);
 
 % From where will we be downloading the data?
 site = 'ftp.ceda.ac.uk';
 basePath = 'badc/ukmo-um/data/nae/';
-
-% Open a remote connection to the FTP site
-remote = ftp(site, credentials(1), credentials(2));
 
 % Depending on the year we're extracting, we need to append different
 % directories to get the data. 
@@ -112,10 +136,13 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
 
     % Do 2010 first because it straddles the two directories.
     if year == 2010
-        if month < 11 && day < 4
+        % Use modified julian dates for the thresholds for each directory.
+        amthresh = greg2mjulian(2010, 11, 03, 00, 00, 00);
+
+        if greg2mjulian(year, month, day, hour, 00, 00) <= amthresh
             % Use the am data
             prefix = 'am';
-            URL = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
+            filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
                 prefix, ...
                 year, ...
                 month, ...
@@ -129,10 +156,10 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
                     hour, ...
                     stash(f));
             end
-        elseif month > 11 && day > 3
+        else
             % Use the mn data
             prefix = 'mn';
-            URL = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
+            filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
                 prefix, ...
                 year, ...
                 month, ...
@@ -144,6 +171,7 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
                 day, ...
                 hour);
         end
+        sprintf('%s', filepath);
 
     % Check the 2006 data are from the 7th November onwards.
     elseif year == 2006
@@ -152,7 +180,7 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
                 error('The MetUM repository does not contain data earlier than 7th November, 2006')
             else
                 prefix = 'am';
-                URL = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
+                filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
                     prefix, ...
                     year, ...
                     month, ...
@@ -178,7 +206,7 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
                 error('The MetUM repository does not contain data later than 17th January, 2012')
             else
                 prefix = 'mn';
-            URL = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
+            filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
                     prefix, ...
                     year, ...
                     month, ...
@@ -196,7 +224,7 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
     elseif year < 2010
         % Use the am data.
         prefix = 'am';
-            URL = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
+            filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
             prefix, ...
             year, ...
             month, ...
@@ -215,7 +243,7 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
     elseif year > 2010
         % Use the mn data.
         prefix = 'mn';
-            URL = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
+            filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
             prefix, ...
             year, ...
             month, ...
@@ -228,56 +256,10 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
             hour);
     end
 
-    fprintf('%s: %s\n', URL, files{1})
-end
+    met_files{i} = get_BADC_data(site, filepath, files, credentials);
 
-% Close the connection to the FTP server.
-close(remote)
+end
 
 if ftbverbose
     fprintf('end   : %s \n', subname)
 end
-
-
-function ftpdata = get_badc_data(remote, URL, files)
-% Child function to do the actual downloading from the BADC site via FTP.
-% 
-% Inputs:
-% 
-%   remote - FTP object
-%   URL - path to the files to download
-%   files - cell array of a file or files to download
-% 
-% Outputs:
-% 
-%   noidea...
-
-if ~iscell(files)
-    error('Provide a cell array of files to download')
-end
-
-cd(remote, URL);
-nf = length(files);
-for i = 1:nf
-    tmpdata = mget(remote, files{i});
-    ftpdata.(vars{i}).data = 
-end
-
-
-function pp2nc(file, convsh)
-% Child function to call the convsh program to convert the obscure pp
-% format to a sensible NetCDF which we can more easily read.
-
-% Assume convsh is in /usr/local unless otherwise told.
-if nargin == 1
-    convsh = '/usr/local/bin/convsh';
-end
-
-if exist(file, 'file') ~= 2
-    error('File %s not found', file)
-end
-
-[path, name, ext] = fileparts(file);
-out = fullfile(path, [name, '.nc']);
-
-system([convsh, '-i ', 

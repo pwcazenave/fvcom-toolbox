@@ -66,10 +66,20 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 %   the toolbox's need. Also, we're not actually using 'pevpr' for the
 %   calculation of evaporation since we're estimating that from the latent
 %   heat net flux ('lhtfl'), so it's superfluous anyway.
+%   2013-06-28 Changed the way the Matlab version is determiend. Now using
+%   release data rather then version number. For example version 7.13 >
+%   verion 7.7 but 7.13 is not greater than 7.7.
 %
 %==========================================================================
 
 subname = 'get_NCEP_forcing';
+
+% Define date that matlab version 7.14 was released.
+% OPeNDAP was included in version 7.14
+% see http://en.wikipedia.org/wiki/MATLAB and
+% https://publicwiki.deltares.nl/display/OET/OPeNDAP+access+with+Matlab
+version_7_14_date = datenum(2012,3,1);
+%version_7_13_date = datenum(2011,9,1);
 
 global ftbverbose;
 if ftbverbose
@@ -111,6 +121,10 @@ ncep.lhtfl  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanaly
 ncep.shtfl  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/shtfl.sfc.gauss.',num2str(year),'.nc'];
 % ncep.pevpr  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/pevpr.sfc.gauss.',num2str(year),'.nc'];
 
+% Possible future data to use?
+% Skin temperature
+% ncep.skt    = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/skt.sfc.gauss.',num2str(year),'.nc'];
+
 % The fields below can be used to create the net shortwave and longwave
 % fluxes if the data you're using don't include net fluxes. Subtract the
 % downward from upward fluxes to get net fluxes.
@@ -132,7 +146,7 @@ for aa = 1:length(fields)
     % libraries to load the OPeNDAP data, otherwise we need the relevant
     % third-party toolbox.
     out = ver('MATLAB');
-    if str2double(out.Version) > 7.13
+    if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
 
         %ncid_info = ncinfo(ncep.(fields{aa}));
         ncid = netcdf.open(ncep.(fields{aa}));
@@ -208,7 +222,7 @@ for aa = 1:length(fields)
     if iscell(index_lon)
         data.(fields{aa}).lon = data_lon.lon(cat(1,index_lon{:}));
 
-        if str2double(out.Version) > 7.13
+        if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
             % varidlon = netcdf.inqVarID(ncid,'lon');
             % varidtime = netcdf.inqVarID(ncid,'time');
             % varidlat = netcdf.inqVarID(ncid,'lat');
@@ -282,7 +296,7 @@ for aa = 1:length(fields)
         % We have a straightforward data extraction
         data.(fields{aa}).lon = data_lon.lon(index_lon);
 
-        if str2double(out.Version) > 7.13
+        if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
             varid = netcdf.inqVarID(ncid,(fields{aa}));
             % [varname,xtype,dimids,natts] = netcdf.inqVar(ncid,varid);
             % [~,length1] = netcdf.inqDim(ncid,dimids(1))
@@ -326,6 +340,14 @@ end
 
 % Now we have some data, we need to create some additional parameters
 % required by FVCOM.
+
+% FVCOM's sign convention is the opposite of the NCEP data for heat fluxes
+% (FVCOM: positive = downward flux = ocean heating, negative = upward flux
+% = ocean cooling. NCEP: positive = upward flux = ocean cooling, negative =
+% downward flux = ocean heating). So, rather than do the corrections in
+% create_files.m or wherever, do them here instead.
+% data.nlwrs.data = -data.nlwrs.data;
+% data.nswrs.data = -data.nswrs.data;
 
 % Convert precipitation from kg/m^2/s to m/s (required by FVCOM) by
 % dividing by freshwater density (kg/m^3).
