@@ -67,7 +67,7 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 %   calculation of evaporation since we're estimating that from the latent
 %   heat net flux ('lhtfl'), so it's superfluous anyway.
 %   2013-06-28 Changed the way the Matlab version is determiend. Now using
-%   release data rather then version number. For example version 7.13 >
+%   release date rather then version number. For example version 7.13 >
 %   verion 7.7 but 7.13 is not greater than 7.7.
 %
 %==========================================================================
