@@ -120,7 +120,7 @@ for t = 1:nt
     % Get the current 3D array of PML POLCOMS-ERSEM results.
     pctemp3 = pc.ETWD.data(:, :, :, t);
     pcsalt3 = pc.x1XD.data(:, :, :, t);
-    
+
     % Preallocate the intermediate results arrays.
     itempz = nan(nf, nz);
     isalz = nan(nf, nz);
