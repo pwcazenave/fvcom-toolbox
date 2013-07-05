@@ -90,7 +90,7 @@ for ii = 1:todo
             ncdata.(getVar).data = data;
         else
             if ndims(data) < 3
-                if strcmpi(varlist{var}, 'time')
+                if strcmpi(getVar, 'time')
                     % If the dimension is time, we need to be a bit more
                     % clever since we'll need a concatenated time series
                     % (in which values are continuous and from which we
