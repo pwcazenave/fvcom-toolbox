@@ -121,12 +121,6 @@ for t = 1:nt
     pctemp3 = pc.ETWD.data(:, :, :, t);
     pcsalt3 = pc.x1XD.data(:, :, :, t);
     
-    % Flip the vertical layer dimension to make the POLCOMS data go from
-    % surface to seabed to match its depth data and to match how FVCOM
-    % works.
-    pctemp3 = flipdim(pctemp3, 3);
-    pcsalt3 = flipdim(pcsalt3, 3);
-
     % Preallocate the intermediate results arrays.
     itempz = nan(nf, nz);
     isalz = nan(nf, nz);
@@ -298,12 +292,12 @@ end
 
 
 %%
-% % Plot a vertical profile for a boundary node (for my Irish Sea case, this
-% % is one of the ones along the Celtic Sea boundary). Also plot the
-% % distribution of interpolated values over the POLCOMS data. Add the
-% % location of the vertical profile (both FVCOM and POLCOMS) to the plot.
+% Plot a vertical profile for a boundary node (for my Irish Sea case, this
+% is one of the ones along the Celtic Sea boundary). Also plot the
+% distribution of interpolated values over the POLCOMS data. Add the
+% location of the vertical profile (both FVCOM and POLCOMS) to the plot.
 % nn = 55;   % open boundary index
-% tt = 1;     % time index
+% tt = 1;    % time index
 %
 % % Get the corresponding indices for the POLCOMS data
 % [~, xidx] = min(abs(lon(1, :) - fvlon(nn)));
@@ -322,7 +316,7 @@ end
 % subplot(2,2,2)
 % % Although POLCOMS stores its temperature values from seabed to surface,
 % % the depths are stored surface to seabed. Nice.
-% plot(squeeze(pc.ETWD.data(xidx, yidx, :, 1)), flipud(squeeze(pc.depth.data(xidx, yidx, :, 1))), 'rx-')
+% plot(squeeze(pc.ETWD.data(xidx, yidx, :, 1)), squeeze(pc.depth.data(xidx, yidx, :, 1)), 'rx-')
 % xlabel('Temperature (^{\circ}C)')
 % ylabel('Depth (m)')
 % title('POLCOMS')
@@ -349,15 +343,15 @@ end
 % dx = mean(diff(pc.lon.data));
 % dy = mean(diff(pc.lat.data));
 % pcolor(pc.lon.data - (dx / 2), pc.lat.data - (dy / 2), ...
-%     squeeze(pc.ETWD.data(:, :, end, tt))')
+%     squeeze(pc.ETWD.data(:, :, 1, tt))')
 % shading flat
 % axis('equal', 'tight')
 % daspect([1.5, 1, 1])
 % hold on
 % % Add the interpolated surface data (first sigma layer)
-% scatter(Mobj.lon(oNodes), Mobj.lat(oNodes), repmat(40, size(Mobj.lon(oNodes))), Mobj.temperature(:, 1, tt), 'filled', 'MarkerEdgeColor', 'k')
+% scatter(Mobj.lon(oNodes), Mobj.lat(oNodes), 40, Mobj.temperature(:, 1, tt), 'filled', 'MarkerEdgeColor', 'k')
 % axis([min(Mobj.lon(oNodes)), max(Mobj.lon(oNodes)), min(Mobj.lat(oNodes)), max(Mobj.lat(oNodes))])
-% caxis([6, 12])
+% caxis([6, 20])
 % plot(lon(yidx, xidx), lat(yidx, xidx), 'rs') % polcoms is all backwards
 % plot(Mobj.lon(oNodes(nn)), Mobj.lat(oNodes(nn)), 'wo')
 % colorbar
