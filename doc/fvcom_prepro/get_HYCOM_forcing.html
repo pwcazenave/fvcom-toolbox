@@ -1,0 +1,250 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_HYCOM_forcing</title>
+  <meta name="keywords" content="get_HYCOM_forcing">
+  <meta name="description" content="Get mean flow, temperature and salinity data from HYCOM model outputs">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_HYCOM_forcing.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_HYCOM_forcing
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Get mean flow, temperature and salinity data from HYCOM model outputs</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function data = get_HYCOM_forcing(Mobj, modelTime) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Get mean flow, temperature and salinity data from HYCOM model outputs
+ through their OPeNDAP server. 
+ 
+ data = get_HYCOM_forcing(Mobj, modelTime)
+ 
+ DESCRIPTION:
+   Using OPeNDAP, extract the necessary parameters to create an FVCOM
+   forcing file. Requires the OPeNDAP toolbox (see below for where to get
+   it).
+ 
+ INPUT: 
+   Mobj - MATLAB mesh object
+   modelTime - Modified Julian Date start and end times
+ 
+ OUTPUT:
+   data - struct of the data necessary to force FVCOM. These can be
+   interpolated onto an unstructured grid in Mobj using
+   grid2fvcom.m.
+ 
+ The parameters which are obtained from the HYCOM data are:
+     - temperature
+     - salinity
+     - u flow component
+     - v flow component
+     - sea surface height (ssh)
+ 
+ REQUIRES:
+   The OPeNDAP toolbox:
+       http://www.opendap.org/pub/contributed/source/ml-toolbox/
+ 
+ Author(s)
+   Pierre Cazenave (Plymouth Marine Laboratory)
+ 
+ Revision history:
+   2013-01-31 First version.
+ 
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function data = get_HYCOM_forcing(Mobj, modelTime)</a>
+0002 <span class="comment">% Get mean flow, temperature and salinity data from HYCOM model outputs</span>
+0003 <span class="comment">% through their OPeNDAP server.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% data = get_HYCOM_forcing(Mobj, modelTime)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%   Using OPeNDAP, extract the necessary parameters to create an FVCOM</span>
+0009 <span class="comment">%   forcing file. Requires the OPeNDAP toolbox (see below for where to get</span>
+0010 <span class="comment">%   it).</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% INPUT:</span>
+0013 <span class="comment">%   Mobj - MATLAB mesh object</span>
+0014 <span class="comment">%   modelTime - Modified Julian Date start and end times</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%   data - struct of the data necessary to force FVCOM. These can be</span>
+0018 <span class="comment">%   interpolated onto an unstructured grid in Mobj using</span>
+0019 <span class="comment">%   grid2fvcom.m.</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% The parameters which are obtained from the HYCOM data are:</span>
+0022 <span class="comment">%     - temperature</span>
+0023 <span class="comment">%     - salinity</span>
+0024 <span class="comment">%     - u flow component</span>
+0025 <span class="comment">%     - v flow component</span>
+0026 <span class="comment">%     - sea surface height (ssh)</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% REQUIRES:</span>
+0029 <span class="comment">%   The OPeNDAP toolbox:</span>
+0030 <span class="comment">%       http://www.opendap.org/pub/contributed/source/ml-toolbox/</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% Author(s)</span>
+0033 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">% Revision history:</span>
+0036 <span class="comment">%   2013-01-31 First version.</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">%==========================================================================</span>
+0039 
+0040 subname = <span class="string">'get_HYCOM_forcing'</span>;
+0041 
+0042 <span class="keyword">global</span> ftbverbose;
+0043 <span class="keyword">if</span>(ftbverbose);
+0044     fprintf(<span class="string">'\n'</span>)
+0045     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="comment">% Get the extent of the model domain (in spherical)</span>
+0049 <span class="keyword">if</span> ~Mobj.have_lonlat
+0050     error(<span class="string">'Need spherical coordinates to extract the forcing data'</span>)
+0051 <span class="keyword">else</span>
+0052     <span class="comment">% Add a buffer of one grid cell in latitude and two in longitude to</span>
+0053     <span class="comment">% make sure the model domain is fully covered by the extracted data.</span>
+0054     [dx, dy] = deal(2.5, 2.5); <span class="comment">% NCEP resolution in degrees</span>
+0055     extents = [min(Mobj.lon(:))-(2*dx), max(Mobj.lon(:))+(2*dx), min(Mobj.lat(:))-dy, max(Mobj.lat(:))+dy];
+0056 <span class="keyword">end</span>
+0057 
+0058 <span class="keyword">if</span> modelTime(end) - modelTime(1) &gt; 365
+0059     error(<span class="string">'Can''t (yet) process more than a year at a time.'</span>)
+0060 <span class="keyword">end</span>
+0061 
+0062 [yearStart, monStart, dayStart, hStart, mStart, sStart] = mjulian2greg(modelTime(1));
+0063 [yearEnd, monEnd, dayEnd, hEnd, mEnd, sEnd] = mjulian2greg(modelTime(end));
+0064 
+0065 <span class="keyword">if</span> yearEnd ~= yearStart
+0066     error(<span class="string">'Can''t (yet) process across a year boundary.'</span>)
+0067 <span class="keyword">else</span>
+0068     year = yearEnd;
+0069 <span class="keyword">end</span>
+0070 
+0071 <span class="keyword">if</span> year &lt; 2008 &amp;&amp; monStart &lt; 9
+0072     error(<span class="string">'Not using the legacy HYCOM model output. Select a start date from September 2008 onwards.'</span>)
+0073 <span class="keyword">elseif</span> (year &gt;= 2008 &amp;&amp; monStart &gt;= 9) &amp;&amp; (year &lt; 2009 &amp;&amp; monEnd &lt;= 5)
+0074     url = [<span class="string">'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.6/'</span>, num2str(year)];
+0075 <span class="keyword">elseif</span> (year &gt;= 2009 &amp;&amp; monStart &gt;= 5) &amp;&amp; (year &lt; 2011 &amp;&amp; monEnd &lt;= 1)
+0076     url = [<span class="string">'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.8/'</span>, num2str(year)];
+0077 <span class="keyword">elseif</span> (year &gt;= 2011 &amp;&amp; monStart &gt;= 1)
+0078     url = <span class="string">'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9'</span>;
+0079 <span class="keyword">else</span>
+0080     error(<span class="string">'Date is bef?'</span>)
+0081 <span class="keyword">end</span>
+0082 
+0083 <span class="comment">% Get the days of year for the start and end dates</span>
+0084 indStart = floor(datenum([yearStart, monStart, dayStart, hStart, mStart, sStart])) - datenum([yearStart, 1, 1]);
+0085 indEnd = ceil(datenum([yearEnd, monEnd, dayEnd, hEnd, mEnd, sEnd])) - datenum([yearEnd, 1, 1]);
+0086 <span class="comment">% Create the necessary string for the time indices.</span>
+0087 tInd = sprintf(<span class="string">'[%i:1:%i]'</span>, indStart, indEnd);
+0088 
+0089 <span class="comment">% Set up a struct of the HYCOM data sets in which we're interested.</span>
+0090 hycom.temp  = [url, <span class="string">'?temperature'</span>];
+0091 hycom.salt  = [url, <span class="string">'?salinity'</span>];
+0092 hycom.u     = [url, <span class="string">'?u'</span>];
+0093 hycom.v     = [url, <span class="string">'?v'</span>];
+0094 hycom.ssh   = [url, <span class="string">'?ssh'</span>];
+0095 hycom.time  = [url, <span class="string">'?MT'</span>];
+0096 hycom.X     = [url, <span class="string">'?X'</span>];
+0097 hycom.Y     = [url, <span class="string">'?Y'</span>];
+0098 hycom.lon   = [url, <span class="string">'?Longitude'</span>];
+0099 hycom.lat   = [url, <span class="string">'?Latitude'</span>];
+0100 
+0101 <span class="comment">% % The HYCOM OPeNDAP server is spectacularly slow (at the moment?). As such,</span>
+0102 <span class="comment">% % extracting even the entire lat/long arrays is painfully slow. Instead of</span>
+0103 <span class="comment">% % directly interrogating the server, we'll assume a uniformly spaced 1/12th</span>
+0104 <span class="comment">% % degree grid and use that to find the indices. We'll give ourself a bit of</span>
+0105 <span class="comment">% % wiggle-room to accommodate the inevitable inaccuracy in this method.</span>
+0106 <span class="comment">% [grid.X, grid.Y] = meshgrid(0:1/12:360, -90:1/12:90);</span>
+0107 <span class="comment">% grid.ids = inbox(extents, grid.X, grid.Y);</span>
+0108 <span class="comment">%</span>
+0109 <span class="comment">% if extents(1) &lt; 0 &amp;&amp; extents(2) &lt; 0</span>
+0110 <span class="comment">%     % This is OK, we can just shunt the values by 360.</span>
+0111 <span class="comment">%     extents(1) = extents(1) + 360;</span>
+0112 <span class="comment">%     extents(2) = extents(2) + 360;</span>
+0113 <span class="comment">%     index_lon = find(data_lon.lon &gt; extents(1) &amp; data_lon.lon &lt; extents(2));</span>
+0114 <span class="comment">% elseif extents(1) &lt; 0 &amp;&amp; extents(2) &gt; 0</span>
+0115 <span class="comment">%     % This is the tricky one. We'll do two passes to extract the</span>
+0116 <span class="comment">%     % western chunk first (extents(1)+360 to 360), then the eastern</span>
+0117 <span class="comment">%     % chunk (0-extents(2))</span>
+0118 <span class="comment">%     index_lon{1} = find(data_lon.lon &gt;= extents(1) + 360);</span>
+0119 <span class="comment">%     index_lon{2} = find(data_lon.lon &lt;= extents(2));</span>
+0120 <span class="comment">% else</span>
+0121 <span class="comment">%     % Dead easy, we're in the eastern hemisphere, so nothing too</span>
+0122 <span class="comment">%     % strenuous here</span>
+0123 <span class="comment">%     index_lon = find(data_lon.lon &gt; extents(1) &amp; data_lon.lon &lt; extents(2));</span>
+0124 <span class="comment">% end</span>
+0125 <span class="comment">%</span>
+0126 <span class="comment">% % Latitude is much more straightforward</span>
+0127 <span class="comment">% data_lat = loaddap([ncep.(fields{aa}),'?lat']);</span>
+0128 <span class="comment">% index_lat = find(data_lat.lat &gt; extents(3) &amp; data_lat.lat &lt; extents(4));</span>
+0129 
+0130 
+0131 
+0132 
+0133 <span class="comment">% Now get the latitude and longitude to calculate the indices representing</span>
+0134 <span class="comment">% the model domain.</span>
+0135 data.X.idx = loaddap(hycom.X);
+0136 data.Y.idx = loaddap(hycom.Y);
+0137 xIdx = length(data.X.idx.X) - 1;
+0138 yIdx = length(data.Y.idx.Y) - 1;
+0139 data.lon.all = loaddap([hycom.lon, sprintf(<span class="string">'[%i:1:%i]'</span>, 0, 0), sprintf(<span class="string">'[%i:1:%i]'</span>, 0, xIdx)]);
+0140 data.lat.all = loaddap([hycom.lat, sprintf(<span class="string">'[%i:1:%i]'</span>, 0, yIdx), sprintf(<span class="string">'[%i:1:%i]'</span>, 0, 0)]);
+0141 
+0142 fields = fieldnames(hycom);
+0143 
+0144 <span class="keyword">for</span> aa = 1:length(fields)
+0145     
+0146     <span class="comment">% Store the downloaded data in a struct with associated spatial and</span>
+0147     <span class="comment">% temporal data.</span>
+0148     data.(fields{aa}).data = [];
+0149     data.(fields{aa}).time = [];
+0150     data.(fields{aa}).lat = [];
+0151     data.(fields{aa}).lon = [];
+0152     data_attributes.(fields{aa}) = [];
+0153 
+0154     <span class="comment">% Get attributes from which to calculate length of various fields.</span>
+0155     data_attributes.(fields{aa}) = loaddap(<span class="string">'-A'</span>, [hycom.(fields{aa})]);
+0156     <span class="comment">% Get the data time and convert to Modified Julian Day.</span>
+0157     data_time = loaddap(hycom.time);
+0158 
+0159     timevec = datevec((data_time.time)/24+365);
+0160     data.time = greg2mjulian(timevec(:,1), timevec(:,2), timevec(:,3), <span class="keyword">...</span>
+0161         timevec(:,4), timevec(:,5), timevec(:,6));
+0162     <span class="comment">% Clip the time to the given range</span>
+0163     data_time_mask = data.time &gt;= modelTime(1) &amp; data.time &lt;= modelTime(end);
+0164     data_time_idx = 1:size(data.time,1);
+0165     data_time_idx = data_time_idx(data_time_mask);
+0166     data.time = data.time(data_time_mask);
+0167</pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

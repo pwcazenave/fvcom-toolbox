@@ -1,0 +1,263 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_POLPRED_spectide</title>
+  <meta name="keywords" content="get_POLPRED_spectide">
+  <meta name="description" content="Extract tidal harmonic phases and amplitudes from POLPRED ASCII files.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_POLPRED_spectide.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_POLPRED_spectide
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Extract tidal harmonic phases and amplitudes from POLPRED ASCII files.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Mobj] = get_POLPRED_spectide(Mobj, POLPRED) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Extract tidal harmonic phases and amplitudes from POLPRED ASCII files.
+
+ get_POLPRED_spectide(Mobj, POLPRED)
+
+ DESCRIPTION:
+    Extract POLPRED harmonic amplitude and phases for the nearest point in
+    the POLPRED grid to the open boundary nodes in Mobj.
+
+ INPUT:
+   Mobj    = MATLAB mesh object (see read_sms_mesh.m)
+   POLPRED = ASCII file of the POLPRED harmonics
+
+ OUTPUT:
+    Mobj  = MATLAB mesh object with two new arrays:
+       phase - Harmonic phases at each open boundary point
+       amp   - Harmonic amplitudes at each open boundary point
+
+ EXAMPLE USAGE
+    Mobj = get_POLPRED_spectide(Mobj, '/path/to/POLPRED.txt')
+
+ Author(s):  
+    Pierre Cazenave (Plymouth Marine Laboratory)
+ 
+ Revision history
+    2012-11-15 First version. Based in part on tide_tools.py from the
+    fvcom-py Python toolbox (https://bitbucket.org/pwcazenave/fvcom-py)
+    and Ricardo Torres' searchtides.m.
+   
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = get_POLPRED_spectide(Mobj, POLPRED)</a>
+0002 <span class="comment">% Extract tidal harmonic phases and amplitudes from POLPRED ASCII files.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% get_POLPRED_spectide(Mobj, POLPRED)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Extract POLPRED harmonic amplitude and phases for the nearest point in</span>
+0008 <span class="comment">%    the POLPRED grid to the open boundary nodes in Mobj.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   Mobj    = MATLAB mesh object (see read_sms_mesh.m)</span>
+0012 <span class="comment">%   POLPRED = ASCII file of the POLPRED harmonics</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% OUTPUT:</span>
+0015 <span class="comment">%    Mobj  = MATLAB mesh object with two new arrays:</span>
+0016 <span class="comment">%       phase - Harmonic phases at each open boundary point</span>
+0017 <span class="comment">%       amp   - Harmonic amplitudes at each open boundary point</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% EXAMPLE USAGE</span>
+0020 <span class="comment">%    Mobj = get_POLPRED_spectide(Mobj, '/path/to/POLPRED.txt')</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Author(s):</span>
+0023 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% Revision history</span>
+0026 <span class="comment">%    2012-11-15 First version. Based in part on tide_tools.py from the</span>
+0027 <span class="comment">%    fvcom-py Python toolbox (https://bitbucket.org/pwcazenave/fvcom-py)</span>
+0028 <span class="comment">%    and Ricardo Torres' searchtides.m.</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">%==========================================================================</span>
+0031 
+0032 subname = <span class="string">'get_POLPRED_spectide'</span>;
+0033 
+0034 <span class="keyword">global</span> ftbverbose;
+0035 <span class="keyword">if</span> ftbverbose
+0036   fprintf(<span class="string">'\n'</span>)
+0037   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0038 <span class="keyword">end</span>
+0039 
+0040 <span class="comment">% Check we have spherical coordinates in Mobj (we can't extract harmonics</span>
+0041 <span class="comment">% without them (easily)).</span>
+0042 <span class="keyword">if</span> ~Mobj.have_lonlat
+0043     error(<span class="string">'Spherical coordinates absent from Mobj. Cannot extract harmonics from cartesian coordinates.'</span>)
+0044 <span class="keyword">end</span>
+0045 
+0046 <span class="comment">% Read the POLPRED header into a struct of header names plus their values.</span>
+0047 fid = fopen(POLPRED,<span class="string">'rt'</span>);
+0048 <span class="keyword">if</span>(fid &lt; 0)
+0049     error([<span class="string">'file: '</span> POLPRED <span class="string">' does not exist'</span>]);
+0050 <span class="keyword">end</span>
+0051 
+0052 <span class="keyword">if</span> ftbverbose
+0053   fprintf([<span class="string">'reading from: '</span> POLPRED <span class="string">'\n'</span>])
+0054   fprintf(<span class="string">'extracting header\n'</span>)
+0055 <span class="keyword">end</span>
+0056 
+0057 readingHeader = true;
+0058 header = struct();
+0059 <span class="keyword">while</span> readingHeader
+0060     lin = fgetl(fid);
+0061     <span class="keyword">if</span> isempty(lin)
+0062         <span class="comment">% Got to the end of the header</span>
+0063         readingHeader = false;
+0064     <span class="keyword">else</span>
+0065         <span class="comment">% We have some header information. Load it into a struct.</span>
+0066         key = regexp(lin, <span class="string">':'</span>, <span class="string">'split'</span>);
+0067         header.(strtrim(regexprep(key{1}, <span class="string">' '</span>, <span class="string">'_'</span>))) = strtrim(key{2});
+0068     <span class="keyword">end</span>
+0069 <span class="keyword">end</span>
+0070 
+0071 <span class="comment">% Reformat the list of harmonics into a more sensible format</span>
+0072 header.Harmonics = regexp(header.Harmonics, <span class="string">' '</span>, <span class="string">'split'</span>);
+0073 
+0074 <span class="comment">% Get the positions in header.Harmonics for the constituents in which we're</span>
+0075 <span class="comment">% interested.</span>
+0076 
+0077 pInd = 1:length(header.Harmonics);
+0078 pIndUse = nan(length(Mobj.Components), 2);
+0079 <span class="keyword">for</span> i=1:length(Mobj.Components)
+0080     pPos = pInd(strcmp(Mobj.Components{i}, header.Harmonics));
+0081     <span class="keyword">if</span> isempty(pPos)
+0082         warning(<span class="string">'Supplied constituent (%s) is not present in the POLPRED data'</span>, Mobj.Components{i}) <span class="comment">%#ok&lt;WNTAG&gt;</span>
+0083     <span class="keyword">else</span>
+0084         <span class="comment">% Make index start at zero so the multiplication works, but</span>
+0085         <span class="comment">% compensate for that once the offset has been applied. Also add</span>
+0086         <span class="comment">% offset for the 2 columns (amplitude and phase).</span>
+0087         pIndUse(i, :) = (repmat((pPos - 1 ) * 6, 1, 2) + 1) + (0:1);
+0088     <span class="keyword">end</span>
+0089 <span class="keyword">end</span>
+0090 <span class="comment">% Add three to offset by the lat, lon and flag columns</span>
+0091 pIndUse = pIndUse + 3;
+0092 
+0093 <span class="comment">% Now we're at the data. Load it all into a massive array.</span>
+0094 <span class="keyword">if</span> ftbverbose
+0095   fprintf(<span class="string">'extracting data\n'</span>)
+0096 <span class="keyword">end</span>
+0097 
+0098 readingData = true;
+0099 i = 0;
+0100 <span class="comment">% Preallocate data to something big and then cut back afterwards (if</span>
+0101 <span class="comment">% necessary). Get the number of columns from the header and multiply by 6</span>
+0102 <span class="comment">% (amplitude and phases for z, u and v). Add three for the lat, lon and</span>
+0103 <span class="comment">% flag columns). The rows is the number of data lines in my files for the</span>
+0104 <span class="comment">% northwest European shelf domain.</span>
+0105 nCols = 3 + (str2double(header.Number_of_harmonics) * 6);
+0106 data = nan(358797, nCols);
+0107 <span class="keyword">if</span> ftbverbose
+0108     tic
+0109 <span class="keyword">end</span>
+0110 <span class="keyword">while</span> readingData
+0111     lin = fgetl(fid);
+0112     <span class="keyword">if</span> lin ~= -1 <span class="comment">% EOF is -1</span>
+0113         i = i + 1;
+0114         <span class="keyword">if</span> ftbverbose
+0115             <span class="keyword">if</span> mod(i, 10000) == 0
+0116                 fprintf(<span class="string">'line %i\n'</span>, i)
+0117             <span class="keyword">end</span>
+0118         <span class="keyword">end</span>
+0119         <span class="comment">% str2double doesn't work without a couple of calls to regexp,</span>
+0120         <span class="comment">% which makes it ~20x slower than str2num on its own. The regexp</span>
+0121         <span class="comment">% approach is still here if you don't believe me.</span>
+0122         data(i, :) = str2num(strtrim(lin)); <span class="comment">%#ok&lt;ST2NM&gt;</span>
+0123 <span class="comment">%         data(i, :) = str2double(regexp(regexprep(strtrim(lin), '\s+', ' '), ' ', 'split'));</span>
+0124     <span class="keyword">else</span>
+0125         <span class="keyword">if</span> ftbverbose
+0126             fprintf(<span class="string">'end of file at line %i\n'</span>, i)
+0127         <span class="keyword">end</span>
+0128         readingData = false;
+0129     <span class="keyword">end</span>
+0130 <span class="keyword">end</span>
+0131 <span class="keyword">if</span> ftbverbose
+0132     toc
+0133 <span class="keyword">end</span>
+0134 
+0135 fclose(fid);
+0136 
+0137 <span class="comment">% Clear out any additional NaNs in data from preallocation.</span>
+0138 data = reshape(data(~isnan(data)), i, nCols);
+0139 
+0140 <span class="comment">% Now we have the data, identify the indices of data which correspond to</span>
+0141 <span class="comment">% the nearest point to each open boundary point. This approach may not be</span>
+0142 <span class="comment">% the best: it might instead be better to simply read in the positions and</span>
+0143 <span class="comment">% create an index which we use to extract the harmonics of interest.</span>
+0144 <span class="comment">% However, we've got this far so might as well carry on.</span>
+0145 
+0146 <span class="comment">% Get the open boundary node IDs with which to extract their locations</span>
+0147 tmpObcNodes = Mobj.obc_nodes';
+0148 ObcNodes = tmpObcNodes(tmpObcNodes~=0)';
+0149 obc_lon = Mobj.lon(ObcNodes);
+0150 obc_lat = Mobj.lat(ObcNodes);
+0151 
+0152 <span class="comment">% For each position, find the nearest POLPRED value. Use the</span>
+0153 <span class="comment">% find_nearest_pt.m logic to get the nearest point (we can't use the</span>
+0154 <span class="comment">% function here because the values for which we're searching aren't in</span>
+0155 <span class="comment">% Mobj).</span>
+0156 distance = nan(size(obc_lon));
+0157 point = nan(size(distance));
+0158 <span class="comment">% Omit the NaNs in the indices from POLPRED when calculating the output</span>
+0159 <span class="comment">% array size.</span>
+0160 amp = nan(length(obc_lon), length(pIndUse(~isnan(pIndUse(:, 1)), 1)));
+0161 phase = nan(size(amp));
+0162 <span class="keyword">for</span> i=1:length(obc_lon)
+0163     radvec = sqrt((obc_lon(i)-data(:,2)).^2 + (obc_lat(i)-data(:,1)).^2);
+0164     [distance(i), point(i)] = min(radvec);
+0165     <span class="comment">% Get the amplitude and phase for each constituent (in order of</span>
+0166     <span class="comment">% Mobj.Components). Check for and omit NaNs here (for missing tidal</span>
+0167     <span class="comment">% constituents in the supplied list and what's given in POLPRED).</span>
+0168     amp(i, :) = data(point(i), pIndUse(~isnan(pIndUse(:, 1)), 1));
+0169     phase(i, :) = data(point(i), pIndUse(~isnan(pIndUse(:, 1)), 2));
+0170 <span class="keyword">end</span>
+0171 
+0172 <span class="comment">% Check for and warn about NaNs (-999.9 in POLPRED data).</span>
+0173 <span class="keyword">if</span> sum(amp(:)==-999.9) &gt; 0
+0174     warning(<span class="string">'NaN values (-999.9 in POLPRED terms) in the amplitude data. Are your boundaries on land?'</span>) <span class="comment">%#ok&lt;WNTAG&gt;</span>
+0175 <span class="keyword">end</span>
+0176 <span class="keyword">if</span> sum(phase(:)==-999.9) &gt; 0
+0177     warning(<span class="string">'NaN values (-999.9 in POLPRED terms) in the phase data. Are your boundaries on land?'</span>) <span class="comment">%#ok&lt;WNTAG&gt;</span>
+0178 <span class="keyword">end</span>
+0179 
+0180 Mobj.amp = amp;
+0181 Mobj.phase = phase;
+0182 
+0183 <span class="comment">% Plot the open boundary positions and the closest POLPRED point.</span>
+0184 <span class="comment">% figure(1000)</span>
+0185 <span class="comment">% plot(obc_lon, obc_lat, 'o')</span>
+0186 <span class="comment">% hold on</span>
+0187 <span class="comment">% plot(data(point,2), data(point,1), 'rx')</span>
+0188</pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

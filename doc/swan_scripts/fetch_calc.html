@@ -1,0 +1,222 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of fetch_calc</title>
+  <meta name="keywords" content="fetch_calc">
+  <meta name="description" content="close all; clear all;">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">swan_scripts</a> &gt; fetch_calc.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for swan_scripts&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>fetch_calc
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>close all; clear all;</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [fetch_struct] = fetch_calc(fvcom_mesh,fvcom_bath,lon,lat,zeta_min,zeta_max,nZeta,nTheta,dry_thresh,darc) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> close all; clear all;
+ fvcom_mesh = 'skg4.3_grd.dat';
+ fvcom_bath = 'skg4.3_dep.dat';
+ lon = -122.4721646 ;
+ lat = 48.3372476; 
+ zeta_min = -3;
+ zeta_max = 3;
+ nZeta = 30;
+ nTheta = 16;
+ dry_thresh = 0.1;
+ darc = 125;
+ Calculate fetch as a function of free surface height (positive up) and orientation 
+
+ function [fetch_struct] = fetch_calc(fvcom_mesh,lon,lat,zeta_min,zeta_max,dzeta,dtheta,dry_thresh) 
+
+ DESCRIPTION:
+   Calculate fetch as a function of free surface height (positive up) and orientation 
+
+ INPUT 
+   fvcom_mesh  = FVCOM 3.x grid file 
+   fvcom_bath  = FVCOM 3.x bathymetry file 
+   lon         = longitude of point
+   lat         = latitude of point
+   zeta_min    = minimum value of free surface height (m)
+   zeta_max    = maximum value of free surface height (m)
+   nZeta       = number of zeta partitions 
+   nTheta      = number of theta partitions 
+   dry_thresh  = threshold for a point to be dry
+   darc        = arc spacing in meters along which fetch is searched
+
+ OUTPUT:
+   fetch_struct = fetch structure containing fetch as a function of angle and free surface 
+                  height.  Angle is defined using Cartesian Wind Stress.  Thus the fetch 
+                  corresponding to an angle of pi/2 (90 degrees) is the
+                  fetch corresponding to a South wind (wind from South
+                  with Northward wind stress)
+
+ EXAMPLE USAGE
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="example_fetchcalc.html" class="code" title="">example_fetchcalc</a>	</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [fetch_struct] = fetch_calc(fvcom_mesh,fvcom_bath,lon,lat,zeta_min,zeta_max,nZeta,nTheta,dry_thresh,darc) </a>
+0002 <span class="comment">% close all; clear all;</span>
+0003 <span class="comment">% fvcom_mesh = 'skg4.3_grd.dat';</span>
+0004 <span class="comment">% fvcom_bath = 'skg4.3_dep.dat';</span>
+0005 <span class="comment">% lon = -122.4721646 ;</span>
+0006 <span class="comment">% lat = 48.3372476;</span>
+0007 <span class="comment">% zeta_min = -3;</span>
+0008 <span class="comment">% zeta_max = 3;</span>
+0009 <span class="comment">% nZeta = 30;</span>
+0010 <span class="comment">% nTheta = 16;</span>
+0011 <span class="comment">% dry_thresh = 0.1;</span>
+0012 <span class="comment">% darc = 125;</span>
+0013 <span class="comment">% Calculate fetch as a function of free surface height (positive up) and orientation</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% function [fetch_struct] = fetch_calc(fvcom_mesh,lon,lat,zeta_min,zeta_max,dzeta,dtheta,dry_thresh)</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% DESCRIPTION:</span>
+0018 <span class="comment">%   Calculate fetch as a function of free surface height (positive up) and orientation</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% INPUT</span>
+0021 <span class="comment">%   fvcom_mesh  = FVCOM 3.x grid file</span>
+0022 <span class="comment">%   fvcom_bath  = FVCOM 3.x bathymetry file</span>
+0023 <span class="comment">%   lon         = longitude of point</span>
+0024 <span class="comment">%   lat         = latitude of point</span>
+0025 <span class="comment">%   zeta_min    = minimum value of free surface height (m)</span>
+0026 <span class="comment">%   zeta_max    = maximum value of free surface height (m)</span>
+0027 <span class="comment">%   nZeta       = number of zeta partitions</span>
+0028 <span class="comment">%   nTheta      = number of theta partitions</span>
+0029 <span class="comment">%   dry_thresh  = threshold for a point to be dry</span>
+0030 <span class="comment">%   darc        = arc spacing in meters along which fetch is searched</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% OUTPUT:</span>
+0033 <span class="comment">%   fetch_struct = fetch structure containing fetch as a function of angle and free surface</span>
+0034 <span class="comment">%                  height.  Angle is defined using Cartesian Wind Stress.  Thus the fetch</span>
+0035 <span class="comment">%                  corresponding to an angle of pi/2 (90 degrees) is the</span>
+0036 <span class="comment">%                  fetch corresponding to a South wind (wind from South</span>
+0037 <span class="comment">%                  with Northward wind stress)</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">% EXAMPLE USAGE</span>
+0040 <span class="comment">%</span>
+0041 <span class="comment">% Author(s):</span>
+0042 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0043 <span class="comment">%</span>
+0044 <span class="comment">% Revision history</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">%==============================================================================</span>
+0047 
+0048 <span class="comment">%-------------------------------------------------</span>
+0049 <span class="comment">% load the mesh metrics</span>
+0050 <span class="comment">%-------------------------------------------------</span>
+0051 
+0052 <span class="comment">% read the Mesh from an FVCOM grid file</span>
+0053 Mobj = read_fvcom_mesh(fvcom_mesh); 
+0054 x = Mobj.x;
+0055 y = Mobj.y;
+0056 
+0057 <span class="comment">% read the bathymetry from an FVCOM grid file</span>
+0058 Mobj.h = read_fvcom_bath(fvcom_bath); 
+0059 h = Mobj.h;
+0060 
+0061 <span class="comment">% set cell center coordinates</span>
+0062 Mobj.xc = nodes2elems(x,Mobj);
+0063 Mobj.yc = nodes2elems(y,Mobj);
+0064 
+0065 <span class="comment">%-------------------------------------------------</span>
+0066 <span class="comment">% set grids in zeta and theta</span>
+0067 <span class="comment">%-------------------------------------------------</span>
+0068 theta = -pi:2*pi/nTheta:pi; nTheta=numel(theta);
+0069 zeta  = zeta_min:(zeta_max-zeta_min)/nZeta:zeta_max;
+0070 <span class="keyword">if</span>(zeta_min==zeta_max)
+0071   zeta = zeta_min;
+0072   nZeta = 1;
+0073 <span class="keyword">else</span>
+0074   nZeta = nZeta+1;
+0075 <span class="keyword">end</span>;
+0076 
+0077 <span class="comment">%-------------------------------------------------</span>
+0078 <span class="comment">% project observation point (lon,lat) =&gt; (x,y)</span>
+0079 <span class="comment">%-------------------------------------------------</span>
+0080 [xobs,yobs] = my_project(lon,lat,<span class="string">'forward'</span>); 
+0081 
+0082 
+0083 <span class="comment">%-------------------------------------------------</span>
+0084 <span class="comment">% compute elevation (positive up) of observation point</span>
+0085 <span class="comment">%-------------------------------------------------</span>
+0086 zobs = -griddata(x,y,h,xobs,yobs); 
+0087 
+0088 <span class="comment">%-------------------------------------------------</span>
+0089 <span class="comment">% loop over angles and depths, compute fetch</span>
+0090 <span class="comment">%-------------------------------------------------</span>
+0091 
+0092 radline = 0:darc:max(max(x)-min(x),max(y)-min(y)); nRad = numel(radline);
+0093 fetch = zeros(nTheta,nZeta);
+0094 hc = nodes2elems(Mobj.h,Mobj);
+0095 <span class="keyword">for</span> i=1:nTheta
+0096   fprintf(<span class="string">'searching theta %f\n'</span>,theta(i)*180/pi);
+0097   xline = xobs+radline*cos(theta(i)+pi);
+0098   yline = yobs+radline*sin(theta(i)+pi);
+0099   k = 1;
+0100   <span class="keyword">for</span> j=1:nZeta
+0101     elev = zeta(j); depth = hc+elev;
+0102     found = 0;
+0103     k = 1;
+0104     <span class="keyword">while</span> ~found
+0105       cell = inCell(Mobj,xline(k),yline(k));
+0106       <span class="keyword">if</span>(cell == 0)| (depth(cell) &lt; dry_thresh);
+0107         fetch(i,j) = radline(k);
+0108         <span class="comment">%fprintf('found at k = %d\n',k)</span>
+0109         found = true;
+0110       <span class="keyword">end</span>
+0111       k = k + 1;
+0112     <span class="keyword">end</span>;
+0113   <span class="keyword">end</span>;
+0114 <span class="keyword">end</span>;
+0115            
+0116 
+0117 <span class="comment">%-------------------------------------------------</span>
+0118 <span class="comment">% save to a structure</span>
+0119 <span class="comment">%-------------------------------------------------</span>
+0120 
+0121 fetch_struct.xobs  = xobs;
+0122 fetch_struct.yobs  = yobs;
+0123 fetch_struct.zobs  = zobs;
+0124 fetch_struct.theta = theta;
+0125 fetch_struct.zeta  = zeta;
+0126 fetch_struct.fetch = fetch;
+0127 fetch_struct.xmesh = x;
+0128 fetch_struct.ymesh = y;
+0129 fetch_struct.hmesh = h;
+0130 
+0131</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

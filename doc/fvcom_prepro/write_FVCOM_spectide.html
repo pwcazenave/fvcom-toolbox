@@ -1,0 +1,248 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_FVCOM_spectide</title>
+  <meta name="keywords" content="write_FVCOM_spectide">
+  <meta name="description" content="Write an FVCOM spectral tidal elevation forcing file">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_FVCOM_spectide.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_FVCOM_spectide
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Write an FVCOM spectral tidal elevation forcing file</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_FVCOM_spectide(ObcNodes,Components,Period,Phase,Amp,BetaLove,EquilibriumAmp,SpectralFile,MyTitle) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Write an FVCOM spectral tidal elevation forcing file
+
+ function write_FVCOM_spectide(ObcNodes,Components,Period,Phase,Amp,BetaLove,EquilibriumAmp,SpectralFile,MyTitle)
+
+ DESCRIPTION:
+    Write an FVCOM NetCDF spectral tidal elevation forcing file
+
+ INPUT:
+   ObcNodes     = list of open boundary nodes of size [nObcs]
+   Components   = list of component names (e.g. 'M2', 'N2' etc.) [nComponents]
+   Period       = list of periods in seconds of size [nComponents]
+   Phase        = list of phases in degrees of size [nObcs,nComponents]
+   Amp          = list of amplitudes (m) of size [nObcs,nComponents]
+   BetaLove     = list of beta Love numbers [nComponents]
+   EquilibriumAmp = list of equilibrium tidal amplitudes [nComponents]
+   SpectralFile = name of NetCDF file
+   MyTitle      = case title, written as global attribute of NetCDF file
+
+ OUTPUT:
+    SpectralFile, A NetCDF FVCOM spectral tide forcing file
+
+ EXAMPLE USAGE
+    write_FVCOM_spectide(ObcNodes,Period,Phase,Amp,SpectralFile,MyTitle)
+
+ Author(s):
+    Geoff Cowles (University of Massachusetts Dartmouth)
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+    2012-06-14 Ported NetCDF write to use MATLAB's native NetCDF support.
+    Requires MATLAB v2010a or greater.
+    2012-08-02 Added beta (Love) number and equilibrium amplitude support
+    when writing output.
+
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="set_spectide.html" class="code" title="function set_spectide(Mobj,nComps,SpectralFile,MyTitle)">set_spectide</a>	Setup spectral tides on the open boundary and dump a spectral file</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_spectide(ObcNodes,Components,Period,Phase,Amp,BetaLove,EquilibriumAmp,SpectralFile,MyTitle)</a>
+0002 
+0003 <span class="comment">% Write an FVCOM spectral tidal elevation forcing file</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function write_FVCOM_spectide(ObcNodes,Components,Period,Phase,Amp,BetaLove,EquilibriumAmp,SpectralFile,MyTitle)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Write an FVCOM NetCDF spectral tidal elevation forcing file</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   ObcNodes     = list of open boundary nodes of size [nObcs]</span>
+0012 <span class="comment">%   Components   = list of component names (e.g. 'M2', 'N2' etc.) [nComponents]</span>
+0013 <span class="comment">%   Period       = list of periods in seconds of size [nComponents]</span>
+0014 <span class="comment">%   Phase        = list of phases in degrees of size [nObcs,nComponents]</span>
+0015 <span class="comment">%   Amp          = list of amplitudes (m) of size [nObcs,nComponents]</span>
+0016 <span class="comment">%   BetaLove     = list of beta Love numbers [nComponents]</span>
+0017 <span class="comment">%   EquilibriumAmp = list of equilibrium tidal amplitudes [nComponents]</span>
+0018 <span class="comment">%   SpectralFile = name of NetCDF file</span>
+0019 <span class="comment">%   MyTitle      = case title, written as global attribute of NetCDF file</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% OUTPUT:</span>
+0022 <span class="comment">%    SpectralFile, A NetCDF FVCOM spectral tide forcing file</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% EXAMPLE USAGE</span>
+0025 <span class="comment">%    write_FVCOM_spectide(ObcNodes,Period,Phase,Amp,SpectralFile,MyTitle)</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Author(s):</span>
+0028 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0029 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Revision history</span>
+0032 <span class="comment">%    2012-06-14 Ported NetCDF write to use MATLAB's native NetCDF support.</span>
+0033 <span class="comment">%    Requires MATLAB v2010a or greater.</span>
+0034 <span class="comment">%    2012-08-02 Added beta (Love) number and equilibrium amplitude support</span>
+0035 <span class="comment">%    when writing output.</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">%==============================================================================</span>
+0038 
+0039 <span class="keyword">global</span> ftbverbose
+0040 report = false;
+0041 <span class="keyword">if</span>(ftbverbose); report = true; <span class="keyword">end</span>;
+0042 subname = <span class="string">'write_FVCOM_spectide'</span>;
+0043 <span class="keyword">if</span>(report);  fprintf(<span class="string">'\n'</span>); <span class="keyword">end</span>;
+0044 <span class="keyword">if</span>(report); fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>]); <span class="keyword">end</span>;
+0045 <span class="comment">%------------------------------------------------------------------------------</span>
+0046 <span class="comment">% Sanity check on input and dimensions</span>
+0047 <span class="comment">%------------------------------------------------------------------------------</span>
+0048 nComponents = numel(Period);
+0049 <span class="keyword">if</span>(report); fprintf(<span class="string">'Number of Tide Components %d\n'</span>,nComponents); <span class="keyword">end</span>;
+0050 
+0051 nObcs = numel(ObcNodes);
+0052 <span class="keyword">if</span>(report); fprintf(<span class="string">'Number of Open Boundary Nodes %d\n'</span>,nObcs); <span class="keyword">end</span>;
+0053 
+0054 [chk1,chk2] = size(Amp);
+0055 <span class="keyword">if</span>( (nObcs-chk1)*(nComponents-chk2) ~= 0)
+0056     fprintf(<span class="string">'Amp dimensions do not match!!!'</span>)
+0057     fprintf(<span class="string">'nObcs %d nComponents %d\n'</span>,chk1,chk2)
+0058     error(<span class="string">'bad'</span>);
+0059 <span class="keyword">end</span>;
+0060 
+0061 [chk1,chk2] = size(Phase);
+0062 <span class="keyword">if</span>( (nObcs-chk1)*(nComponents-chk2) ~= 0)
+0063     fprintf(<span class="string">'Phase dimensions do not match!!!'</span>)
+0064     fprintf(<span class="string">'nObcs %d nComponents %d\n'</span>,chk1,chk2)
+0065     error(<span class="string">'bad'</span>);
+0066 <span class="keyword">end</span>;
+0067 
+0068 <span class="comment">%%</span>
+0069 <span class="comment">%------------------------------------------------------------------------------</span>
+0070 <span class="comment">% Dump the file</span>
+0071 <span class="comment">%------------------------------------------------------------------------------</span>
+0072 
+0073 nc=netcdf.create(SpectralFile,<span class="string">'clobber'</span>);
+0074 
+0075 <span class="comment">% define global attributes</span>
+0076 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM SPECTRAL ELEVATION FORCING FILE'</span>)
+0077 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,MyTitle)
+0078 ComponentsOut = char();
+0079 <span class="keyword">for</span> i=1:nComponents
+0080     <span class="keyword">if</span> i == 1
+0081         ComponentsOut = Components{i};
+0082     <span class="keyword">else</span>
+0083         ComponentsOut = [ComponentsOut, <span class="string">' '</span>, Components{i}];
+0084     <span class="keyword">end</span>
+0085 <span class="keyword">end</span>
+0086 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'components'</span>,ComponentsOut)
+0087 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'FILE CREATED using write_FVCOM_spectide'</span>)
+0088 
+0089 <span class="comment">% define dimensions</span>
+0090 one_dimid=netcdf.defDim(nc,<span class="string">'one'</span>,1);
+0091 nobc_dimid=netcdf.defDim(nc,<span class="string">'nobc'</span>,nObcs);
+0092 tidal_components_dimid=netcdf.defDim(nc,<span class="string">'tidal_components'</span>,nComponents);
+0093 date_str_len_dimid=netcdf.defDim(nc,<span class="string">'DateStrLen'</span>,26);
+0094 
+0095 <span class="comment">% define variables and attributes</span>
+0096 nobc_varid=netcdf.defVar(nc,<span class="string">'obc_nodes'</span>,<span class="string">'NC_INT'</span>,nobc_dimid);
+0097 netcdf.putAtt(nc,nobc_varid,<span class="string">'long_name'</span>,<span class="string">'Open Boundary Node Number'</span>);
+0098 netcdf.putAtt(nc,nobc_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
+0099 
+0100 tide_period_varid=netcdf.defVar(nc,<span class="string">'tide_period'</span>,<span class="string">'NC_FLOAT'</span>,tidal_components_dimid);
+0101 netcdf.putAtt(nc,tide_period_varid,<span class="string">'long_name'</span>,<span class="string">'tide angular period'</span>);
+0102 netcdf.putAtt(nc,tide_period_varid,<span class="string">'units'</span>,<span class="string">'seconds'</span>);
+0103 
+0104 tide_Eref_varid=netcdf.defVar(nc,<span class="string">'tide_Eref'</span>,<span class="string">'NC_FLOAT'</span>,nobc_dimid);
+0105 netcdf.putAtt(nc,tide_Eref_varid,<span class="string">'long_name'</span>,<span class="string">'tidal elevation reference level'</span>);
+0106 netcdf.putAtt(nc,tide_Eref_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0107 
+0108 tide_Ephase_varid=netcdf.defVar(nc,<span class="string">'tide_Ephase'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid,tidal_components_dimid]);
+0109 netcdf.putAtt(nc,tide_Ephase_varid,<span class="string">'long_name'</span>,<span class="string">'tidal elevation phase angle'</span>);
+0110 netcdf.putAtt(nc,tide_Ephase_varid,<span class="string">'units'</span>,<span class="string">'degrees, time of maximum elevation with respect to chosen time origin'</span>);
+0111 
+0112 tide_Eamp_varid=netcdf.defVar(nc,<span class="string">'tide_Eamp'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid,tidal_components_dimid]);
+0113 netcdf.putAtt(nc,tide_Eamp_varid,<span class="string">'long_name'</span>,<span class="string">'tidal elevation amplitude'</span>);
+0114 netcdf.putAtt(nc,tide_Eamp_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0115 
+0116 equilibrium_tide_Eamp_varid=netcdf.defVar(nc,<span class="string">'equilibrium_tide_Eamp'</span>,<span class="string">'NC_FLOAT'</span>,tidal_components_dimid);
+0117 netcdf.putAtt(nc,equilibrium_tide_Eamp_varid,<span class="string">'long_name'</span>,<span class="string">'equilibrium tidal elevation amplitude'</span>);
+0118 netcdf.putAtt(nc,equilibrium_tide_Eamp_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0119 
+0120 equilibrium_beta_love_varid=netcdf.defVar(nc,<span class="string">'equilibrium_beta_love'</span>,<span class="string">'NC_FLOAT'</span>,tidal_components_dimid);
+0121 netcdf.putAtt(nc,equilibrium_beta_love_varid,<span class="string">'formula'</span>,<span class="string">'beta=1+klove-hlove'</span>);
+0122 
+0123 date_str_len_varid=netcdf.defVar(nc,<span class="string">'equilibrium_tide_type'</span>,<span class="string">'NC_CHAR'</span>,[date_str_len_dimid,tidal_components_dimid]);
+0124 netcdf.putAtt(nc,date_str_len_varid,<span class="string">'long_name'</span>,<span class="string">'formula'</span>);
+0125 netcdf.putAtt(nc,date_str_len_varid,<span class="string">'units'</span>,<span class="string">'beta=1+klove-hlove'</span>);
+0126 
+0127 time_origin_varid=netcdf.defVar(nc,<span class="string">'time_origin'</span>,<span class="string">'NC_FLOAT'</span>,one_dimid);
+0128 netcdf.putAtt(nc,time_origin_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
+0129 netcdf.putAtt(nc,time_origin_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
+0130 netcdf.putAtt(nc,time_origin_varid,<span class="string">'format'</span>,<span class="string">'modified julian day (MJD)'</span>);
+0131 netcdf.putAtt(nc,time_origin_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
+0132 netcdf.putAtt(nc,time_origin_varid,<span class="string">'comments'</span>,<span class="string">'tidal harmonic origin_date:1899-12-31 12:00:00'</span>);
+0133 
+0134 <span class="comment">% end definitions</span>
+0135 netcdf.endDef(nc);
+0136 
+0137 <span class="comment">% write data</span>
+0138 netcdf.putVar(nc,nobc_varid,ObcNodes);
+0139 netcdf.putVar(nc,tide_period_varid,Period);
+0140 netcdf.putVar(nc,tide_Eref_varid,zeros(1,nObcs));
+0141 netcdf.putVar(nc,tide_Ephase_varid,Phase);
+0142 netcdf.putVar(nc,tide_Eamp_varid,Amp);
+0143 netcdf.putVar(nc,equilibrium_tide_Eamp_varid,EquilibriumAmp);
+0144 netcdf.putVar(nc,equilibrium_beta_love_varid,BetaLove);
+0145 
+0146 nStringOut=char();
+0147 <span class="keyword">for</span> i=1:nComponents
+0148     <span class="keyword">if</span> Period(i) &lt;= 13*3600 <span class="comment">% Be a bit fuzzy to get the M2 in</span>
+0149         <span class="comment">% Semi-diurnal</span>
+0150         nStringOut = [nStringOut, <span class="string">'SEMIDIURNAL               '</span>];
+0151     <span class="keyword">elseif</span> (Period(i) &gt; 13*3600 &amp;&amp; Period(i) &lt; 28*3600)
+0152         <span class="comment">% Diurnal</span>
+0153         nStringOut = [nStringOut, <span class="string">'DIURNAL                   '</span>];
+0154     <span class="keyword">else</span>
+0155         <span class="comment">% Just call them all 'long period'</span>
+0156         warning(<span class="string">'FVCOM does not (apparently) support long period harmonics. This output may cause the model to crash during initialisation.'</span>)
+0157         nStringOut = [nStringOut, <span class="string">'LONG PERIOD               '</span>];
+0158     <span class="keyword">end</span>
+0159 <span class="keyword">end</span>
+0160 netcdf.putVar(nc,date_str_len_varid,nStringOut);
+0161 netcdf.putVar(nc,time_origin_varid,15019.5);
+0162 
+0163 <span class="comment">% close file</span>
+0164 netcdf.close(nc);
+0165 
+0166 <span class="keyword">if</span>(report); fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>]); <span class="keyword">end</span>;
+0167</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

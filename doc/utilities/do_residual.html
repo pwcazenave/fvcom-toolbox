@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of do_residual</title>
+  <meta name="keywords" content="do_residual">
+  <meta name="description" content="DO_RESIDUAL Takes the u and v vectors of a model output and calculates">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; do_residual.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>do_residual
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>DO_RESIDUAL Takes the u and v vectors of a model output and calculates</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [rDir,rMag,uRes,vRes]=do_residual(u,v,dt) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> DO_RESIDUAL Takes the u and v vectors of a model output and calculates
+ the long-term direction and magnitude for that data.
+ 
+   [RDIR,RMAG,URES,VRES]=DO_RESIDUAL(U,V,DT) takes the residual direction
+   (RDIR) and magnitude RMAG) of the data in U and V sampled at interval
+   DT. URES and UDIR are the summed U and V positions (the raw data for a
+   progresive vector diagram). Direction output is in degrees, vector
+   magnitude in units/s.
+ 
+ Pierre Cazenave PML 20/03/2012.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="do_residual_plot.html" class="code" title="function [Plots]=do_residual_plot(plotOPTS,FVCOM,dt)">do_residual_plot</a>	Take the output of do_residual and plot as a vector figure. Summarises a</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [rDir,rMag,uRes,vRes]=do_residual(u,v,dt)</a>
+0002 <span class="comment">% DO_RESIDUAL Takes the u and v vectors of a model output and calculates</span>
+0003 <span class="comment">% the long-term direction and magnitude for that data.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%   [RDIR,RMAG,URES,VRES]=DO_RESIDUAL(U,V,DT) takes the residual direction</span>
+0006 <span class="comment">%   (RDIR) and magnitude RMAG) of the data in U and V sampled at interval</span>
+0007 <span class="comment">%   DT. URES and UDIR are the summed U and V positions (the raw data for a</span>
+0008 <span class="comment">%   progresive vector diagram). Direction output is in degrees, vector</span>
+0009 <span class="comment">%   magnitude in units/s.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% Pierre Cazenave PML 20/03/2012.</span>
+0012 <span class="comment">%</span>
+0013 
+0014 <span class="comment">% Loosely based on my original dfsuResidual.m and processResidual function</span>
+0015 <span class="comment">% for DHI's MIKE21 software, which in turn were based on Dave Lambkin's</span>
+0016 <span class="comment">% residual analysis scripts.</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% TODO: Make it possible to specify the average for all layers (i.e. NZ is</span>
+0019 <span class="comment">% all layers).</span>
+0020 
+0021 <span class="comment">% Let's do it...</span>
+0022 
+0023 toSecFactor=24*60*60;
+0024 
+0025 nElements=size(u,1);
+0026 nLayers=size(u,2);
+0027 nTimeSteps=size(u,3);
+0028 
+0029 <span class="comment">% Some tidal assumptions. This will need to change in areas in which the</span>
+0030 <span class="comment">% diurnal tide dominates over the semidiurnal.</span>
+0031 tideCycle=(12+(25/60))/24;
+0032 tideWindow=ceil(tideCycle/dt);
+0033 tideDuration=(mean((dt*nTimeSteps)-tideCycle)-mean(tideCycle))*toSecFactor;
+0034 
+0035 <span class="comment">% Preallocate outputs.</span>
+0036 uRes=zeros(nElements,nLayers,nTimeSteps);
+0037 vRes=zeros(nElements,nLayers,nTimeSteps);
+0038 uSum=nan(nElements,nTimeSteps,nLayers);
+0039 vSum=nan(nElements,nTimeSteps,nLayers);
+0040 uStart=nan(nElements,nLayers);
+0041 vStart=nan(nElements,nLayers);
+0042 uEnd=nan(nElements,nLayers);
+0043 vEnd=nan(nElements,nLayers);
+0044 
+0045 <span class="keyword">for</span> hh=1:nLayers
+0046     uSum(:,:,hh)=cumsum(squeeze(u(:,hh,:)),2);
+0047     vSum(:,:,hh)=cumsum(squeeze(v(:,hh,:)),2);
+0048     <span class="keyword">for</span> ii=1:nTimeSteps;
+0049         uRes(:,hh,ii)=uRes(:,hh,ii)+(uSum(:,ii,hh).*(dt*toSecFactor));
+0050         vRes(:,hh,ii)=vRes(:,hh,ii)+(vSum(:,ii,hh).*(dt*toSecFactor));
+0051     <span class="keyword">end</span>
+0052     uStart(:,hh)=mean(squeeze(uRes(:,hh,1:tideWindow)),2);
+0053     vStart(:,hh)=mean(squeeze(vRes(:,hh,1:tideWindow)),2);
+0054     uEnd(:,hh)=mean(squeeze(uRes(:,hh,end-tideWindow:end)),2);
+0055     vEnd(:,hh)=mean(squeeze(vRes(:,hh,end-tideWindow:end)),2);
+0056 <span class="keyword">end</span>
+0057 
+0058 uDiff=uEnd-uStart;
+0059 vDiff=vEnd-vStart;
+0060 
+0061 <span class="comment">% Calculate direction and magnitude.</span>
+0062 rDir=atan2(uDiff,vDiff)*(180/pi); <span class="comment">% in degrees.</span>
+0063 rMag=sqrt(uDiff.^2+vDiff.^2)/tideDuration; <span class="comment">% in units/s.</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of deg2utm</title>
+  <meta name="keywords" content="deg2utm">
+  <meta name="description" content="-------------------------------------------------------------------------">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; deg2utm.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>deg2utm
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>-------------------------------------------------------------------------</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function  [x,y,utmzone] = deg2utm(Lat,Lon) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> -------------------------------------------------------------------------
+ [x,y,utmzone] = deg2utm(Lat,Lon)
+
+ Description: Function to convert lat/lon vectors into UTM coordinates (WGS84).
+ Some code has been extracted from UTM.m function by Gabriel Ruiz Martinez.
+
+ Inputs:
+    Lat: Latitude vector.   Degrees.  +ddd.ddddd  WGS84
+    Lon: Longitude vector.  Degrees.  +ddd.ddddd  WGS84
+
+ Outputs:
+    x, y , utmzone.   See example
+
+ Example 1:
+    Lat=[40.3154333; 46.283900; 37.577833; 28.645650; 38.855550; 25.061783];
+    Lon=[-3.4857166; 7.8012333; -119.95525; -17.759533; -94.7990166; 121.640266];
+    [x,y,utmzone] = deg2utm(Lat,Lon);
+    fprintf('%7.0f ',x)
+       458731  407653  239027  230253  343898  362850
+    fprintf('%7.0f ',y)
+      4462881 5126290 4163083 3171843 4302285 2772478
+    utmzone =
+       30 T
+       32 T
+       11 S
+       28 R
+       15 S
+       51 R
+
+ Example 2: If you have Lat/Lon coordinates in Degrees, Minutes and Seconds
+    LatDMS=[40 18 55.56; 46 17 2.04];
+    LonDMS=[-3 29  8.58;  7 48 4.44];
+    Lat=dms2deg(mat2dms(LatDMS)); %convert into degrees
+    Lon=dms2deg(mat2dms(LonDMS)); %convert into degrees
+    [x,y,utmzone] = deg2utm(Lat,Lon)
+
+ Author: 
+   Rafael Palacios
+   Universidad Pontificia Comillas
+   Madrid, Spain
+ Version: Apr/06, Jun/06, Aug/06, Aug/06
+ Aug/06: fixed a problem (found by Rodolphe Dewarrat) related to southern 
+    hemisphere coordinates. 
+ Aug/06: corrected m-Lint warnings
+-------------------------------------------------------------------------</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function  [x,y,utmzone] = deg2utm(Lat,Lon)</a>
+0002 <span class="comment">% -------------------------------------------------------------------------</span>
+0003 <span class="comment">% [x,y,utmzone] = deg2utm(Lat,Lon)</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% Description: Function to convert lat/lon vectors into UTM coordinates (WGS84).</span>
+0006 <span class="comment">% Some code has been extracted from UTM.m function by Gabriel Ruiz Martinez.</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% Inputs:</span>
+0009 <span class="comment">%    Lat: Latitude vector.   Degrees.  +ddd.ddddd  WGS84</span>
+0010 <span class="comment">%    Lon: Longitude vector.  Degrees.  +ddd.ddddd  WGS84</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% Outputs:</span>
+0013 <span class="comment">%    x, y , utmzone.   See example</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% Example 1:</span>
+0016 <span class="comment">%    Lat=[40.3154333; 46.283900; 37.577833; 28.645650; 38.855550; 25.061783];</span>
+0017 <span class="comment">%    Lon=[-3.4857166; 7.8012333; -119.95525; -17.759533; -94.7990166; 121.640266];</span>
+0018 <span class="comment">%    [x,y,utmzone] = deg2utm(Lat,Lon);</span>
+0019 <span class="comment">%    fprintf('%7.0f ',x)</span>
+0020 <span class="comment">%       458731  407653  239027  230253  343898  362850</span>
+0021 <span class="comment">%    fprintf('%7.0f ',y)</span>
+0022 <span class="comment">%      4462881 5126290 4163083 3171843 4302285 2772478</span>
+0023 <span class="comment">%    utmzone =</span>
+0024 <span class="comment">%       30 T</span>
+0025 <span class="comment">%       32 T</span>
+0026 <span class="comment">%       11 S</span>
+0027 <span class="comment">%       28 R</span>
+0028 <span class="comment">%       15 S</span>
+0029 <span class="comment">%       51 R</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Example 2: If you have Lat/Lon coordinates in Degrees, Minutes and Seconds</span>
+0032 <span class="comment">%    LatDMS=[40 18 55.56; 46 17 2.04];</span>
+0033 <span class="comment">%    LonDMS=[-3 29  8.58;  7 48 4.44];</span>
+0034 <span class="comment">%    Lat=dms2deg(mat2dms(LatDMS)); %convert into degrees</span>
+0035 <span class="comment">%    Lon=dms2deg(mat2dms(LonDMS)); %convert into degrees</span>
+0036 <span class="comment">%    [x,y,utmzone] = deg2utm(Lat,Lon)</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">% Author:</span>
+0039 <span class="comment">%   Rafael Palacios</span>
+0040 <span class="comment">%   Universidad Pontificia Comillas</span>
+0041 <span class="comment">%   Madrid, Spain</span>
+0042 <span class="comment">% Version: Apr/06, Jun/06, Aug/06, Aug/06</span>
+0043 <span class="comment">% Aug/06: fixed a problem (found by Rodolphe Dewarrat) related to southern</span>
+0044 <span class="comment">%    hemisphere coordinates.</span>
+0045 <span class="comment">% Aug/06: corrected m-Lint warnings</span>
+0046 <span class="comment">%-------------------------------------------------------------------------</span>
+0047 
+0048 <span class="comment">% Argument checking</span>
+0049 <span class="comment">%</span>
+0050 error(nargchk(2, 2, nargin));  <span class="comment">%2 arguments required</span>
+0051 n1=length(Lat);
+0052 n2=length(Lon);
+0053 <span class="keyword">if</span> (n1~=n2)
+0054    error(<span class="string">'Lat and Lon vectors should have the same length'</span>);
+0055 <span class="keyword">end</span>
+0056 
+0057 
+0058 <span class="comment">% Memory pre-allocation</span>
+0059 <span class="comment">%</span>
+0060 x=zeros(n1,1);
+0061 y=zeros(n1,1);
+0062 utmzone(n1,:)=<span class="string">'60 X'</span>;
+0063 
+0064 <span class="comment">% Main Loop</span>
+0065 <span class="comment">%</span>
+0066 <span class="keyword">for</span> i=1:n1
+0067    la=Lat(i);
+0068    lo=Lon(i);
+0069 
+0070    sa = 6378137.000000 ; sb = 6356752.314245;
+0071          
+0072    <span class="comment">%e = ( ( ( sa ^ 2 ) - ( sb ^ 2 ) ) ^ 0.5 ) / sa;</span>
+0073    e2 = ( ( ( sa ^ 2 ) - ( sb ^ 2 ) ) ^ 0.5 ) / sb;
+0074    e2cuadrada = e2 ^ 2;
+0075    c = ( sa ^ 2 ) / sb;
+0076    <span class="comment">%alpha = ( sa - sb ) / sa;             %f</span>
+0077    <span class="comment">%ablandamiento = 1 / alpha;   % 1/f</span>
+0078 
+0079    lat = la * ( pi / 180 );
+0080    lon = lo * ( pi / 180 );
+0081 
+0082    Huso = fix( ( lo / 6 ) + 31);
+0083    S = ( ( Huso * 6 ) - 183 );
+0084    deltaS = lon - ( S * ( pi / 180 ) );
+0085 
+0086    <span class="keyword">if</span> (la&lt;-72), Letra=<span class="string">'C'</span>;
+0087    <span class="keyword">elseif</span> (la&lt;-64), Letra=<span class="string">'D'</span>;
+0088    <span class="keyword">elseif</span> (la&lt;-56), Letra=<span class="string">'E'</span>;
+0089    <span class="keyword">elseif</span> (la&lt;-48), Letra=<span class="string">'F'</span>;
+0090    <span class="keyword">elseif</span> (la&lt;-40), Letra=<span class="string">'G'</span>;
+0091    <span class="keyword">elseif</span> (la&lt;-32), Letra=<span class="string">'H'</span>;
+0092    <span class="keyword">elseif</span> (la&lt;-24), Letra=<span class="string">'J'</span>;
+0093    <span class="keyword">elseif</span> (la&lt;-16), Letra=<span class="string">'K'</span>;
+0094    <span class="keyword">elseif</span> (la&lt;-8), Letra=<span class="string">'L'</span>;
+0095    <span class="keyword">elseif</span> (la&lt;0), Letra=<span class="string">'M'</span>;
+0096    <span class="keyword">elseif</span> (la&lt;8), Letra=<span class="string">'N'</span>;
+0097    <span class="keyword">elseif</span> (la&lt;16), Letra=<span class="string">'P'</span>;
+0098    <span class="keyword">elseif</span> (la&lt;24), Letra=<span class="string">'Q'</span>;
+0099    <span class="keyword">elseif</span> (la&lt;32), Letra=<span class="string">'R'</span>;
+0100    <span class="keyword">elseif</span> (la&lt;40), Letra=<span class="string">'S'</span>;
+0101    <span class="keyword">elseif</span> (la&lt;48), Letra=<span class="string">'T'</span>;
+0102    <span class="keyword">elseif</span> (la&lt;56), Letra=<span class="string">'U'</span>;
+0103    <span class="keyword">elseif</span> (la&lt;64), Letra=<span class="string">'V'</span>;
+0104    <span class="keyword">elseif</span> (la&lt;72), Letra=<span class="string">'W'</span>;
+0105    <span class="keyword">else</span> Letra=<span class="string">'X'</span>;
+0106    <span class="keyword">end</span>
+0107 
+0108    a = cos(lat) * sin(deltaS);
+0109    epsilon = 0.5 * log( ( 1 +  a) / ( 1 - a ) );
+0110    nu = atan( tan(lat) / cos(deltaS) ) - lat;
+0111    v = ( c / ( ( 1 + ( e2cuadrada * ( cos(lat) ) ^ 2 ) ) ) ^ 0.5 ) * 0.9996;
+0112    ta = ( e2cuadrada / 2 ) * epsilon ^ 2 * ( cos(lat) ) ^ 2;
+0113    a1 = sin( 2 * lat );
+0114    a2 = a1 * ( cos(lat) ) ^ 2;
+0115    j2 = lat + ( a1 / 2 );
+0116    j4 = ( ( 3 * j2 ) + a2 ) / 4;
+0117    j6 = ( ( 5 * j4 ) + ( a2 * ( cos(lat) ) ^ 2) ) / 3;
+0118    alfa = ( 3 / 4 ) * e2cuadrada;
+0119    beta = ( 5 / 3 ) * alfa ^ 2;
+0120    gama = ( 35 / 27 ) * alfa ^ 3;
+0121    Bm = 0.9996 * c * ( lat - alfa * j2 + beta * j4 - gama * j6 );
+0122    xx = epsilon * v * ( 1 + ( ta / 3 ) ) + 500000;
+0123    yy = nu * v * ( 1 + ta ) + Bm;
+0124 
+0125    <span class="keyword">if</span> (yy&lt;0)
+0126        yy=9999999+yy;
+0127    <span class="keyword">end</span>
+0128 
+0129    x(i)=xx;
+0130    y(i)=yy;
+0131    utmzone(i,:)=sprintf(<span class="string">'%02d %c'</span>,Huso,Letra);
+0132 <span class="keyword">end</span>
+0133</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

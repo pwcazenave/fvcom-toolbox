@@ -1,0 +1,283 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of show_sigma</title>
+  <meta name="keywords" content="show_sigma">
+  <meta name="description" content="plot a sigma distribution along a user-selected line">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; show_sigma.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>show_sigma
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>plot a sigma distribution along a user-selected line</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function show_sigma(meshfile,bathfile,sigmafile,varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> plot a sigma distribution along a user-selected line
+
+ show_sigma(meshfile,bathfile,sigmafile) 
+
+ DESCRIPTION:
+    plot a sigma distribution along a user-selected line
+
+ INPUT:
+    meshfile:   fvcom grid file
+    bathfile:   fvcom bathymetry file
+    sigmafile:  fvcom sigma distribution file
+    npts:       number of points in the user-selected line (optional,
+                defaults to 25).
+
+ OUTPUT:
+
+ EXAMPLE USAGE
+    show_sigma('tst_grd.dat', 'tst_dep.dat', 'sigma.dat', 50)
+
+ Author(s):
+    Geoff Cowles (University of Massachusetts Dartmouth)
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+   2013-01-08 Added more resilient reading of the sigma coordinates file
+   (can now handle comments and blank lines). Also add extra (optional)
+   argument to increase the profile sampling frequency.
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="sigma_gen.html" class="code" title="function dist = sigma_gen(nlev,dl,du,kl,ku,zkl,zku,h,hmin)">sigma_gen</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function show_sigma(meshfile,bathfile,sigmafile,varargin)</a>
+0002 <span class="comment">% plot a sigma distribution along a user-selected line</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% show_sigma(meshfile,bathfile,sigmafile)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    plot a sigma distribution along a user-selected line</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT:</span>
+0010 <span class="comment">%    meshfile:   fvcom grid file</span>
+0011 <span class="comment">%    bathfile:   fvcom bathymetry file</span>
+0012 <span class="comment">%    sigmafile:  fvcom sigma distribution file</span>
+0013 <span class="comment">%    npts:       number of points in the user-selected line (optional,</span>
+0014 <span class="comment">%                defaults to 25).</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% EXAMPLE USAGE</span>
+0019 <span class="comment">%    show_sigma('tst_grd.dat', 'tst_dep.dat', 'sigma.dat', 50)</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% Author(s):</span>
+0022 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0023 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% Revision history</span>
+0026 <span class="comment">%   2013-01-08 Added more resilient reading of the sigma coordinates file</span>
+0027 <span class="comment">%   (can now handle comments and blank lines). Also add extra (optional)</span>
+0028 <span class="comment">%   argument to increase the profile sampling frequency.</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">%==============================================================================</span>
+0031 
+0032 close all
+0033 
+0034 <span class="keyword">global</span> ftbverbose
+0035 
+0036 <span class="keyword">if</span> nargin == 4
+0037     npts = varargin{1};
+0038 <span class="keyword">else</span>
+0039     npts = 25;
+0040 <span class="keyword">end</span>
+0041 
+0042 <span class="comment">% read the mesh</span>
+0043 fid = fopen(meshfile,<span class="string">'r'</span>);
+0044 <span class="keyword">if</span>(fid  &lt; 0)
+0045     error([<span class="string">'file: '</span> meshfile <span class="string">' does not exist'</span>]);
+0046 <span class="keyword">end</span>
+0047 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1);
+0048 Nverts = C{4};
+0049 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1);
+0050 Nelems = C{4};
+0051 x = zeros(Nverts,3);
+0052 tri = zeros(Nelems,3);
+0053 <span class="keyword">if</span> ftbverbose
+0054     fprintf(<span class="string">'Nverts: %d\n'</span>,Nverts)
+0055     fprintf(<span class="string">'Nelems: %d\n'</span>,Nelems)
+0056 <span class="keyword">end</span>
+0057 
+0058 <span class="keyword">for</span> i=1:Nelems
+0059     C = textscan(fid, <span class="string">'%d %d %d %d %d'</span>, 1);
+0060     tri(i,1) = C{2};
+0061     tri(i,2) = C{3};
+0062     tri(i,3) = C{4};
+0063 <span class="keyword">end</span>
+0064 <span class="keyword">for</span> i=1:Nverts
+0065     C = textscan(fid, <span class="string">'%d %f %f %f '</span>, 1);
+0066     x(i,1) = C{2};
+0067     x(i,2) = C{3};
+0068 <span class="keyword">end</span>
+0069 
+0070 <span class="comment">% read the bathy</span>
+0071 fid = fopen(bathfile,<span class="string">'r'</span>);
+0072 <span class="keyword">if</span>(fid  &lt; 0)
+0073     error([<span class="string">'file: '</span> bathfile <span class="string">' does not exist'</span>]);
+0074 <span class="keyword">end</span>
+0075 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1);
+0076 <span class="keyword">for</span> i=1:Nverts
+0077     C = textscan(fid, <span class="string">'%f %f %f '</span>, 1);
+0078     x(i,3) = C{3};
+0079 <span class="keyword">end</span>
+0080 
+0081 <span class="keyword">if</span> ftbverbose
+0082     fprintf(<span class="string">'min topography %f\n'</span>,min(x(:,3)));
+0083     fprintf(<span class="string">'max topography %f\n'</span>,max(x(:,3)));
+0084 <span class="keyword">end</span>
+0085 
+0086 <span class="comment">% read the sigma file</span>
+0087 fid = fopen(sigmafile,<span class="string">'r'</span>);
+0088 <span class="keyword">if</span>(fid  &lt; 0)
+0089     error([<span class="string">'file: '</span> sigmafile <span class="string">' does not exist'</span>]);
+0090 <span class="keyword">end</span>
+0091 
+0092 <span class="keyword">while</span> ~feof(fid)
+0093     line = fgetl(fid);
+0094     <span class="keyword">if</span> isempty(line) || strncmp(line, <span class="string">'!'</span>, 1) || ~ischar(line)
+0095         <span class="keyword">continue</span>
+0096     <span class="keyword">end</span>
+0097     key = lower(line(1:3));
+0098     C = strtrim(regexpi(line, <span class="string">'='</span>, <span class="string">'split'</span>));
+0099     <span class="keyword">switch</span> key
+0100         <span class="keyword">case</span> <span class="string">'num'</span>
+0101             nlev = str2double(C{2});
+0102         <span class="keyword">case</span> <span class="string">'sig'</span>
+0103             sigtype = C{2};
+0104         <span class="keyword">case</span> <span class="string">'du '</span>
+0105             du = str2double(C{2});
+0106         <span class="keyword">case</span> <span class="string">'dl '</span>
+0107             dl = str2double(C{2});
+0108         <span class="keyword">case</span> <span class="string">'min'</span>
+0109             min_constant_depth = str2double(C{2});
+0110         <span class="keyword">case</span> <span class="string">'ku '</span>
+0111             ku = str2double(C{2});
+0112         <span class="keyword">case</span> <span class="string">'kl '</span>
+0113             kl = str2double(C{2});
+0114         <span class="keyword">case</span> <span class="string">'zku'</span>
+0115             s = str2double(regexp(C{2}, <span class="string">' '</span>, <span class="string">'split'</span>));
+0116             zku = zeros(ku, 1);
+0117             <span class="keyword">for</span> i = 1:ku
+0118                 zku(i) = s(i);
+0119             <span class="keyword">end</span>
+0120         <span class="keyword">case</span> <span class="string">'zkl'</span>
+0121             s = str2double(regexp(C{2}, <span class="string">' '</span>, <span class="string">'split'</span>));
+0122             zkl = zeros(kl, 1);
+0123             <span class="keyword">for</span> i = 1:kl
+0124                 zkl(i) = s(i);
+0125             <span class="keyword">end</span>
+0126     <span class="keyword">end</span>
+0127 <span class="keyword">end</span>
+0128 
+0129 <span class="keyword">if</span> ftbverbose
+0130     fprintf(<span class="string">'nlev %d\n'</span>,nlev)
+0131     fprintf(<span class="string">'sigtype %s\n'</span>,sigtype)
+0132     fprintf(<span class="string">'du %d\n'</span>,du)
+0133     fprintf(<span class="string">'dl %d\n'</span>,dl)
+0134     fprintf(<span class="string">'min_constant_depth %f\n'</span>,min_constant_depth)
+0135     fprintf(<span class="string">'ku %d\n'</span>,ku)
+0136     fprintf(<span class="string">'kl %d\n'</span>,kl)
+0137     fprintf(<span class="string">'zku %d\n'</span>,zku)
+0138     fprintf(<span class="string">'zkl %d\n'</span>,zkl)
+0139 <span class="keyword">end</span>
+0140 
+0141 <span class="comment">% generate the sigma coordinates</span>
+0142 
+0143 <span class="comment">% fix &quot;java.lang.IllegalArgumentException: adding a container to a container</span>
+0144 <span class="comment">% on a different GraphicsDevice&quot; error. See</span>
+0145 <span class="comment">% http://www.mathworks.co.uk/matlabcentral/newsreader/view_thread/169024.</span>
+0146 set(0,<span class="string">'DefaultFigureRenderer'</span>,<span class="string">'OpenGL'</span>)
+0147 
+0148 figure(1)
+0149 patch(<span class="string">'Vertices'</span>,[x(:,1),x(:,2)],<span class="string">'Faces'</span>,tri,<span class="keyword">...</span>
+0150     <span class="string">'Cdata'</span>,x(:,3),<span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0151 axis equal
+0152 
+0153 <span class="comment">% plot to get a line</span>
+0154 fprintf(<span class="string">'select two end points of a transect with your mouse... '</span>);
+0155 [xt,yt] = ginput(2);
+0156 hold on
+0157 fprintf(<span class="string">'done.\n'</span>)
+0158 
+0159 ds = (xt(2)-xt(1))/(npts-1);
+0160 xline = xt(1):ds:xt(2);
+0161 ds = (yt(2)-yt(1))/(npts-1);
+0162 yline = yt(1):ds:yt(2);
+0163 plot(xline, yline, <span class="string">'w+'</span>)
+0164 sline = zeros(1, npts);
+0165 <span class="keyword">for</span> i=2:npts
+0166     sline(i) = sline(i-1) + sqrt((xline(i)-xline(i-1))^2 + (yline(i)-yline(i-1))^2);
+0167 <span class="keyword">end</span>
+0168 
+0169 <span class="comment">% interpolate the bathymetry along the line</span>
+0170 zline = griddata(x(:,1), x(:,2), x(:,3), xline, yline);
+0171 
+0172 figure(2)
+0173 plot(sline, -zline)
+0174 
+0175 <span class="comment">% generate the sigma coordinates along the line</span>
+0176 xslice = zeros(npts,nlev);
+0177 yslice = zeros(npts,nlev);
+0178 z = nan(npts, nlev);
+0179 
+0180 <span class="comment">% calculate the sigma distributions along the transect</span>
+0181 <span class="keyword">switch</span> lower(sigtype)
+0182     <span class="keyword">case</span> <span class="string">'generalized'</span>
+0183         <span class="keyword">for</span> i=1:npts
+0184             z(i,1:nlev) = <a href="sigma_gen.html" class="code" title="function dist = sigma_gen(nlev,dl,du,kl,ku,zkl,zku,h,hmin)">sigma_gen</a>(nlev,dl,du,kl,ku,zkl,zku,zline(i),min_constant_depth);
+0185         <span class="keyword">end</span>
+0186     <span class="keyword">case</span> <span class="string">'uniform'</span>
+0187         <span class="keyword">for</span> i=1:npts
+0188             z(i,1:nlev) = 0:-1/double(nlev-1):-1;
+0189         <span class="keyword">end</span>
+0190     <span class="keyword">otherwise</span>
+0191         error(<span class="string">'Can''t do that sigtype'</span>)
+0192 <span class="keyword">end</span>
+0193 
+0194 <span class="keyword">for</span> i=1:npts
+0195     xslice(i,1:nlev) = sline(i);
+0196     yslice(i,1:nlev) = z(i,1:nlev) * zline(i);
+0197 <span class="keyword">end</span>
+0198 
+0199 
+0200 <span class="comment">% plot the mesh along the transect</span>
+0201 <span class="keyword">for</span> k=1:nlev
+0202     plot(xslice(:,k),yslice(:,k),<span class="string">'k'</span>); hold on;
+0203 <span class="keyword">end</span>
+0204 <span class="keyword">for</span> k=1:npts
+0205     plot(xslice(k,:),yslice(k,:),<span class="string">'k'</span>); hold on;
+0206 <span class="keyword">end</span>
+0207 axis([xslice(1,1),xslice(<span class="keyword">end</span>,1),min(yslice(:,end)),5])
+0208 title(<span class="string">'sigma distribution along the transect'</span>);</pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of read_ERA_wind</title>
+  <meta name="keywords" content="read_ERA_wind">
+  <meta name="description" content="Reads in ERA Interim files and outputs a struct containing the requested">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; read_ERA_wind.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>read_ERA_wind
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Reads in ERA Interim files and outputs a struct containing the requested</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function era = read_ERA_wind(year, datadir, varlist) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Reads in ERA Interim files and outputs a struct containing the requested
+ variables for a given year. 
+ 
+ ERA = read_ERA_wind(YEAR, DATADIR, VARLIST)
+ 
+ DESCRIPTION:
+   For the given YEAR, find all the ERA Interim NetCDF files and aggregate
+   them into a single MATLAB struct, which contains the variables
+   specified in VARLIST. In addition to the specified variables, time and
+   longitude and latitude will also be extracted. 
+ 
+ INPUT:
+   YEAR - year to extract
+   DATADIR - path to the directory which contains the ERA NetCDF files
+   VARLIST - list of the particular variables to extract from the NetCDF
+   files.
+ 
+ OUTPUT:
+   era - struct containing the variables specified in VARLIST.
+ 
+ Author(s)
+   Pierre Cazenave (Plymouth Marine Laboratory)
+ 
+ Revision history:
+   2012-10-19 First version based loosely on read_NCEP_wind.m in the
+   fvcom-toolbox.
+ 
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function era = read_ERA_wind(year, datadir, varlist)</a>
+0002 <span class="comment">% Reads in ERA Interim files and outputs a struct containing the requested</span>
+0003 <span class="comment">% variables for a given year.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% ERA = read_ERA_wind(YEAR, DATADIR, VARLIST)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%   For the given YEAR, find all the ERA Interim NetCDF files and aggregate</span>
+0009 <span class="comment">%   them into a single MATLAB struct, which contains the variables</span>
+0010 <span class="comment">%   specified in VARLIST. In addition to the specified variables, time and</span>
+0011 <span class="comment">%   longitude and latitude will also be extracted.</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% INPUT:</span>
+0014 <span class="comment">%   YEAR - year to extract</span>
+0015 <span class="comment">%   DATADIR - path to the directory which contains the ERA NetCDF files</span>
+0016 <span class="comment">%   VARLIST - list of the particular variables to extract from the NetCDF</span>
+0017 <span class="comment">%   files.</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% OUTPUT:</span>
+0020 <span class="comment">%   era - struct containing the variables specified in VARLIST.</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Author(s)</span>
+0023 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% Revision history:</span>
+0026 <span class="comment">%   2012-10-19 First version based loosely on read_NCEP_wind.m in the</span>
+0027 <span class="comment">%   fvcom-toolbox.</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">%==========================================================================</span>
+0030 
+0031 <span class="comment">% year = 2006;</span>
+0032 <span class="comment">% % datadir = '/data/modellers/to_archive/momm-ERA40-interim/';</span>
+0033 <span class="comment">% datadir = '/users/modellers/pica/Data/ECMWF/2006';</span>
+0034 <span class="comment">% varlist = {'u10', 'v10'};</span>
+0035 
+0036 warning off
+0037 
+0038 <span class="keyword">if</span> nargin ~= 3
+0039     error(<span class="string">'Incorrect number of arguments'</span>)
+0040 <span class="keyword">end</span>
+0041 
+0042 subname = <span class="string">'read_ERA_wind'</span>;
+0043 
+0044 <span class="keyword">global</span> ftbverbose;
+0045 <span class="keyword">if</span>(ftbverbose);
+0046   fprintf(<span class="string">'\n'</span>)
+0047   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0048 <span class="keyword">end</span>;
+0049 
+0050 <span class="keyword">if</span> exist(datadir, <span class="string">'dir'</span>) ~= 7
+0051    error([<span class="string">'file: '</span> datadir <span class="string">' does not exist'</span>]);
+0052 <span class="keyword">end</span>
+0053 
+0054 <span class="comment">%--------------------------------------------------------------------------</span>
+0055 <span class="comment">% Open ERA Interim data and check for time range</span>
+0056 <span class="comment">%--------------------------------------------------------------------------</span>
+0057 
+0058 <span class="comment">% Get the time.</span>
+0059 ncERA = netcdf.open(fullfile(datadir, [num2str(year), <span class="string">'_U10V10.nc'</span>]), <span class="string">'NOWRITE'</span>);
+0060 time_varid = netcdf.inqVarID(ncERA, <span class="string">'time'</span>);
+0061 eratimehours = netcdf.getVar(ncERA, time_varid);
+0062 
+0063 <span class="comment">% ERA Interim times are stored as hours since 1900-01-01 00:00:0.0.</span>
+0064 <span class="comment">% MATLAB's dates days since 0000/00/00 00:00:00.</span>
+0065 eratimehours = datevec((double(eratimehours)/24) + datenum(<span class="string">'1900-01-01 00:00:0.0'</span>));
+0066 <span class="comment">% Convert the ERA times to Modified Julian Date.</span>
+0067 era.time = greg2mjulian(eratimehours(:,1), eratimehours(:,2),<span class="keyword">...</span>
+0068     eratimehours(:,3), eratimehours(:,4), eratimehours(:,5),<span class="keyword">...</span>
+0069     eratimehours(:,6));
+0070 
+0071 <span class="keyword">if</span>(ftbverbose);
+0072     fprintf(<span class="string">'beg time of ERA Interim data %04i/%02i/%02i %02i:%02i:%02i\n'</span>, eratimehours(1,:));
+0073     fprintf(<span class="string">'end time of ERA Interim data %04i/%02i/%02i %02i:%02i:%02i\n'</span>, eratimehours(<span class="keyword">end</span>,:));
+0074 <span class="keyword">end</span>
+0075 
+0076 <span class="comment">% Get the geographical information from the ERA Interim data. Again, use</span>
+0077 <span class="comment">% the U10 file only (we're assuming they're both global).</span>
+0078 lat_varid = netcdf.inqVarID(ncERA, <span class="string">'latitude'</span>);
+0079 lon_varid = netcdf.inqVarID(ncERA, <span class="string">'longitude'</span>);
+0080 eralatvector = netcdf.getVar(ncERA, lat_varid);
+0081 eralonvector = netcdf.getVar(ncERA, lon_varid);
+0082 [era.lon, era.lat] = meshgrid(eralonvector, eralatvector);
+0083 
+0084 <span class="comment">% Find the necessary variables</span>
+0085 <span class="keyword">for</span> var=1:numel(varlist)
+0086 
+0087     getVar = varlist{var};
+0088     varid_ERA = netcdf.inqVarID(ncERA, getVar);
+0089 
+0090     <span class="comment">% Get the data</span>
+0091     data = netcdf.getVar(ncERA, varid_ERA, <span class="string">'single'</span>);
+0092     
+0093     <span class="keyword">if</span> strcmpi(getVar, <span class="string">'u10'</span>) || strcmpi(getVar, <span class="string">'v10'</span>)
+0094         <span class="comment">% The ERA Interim wind component data are packed as integers. The</span>
+0095         <span class="comment">% following equation describes how to unpack them:</span>
+0096         <span class="comment">%     unpacked value = add_offset + ((packed value)*scale_factor)</span>
+0097         <span class="comment">% (from</span>
+0098         <span class="comment">% http://www.ecmwf.int/products/data/archive/data_faq.html#netcdfintegers).</span>
+0099         <span class="comment">% ERA wind scale_factor and add_offset are doubles (the NCEP ones</span>
+0100         <span class="comment">% are singles).</span>
+0101         scale_factor = netcdf.getAtt(ncERA,varid_ERA,<span class="string">'scale_factor'</span>,<span class="string">'double'</span>);
+0102         add_offset = netcdf.getAtt(ncERA,varid_ERA,<span class="string">'add_offset'</span>,<span class="string">'double'</span>);
+0103 
+0104         <span class="comment">% Unpack the values. In general, the data for U10 and V10 should be</span>
+0105         <span class="comment">% doubles for griddata to work. Fix the order of the dimensions to</span>
+0106         <span class="comment">% match the coordinates in eralon and eralat.</span>
+0107         era.(getVar) = permute(double(add_offset + (data.*scale_factor)), [2,1,3]);
+0108     <span class="keyword">else</span>
+0109         <span class="comment">% We're assuming they're not packed and so we just return the data</span>
+0110         <span class="comment">% as is (but as doubles).</span>
+0111         era.(getVar) = double(data);
+0112     <span class="keyword">end</span>
+0113 <span class="keyword">end</span>
+0114 
+0115 netcdf.close(ncERA)
+0116 
+0117 <span class="keyword">if</span> ftbverbose;
+0118     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0119 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

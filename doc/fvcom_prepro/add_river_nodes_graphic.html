@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of add_river_nodes_graphic</title>
+  <meta name="keywords" content="add_river_nodes_graphic">
+  <meta name="description" content="Add a set of river nodes comprising a single river to Mesh structure">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; add_river_nodes_graphic.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>add_river_nodes_graphic
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Add a set of river nodes comprising a single river to Mesh structure</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Mobj]  = add_river_nodes(Mobj,RiverName) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Add a set of river nodes comprising a single river to Mesh structure  
+
+ [Mobj] = add_river_nodes(Mobj)
+
+ DESCRIPTION:
+    Select using ginput the set of nodes comprising a river
+
+ INPUT
+    Mobj = Matlab mesh object
+    RiverName = Name of the River
+
+ OUTPUT:
+    Mobj = Matlab mesh object with an additional river nodelist
+
+ EXAMPLE USAGE
+    Mobj = add_river_nodes(Mobj,'Potomac')
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Note:
+    Uses ginput2 which allows zooming before selecting points and displays
+    clicked points realtime
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="find_nearest_pt.html" class="code" title="function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj)">find_nearest_pt</a>	Find nearest point in Mesh structure to (x,y)</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj]  = add_river_nodes(Mobj,RiverName)</a>
+0002 
+0003 <span class="comment">% Add a set of river nodes comprising a single river to Mesh structure</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% [Mobj] = add_river_nodes(Mobj)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Select using ginput the set of nodes comprising a river</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT</span>
+0011 <span class="comment">%    Mobj = Matlab mesh object</span>
+0012 <span class="comment">%    RiverName = Name of the River</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% OUTPUT:</span>
+0015 <span class="comment">%    Mobj = Matlab mesh object with an additional river nodelist</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% EXAMPLE USAGE</span>
+0018 <span class="comment">%    Mobj = add_river_nodes(Mobj,'Potomac')</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Author(s):</span>
+0021 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Note:</span>
+0024 <span class="comment">%    Uses ginput2 which allows zooming before selecting points and displays</span>
+0025 <span class="comment">%    clicked points realtime</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Revision history</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">%==============================================================================</span>
+0030 subname = <span class="string">'add_river_nodes'</span>;
+0031 <span class="keyword">global</span> ftbverbose
+0032 <span class="keyword">if</span>(ftbverbose)
+0033   fprintf(<span class="string">'\n'</span>)
+0034   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0035 <span class="keyword">end</span>;
+0036 
+0037 
+0038 <span class="comment">%------------------------------------------------------------------------------</span>
+0039 <span class="comment">% Plot the mesh</span>
+0040 <span class="comment">%------------------------------------------------------------------------------</span>
+0041 
+0042 <span class="keyword">if</span>(lower(Mobj.nativeCoords(1:3)) == <span class="string">'car'</span>)
+0043     x = Mobj.x;
+0044     y = Mobj.y;
+0045 <span class="keyword">else</span>
+0046     x = Mobj.lon;
+0047     y = Mobj.lat;
+0048 <span class="keyword">end</span>;
+0049 
+0050 figure
+0051 patch(<span class="string">'Vertices'</span>,[x,y],<span class="string">'Faces'</span>,Mobj.tri,<span class="keyword">...</span>
+0052         <span class="string">'Cdata'</span>,Mobj.h,<span class="string">'edgecolor'</span>,<span class="string">'k'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0053 hold on;
+0054 
+0055 <span class="comment">% use ginput2 (which allows zooming and plots points as they are clicked) to let</span>
+0056 <span class="comment">% user select the boundary points</span>
+0057 fprintf(<span class="string">'click the river nodes in the model\n'</span>)
+0058 fprintf(<span class="string">'left click:  zoom\n'</span>);
+0059 fprintf(<span class="string">'delete:  delete last point\n'</span>);
+0060 fprintf(<span class="string">'drag mouse: pan\n'</span>);
+0061 fprintf(<span class="string">'right click: select point\n'</span>);
+0062 fprintf(<span class="string">'enter (return): finished selecting points\n'</span>);
+0063 [xselect] = ginput2(true,<span class="string">'r+'</span>);
+0064 
+0065 
+0066 [npts,jnk] = size(xselect);
+0067 
+0068 <span class="keyword">if</span>(npts == 0)
+0069     fprintf(<span class="string">'you didn''t select any points'</span>)
+0070     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0071     <span class="keyword">return</span>
+0072 <span class="keyword">end</span>;
+0073 fprintf(<span class="string">'you selected %d points\n'</span>,npts)
+0074 
+0075 <span class="comment">% snap to the closest vertices</span>
+0076 <span class="keyword">for</span> i=1:npts
+0077     [ipt(i),dist] = <a href="find_nearest_pt.html" class="code" title="function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj)">find_nearest_pt</a>(xselect(i,1),xselect(i,2),Mobj);
+0078 <span class="keyword">end</span>;
+0079 
+0080 <span class="comment">% replot domain with snapped vertices</span>
+0081 plot(x(ipt),y(ipt),<span class="string">'ro'</span>);
+0082 
+0083 <span class="comment">% add to mesh object</span>
+0084 Mobj.nRivers = Mobj.nRivers + 1;
+0085 Mobj.nRivNodes(Mobj.nRivers) = npts;
+0086 Mobj.riv_nodes(Mobj.nRivers,1:npts) = ipt;
+0087 Mobj.riv_name{Mobj.nRivers} = RiverName;
+0088 
+0089 
+0090 <span class="keyword">if</span>(ftbverbose)
+0091   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0092 <span class="keyword">end</span>;
+0093</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

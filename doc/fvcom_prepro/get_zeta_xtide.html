@@ -1,0 +1,142 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_zeta_xtide</title>
+  <meta name="keywords" content="get_zeta_xtide">
+  <meta name="description" content="Extract an elevation time series from a location using Xtide">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_zeta_xtide.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_zeta_xtide
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Extract an elevation time series from a location using Xtide</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [times,zeta] = get_zeta_xtide(Xtide_Location,tbeg,tend) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Extract an elevation time series from a location using Xtide 
+
+ function [time,zeta] = gen_zeta_xtide(Xtide_Location,tbeg,tend)  
+
+ DESCRIPTION:
+    Extract time and an elevation series from a location using xtide
+
+ INPUT:
+   Xtide_Location = Location in Xtide Database 
+   tbeg           = begin time in modified Julian days UTC
+   tend           = end time in modified Julian days UTC
+
+ OUTPUT:
+    time  = time sequence for elevation series in modified Julian days, UTC
+    zeta  = elevation series in meters
+
+ EXAMPLE USAGE
+   [time,zeta] = get_zeta_xtide('Sandy Point, Whidbey Island',54191,54466) 
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [times,zeta] = get_zeta_xtide(Xtide_Location,tbeg,tend)</a>
+0002 
+0003 <span class="comment">% Extract an elevation time series from a location using Xtide</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function [time,zeta] = gen_zeta_xtide(Xtide_Location,tbeg,tend)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Extract time and an elevation series from a location using xtide</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   Xtide_Location = Location in Xtide Database</span>
+0012 <span class="comment">%   tbeg           = begin time in modified Julian days UTC</span>
+0013 <span class="comment">%   tend           = end time in modified Julian days UTC</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% OUTPUT:</span>
+0016 <span class="comment">%    time  = time sequence for elevation series in modified Julian days, UTC</span>
+0017 <span class="comment">%    zeta  = elevation series in meters</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% EXAMPLE USAGE</span>
+0020 <span class="comment">%   [time,zeta] = get_zeta_xtide('Sandy Point, Whidbey Island',54191,54466)</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Author(s):</span>
+0023 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% Revision history</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">%==============================================================================</span>
+0028 
+0029 
+0030 <span class="comment">% conversions for dates and lengths</span>
+0031 unixstart      = greg2mjulian(1970,1,1,0,0,0);  <span class="comment">%xtide is based on days from this date</span>
+0032 meters2feet    = 3.2808399;
+0033 
+0034 <span class="comment">% paths to executable</span>
+0035 setpath        = <span class="string">' export HFILE_PATH=~gcowles/Packages/xtide/harmonics_files; '</span>;
+0036 ttide          = <span class="string">' /usr/local/bin/tide -b &quot;2005-01-01 00:00&quot; -e &quot;2012-01-01 00:00&quot; -l '</span>;
+0037 opts           = <span class="string">' -s &quot;00:06&quot;  -m r -z &gt; '</span>;
+0038 
+0039 <span class="comment">%----------------------------------------------------------------------------------</span>
+0040 <span class="comment">% extract time series from xtide at station</span>
+0041 <span class="comment">%----------------------------------------------------------------------------------</span>
+0042 cmd = [setpath ttide  <span class="string">'&quot;'</span> char(Xtide_Location) <span class="string">'&quot;'</span> opts  <span class="string">'&quot;tidefile&quot;'</span>];
+0043 system(cmd);
+0044 [times,zeta] = textread(<span class="string">'tidefile'</span>,<span class="string">'%f %f\n'</span>);
+0045 system(<span class="string">'\rm tidefile'</span>);
+0046 
+0047 <span class="comment">%-------------------------------------------------------------</span>
+0048 <span class="comment">% process xtide data</span>
+0049 <span class="comment">%    - convert to meters</span>
+0050 <span class="comment">%    - shift to MSL</span>
+0051 <span class="comment">%    - shift to Julian Day, UTC</span>
+0052 <span class="comment">%-------------------------------------------------------------</span>
+0053 
+0054 <span class="comment">% convert feet =&gt; meters</span>
+0055 zeta = zeta/meters2feet;
+0056 
+0057 <span class="comment">% shift the vertical datum to center around mean</span>
+0058 zeta = zeta - mean(zeta);
+0059 
+0060 <span class="comment">% convert the time from unix time to modified Julian day UTC</span>
+0061 times = unixstart + times/(3600.*24.);
+0062 
+0063 <span class="comment">% determine begin/end frames</span>
+0064 [mbeg,ibeg] = min(abs(times-tbeg));
+0065 [mbeg,iend] = min(abs(times-tend));
+0066 
+0067 times = times(ibeg:iend);
+0068 zeta  = zeta(ibeg:iend);
+0069 
+0070 
+0071</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

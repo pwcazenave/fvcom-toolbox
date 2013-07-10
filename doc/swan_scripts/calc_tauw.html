@@ -1,0 +1,228 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of calc_tauw</title>
+  <meta name="keywords" content="calc_tauw">
+  <meta name="description" content="DESCRIPTION:">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">swan_scripts</a> &gt; calc_tauw.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for swan_scripts&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>calc_tauw
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>DESCRIPTION:</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [tauw] = calc_tauw(z0,ncfile,writenetcdf) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> DESCRIPTION:
+    Function used to calculate Wave Bed Shear Stress, tauw, from the
+    bottom orbital velocity (Ubot) and the bottom wave period (TmBot). 
+    This function is currently set up to extract these values from SWAN
+    output. Currently temperature, salinity and z0 are set to be constant
+    accross the domain. Using actual data could improve accuaracy.
+    
+    REQUIRES FVCOM_TOOLBOX to be in your MATLAB path
+ 
+
+ INPUT 
+   z0           = bed roughness length (z0=d50/12) [mm]
+   &lt;=={possibly use constant value 0.05 Soulsby pg. 49}==&gt;
+   
+   ncfile       = netcdf file containing Ubot &amp; TmBot
+                  that was created from swan2netcdf.m
+   
+   writenetcdf  = accepts either true or false 
+                  if 'True' write tauw and fw to netcdf
+   
+    
+   
+
+ OUTPUT:
+    tauw = array containing values of tauw at all time for each node in 
+    model domain
+
+ EXAMPLE USAGE
+    tauw = calc_tauw(z0,'skg4.3.nc',true); 
+    
+
+ Author(s):  
+    Eric Holmes (University of Massachusetts Dartmouth)
+
+ Revision history
+    Initially created 09-24-2010
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [tauw] = calc_tauw(z0,ncfile,writenetcdf) </a>
+0002 
+0003 <span class="comment">% DESCRIPTION:</span>
+0004 <span class="comment">%    Function used to calculate Wave Bed Shear Stress, tauw, from the</span>
+0005 <span class="comment">%    bottom orbital velocity (Ubot) and the bottom wave period (TmBot).</span>
+0006 <span class="comment">%    This function is currently set up to extract these values from SWAN</span>
+0007 <span class="comment">%    output. Currently temperature, salinity and z0 are set to be constant</span>
+0008 <span class="comment">%    accross the domain. Using actual data could improve accuaracy.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">%    REQUIRES FVCOM_TOOLBOX to be in your MATLAB path</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% INPUT</span>
+0014 <span class="comment">%   z0           = bed roughness length (z0=d50/12) [mm]</span>
+0015 <span class="comment">%   &lt;=={possibly use constant value 0.05 Soulsby pg. 49}==&gt;</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%   ncfile       = netcdf file containing Ubot &amp; TmBot</span>
+0018 <span class="comment">%                  that was created from swan2netcdf.m</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">%   writenetcdf  = accepts either true or false</span>
+0021 <span class="comment">%                  if 'True' write tauw and fw to netcdf</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% OUTPUT:</span>
+0027 <span class="comment">%    tauw = array containing values of tauw at all time for each node in</span>
+0028 <span class="comment">%    model domain</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">% EXAMPLE USAGE</span>
+0031 <span class="comment">%    tauw = calc_tauw(z0,'skg4.3.nc',true);</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% Author(s):</span>
+0035 <span class="comment">%    Eric Holmes (University of Massachusetts Dartmouth)</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">% Revision history</span>
+0038 <span class="comment">%    Initially created 09-24-2010</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">%==============================================================================</span>
+0041 
+0042 <span class="comment">%------------------------------------------------------------------------------</span>
+0043 <span class="comment">% Convert z0 to meters</span>
+0044 <span class="comment">%------------------------------------------------------------------------------</span>
+0045 z0 = z0/1000;
+0046 
+0047 <span class="comment">%------------------------------------------------------------------------------</span>
+0048 <span class="comment">% Set Ubot &amp; TmBot from netCDF file</span>
+0049 <span class="comment">%------------------------------------------------------------------------------</span>
+0050 nc = netcdf(ncfile,<span class="string">'w'</span>);
+0051 
+0052 Ubot = nc{<span class="string">'Ubot'</span>}(:,:);
+0053 TmBot = nc{<span class="string">'TmBot'</span>}(:,:);
+0054 
+0055 
+0056 
+0057 <span class="comment">%------------------------------------------------------------------------------</span>
+0058 <span class="comment">% Set Generic Values to Salinity and Temperature</span>
+0059 <span class="comment">% This is temporary, it would be better to use actual salinity and</span>
+0060 <span class="comment">% temperature data.</span>
+0061 <span class="comment">%------------------------------------------------------------------------------</span>
+0062 vectorsize=size(Ubot);
+0063 T=zeros(vectorsize);
+0064 S=zeros(vectorsize);
+0065 
+0066 T(:,:)=15;
+0067 S(:,:)=30;
+0068 
+0069 <span class="comment">%------------------------------------------------------------------------------</span>
+0070 <span class="comment">% Call Kinematic Viscosity Routine and Density Routine</span>
+0071 <span class="comment">%------------------------------------------------------------------------------</span>
+0072 nu = SW_Kviscosity(T,S); <span class="comment">%</span>
+0073 rho = SW_Density(T,S); <span class="comment">%</span>
+0074 
+0075 
+0076 <span class="comment">%------------------------------------------------------------------------------</span>
+0077 <span class="comment">% Calculate fwr &amp; fws according to Soulsby pg. 77-79</span>
+0078 <span class="comment">%------------------------------------------------------------------------------</span>
+0079 
+0080 <span class="comment">%----CONSTANTS-----------------------------------------------------------------</span>
+0081 <span class="comment">%ks = z0*30.;                    % Nikuradse roughness</span>
+0082 A = Ubot.*TmBot/(2.*pi);        <span class="comment">% semi-orbital excursion</span>
+0083 <span class="comment">% r = A/ks;                     % relative roughness</span>
+0084 Rw = Ubot.*A./nu;                 <span class="comment">% wave Reynolds</span>
+0085 <span class="comment">%------------------------------------------------------------------------------</span>
+0086 fwr = 1.39*(A/z0).^(-0.52);     <span class="comment">% case in which flow is rough turbulent</span>
+0087                                 <span class="comment">% Soulsby (62a)</span>
+0088 
+0089                                 <span class="comment">% Smooth Cases</span>
+0090 <span class="keyword">for</span> i = 1:vectorsize(1,1)
+0091     <span class="keyword">for</span> j = 1:vectorsize(1,2)
+0092         <span class="keyword">if</span>(Rw(i,j) &gt; 5e5)
+0093             B=0.0521; N=0.187;  <span class="comment">% case in which flow is smooth turbulent</span>
+0094         <span class="keyword">else</span>
+0095             B=2; N=0.5;         <span class="comment">% case in which flow is laminar</span>
+0096         <span class="keyword">end</span>;
+0097     <span class="keyword">end</span>
+0098 <span class="keyword">end</span>
+0099                                 
+0100 fws = B*Rw.^(-N);               <span class="comment">% smooth bed friction factor Soulsby (63)</span>
+0101 
+0102 <span class="comment">%------------------------------------------------------------------------------</span>
+0103 <span class="comment">% Choose wave friction factor for current conditions</span>
+0104 <span class="comment">%------------------------------------------------------------------------------</span>
+0105 fw = zeros(vectorsize);
+0106 
+0107 <span class="keyword">for</span> i = 1:vectorsize(1,1)
+0108     <span class="keyword">for</span> j = 1:vectorsize(1,2)
+0109         fw(i,j) = max(fwr(i,j),fws(i,j));   
+0110                                 <span class="comment">% wave friction factor</span>
+0111     <span class="keyword">end</span>;
+0112 <span class="keyword">end</span>;
+0113 
+0114 tauw = 0.5*rho.*fw.*Ubot.*Ubot;    <span class="comment">% wave shear stress</span>
+0115 <span class="comment">%tauw(isnan(tauw)) = 0;</span>
+0116 
+0117 <span class="comment">%------------------------------------------------------------------------------</span>
+0118 <span class="comment">% Write Values of tauw to ncfile</span>
+0119 <span class="comment">%------------------------------------------------------------------------------</span>
+0120 <span class="keyword">if</span> (writenetcdf == true)
+0121         
+0122     nc = netcdf(ncfile,<span class="string">'w'</span>);
+0123     
+0124     nc{<span class="string">'tauw'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0125     nc{<span class="string">'tauw'</span>}.long_name = <span class="string">'Bed Shear Stress'</span>;
+0126     nc{<span class="string">'tauw'</span>}.units     = <span class="string">'N/m^2'</span>;
+0127     
+0128     <span class="keyword">for</span> i=1:vectorsize(1,1)
+0129         nc{<span class="string">'tauw'</span>}(i,1:vectorsize(1,2)) = tauw(i,1:vectorsize(1,2));
+0130     <span class="keyword">end</span>
+0131     
+0132     close(nc);
+0133     
+0134 <span class="keyword">end</span>;
+0135 
+0136 
+0137 
+0138 
+0139 
+0140 
+0141 
+0142 
+0143 
+0144 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

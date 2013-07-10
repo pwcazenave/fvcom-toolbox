@@ -1,0 +1,152 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of greg2julian</title>
+  <meta name="keywords" content="greg2julian">
+  <meta name="description" content="This function converts the Gregorian dates to Julian dates.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; greg2julian.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>greg2julian
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This function converts the Gregorian dates to Julian dates.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [JD,julianday] =greg2julian(year,month,day,hour,min,sec) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> This function converts the Gregorian dates to Julian dates.
+
+ 0. Syntax:
+ [JD,julianday] = juliandate(year,month,day,hour,min,sec)
+
+ 1. Inputs:
+     year, month, day = date in Gregorian calendar.
+     hour,min,sec = time at universal time.
+
+ 2. Outputs:
+     JD = Julian date.
+     julianday = day of week.
+
+ 3. Example:
+  &gt;&gt; [a,b] = greg2julian(2006,5,30,2,30,28)
+  a = 
+
+           2453885.60449074
+  b =
+
+  Tuesday
+ 
+  4. Notes:
+     - For all common era (CE) dates in the Gregorian calendar, and for more
+     information, check the referents.
+     - The function was tested, using  the julian date converter of U.S. Naval Observatory and
+     the results were similar. You can check it.
+     - Trying to do the life... more easy with the conversions.
+
+ 5. Referents:
+     Astronomical Applications Department. &quot;Julian Date Converter&quot;. From U.S. Naval Observatory.
+               http://aa.usno.navy.mil/data/docs/JulianDate.html
+     Duffett-Smith, P. (1992).  Practical Astronomy with Your Calculator.
+               Cambridge University Press, England:  pp. 9.
+     Seidelmann, P. K. (1992). Explanatory Supplement to the Astronomical Almanac. 
+               University Science Books, USA.  pp. 55-56.
+      Weisstein, Eric W.  &quot;Julian Date&quot;.  From World of Astronomy--A Wolfram Web Resource. 
+               http://scienceworld.wolfram.com/astronomy/JulianDate.html
+
+ Gabriel Ruiz Mtz.
+ May-2006
+
+ Modifications:
+ 04/06/06: To find the days, it was only changed the loop to a cell array. Thanks to Jérôme.
+ ------------------------------------------------------------------------------------------------------------</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="greg2mjulian.html" class="code" title="function [mjulianday] =greg2mjulian(year,month,day,hour,mint,sec)">greg2mjulian</a>	mjulianday = greg2mjulian(yyyy,mm,dd,HH,MM,SS)</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [JD,julianday] =greg2julian(year,month,day,hour,min,sec)</a>
+0002 <span class="comment">% This function converts the Gregorian dates to Julian dates.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% 0. Syntax:</span>
+0005 <span class="comment">% [JD,julianday] = juliandate(year,month,day,hour,min,sec)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% 1. Inputs:</span>
+0008 <span class="comment">%     year, month, day = date in Gregorian calendar.</span>
+0009 <span class="comment">%     hour,min,sec = time at universal time.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% 2. Outputs:</span>
+0012 <span class="comment">%     JD = Julian date.</span>
+0013 <span class="comment">%     julianday = day of week.</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% 3. Example:</span>
+0016 <span class="comment">%  &gt;&gt; [a,b] = greg2julian(2006,5,30,2,30,28)</span>
+0017 <span class="comment">%  a =</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%           2453885.60449074</span>
+0020 <span class="comment">%  b =</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">%  Tuesday</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">%  4. Notes:</span>
+0025 <span class="comment">%     - For all common era (CE) dates in the Gregorian calendar, and for more</span>
+0026 <span class="comment">%     information, check the referents.</span>
+0027 <span class="comment">%     - The function was tested, using  the julian date converter of U.S. Naval Observatory and</span>
+0028 <span class="comment">%     the results were similar. You can check it.</span>
+0029 <span class="comment">%     - Trying to do the life... more easy with the conversions.</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% 5. Referents:</span>
+0032 <span class="comment">%     Astronomical Applications Department. &quot;Julian Date Converter&quot;. From U.S. Naval Observatory.</span>
+0033 <span class="comment">%               http://aa.usno.navy.mil/data/docs/JulianDate.html</span>
+0034 <span class="comment">%     Duffett-Smith, P. (1992).  Practical Astronomy with Your Calculator.</span>
+0035 <span class="comment">%               Cambridge University Press, England:  pp. 9.</span>
+0036 <span class="comment">%     Seidelmann, P. K. (1992). Explanatory Supplement to the Astronomical Almanac.</span>
+0037 <span class="comment">%               University Science Books, USA.  pp. 55-56.</span>
+0038 <span class="comment">%      Weisstein, Eric W.  &quot;Julian Date&quot;.  From World of Astronomy--A Wolfram Web Resource.</span>
+0039 <span class="comment">%               http://scienceworld.wolfram.com/astronomy/JulianDate.html</span>
+0040 <span class="comment">%</span>
+0041 <span class="comment">% Gabriel Ruiz Mtz.</span>
+0042 <span class="comment">% May-2006</span>
+0043 <span class="comment">%</span>
+0044 <span class="comment">% Modifications:</span>
+0045 <span class="comment">% 04/06/06: To find the days, it was only changed the loop to a cell array. Thanks to Jérôme.</span>
+0046 <span class="comment">% ------------------------------------------------------------------------------------------------------------</span>
+0047    
+0048    error(nargchk(6,6,nargin))
+0049    timeut = hour + ( min / 60 ) + ( sec / 3600 );
+0050 
+0051    <span class="comment">%For common era (CE), anno domini (AD)</span>
+0052    JD = ( 367 * year ) - floor ( 7 * ( year + floor( ( month + 9 ) / 12 ) ) / 4 ) - <span class="keyword">...</span>
+0053                      floor( 3 * ( floor( ( year + ( month - 9 ) / 7 ) / 100 ) + 1 ) / 4 ) + <span class="keyword">...</span>
+0054                      floor( ( 275 * month ) / 9 ) + day + 1721028.5 + ( timeut / 24 );
+0055    a = ( JD + 1.5 ) / 7;
+0056    frac = a - floor(a);
+0057    n = floor(frac * 7) ;
+0058    julianday ={ <span class="string">'Sunday'</span> <span class="string">'Monday'</span> <span class="string">'Tuesday'</span> <span class="string">'Wednesday'</span> <span class="string">'Thursday'</span> <span class="string">'Friday'</span> <span class="string">'Saturday'</span>};
+0059    julianday = julianday{n+1};
+0060 
+0061</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

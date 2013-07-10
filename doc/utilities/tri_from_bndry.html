@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tri_from_bndry</title>
+  <meta name="keywords" content="tri_from_bndry">
+  <meta name="description" content="tesselate a triangular mesh using &quot;triangle&quot; from a single, unclosed boundary">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; tri_from_bndry.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>tri_from_bndry
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>tesselate a triangular mesh using &quot;triangle&quot; from a single, unclosed boundary</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [tri,x,y] = tri_from_bndry(xb,yb,path_to_triangle); </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> tesselate a triangular mesh using &quot;triangle&quot; from a single, unclosed boundary 
+
+ input:  xb,yb (boundary nodes, unclosed)
+         path_to_triangle:  full path to triangle executable ( a string )
+ output: tri,x,y (connectivity, nodes)</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="inkmlbb.html" class="code" title="function [pts] = inkmlbb(fname,x,y)">inkmlbb</a>	fname = 'Wet_Skagit_BB.kml';</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [tri,x,y] = tri_from_bndry(xb,yb,path_to_triangle); </a>
+0002 <span class="comment">% tesselate a triangular mesh using &quot;triangle&quot; from a single, unclosed boundary</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% input:  xb,yb (boundary nodes, unclosed)</span>
+0005 <span class="comment">%         path_to_triangle:  full path to triangle executable ( a string )</span>
+0006 <span class="comment">% output: tri,x,y (connectivity, nodes)</span>
+0007 
+0008 
+0009 <span class="comment">% dump poly file</span>
+0010 fid = fopen(<span class="string">'junk.poly'</span>,<span class="string">'w'</span>);
+0011 npts = length(xb);
+0012 fprintf(fid,<span class="string">'%d %d %d %d\n'</span>,npts,2,1,1);
+0013 <span class="keyword">for</span> i=1:npts
+0014   fprintf(fid,<span class="string">'%d %f %f %d %d\n'</span>,i,xb(i),yb(i),1,1);
+0015 <span class="keyword">end</span>;
+0016 fprintf(fid,<span class="string">'%d %d\n'</span>,npts,1);
+0017 <span class="keyword">for</span> i=1:npts-1
+0018   fprintf(fid,<span class="string">'%d %d %d %d\n'</span>,i,i,i+1,1);  
+0019 <span class="keyword">end</span>;
+0020 fprintf(fid,<span class="string">'%d %d %d %d\n'</span>,npts,npts,1,1);  
+0021 fprintf(fid,<span class="string">'%d\n'</span>,0);
+0022 fclose(fid);
+0023 
+0024 <span class="comment">% triangulate</span>
+0025 system([path_to_triangle <span class="string">' -pqm -Q junk.poly'</span>]);
+0026 
+0027 <span class="comment">% read in the triangulate file</span>
+0028 fid = fopen(<span class="string">'junk.1.node'</span>);
+0029 vec = fgetl(fid);
+0030 veci = sscanf(vec,<span class="string">'%d %d %d %d'</span>);
+0031 nvts = veci(1);
+0032 b = fscanf(fid,<span class="string">'%d %f %f %d %d'</span>,nvts*5); 
+0033 a = reshape(b,5,nvts);
+0034 x = a(2,:);
+0035 y = a(3,:);
+0036 fclose(fid);
+0037 
+0038 fid = fopen(<span class="string">'junk.1.ele'</span>);
+0039 vec = fgetl(fid);
+0040 veci = sscanf(vec,<span class="string">'%d %d %d'</span>);
+0041 nelems = veci(1);
+0042 b = fscanf(fid,<span class="string">'%d %d %d %d'</span>,nelems*4); 
+0043 a = reshape(b,4,nelems);
+0044 tri = zeros(nelems,3); 
+0045 tri(:,1) = a(2,:); 
+0046 tri(:,2) = a(3,:); 
+0047 tri(:,3) = a(4,:);</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

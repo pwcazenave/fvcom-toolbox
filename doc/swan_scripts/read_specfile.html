@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of read_specfile</title>
+  <meta name="keywords" content="read_specfile">
+  <meta name="description" content="Read the ascii-based spectral distribution output from SWAN for single station">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">swan_scripts</a> &gt; read_specfile.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for swan_scripts&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>read_specfile
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Read the ascii-based spectral distribution output from SWAN for single station</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [specstruct] = read_specfile(specfile,plotall) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Read the ascii-based spectral distribution output from SWAN for single station 
+
+ DESCRIPTION:
+   function [specstruct] = read_specfile(specfile,plotall) 
+
+ INPUT 
+   specfile = swan 40.72 spectral energy file 
+   plotall  = [optional] plot all the spectral distributions
+
+ OUTPUT:
+   specstruct = matlab spectral distribution structure
+
+ EXAMPLE USAGE
+   read_specfile('skg4.3.spec',true) 
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [specstruct] = read_specfile(specfile,plotall) </a>
+0002 <span class="comment">% Read the ascii-based spectral distribution output from SWAN for single station</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% DESCRIPTION:</span>
+0005 <span class="comment">%   function [specstruct] = read_specfile(specfile,plotall)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% INPUT</span>
+0008 <span class="comment">%   specfile = swan 40.72 spectral energy file</span>
+0009 <span class="comment">%   plotall  = [optional] plot all the spectral distributions</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% OUTPUT:</span>
+0012 <span class="comment">%   specstruct = matlab spectral distribution structure</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% EXAMPLE USAGE</span>
+0015 <span class="comment">%   read_specfile('skg4.3.spec',true)</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% Author(s):</span>
+0018 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Revision history</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">%==============================================================================</span>
+0023 
+0024 
+0025 <span class="comment">%------------------------------------------------------------------------------</span>
+0026 <span class="comment">% read in the spectral file</span>
+0027 <span class="comment">%------------------------------------------------------------------------------</span>
+0028 
+0029 <span class="comment">% make sure file exists</span>
+0030 fid = fopen(specfile,<span class="string">'r'</span>);
+0031 <span class="keyword">if</span>(fid  &lt; 0)
+0032   error([<span class="string">'file: '</span> specfile <span class="string">' does not exist'</span>]);
+0033 <span class="keyword">end</span>;
+0034 fclose(fid);
+0035 
+0036 <span class="comment">% determine number of spectral profiles</span>
+0037 cmd  = [<span class="string">'grep LOCATION '</span> specfile <span class="string">' | grep -v LOCATIONS | wc -l &gt; out'</span>];
+0038 system(cmd);
+0039 fid = fopen(<span class="string">'out'</span>,<span class="string">'r'</span>);
+0040 C=textscan(fid,<span class="string">'%d'</span>,1);
+0041 nProfiles = C{1};
+0042 fclose(fid);
+0043 
+0044 <span class="comment">% read the header</span>
+0045 fid = fopen(specfile,<span class="string">'r'</span>);
+0046 lin = fgetl(fid); <span class="comment">%header</span>
+0047 lin = fgetl(fid); <span class="comment">%header</span>
+0048 lin = fgetl(fid); <span class="comment">%header</span>
+0049 lin = fgetl(fid); <span class="comment">%header</span>
+0050 lin = fgetl(fid); <span class="comment">%header</span>
+0051 lin = fgetl(fid); <span class="comment">%header</span>
+0052 lin = fgetl(fid); <span class="comment">%header</span>
+0053 
+0054 
+0055 <span class="comment">% read the data location</span>
+0056 C = textscan(fid, <span class="string">'%f %f\n'</span>,1); 
+0057 x = C{1};
+0058 y = C{2};
+0059 fprintf(<span class="string">'probe location: %f %f\n'</span>,x,y);
+0060 
+0061 <span class="comment">% number of frequencies</span>
+0062 C = textscan(fid, <span class="string">'%s %s %s %s %s'</span>,1);  <span class="comment">%AFREQ  absolute frequencies in Hz</span>
+0063 C = textscan(fid, <span class="string">'%d %s %s %s'</span>,1); 
+0064 nFreq = C{1}
+0065 
+0066 <span class="comment">% report dimensions</span>
+0067 fprintf(<span class="string">'number of profiles %d\n'</span>,nProfiles);
+0068 fprintf(<span class="string">'number of freqs    %d\n'</span>,nFreq);
+0069 
+0070 <span class="comment">% allocate space for data</span>
+0071 freq = zeros(nFreq,1);          <span class="comment">%frequencies</span>
+0072 time = zeros(nProfiles,1);      <span class="comment">%time (modified julian day)</span>
+0073 dens = zeros(nProfiles,nFreq);  <span class="comment">%spectral density in m^2/hz</span>
+0074 wdir = zeros(nProfiles,nFreq);  <span class="comment">%average wave direction (Cartesian) at that freq</span>
+0075 sprd = zeros(nProfiles,nFreq);  <span class="comment">%directional spreading</span>
+0076 
+0077 <span class="comment">% read the frequencies</span>
+0078 <span class="keyword">for</span> i=1:nFreq
+0079   C = textscan(fid, <span class="string">'%f'</span>, 1);
+0080   freq(i) = C{1};
+0081 <span class="keyword">end</span>;
+0082 
+0083 <span class="comment">% read in stuff</span>
+0084 C = textscan(fid, <span class="string">'%s'</span>, 1);
+0085 lin = fgets(fid); 
+0086 lin = fgets(fid); 
+0087 lin = fgets(fid); 
+0088 lin = fgets(fid); 
+0089 lin = fgets(fid); 
+0090 lin = fgets(fid); 
+0091 lin = fgets(fid); 
+0092 lin = fgets(fid); 
+0093 lin = fgets(fid); 
+0094 lin = fgets(fid); 
+0095 lin = fgets(fid); 
+0096 
+0097 <span class="comment">% loop over probes, reading profiles</span>
+0098 <span class="keyword">for</span> i=1:nProfiles
+0099   fprintf(<span class="string">'reading profile %d\n'</span>,i)
+0100   C = textscan(fid, <span class="string">'%s %s %s %s'</span>, 1);
+0101   C = textscan(fid, <span class="string">'%s %d'</span>, 1);
+0102   <span class="keyword">for</span> j=1:nFreq
+0103     C = textscan(fid, <span class="string">'%f %f %f'</span>, 1);
+0104     pwr = C{1}; <span class="keyword">if</span>(pwr &lt; 0) pwr = NaN; <span class="keyword">end</span>; 
+0105     dir = C{2}; <span class="keyword">if</span>(pwr &lt; -900) dir = NaN; <span class="keyword">end</span>; 
+0106     spr = C{3}; <span class="keyword">if</span>(pwr &lt; 0) spr = NaN; <span class="keyword">end</span>; 
+0107     dens(i,j) = pwr;
+0108     wdir(i,j) = dir;
+0109     sprd(i,j) = spr;
+0110   <span class="keyword">end</span>;
+0111 <span class="keyword">end</span>;
+0112 
+0113 <span class="comment">% plot option</span>
+0114 <span class="keyword">if</span>(plotall)
+0115   <span class="keyword">for</span> i=1:2:nProfiles
+0116     plot(1./freq,dens(i,:)); hold on;
+0117   <span class="keyword">end</span>;
+0118 <span class="keyword">end</span>;</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

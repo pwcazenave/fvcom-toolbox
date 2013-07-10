@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_runs</title>
+  <meta name="keywords" content="get_runs">
+  <meta name="description" content="GET_RUNS Finds runs of continuous change in some value beyond some length">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; get_runs.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_runs
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>GET_RUNS Finds runs of continuous change in some value beyond some length</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function totalVolume = get_runs(plotOPTS,data,cellVolume,lengthThreshold,changeThreshold) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> GET_RUNS Finds runs of continuous change in some value beyond some length
+ and magnitude thresholds.
+ 
+ We're just doing lots of time series analyses here, so provide only a
+ time series as DATA.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="do_volume_change.html" class="code" title="function [totalVolume] = do_volume_change(plotOPTS,FVCOM)">do_volume_change</a>	DO_VOLUME_CHANGE Calculate volume of water which experiences a change in</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function totalVolume = get_runs(plotOPTS,data,cellVolume,lengthThreshold,changeThreshold)</a>
+0002 <span class="comment">% GET_RUNS Finds runs of continuous change in some value beyond some length</span>
+0003 <span class="comment">% and magnitude thresholds.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% We're just doing lots of time series analyses here, so provide only a</span>
+0006 <span class="comment">% time series as DATA.</span>
+0007 
+0008 <span class="comment">% Make sure we have a totalVolume value to output even if this time step</span>
+0009 <span class="comment">% doesn't match the threshold conditions specified.</span>
+0010 totalVolume=0;
+0011 
+0012 <span class="comment">% Make an array of the time indices.</span>
+0013 timeIdx=1:length(data);
+0014 <span class="comment">% Calculate the differences ...</span>
+0015 dataChange=diff(data);
+0016 <span class="comment">% and find where they're negative.</span>
+0017 negIdx=dataChange&lt;0;
+0018 
+0019 <span class="comment">% Use the diff of the negative indices to find the start and end of each</span>
+0020 <span class="comment">% run.</span>
+0021 dn=diff(negIdx);
+0022 dnIdxStart=timeIdx(dn&gt;0)+1; <span class="comment">% add one to move start along to correct index</span>
+0023 dnIdxEnd=timeIdx(dn&lt;0);
+0024 
+0025 <span class="comment">% Check if the start and end are identical (i.e. we have a spike).</span>
+0026 <span class="keyword">if</span> (numel(dnIdxStart)==1 || numel(dnIdxEnd)==1)
+0027     <span class="keyword">if</span> dnIdxStart==dnIdxEnd
+0028 <span class="comment">%         warning('Single spike in time series, so carry on.')</span>
+0029         longOnesIdx(:,1:2)=nan(1,2);
+0030         <span class="keyword">return</span>
+0031     <span class="keyword">end</span>
+0032 <span class="keyword">end</span>
+0033 <span class="comment">% Check for no values</span>
+0034 <span class="keyword">if</span> sum(dnIdxStart)==0 || sum(dnIdxEnd)==0
+0035 <span class="comment">%     warning('No appropriate values here, so carry on.')</span>
+0036     longOnesIdx(:,1:2)=nan(1,2);
+0037     <span class="keyword">return</span>
+0038 <span class="keyword">end</span>
+0039 <span class="comment">% Check the first index in dnIdxEnd is larger than the dnIdxStart.</span>
+0040 <span class="keyword">if</span> dnIdxEnd(1)&lt;dnIdxStart(1)
+0041     <span class="comment">% Strip it out and adjust the dnIdxStart index accordingly.</span>
+0042     dnIdxEnd=dnIdxEnd(2:end);
+0043     dnIdxStart=dnIdxStart(1:end-1);
+0044 <span class="keyword">end</span>
+0045 
+0046 <span class="comment">% If arrays are different lengths, lop off the last one from the longer</span>
+0047 <span class="comment">% array.</span>
+0048 <span class="keyword">if</span> length(dnIdxEnd)&gt;length(dnIdxStart)
+0049     timeIndices=(dnIdxEnd(1:end-1)-dnIdxStart)&gt;=lengthThreshold;
+0050 <span class="keyword">elseif</span> length(dnIdxEnd)&lt;length(dnIdxStart)
+0051     timeIndices=(dnIdxEnd-dnIdxStart(1:end-1))&gt;=lengthThreshold;
+0052 <span class="keyword">elseif</span> length(dnIdxEnd)==length(dnIdxStart)
+0053     <span class="keyword">if</span> dnIdxStart(1)==1
+0054         timeIndices=(dnIdxEnd(1:end-1)-dnIdxStart(2:end))&gt;=lengthThreshold;
+0055     <span class="keyword">elseif</span> dnIdxEnd(1)==1
+0056         timeIndices=(dnIdxEnd(2:end)-dnIdxStart(1:end-1))&gt;=lengthThreshold;
+0057     <span class="keyword">else</span>
+0058         timeIndices=(dnIdxEnd-dnIdxStart)&gt;=lengthThreshold;
+0059     <span class="keyword">end</span>
+0060 <span class="keyword">else</span>
+0061     <span class="keyword">return</span>
+0062 <span class="keyword">end</span>
+0063 
+0064 <span class="keyword">if</span> sum(timeIndices~=0)
+0065     longOnesIdx(:,1)=dnIdxStart(timeIndices);
+0066     longOnesIdx(:,2)=dnIdxEnd(timeIndices);
+0067 <span class="keyword">else</span>
+0068     <span class="keyword">return</span>
+0069 <span class="keyword">end</span>    
+0070 
+0071 totalVolume=0;
+0072 <span class="keyword">for</span> jj=1:size(longOnesIdx,1)
+0073     <span class="comment">% Average change</span>
+0074 <span class="comment">%     changeMetric=mean(data(longOnesIdx(jj,1):longOnesIdx(jj,2)));</span>
+0075     <span class="comment">% Maximum change (i.e. closest to zero in our case)</span>
+0076     changeMetric=max(data(longOnesIdx(jj,1):longOnesIdx(jj,2)));
+0077     <span class="keyword">if</span> changeMetric&lt;changeThreshold
+0078         totalVolume=totalVolume+sum(cellVolume(longOnesIdx(jj,1):longOnesIdx(jj,2)));
+0079     <span class="keyword">end</span>
+0080 <span class="keyword">end</span>
+0081 
+0082 <span class="keyword">end</span>
+0083</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

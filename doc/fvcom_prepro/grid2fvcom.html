@@ -1,0 +1,220 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of grid2fvcom</title>
+  <meta name="keywords" content="grid2fvcom">
+  <meta name="description" content="Interpolate regularly gridded surface forcing data onto a given FVCOM">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; grid2fvcom.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>grid2fvcom
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Interpolate regularly gridded surface forcing data onto a given FVCOM</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function fvcom = grid2fvcom(Mobj,vars,data) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Interpolate regularly gridded surface forcing data onto a given FVCOM
+ grid.
+
+ grid2fvcom(Mobj,vars,data)
+
+ DESCRIPTION:
+   Takes a given NCEP reanalysis grid file and interpolates the U10 and
+   V10 values onto the specified FVCOM grid file.
+
+ INPUT:
+   Mobj - MATLAB mesh object
+   vars - a cell array of the variables to be interpolated on the FVCOM
+   grid in Mobj (e.g. uwnd, U10, vwnd, V10 etc.).
+   data - a struct which contains the following arrays:
+       x - x data (probably best in cartesian for the interpolation)
+       y - y data (probably best in cartesian for the interpolation)
+       The struct must also contain all the variables defined in vars.
+       time - time vector (in Modified Julian Days)
+
+ OUTPUT:
+   fvcom - struct of the interpolated data values at the model nodes and
+   element centres. Also includes any variables which were in the input
+   struct but which have not been interpolated (e.g. time).
+
+ NOTE:
+   The shape of the returned arrays for rhum and slp (via
+   get_NCEP_forcing.m) have sometimes differed from the other vairables
+   (they appear to be projected onto a different grid). Unless you
+   desperately need them, I would suggest omitting them from the
+   interpolation here as this assumes the arrays are all the same size.
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history:
+   2012-10-15 First version based on ncep2fvcom_U10V10.m in the
+   fvcom-toolbox.
+   2012-10-16 Removed the code to read the NCEP file. Instead, farmed that
+   out to a new function (read_NCEP_wind) so that the relevant section can
+   be more readily extracted (rather than using the entire globe's data:
+   it's easier to subsample and provide the subsampled data here).
+   2012-10-17 Add outputs to the function for use in visualisation.
+   2012-10-19 Add wind struct as input rather than separate u, v, time and
+   lat/long arrays. Makes invocation a bit cleaner.
+   2012-11-01 Farmed out the creation of the NetCDF file to
+   write_FVCOM_forcing.m and made this purely an interpolation script.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="nodes2elems.html" class="code" title="function [fieldout]  = nodes2elems(fieldin,Mobj)">nodes2elems</a>	Transfer a field from vertices to elements</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function fvcom = grid2fvcom(Mobj,vars,data)</a>
+0002 <span class="comment">% Interpolate regularly gridded surface forcing data onto a given FVCOM</span>
+0003 <span class="comment">% grid.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% grid2fvcom(Mobj,vars,data)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%   Takes a given NCEP reanalysis grid file and interpolates the U10 and</span>
+0009 <span class="comment">%   V10 values onto the specified FVCOM grid file.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT:</span>
+0012 <span class="comment">%   Mobj - MATLAB mesh object</span>
+0013 <span class="comment">%   vars - a cell array of the variables to be interpolated on the FVCOM</span>
+0014 <span class="comment">%   grid in Mobj (e.g. uwnd, U10, vwnd, V10 etc.).</span>
+0015 <span class="comment">%   data - a struct which contains the following arrays:</span>
+0016 <span class="comment">%       x - x data (probably best in cartesian for the interpolation)</span>
+0017 <span class="comment">%       y - y data (probably best in cartesian for the interpolation)</span>
+0018 <span class="comment">%       The struct must also contain all the variables defined in vars.</span>
+0019 <span class="comment">%       time - time vector (in Modified Julian Days)</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% OUTPUT:</span>
+0022 <span class="comment">%   fvcom - struct of the interpolated data values at the model nodes and</span>
+0023 <span class="comment">%   element centres. Also includes any variables which were in the input</span>
+0024 <span class="comment">%   struct but which have not been interpolated (e.g. time).</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% NOTE:</span>
+0027 <span class="comment">%   The shape of the returned arrays for rhum and slp (via</span>
+0028 <span class="comment">%   get_NCEP_forcing.m) have sometimes differed from the other vairables</span>
+0029 <span class="comment">%   (they appear to be projected onto a different grid). Unless you</span>
+0030 <span class="comment">%   desperately need them, I would suggest omitting them from the</span>
+0031 <span class="comment">%   interpolation here as this assumes the arrays are all the same size.</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">% Author(s):</span>
+0034 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% Revision history:</span>
+0037 <span class="comment">%   2012-10-15 First version based on ncep2fvcom_U10V10.m in the</span>
+0038 <span class="comment">%   fvcom-toolbox.</span>
+0039 <span class="comment">%   2012-10-16 Removed the code to read the NCEP file. Instead, farmed that</span>
+0040 <span class="comment">%   out to a new function (read_NCEP_wind) so that the relevant section can</span>
+0041 <span class="comment">%   be more readily extracted (rather than using the entire globe's data:</span>
+0042 <span class="comment">%   it's easier to subsample and provide the subsampled data here).</span>
+0043 <span class="comment">%   2012-10-17 Add outputs to the function for use in visualisation.</span>
+0044 <span class="comment">%   2012-10-19 Add wind struct as input rather than separate u, v, time and</span>
+0045 <span class="comment">%   lat/long arrays. Makes invocation a bit cleaner.</span>
+0046 <span class="comment">%   2012-11-01 Farmed out the creation of the NetCDF file to</span>
+0047 <span class="comment">%   write_FVCOM_forcing.m and made this purely an interpolation script.</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">%==========================================================================</span>
+0050 
+0051 <span class="keyword">if</span> nargin ~= 3
+0052     error(<span class="string">'Incorrect number of arguments'</span>)
+0053 <span class="keyword">end</span>
+0054 
+0055 subname = <span class="string">'grid2fvcom'</span>;
+0056 
+0057 <span class="keyword">global</span> ftbverbose;
+0058 <span class="keyword">if</span>(ftbverbose)
+0059   fprintf(<span class="string">'\n'</span>)
+0060   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0061 <span class="keyword">end</span>
+0062 
+0063 <span class="comment">%--------------------------------------------------------------------------</span>
+0064 <span class="comment">% Get the relevant bits from the FVCOM mesh object</span>
+0065 <span class="comment">%--------------------------------------------------------------------------</span>
+0066 x   = Mobj.x;
+0067 y   = Mobj.y;
+0068 nVerts = Mobj.nVerts;
+0069 nElems = Mobj.nElems;
+0070 <span class="keyword">if</span>(ftbverbose);
+0071     fprintf(<span class="string">'info for FVCOM domain\n'</span>);
+0072     fprintf(<span class="string">'number of nodes: %d\n'</span>,nVerts);
+0073     fprintf(<span class="string">'number of elems: %d\n'</span>,nElems);
+0074 <span class="keyword">end</span>
+0075 
+0076 xc = <a href="nodes2elems.html" class="code" title="function [fieldout]  = nodes2elems(fieldin,Mobj)">nodes2elems</a>(x, Mobj);
+0077 yc = <a href="nodes2elems.html" class="code" title="function [fieldout]  = nodes2elems(fieldin,Mobj)">nodes2elems</a>(y, Mobj);
+0078 
+0079 <span class="keyword">try</span>
+0080     ntimes = numel(data.time);
+0081 <span class="keyword">catch</span>
+0082     ntimes = numel(data.(vars{1}).time);
+0083 <span class="keyword">end</span>
+0084 
+0085 <span class="comment">% Interpolate supplied regularly gridded data to FVCOM mesh. Use</span>
+0086 <span class="comment">% TriScatteredInterp to do the interpolation instead of griddata (should be</span>
+0087 <span class="comment">% faster).</span>
+0088 <span class="keyword">for</span> vv=1:length(vars)
+0089     <span class="keyword">if</span> strcmpi(vars{vv}, <span class="string">'time'</span>)
+0090         fprintf(<span class="string">'transferring variable %s as is\n'</span>, vars{vv})
+0091         fvcom.(vars{vv}) = data.(vars{vv});
+0092         <span class="keyword">continue</span>
+0093     <span class="keyword">elseif</span> strcmpi(vars{vv}, <span class="string">'lat'</span>) || strcmpi(vars{vv}, <span class="string">'lon'</span>) || strcmpi(vars{vv}, <span class="string">'x'</span>) || strcmpi(vars{vv}, <span class="string">'y'</span>)
+0094         fprintf(<span class="string">'reassigning variable %s from unstructured grid\n'</span>, vars{vv})
+0095         fvcom.(vars{vv}) = Mobj.(vars{vv});
+0096     <span class="keyword">else</span>
+0097         <span class="comment">% Preallocate the output arrays</span>
+0098         fvcom.(vars{vv}).data = zeros(nElems,ntimes);
+0099         fvcom.(vars{vv}).node = zeros(nVerts,ntimes);
+0100 
+0101         <span class="keyword">for</span> i=1:ntimes
+0102             fprintf(<span class="string">'interpolating %s, frame %d of %d\n'</span>, vars{vv}, i, ntimes);
+0103             currvar = data.(vars{vv}).data(:, :, i);
+0104             <span class="comment">% griddata way (cubic interpolation)</span>
+0105             <span class="comment">%fvcom.(vars{vv}).node(:,i) = griddata(wind.x,wind.y,currvar,x,y,'cubic');</span>
+0106             <span class="comment">%fvcom.(vars{vv}).data(:,i) = griddata(wind.x,wind.y,currvar,xc,yc,'cubic');</span>
+0107             <span class="comment">% TriScatteredInterp way (with natural neighbour interpolation)</span>
+0108             ftsin = TriScatteredInterp(data.x(:), data.y(:), currvar(:), <span class="string">'natural'</span>);
+0109             fvcom.(vars{vv}).node(:,i) = ftsin(x,y);
+0110             fvcom.(vars{vv}).data(:,i) = ftsin(xc,yc);
+0111             nnans(1) = sum(isnan(fvcom.(vars{vv}).node(:,i)));
+0112             nnans(2) = sum(isnan(fvcom.(vars{vv}).data(:,i)));
+0113             <span class="keyword">if</span>  nnans(1) &gt; 0
+0114                 warning(<span class="string">'%i NaNs in the interpolated node data. This won''t work with FVCOM.'</span>, nnans(1))
+0115             <span class="keyword">end</span>
+0116             <span class="keyword">if</span> nnans(2) &gt; 0
+0117                 warning(<span class="string">'%i NaNs in the interpolated element data. This won''t work with FVCOM.'</span>, nnans(2))
+0118             <span class="keyword">end</span>
+0119         <span class="keyword">end</span>
+0120         fprintf(<span class="string">'interpolation of %s complete\n'</span>, vars{vv});
+0121     <span class="keyword">end</span>
+0122 <span class="keyword">end</span>
+0123 
+0124 <span class="keyword">if</span> ftbverbose;
+0125     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0126 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

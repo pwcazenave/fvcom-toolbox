@@ -1,0 +1,55 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of SW_Kviscosity</title>
+  <meta name="keywords" content="SW_Kviscosity">
+  <meta name="description" content="Calculates the kinemtic viscosity [m^2/s] from the dynamic viscosity and">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; SW_Kviscosity.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>SW_Kviscosity
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Calculates the kinemtic viscosity [m^2/s] from the dynamic viscosity and</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function new = SW_Kviscosity(T,S) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Calculates the kinemtic viscosity [m^2/s] from the dynamic viscosity and
+ density functions</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="SW_Density.html" class="code" title="function rho = SW_Density(T,S)">SW_Density</a>	SW_Density    Density of sea water</li><li><a href="SW_Viscosity.html" class="code" title="function mu = SW_Viscosity(T,S)">SW_Viscosity</a>	SW_Viscosity    Dynamic viscosity of seawater</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ST_Dstar.html" class="code" title="function [dstar] = ST_Dstar(d,varargin)">ST_Dstar</a>	Calculate non-dimensional grain size D*</li><li><a href="ST_wset.html" class="code" title="function [wset] = ST_wset(d,varargin)">ST_wset</a>	Calculate settling velocity of particle diameter d (m) in m/s</li><li><a href="calc_tauw.html" class="code" title="function [tauw] = calc_tauw(z0,ncfile,writenetcdf)">calc_tauw</a>	DESCRIPTION:</li><li><a href="check_wset.html" class="code" title="function [wset] = ST_wset(d,varargin)">check_wset</a>	Calculate settling velocity of particle diameter d (m) in m/s</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function new = SW_Kviscosity(T,S)</a>
+0002 <span class="comment">% Calculates the kinemtic viscosity [m^2/s] from the dynamic viscosity and</span>
+0003 <span class="comment">% density functions</span>
+0004 mu = <a href="SW_Viscosity.html" class="code" title="function mu = SW_Viscosity(T,S)">SW_Viscosity</a>(T,S);
+0005 rho = <a href="SW_Density.html" class="code" title="function rho = SW_Density(T,S)">SW_Density</a>(T,S);
+0006 new = mu./rho;
+0007 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

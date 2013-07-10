@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of ST_summary</title>
+  <meta name="keywords" content="ST_summary">
+  <meta name="description" content="Print summary for stats of particle diameter d (m)">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; ST_summary.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>ST_summary
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Print summary for stats of particle diameter d (m)</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [] = ST_summary(d,varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Print summary for stats of particle diameter d (m) 
+
+ function [] = ST_summary(d,varargin)
+
+ DESCRIPTION:
+ Calculate settling velocity of particle diameter d (m) in m/s 
+
+ INPUT:
+    d: sediment grain size in m
+    [optional] 'temperature' = temperature of the seawater in C [default=10]
+    [optional] 'salinity'    = salinity of seawater in PSU      [default=35]
+    [optional] 'sdens'       = sediment density in kg/m^3       [default=2650]
+
+ OUTPUT:
+      
+
+ EXAMPLE USAGE
+    ST_summary(.0005,'temperature',10,'salinity',35,'sdens',2650) 
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ References
+   
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ST_Dstar.html" class="code" title="function [dstar] = ST_Dstar(d,varargin)">ST_Dstar</a>	Calculate non-dimensional grain size D*</li><li><a href="ST_d2phi.html" class="code" title="function [phi] = ST_d2phi(d)">ST_d2phi</a>	Convert sediment diameter (m) to phi</li><li><a href="ST_erate.html" class="code" title="function [erate] = ST_erate(d,varargin)">ST_erate</a>	Calculate erosion rate in kg/(m^2-s)</li><li><a href="ST_taucr.html" class="code" title="function [taucr] = ST_taucr(d,varargin)">ST_taucr</a>	Calculate critical shear stress in Pascals</li><li><a href="ST_wentworth.html" class="code" title="function [Sclass] = wentworth(phi)">ST_wentworth</a>	Report wentworth class of a particular grain size phi</li><li><a href="ST_wset.html" class="code" title="function [wset] = ST_wset(d,varargin)">ST_wset</a>	Calculate settling velocity of particle diameter d (m) in m/s</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [] = ST_summary(d,varargin)</a>
+0002 <span class="comment">% Print summary for stats of particle diameter d (m)</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function [] = ST_summary(d,varargin)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">% Calculate settling velocity of particle diameter d (m) in m/s</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT:</span>
+0010 <span class="comment">%    d: sediment grain size in m</span>
+0011 <span class="comment">%    [optional] 'temperature' = temperature of the seawater in C [default=10]</span>
+0012 <span class="comment">%    [optional] 'salinity'    = salinity of seawater in PSU      [default=35]</span>
+0013 <span class="comment">%    [optional] 'sdens'       = sediment density in kg/m^3       [default=2650]</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% OUTPUT:</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% EXAMPLE USAGE</span>
+0019 <span class="comment">%    ST_summary(.0005,'temperature',10,'salinity',35,'sdens',2650)</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% Author(s):</span>
+0022 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% References</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Revision history</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">%==============================================================================</span>
+0030 
+0031 subname = <span class="string">'ST_summary'</span>;  
+0032 <span class="comment">%fprintf('\n')</span>
+0033 <span class="comment">%fprintf(['begin : ' subname '\n'])</span>
+0034 
+0035 <span class="comment">% constants</span>
+0036 grav  = 9.8106;   <span class="comment">%g</span>
+0037 T     = 10;       <span class="comment">%T (C)</span>
+0038 S     = 35;       <span class="comment">%S (PSU)</span>
+0039 sdens = 2650;     <span class="comment">%sediment density in kg/m^3</span>
+0040 
+0041 <span class="comment">% parse arguments</span>
+0042 <span class="keyword">for</span> i=1:2:length(varargin)-1
+0043         keyword  = lower(varargin{i});
+0044         <span class="keyword">if</span>( ~ischar(keyword) )
+0045                 error(<span class="string">'incorrect usage of ST_wset'</span>)
+0046         <span class="keyword">end</span>;
+0047 
+0048         <span class="keyword">switch</span>(keyword(1:3))
+0049 
+0050         <span class="keyword">case</span> <span class="string">'tem'</span>
+0051              T = varargin{i+1};
+0052         <span class="keyword">case</span> <span class="string">'sal'</span>
+0053              S = varargin{i+1};
+0054         <span class="keyword">case</span> <span class="string">'sde'</span>
+0055              sdens = varargin{i+1}; 
+0056         <span class="keyword">otherwise</span>
+0057                 error([<span class="string">'Can''t understand value for:'</span> keyword]);
+0058         <span class="keyword">end</span>; <span class="comment">%switch keyword</span>
+0059 <span class="keyword">end</span>;
+0060 
+0061 fprintf(<span class="string">'       phi          class       d(mm)    Dstar    wset(mm/s)  taucr (Pa)  erate x1e-3(kg/(m^2-s))\n'</span>)
+0062 
+0063 phi         = <a href="ST_d2phi.html" class="code" title="function [phi] = ST_d2phi(d)">ST_d2phi</a>(d);
+0064 phiclass    = <a href="ST_wentworth.html" class="code" title="function [Sclass] = wentworth(phi)">ST_wentworth</a>(phi);
+0065 Dstar       = <a href="ST_Dstar.html" class="code" title="function [dstar] = ST_Dstar(d,varargin)">ST_Dstar</a>(d);
+0066 Wset        = <a href="ST_wset.html" class="code" title="function [wset] = ST_wset(d,varargin)">ST_wset</a>(d);
+0067 Taucr       = <a href="ST_taucr.html" class="code" title="function [taucr] = ST_taucr(d,varargin)">ST_taucr</a>(d);
+0068 erate       = <a href="ST_erate.html" class="code" title="function [erate] = ST_erate(d,varargin)">ST_erate</a>(d);
+0069 fprintf(<span class="string">'%10d %20s %8.4f %8.2f %9.4f %8.3f %8.3f\n'</span>,phi,phiclass,d*1000,Dstar,Wset*1000,Taucr,1000*erate)
+0070 
+0071</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of example</title>
+  <meta name="keywords" content="example">
+  <meta name="description" content="example demonstrating reading in a 2DM file and constructing a model">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; example.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>example
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>example demonstrating reading in a 2DM file and constructing a model</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> example demonstrating reading in a 2DM file and constructing a model
+
+ function example
+
+ DESCRIPTION:
+    Read in a 2DM Mesh and bathymetry file
+    Dump river file, open boundary forcing file, time series wind forcing 
+      file, grid file, open boundary node list file, bathymetry file, 
+      beflag file, roughness file
+
+ INPUT
+   
+ OUTPUT:
+    A bunch of files
+
+ EXAMPLE USAGE
+    example
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="add_coriolis.html" class="code" title="function [Mobj] = add_coriolis(Mobj,cortype,fval)">add_coriolis</a>	Generate latitude used for FVCOM Coriolis file</li><li><a href="add_obc_nodes_list.html" class="code" title="function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType,plotFig)">add_obc_nodes_list</a>	Add a set of obc nodes comprising a single obc boundary to Mesh structure</li><li><a href="add_river_nodes_list.html" class="code" title="function [Mobj]  = add_river_nodes(Mobj,Nlist,RiverName)">add_river_nodes_list</a>	Add a set of river nodes comprising a single river to Mesh structure</li><li><a href="elems2nodes.html" class="code" title="function [fieldout]  = elems2nodes(fieldin,Mobj)">elems2nodes</a>	Transfer a field from elements to vertices</li><li><a href="estimate_ts.html" class="code" title="function [Mobj] = estimate_ts(Mobj,u,zeta)">estimate_ts</a>	Estimate time step at each node</li><li><a href="example_FVCOM_river.html" class="code" title="function example_FVCOM_river()">example_FVCOM_river</a>	example file for dumping an FVCOM river file and adding sediment concentration</li><li><a href="example_FVCOM_tsobc.html" class="code" title="function example_FVCOM_tsobc(basename,time,nSiglay)">example_FVCOM_tsobc</a>	example file for dumping a file to force temperature and salinity at the open b.</li><li><a href="example_FVCOM_wind_ts.html" class="code" title="function example_FVCOM_wind_ts">example_FVCOM_wind_ts</a>	example file for FVCOM, time-varying/spatially constant wind forcing as stress</li><li><a href="nodes2elems.html" class="code" title="function [fieldout]  = nodes2elems(fieldin,Mobj)">nodes2elems</a>	Transfer a field from vertices to elements</li><li><a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>	Plot the mesh, user defined field, open boundary nodes, and river points</li><li><a href="read_sms_mesh.html" class="code" title="function [Mobj] = read_sms_mesh(varargin)">read_sms_mesh</a>	Read sms mesh files into Matlab mesh object</li><li><a href="set_spectide.html" class="code" title="function set_spectide(Mobj,nComps,SpectralFile,MyTitle)">set_spectide</a>	Setup spectral tides on the open boundary and dump a spectral file</li><li><a href="setup_metrics.html" class="code" title="function [Mobj]  = setup_metrics(Mobj)">setup_metrics</a>	Setup metrics for mesh object Mesh</li><li><a href="smoothfield.html" class="code" title="function [field]  = smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts)">smoothfield</a>	Smooth a vertex-based field using averages</li><li><a href="write_FVCOM_bath.html" class="code" title="function write_FVCOM_bath(Mobj,filename)">write_FVCOM_bath</a>	Write bathymetry to FVCOM format bathymetry file</li><li><a href="write_FVCOM_bedflag.html" class="code" title="function write_FVCOM_bedflag(bedflag,filename,mytitle)">write_FVCOM_bedflag</a>	Dump spatially-variable flag (bedflag) to FVCOM forcing file</li><li><a href="write_FVCOM_cor.html" class="code" title="function write_FVCOM_cor(Mobj,filename)">write_FVCOM_cor</a>	Write coriolis to FVCOM format coriolis file</li><li><a href="write_FVCOM_grid.html" class="code" title="function write_FVCOM_grid(Mobj,filename)">write_FVCOM_grid</a>	Write grid and connectivity to FVCOM format grid file</li><li><a href="write_FVCOM_obc.html" class="code" title="function write_FVCOM_obc(Mobj,filename)">write_FVCOM_obc</a>	Write FVCOM format open boundary node list file</li><li><a href="write_FVCOM_sponge.html" class="code" title="function write_FVCOM_sponge(Mobj,filename)">write_FVCOM_sponge</a>	Write FVCOM format sponge layer file</li><li><a href="write_FVCOM_z0.html" class="code" title="function write_FVCOM_z0(z0,filename,mytitle)">write_FVCOM_z0</a>	Dump spatially-variable or uniform bottom roughness (z0) to FVCOM forcing</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">% example demonstrating reading in a 2DM file and constructing a model</span>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% function example</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% DESCRIPTION:</span>
+0006 <span class="comment">%    Read in a 2DM Mesh and bathymetry file</span>
+0007 <span class="comment">%    Dump river file, open boundary forcing file, time series wind forcing</span>
+0008 <span class="comment">%      file, grid file, open boundary node list file, bathymetry file,</span>
+0009 <span class="comment">%      beflag file, roughness file</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% OUTPUT:</span>
+0014 <span class="comment">%    A bunch of files</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% EXAMPLE USAGE</span>
+0017 <span class="comment">%    example</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% Author(s):</span>
+0020 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Revision history</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">%==============================================================================</span>
+0025 
+0026 
+0027 clear all; close all;
+0028 
+0029 <span class="keyword">global</span> ftbverbose
+0030 ftbverbose = true; <span class="comment">%print information to screen [true/false]</span>
+0031 
+0032 <span class="comment">% read the Mesh from an SMS file</span>
+0033 Mobj = <a href="read_sms_mesh.html" class="code" title="function [Mobj] = read_sms_mesh(varargin)">read_sms_mesh</a>(<span class="string">'2dm'</span>,<span class="string">'./samples/tst.2dm'</span>,<span class="string">'bath'</span>,<span class="string">'./samples/tst.dep'</span>);
+0034 
+0035 <span class="comment">% reverse the topography so that it is positive down (e.g. bathymetry)</span>
+0036 <span class="keyword">if</span>(mean(Mobj.h) &lt; 0.0)
+0037     Mobj.h = -Mobj.h;
+0038 <span class="keyword">end</span>;
+0039 
+0040 <span class="comment">% calculate the Corolis</span>
+0041 Mobj = <a href="add_coriolis.html" class="code" title="function [Mobj] = add_coriolis(Mobj,cortype,fval)">add_coriolis</a>(Mobj,<span class="string">'constant'</span>,31.0);
+0042 
+0043 <span class="comment">% check the time step and plot</span>
+0044 Mobj = <a href="estimate_ts.html" class="code" title="function [Mobj] = estimate_ts(Mobj,u,zeta)">estimate_ts</a>(Mobj);
+0045 <a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>(Mobj,Mobj.ts,<span class="string">'title'</span>,<span class="string">'timestep (s)'</span>)
+0046 fprintf(<span class="string">'estimated max external mode time step in seconds %f\n'</span>,min(Mobj.ts));
+0047 
+0048 <span class="comment">% smooth bathymetry with 4 iterations of explicit smoother</span>
+0049 <a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>(Mobj,Mobj.h,<span class="string">'title'</span>,<span class="string">'original bathymetry'</span>)
+0050 Mobj = <a href="setup_metrics.html" class="code" title="function [Mobj]  = setup_metrics(Mobj)">setup_metrics</a>(Mobj);
+0051 [Mobj.h] = <a href="smoothfield.html" class="code" title="function [field]  = smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts)">smoothfield</a>(Mobj.h,Mobj,0.5,4);
+0052 <a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>(Mobj,Mobj.h,<span class="string">'title'</span>,<span class="string">'smoothed bathymetry'</span>);
+0053 
+0054 <span class="comment">% setup spatially variable bottom roughness and dump to file</span>
+0055  hc = <a href="nodes2elems.html" class="code" title="function [fieldout]  = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.h,Mobj);
+0056  z0 = .008*ones(Mobj.nElems,1);
+0057  deep = find(hc &gt; 5.);
+0058  z0(deep) = .004;
+0059  clear hc;
+0060  <a href="write_FVCOM_z0.html" class="code" title="function write_FVCOM_z0(z0,filename,mytitle)">write_FVCOM_z0</a>(z0,<span class="string">'tst_z0.nc'</span>,<span class="string">'z0 test 1'</span>)
+0061  <a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>(Mobj,<a href="elems2nodes.html" class="code" title="function [fieldout]  = elems2nodes(fieldin,Mobj)">elems2nodes</a>(z0,Mobj),<span class="string">'title'</span>,<span class="string">'bottom roughness'</span>)
+0062 
+0063 <span class="comment">% add a river to the domain</span>
+0064 <span class="comment">%[Mobj] = add_river_nodes_graphic(Mobj,'tstRiver');</span>
+0065 [Mobj] = <a href="add_river_nodes_list.html" class="code" title="function [Mobj]  = add_river_nodes(Mobj,Nlist,RiverName)">add_river_nodes_list</a>(Mobj,[838,844,845],<span class="string">'tstRiver'</span>);
+0066 
+0067 <span class="comment">% add an open boundary to the Mesh</span>
+0068 [Mobj] = <a href="add_obc_nodes_list.html" class="code" title="function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType,plotFig)">add_obc_nodes_list</a>(Mobj,[1:25],<span class="string">'OpenOcean'</span>,1);
+0069 <span class="comment">% [Mobj] = add_obc_nodes_graphic(Mobj,'OpenOcean2',1);</span>
+0070 
+0071 <span class="comment">% add two sponge layers to the Mesh</span>
+0072 <span class="comment">% [Mobj] = add_sponge_nodes(Mobj,'Sponge1',10000,.0001);</span>
+0073 <span class="comment">% [Mobj] = add_sponge_nodes(Mobj,'Sponge2',5000,.0004);</span>
+0074 
+0075 <span class="comment">% plot everything</span>
+0076 <a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>(Mobj,Mobj.h,<span class="string">'title'</span>,<span class="string">'domain'</span>,<span class="string">'withextra'</span>,true,<span class="string">'showgrid'</span>,true);
+0077 
+0078 
+0079 
+0080 <span class="comment">%------------------------------------------------------------------------------</span>
+0081 <span class="comment">% dump input files for FVCOM 3.x</span>
+0082 <span class="comment">%------------------------------------------------------------------------------</span>
+0083 
+0084 <span class="comment">% add river forcing</span>
+0085 <a href="example_FVCOM_river.html" class="code" title="function example_FVCOM_river()">example_FVCOM_river</a>()
+0086 
+0087 <span class="comment">% add harmonic forcing to open boundary</span>
+0088 <a href="set_spectide.html" class="code" title="function set_spectide(Mobj,nComps,SpectralFile,MyTitle)">set_spectide</a>(Mobj)
+0089 
+0090 <span class="comment">% add Julian forcing to the open boundary using t_tide station</span>
+0091 
+0092 <span class="comment">% wind time series wind forcing example here</span>
+0093 <a href="example_FVCOM_wind_ts.html" class="code" title="function example_FVCOM_wind_ts">example_FVCOM_wind_ts</a>
+0094 
+0095 <span class="comment">% dump mesh and connectivity</span>
+0096 <a href="write_FVCOM_grid.html" class="code" title="function write_FVCOM_grid(Mobj,filename)">write_FVCOM_grid</a>(Mobj,<span class="string">'tst_grd.dat'</span>)
+0097 
+0098 <span class="comment">% dump bathymetry</span>
+0099 <a href="write_FVCOM_bath.html" class="code" title="function write_FVCOM_bath(Mobj,filename)">write_FVCOM_bath</a>(Mobj,<span class="string">'tst_dep.dat'</span>)
+0100 
+0101 <span class="comment">% % dump open boundary node list</span>
+0102 <a href="write_FVCOM_obc.html" class="code" title="function write_FVCOM_obc(Mobj,filename)">write_FVCOM_obc</a>(Mobj,<span class="string">'tst_obc.dat'</span>)
+0103 
+0104 <span class="comment">% dump a Temp/Salinity open boundary forcing file</span>
+0105 <a href="example_FVCOM_tsobc.html" class="code" title="function example_FVCOM_tsobc(basename,time,nSiglay)">example_FVCOM_tsobc</a>()
+0106 
+0107 <span class="comment">% dump sponge layer file</span>
+0108 <a href="write_FVCOM_sponge.html" class="code" title="function write_FVCOM_sponge(Mobj,filename)">write_FVCOM_sponge</a>(Mobj,<span class="string">'tst_spg.dat'</span>);
+0109 
+0110 <span class="comment">% do not allow for bed processes (erosion/deposition) east of the inlet</span>
+0111 pts = find(Mobj.x &gt; 2.85e5);
+0112 bedflag = ones(Mobj.nVerts,1); 
+0113 bedflag(pts) = 0;
+0114 <a href="write_FVCOM_bedflag.html" class="code" title="function write_FVCOM_bedflag(bedflag,filename,mytitle)">write_FVCOM_bedflag</a>(bedflag,<span class="string">'tst_bedflag.nc'</span>,<span class="string">'no bed processes east of inlet'</span>)
+0115 <a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>(Mobj,bedflag); title(<span class="string">'bedflag'</span>);
+0116 
+0117 <span class="comment">% dump Coriolis file</span>
+0118 <a href="write_FVCOM_cor.html" class="code" title="function write_FVCOM_cor(Mobj,filename)">write_FVCOM_cor</a>(Mobj,<span class="string">'tst_cor.dat'</span>)
+0119 
+0120</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

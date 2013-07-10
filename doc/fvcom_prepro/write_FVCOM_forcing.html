@@ -1,0 +1,473 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_FVCOM_forcing</title>
+  <meta name="keywords" content="write_FVCOM_forcing">
+  <meta name="description" content="Write data out to FVCOM NetCDF forcing file.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_FVCOM_forcing.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_FVCOM_forcing
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Write data out to FVCOM NetCDF forcing file.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Write data out to FVCOM NetCDF forcing file.
+
+ write_FVCOM_forcing(fvcom_forcing_file, data, infos, fver)
+
+ DESCRIPTION:
+   Takes the given interpolated data (e.g. from grid2fvcom) and writes out
+   to a NetCDF file.
+
+ INPUT:
+   Mobj - MATLAB mesh object
+   fileprefix - Output NetCDF file prefix (plus path) will be
+       fileprefix_{wnd,hfx,evap}.nc if fver is '3.1.0', otherwise output
+       files will be fileprefix_wnd.nc.
+   data - Struct of the data to be written out.
+   infos - Additional remarks to be written to the &quot;infos&quot; NetCDF variable
+   fver - Output for version 3.1.0 or 3.1.6. The latter means all the
+       forcing can go in a single file, the former needs separate files
+       for specific forcing data (wind, heating and precipitation).
+
+ The fields in data may be called any of:
+     - 'u10', 'v10', 'uwnd', 'vwnd' - wind components
+     - 'slp'       - sea level pressure
+     - 'P_E'       - evaporation
+     - 'prate'     - precipitation
+     - 'nswrs'     - short wave radiation
+     - 'shtfl'\
+     - 'lhtfl' &gt;   - combine to form &quot;surface net heat flux&quot;
+     - 'nlwrs'/
+     - 'time'
+     - 'lon'
+     - 'lat'
+     - 'x'
+     - 'y'
+
+ OUTPUT:
+   FVCOM wind speed forcing NetCDF file(s)
+
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+   Karen Thurston (National Oceanography Centre, Liverpool)
+
+ PWC Revision history:
+   2012-11-01 - First version based on the parts of grid2fvcom_U10V10.m
+   which dealt with writing the NetCDF file. This version now dynamically
+   deals with varying numbers of forcing data.
+   2012-11-09 - Add the correct calculation for the surface net heat flux.
+
+ KJT Revision history:
+   2013-01-16 - Added support for output of sea level pressure.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="nodes2elems.html" class="code" title="function [fieldout]  = nodes2elems(fieldin,Mobj)">nodes2elems</a>	Transfer a field from vertices to elements</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)</a>
+0002 <span class="comment">% Write data out to FVCOM NetCDF forcing file.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% write_FVCOM_forcing(fvcom_forcing_file, data, infos, fver)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Takes the given interpolated data (e.g. from grid2fvcom) and writes out</span>
+0008 <span class="comment">%   to a NetCDF file.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   Mobj - MATLAB mesh object</span>
+0012 <span class="comment">%   fileprefix - Output NetCDF file prefix (plus path) will be</span>
+0013 <span class="comment">%       fileprefix_{wnd,hfx,evap}.nc if fver is '3.1.0', otherwise output</span>
+0014 <span class="comment">%       files will be fileprefix_wnd.nc.</span>
+0015 <span class="comment">%   data - Struct of the data to be written out.</span>
+0016 <span class="comment">%   infos - Additional remarks to be written to the &quot;infos&quot; NetCDF variable</span>
+0017 <span class="comment">%   fver - Output for version 3.1.0 or 3.1.6. The latter means all the</span>
+0018 <span class="comment">%       forcing can go in a single file, the former needs separate files</span>
+0019 <span class="comment">%       for specific forcing data (wind, heating and precipitation).</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% The fields in data may be called any of:</span>
+0022 <span class="comment">%     - 'u10', 'v10', 'uwnd', 'vwnd' - wind components</span>
+0023 <span class="comment">%     - 'slp'       - sea level pressure</span>
+0024 <span class="comment">%     - 'P_E'       - evaporation</span>
+0025 <span class="comment">%     - 'prate'     - precipitation</span>
+0026 <span class="comment">%     - 'nswrs'     - short wave radiation</span>
+0027 <span class="comment">%     - 'shtfl'\</span>
+0028 <span class="comment">%     - 'lhtfl' &gt;   - combine to form &quot;surface net heat flux&quot;</span>
+0029 <span class="comment">%     - 'nlwrs'/</span>
+0030 <span class="comment">%     - 'time'</span>
+0031 <span class="comment">%     - 'lon'</span>
+0032 <span class="comment">%     - 'lat'</span>
+0033 <span class="comment">%     - 'x'</span>
+0034 <span class="comment">%     - 'y'</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% OUTPUT:</span>
+0037 <span class="comment">%   FVCOM wind speed forcing NetCDF file(s)</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% Author(s):</span>
+0041 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0042 <span class="comment">%   Karen Thurston (National Oceanography Centre, Liverpool)</span>
+0043 <span class="comment">%</span>
+0044 <span class="comment">% PWC Revision history:</span>
+0045 <span class="comment">%   2012-11-01 - First version based on the parts of grid2fvcom_U10V10.m</span>
+0046 <span class="comment">%   which dealt with writing the NetCDF file. This version now dynamically</span>
+0047 <span class="comment">%   deals with varying numbers of forcing data.</span>
+0048 <span class="comment">%   2012-11-09 - Add the correct calculation for the surface net heat flux.</span>
+0049 <span class="comment">%</span>
+0050 <span class="comment">% KJT Revision history:</span>
+0051 <span class="comment">%   2013-01-16 - Added support for output of sea level pressure.</span>
+0052 <span class="comment">%</span>
+0053 <span class="comment">%==========================================================================</span>
+0054 
+0055 multi_out = false; <span class="comment">% default to 3.1.6, single output file</span>
+0056 <span class="keyword">if</span> nargin &lt; 4 || nargin &gt; 5
+0057     error(<span class="string">'Incorrect number of arguments'</span>)
+0058 <span class="keyword">elseif</span> nargin == 5
+0059     <span class="keyword">if</span> strcmpi(fver, <span class="string">'3.1.0'</span>)
+0060         multi_out = true;
+0061     <span class="keyword">end</span>
+0062 <span class="keyword">end</span>
+0063 
+0064 subname = <span class="string">'write_FVCOM_forcing'</span>;
+0065 
+0066 <span class="keyword">global</span> ftbverbose;
+0067 <span class="keyword">if</span>(ftbverbose)
+0068   fprintf(<span class="string">'\n'</span>)
+0069   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0070 <span class="keyword">end</span>
+0071 
+0072 tri = Mobj.tri;
+0073 nNodes = Mobj.nVerts;
+0074 nElems = Mobj.nElems;
+0075 ntimes = numel(data.time);
+0076 
+0077 <span class="keyword">if</span> strcmpi(Mobj.nativeCoords,<span class="string">'cartesian'</span>)
+0078     x = Mobj.x;
+0079     y = Mobj.y;
+0080 <span class="keyword">else</span>
+0081     x = Mobj.lon;
+0082     y = Mobj.lat;
+0083 <span class="keyword">end</span>
+0084 
+0085 <span class="comment">% Create element vertices positions</span>
+0086 xc = <a href="nodes2elems.html" class="code" title="function [fieldout]  = nodes2elems(fieldin,Mobj)">nodes2elems</a>(x, Mobj);
+0087 yc = <a href="nodes2elems.html" class="code" title="function [fieldout]  = nodes2elems(fieldin,Mobj)">nodes2elems</a>(y, Mobj);
+0088 
+0089 <span class="comment">%--------------------------------------------------------------------------</span>
+0090 <span class="comment">% Create the NetCDF header for the FVCOM forcing file</span>
+0091 <span class="comment">%--------------------------------------------------------------------------</span>
+0092 
+0093 <span class="keyword">if</span> multi_out
+0094     suffixes = {<span class="string">'_wnd'</span>, <span class="string">'_hfx'</span>, <span class="string">'_evap'</span>, <span class="string">'_air_press'</span>};
+0095 <span class="keyword">else</span>
+0096     suffixes = {<span class="string">'_wnd'</span>};
+0097 <span class="keyword">end</span>
+0098 
+0099 <span class="keyword">for</span> i=1:length(suffixes)
+0100     nc = netcdf.create([fileprefix, suffixes{i}, <span class="string">'.nc'</span>], <span class="string">'clobber'</span>);
+0101 
+0102 <span class="comment">%     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM Forcing File')</span>
+0103     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,<span class="string">'FVCOM Forcing File'</span>)
+0104     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'institution'</span>,<span class="string">'Plymouth Marine Laboratory'</span>)
+0105     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'source'</span>,<span class="string">'FVCOM grid (unstructured) surface forcing'</span>)
+0106     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,[<span class="string">'File created on '</span>, datestr(now, <span class="string">'yyyy-mm-dd HH:MM:SS'</span>), <span class="string">' with write_FVCOM_forcing.m from the fvcom-toolbox (https://github.com/pwcazenave/fvcom-toolbox)'</span>])
+0107     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'references'</span>,<span class="string">'http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu'</span>)
+0108     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'Conventions'</span>,<span class="string">'CF-1.0'</span>)
+0109 <span class="comment">%     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'infos',infos)</span>
+0110     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'CoordinateSystem'</span>,Mobj.nativeCoords)
+0111     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'CoordinateProjection'</span>,<span class="string">'init=epsg:4326'</span>) <span class="comment">% WGS84?</span>
+0112 
+0113     <span class="comment">% Dimensions</span>
+0114     nele_dimid=netcdf.defDim(nc,<span class="string">'nele'</span>,nElems);
+0115     node_dimid=netcdf.defDim(nc,<span class="string">'node'</span>,nNodes);
+0116     three_dimid=netcdf.defDim(nc,<span class="string">'three'</span>,3);
+0117     time_dimid=netcdf.defDim(nc,<span class="string">'time'</span>,netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0118     datestrlen_dimid=netcdf.defDim(nc,<span class="string">'DateStrLen'</span>,26);
+0119 
+0120     <span class="comment">% Space variables</span>
+0121     x_varid=netcdf.defVar(nc,<span class="string">'x'</span>,<span class="string">'NC_FLOAT'</span>,node_dimid);
+0122     netcdf.putAtt(nc,x_varid,<span class="string">'long_name'</span>,<span class="string">'nodal x-coordinate'</span>);
+0123     netcdf.putAtt(nc,x_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0124 
+0125     y_varid=netcdf.defVar(nc,<span class="string">'y'</span>,<span class="string">'NC_FLOAT'</span>,node_dimid);
+0126     netcdf.putAtt(nc,y_varid,<span class="string">'long_name'</span>,<span class="string">'nodal y-coordinate'</span>);
+0127     netcdf.putAtt(nc,y_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0128 
+0129     xc_varid=netcdf.defVar(nc,<span class="string">'xc'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
+0130     netcdf.putAtt(nc,xc_varid,<span class="string">'long_name'</span>,<span class="string">'zonal x-coordinate'</span>);
+0131     netcdf.putAtt(nc,xc_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0132 
+0133     yc_varid=netcdf.defVar(nc,<span class="string">'yc'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
+0134     netcdf.putAtt(nc,yc_varid,<span class="string">'long_name'</span>,<span class="string">'zonal y-coordinate'</span>);
+0135     netcdf.putAtt(nc,yc_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0136 
+0137     nv_varid=netcdf.defVar(nc,<span class="string">'nv'</span>,<span class="string">'NC_INT'</span>,[nele_dimid, three_dimid]);
+0138     netcdf.putAtt(nc,nv_varid,<span class="string">'long_name'</span>,<span class="string">'nodes surrounding element'</span>);
+0139 
+0140     <span class="comment">% Time variables</span>
+0141     time_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,time_dimid);
+0142     netcdf.putAtt(nc,time_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
+0143     netcdf.putAtt(nc,time_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
+0144     netcdf.putAtt(nc,time_varid,<span class="string">'format'</span>,<span class="string">'modified julian day (MJD)'</span>);
+0145     netcdf.putAtt(nc,time_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0146 
+0147     itime_varid=netcdf.defVar(nc,<span class="string">'Itime'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0148     netcdf.putAtt(nc,itime_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
+0149     netcdf.putAtt(nc,itime_varid,<span class="string">'format'</span>,<span class="string">'modified julian day (MJD)'</span>);
+0150     netcdf.putAtt(nc,itime_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0151 
+0152     itime2_varid=netcdf.defVar(nc,<span class="string">'Itime2'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0153     netcdf.putAtt(nc,itime2_varid,<span class="string">'units'</span>,<span class="string">'msec since 00:00:00'</span>);
+0154     netcdf.putAtt(nc,itime2_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0155 
+0156     <span class="comment">% Since we have a dynamic number of variables in the struct, try to be a</span>
+0157     <span class="comment">% bit clever about how to create the output variables.</span>
+0158     fnames = fieldnames(data);
+0159     used_varids = cell(0);
+0160     used_fnames = cell(0);
+0161     used_dims = cell(0); <span class="comment">% exclude time (assume all variables vary in time)</span>
+0162 
+0163     <span class="keyword">for</span> vv=1:length(fnames)
+0164         <span class="comment">% Need to check both whether we have the data but also whether</span>
+0165         <span class="comment">% we're outputting to several NetCDF files. If so, we drop some</span>
+0166         <span class="comment">% variables if we're in the wrong file loop.</span>
+0167         <span class="keyword">switch</span> fnames{vv}
+0168             <span class="keyword">case</span> {<span class="string">'uwnd'</span>, <span class="string">'u10'</span>}
+0169                 <span class="keyword">if</span> strcmpi(suffixes{i}, <span class="string">'_wnd'</span>) || ~multi_out
+0170                     <span class="comment">% wind components (assume we have v if we have u)</span>
+0171 
+0172                     <span class="comment">% On the elements</span>
+0173                     u10_varid=netcdf.defVar(nc,<span class="string">'U10'</span>,<span class="string">'NC_FLOAT'</span>,[nele_dimid, time_dimid]);
+0174                     netcdf.putAtt(nc,u10_varid,<span class="string">'long_name'</span>,<span class="string">'Eastward Wind Speed'</span>);
+0175 <span class="comment">%                     netcdf.putAtt(nc,u10_varid,'standard_name','Eastward Wind Speed');</span>
+0176                     netcdf.putAtt(nc,u10_varid,<span class="string">'units'</span>,<span class="string">'m/s'</span>);
+0177                     netcdf.putAtt(nc,u10_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0178                     netcdf.putAtt(nc,u10_varid,<span class="string">'coordinates'</span>,<span class="string">''</span>);
+0179                     netcdf.putAtt(nc,u10_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0180 
+0181                     v10_varid=netcdf.defVar(nc,<span class="string">'V10'</span>,<span class="string">'NC_FLOAT'</span>,[nele_dimid, time_dimid]);
+0182                     netcdf.putAtt(nc,v10_varid,<span class="string">'long_name'</span>,<span class="string">'Northward Wind Speed'</span>);
+0183 <span class="comment">%                     netcdf.putAtt(nc,v10_varid,'standard_name','Northward Wind Speed');</span>
+0184                     netcdf.putAtt(nc,v10_varid,<span class="string">'units'</span>,<span class="string">'m/s'</span>);
+0185                     netcdf.putAtt(nc,v10_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0186                     netcdf.putAtt(nc,v10_varid,<span class="string">'coordinates'</span>,<span class="string">''</span>);
+0187                     netcdf.putAtt(nc,v10_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0188 
+0189                     uwind_varid=netcdf.defVar(nc,<span class="string">'uwind_speed'</span>,<span class="string">'NC_FLOAT'</span>,[nele_dimid, time_dimid]);
+0190                     netcdf.putAtt(nc,uwind_varid,<span class="string">'long_name'</span>,<span class="string">'Eastward Wind Speed'</span>);
+0191                     netcdf.putAtt(nc,uwind_varid,<span class="string">'standard_name'</span>,<span class="string">'Wind Speed'</span>);
+0192                     netcdf.putAtt(nc,uwind_varid,<span class="string">'units'</span>,<span class="string">'m/s'</span>);
+0193                     netcdf.putAtt(nc,uwind_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0194                     netcdf.putAtt(nc,uwind_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0195 
+0196                     vwind_varid=netcdf.defVar(nc,<span class="string">'vwind_speed'</span>,<span class="string">'NC_FLOAT'</span>,[nele_dimid, time_dimid]);
+0197                     netcdf.putAtt(nc,vwind_varid,<span class="string">'long_name'</span>,<span class="string">'Northward Wind Speed'</span>);
+0198                     netcdf.putAtt(nc,vwind_varid,<span class="string">'standard_name'</span>,<span class="string">'Wind Speed'</span>);
+0199                     netcdf.putAtt(nc,vwind_varid,<span class="string">'units'</span>,<span class="string">'m/s'</span>);
+0200                     netcdf.putAtt(nc,vwind_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0201                     netcdf.putAtt(nc,vwind_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0202 
+0203                     <span class="comment">% On the nodes</span>
+0204 <span class="comment">%                     u10_node_varid=netcdf.defVar(nc,'U10','NC_FLOAT',[node_dimid, time_dimid]);</span>
+0205 <span class="comment">%                     netcdf.putAtt(nc,u10_node_varid,'long_name','Eastward 10-m Velocity');</span>
+0206 <span class="comment">%                     netcdf.putAtt(nc,u10_node_varid,'standard_name','Eastward Wind Speed');</span>
+0207 <span class="comment">%                     netcdf.putAtt(nc,u10_node_varid,'units','m/s');</span>
+0208 <span class="comment">%                     netcdf.putAtt(nc,u10_node_varid,'grid','fvcom_grid');</span>
+0209 <span class="comment">%                     netcdf.putAtt(nc,u10_node_varid,'type','data');</span>
+0210 <span class="comment">%                     netcdf.putAtt(nc,u10_node_varid,'coordinates','');</span>
+0211 <span class="comment">%</span>
+0212 <span class="comment">%                     v10_node_varid=netcdf.defVar(nc,'V10','NC_FLOAT',[node_dimid, time_dimid]);</span>
+0213 <span class="comment">%                     netcdf.putAtt(nc,v10_node_varid,'long_name','Northward 10-m Velocity');</span>
+0214 <span class="comment">%                     netcdf.putAtt(nc,v10_node_varid,'standard_name','Northward Wind Speed');</span>
+0215 <span class="comment">%                     netcdf.putAtt(nc,v10_node_varid,'units','m/s');</span>
+0216 <span class="comment">%                     netcdf.putAtt(nc,v10_node_varid,'grid','fvcom_grid');</span>
+0217 <span class="comment">%                     netcdf.putAtt(nc,v10_node_varid,'type','data');</span>
+0218 <span class="comment">%                     netcdf.putAtt(nc,v10_node_varid,'coordinates','');</span>
+0219 
+0220 <span class="comment">%                     % Both node and element centred</span>
+0221 <span class="comment">%                     used_varids = [used_varids, {'u10_varid', 'v10_varid', 'u10_node_varid', 'v10_node_varid'}];</span>
+0222 <span class="comment">%                     used_fnames = [used_fnames, {'uwnd', 'vwnd', 'uwnd', 'vwnd'}];</span>
+0223 <span class="comment">%                     used_dims = [used_dims, {'nElems', 'nElems', 'nNodes', 'nNodes'}];</span>
+0224 <span class="comment">%                     % Only on the nodes</span>
+0225 <span class="comment">%                     used_varids = [used_varids, {'u10_node_varid', 'v10_node_varid'}];</span>
+0226 <span class="comment">%                     used_fnames = [used_fnames, {'uwnd', 'vwnd'}];</span>
+0227 <span class="comment">%                     used_dims = [used_dims, {'nNodes', 'nNodes'}];</span>
+0228                     <span class="comment">% Only on the elements</span>
+0229 <span class="comment">%                     used_varids = [used_varids, {'u10_varid', 'v10_varid'}];</span>
+0230 <span class="comment">%                     used_fnames = [used_fnames, {'uwnd', 'vwnd'}];</span>
+0231 <span class="comment">%                     used_dims = [used_dims, {'nElems', 'nElems'}];</span>
+0232                     <span class="comment">% Only on the elements (both U10/V10 and uwind_speed and</span>
+0233                     <span class="comment">% vwind_speed).</span>
+0234                     used_varids = [used_varids, {<span class="string">'u10_varid'</span>, <span class="string">'v10_varid'</span>, <span class="string">'uwind_varid'</span>, <span class="string">'vwind_varid'</span>}];
+0235                     used_fnames = [used_fnames, {<span class="string">'uwnd'</span>, <span class="string">'vwnd'</span>, <span class="string">'uwnd'</span>, <span class="string">'vwnd'</span>}];
+0236                     used_dims = [used_dims, {<span class="string">'nElems'</span>, <span class="string">'nElems'</span>, <span class="string">'nElems'</span>, <span class="string">'nElems'</span>}];
+0237                 <span class="keyword">end</span>
+0238 
+0239             <span class="keyword">case</span> <span class="string">'slp'</span>
+0240                 <span class="keyword">if</span> strcmpi(suffixes{i}, <span class="string">'_air_press'</span>) || ~multi_out
+0241                     <span class="comment">% Sea level pressure</span>
+0242                     slp_varid=netcdf.defVar(nc,<span class="string">'air_pressure'</span>,<span class="string">'NC_FLOAT'</span>,[node_dimid, time_dimid]);
+0243                     netcdf.putAtt(nc,slp_varid,<span class="string">'long_name'</span>,<span class="string">'Surface air pressure'</span>);
+0244                     netcdf.putAtt(nc,slp_varid,<span class="string">'units'</span>,<span class="string">'Pa'</span>);
+0245                     netcdf.putAtt(nc,slp_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0246                     netcdf.putAtt(nc,slp_varid,<span class="string">'coordinates'</span>,<span class="string">''</span>);
+0247                     netcdf.putAtt(nc,slp_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0248 
+0249                     used_varids = [used_varids, <span class="string">'slp_varid'</span>];
+0250                     used_fnames = [used_fnames, fnames{vv}];
+0251                     used_dims = [used_dims, <span class="string">'nNodes'</span>];
+0252                 <span class="keyword">end</span>
+0253 
+0254             <span class="keyword">case</span> <span class="string">'P_E'</span>
+0255                 <span class="keyword">if</span> strcmpi(suffixes{i}, <span class="string">'_evap'</span>) || ~multi_out
+0256                     <span class="comment">% Evaporation</span>
+0257                     pe_varid=netcdf.defVar(nc,<span class="string">'evap'</span>,<span class="string">'NC_FLOAT'</span>,[node_dimid, time_dimid]);
+0258                     netcdf.putAtt(nc,pe_varid,<span class="string">'long_name'</span>,<span class="string">'Evaporation'</span>);
+0259                     netcdf.putAtt(nc,pe_varid,<span class="string">'description'</span>,<span class="string">'Evaporation, ocean lose water is negative'</span>);
+0260                     netcdf.putAtt(nc,pe_varid,<span class="string">'units'</span>,<span class="string">'m s-1'</span>);
+0261                     netcdf.putAtt(nc,pe_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0262                     netcdf.putAtt(nc,pe_varid,<span class="string">'coordinates'</span>,<span class="string">''</span>);
+0263                     netcdf.putAtt(nc,pe_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0264 
+0265                     used_varids = [used_varids, <span class="string">'pe_varid'</span>];
+0266                     used_fnames = [used_fnames, fnames{vv}];
+0267                     used_dims = [used_dims, <span class="string">'nNodes'</span>];
+0268                 <span class="keyword">end</span>
+0269 
+0270             <span class="keyword">case</span> <span class="string">'prate'</span>
+0271                 <span class="keyword">if</span> strcmpi(suffixes{i}, <span class="string">'_evap'</span>) || ~multi_out
+0272                     <span class="comment">% Precipitation</span>
+0273                     prate_varid=netcdf.defVar(nc,<span class="string">'precip'</span>,<span class="string">'NC_FLOAT'</span>,[node_dimid, time_dimid]);
+0274                     netcdf.putAtt(nc,prate_varid,<span class="string">'long_name'</span>,<span class="string">'Precipitation'</span>);
+0275                     netcdf.putAtt(nc,prate_varid,<span class="string">'description'</span>,<span class="string">'Precipitation, ocean lose water is negative'</span>);
+0276                     netcdf.putAtt(nc,prate_varid,<span class="string">'units'</span>,<span class="string">'m s-1'</span>);
+0277                     netcdf.putAtt(nc,prate_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0278                     netcdf.putAtt(nc,prate_varid,<span class="string">'coordinates'</span>,<span class="string">''</span>);
+0279                     netcdf.putAtt(nc,prate_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0280 
+0281                     used_varids = [used_varids, <span class="string">'prate_varid'</span>];
+0282                     used_fnames = [used_fnames, fnames{vv}];
+0283                     used_dims = [used_dims, <span class="string">'nNodes'</span>];
+0284                 <span class="keyword">end</span>
+0285 
+0286             <span class="keyword">case</span> <span class="string">'nswrs'</span>
+0287                 <span class="keyword">if</span> strcmpi(suffixes{i}, <span class="string">'_hfx'</span>) || ~multi_out
+0288                     <span class="comment">% Shortwave radiation</span>
+0289                     nswrs_varid=netcdf.defVar(nc,<span class="string">'short_wave'</span>,<span class="string">'NC_FLOAT'</span>,[node_dimid, time_dimid]);
+0290                     netcdf.putAtt(nc,nswrs_varid,<span class="string">'long_name'</span>,<span class="string">'Short Wave Radiation'</span>);
+0291                     netcdf.putAtt(nc,nswrs_varid,<span class="string">'units'</span>,<span class="string">'W m-2'</span>);
+0292                     netcdf.putAtt(nc,nswrs_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0293                     netcdf.putAtt(nc,nswrs_varid,<span class="string">'coordinates'</span>,<span class="string">''</span>);
+0294                     netcdf.putAtt(nc,nswrs_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0295 
+0296                     used_varids = [used_varids, <span class="string">'nswrs_varid'</span>];
+0297                     used_fnames = [used_fnames, fnames{vv}];
+0298                     used_dims = [used_dims, <span class="string">'nNodes'</span>];
+0299                 <span class="keyword">end</span>
+0300 
+0301             <span class="keyword">case</span> {<span class="string">'shtfl'</span>, <span class="string">'lhtfl'</span>, <span class="string">'nlwrs'</span>}
+0302                 <span class="keyword">try</span>
+0303                     <span class="comment">% We might have already made this attribute, so fail</span>
+0304                     <span class="comment">% elegantly if we do. This is because we need to put</span>
+0305                     <span class="comment">% all three of shtfl, lhtfl and nlwrs to make Surface</span>
+0306                     <span class="comment">% Net Heat Flux.</span>
+0307                     <span class="keyword">if</span> strcmpi(suffixes{i}, <span class="string">'_hfx'</span>) || ~multi_out
+0308                         <span class="comment">% Surface net heat flux</span>
+0309                         nhf_varid=netcdf.defVar(nc,<span class="string">'net_heat_flux'</span>,<span class="string">'NC_FLOAT'</span>,[node_dimid, time_dimid]);
+0310                         netcdf.putAtt(nc,nhf_varid,<span class="string">'long_name'</span>,<span class="string">'Surface Net Heat Flux'</span>);
+0311                         netcdf.putAtt(nc,nhf_varid,<span class="string">'units'</span>,<span class="string">'W m-2'</span>);
+0312                         netcdf.putAtt(nc,nhf_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0313                         netcdf.putAtt(nc,nhf_varid,<span class="string">'coordinates'</span>,<span class="string">''</span>);
+0314                         netcdf.putAtt(nc,nhf_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0315                     <span class="keyword">end</span>
+0316                 <span class="keyword">end</span>
+0317                 <span class="keyword">if</span> strcmpi(suffixes{i}, <span class="string">'_hfx'</span>) || ~multi_out
+0318                     <span class="comment">% We need to save the current variable name even if we've</span>
+0319                     <span class="comment">% already made its attribute.</span>
+0320                     used_varids = [used_varids, <span class="string">'nhf_varid'</span>];
+0321                     used_fnames = [used_fnames, fnames{vv}];
+0322                     used_dims = [used_dims, <span class="string">'nNodes'</span>];
+0323                 <span class="keyword">end</span>
+0324 
+0325             <span class="keyword">case</span> {<span class="string">'time'</span>, <span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'x'</span>, <span class="string">'y'</span>}
+0326                 <span class="keyword">continue</span>
+0327 
+0328             <span class="keyword">otherwise</span>
+0329                 <span class="keyword">if</span>(ftbverbose)
+0330                     warning(<span class="string">'Unknown or unused input data type: %s'</span>, fnames{vv})
+0331                 <span class="keyword">end</span>
+0332         <span class="keyword">end</span>
+0333     <span class="keyword">end</span>
+0334 
+0335     <span class="comment">% End definitions</span>
+0336     netcdf.endDef(nc);
+0337 
+0338     <span class="comment">% Put the easy ones in first.</span>
+0339     netcdf.putVar(nc,nv_varid, tri');
+0340     netcdf.putVar(nc,time_varid,0,ntimes,data.time);
+0341     netcdf.putVar(nc,itime_varid,0,ntimes,floor(data.time));
+0342     netcdf.putVar(nc,itime2_varid,0,ntimes,mod(data.time,1)*24*3600*1000);
+0343     netcdf.putVar(nc,x_varid,x);
+0344     netcdf.putVar(nc,y_varid,y);
+0345     netcdf.putVar(nc,xc_varid,xc);
+0346     netcdf.putVar(nc,yc_varid,yc);
+0347 
+0348     <span class="comment">% Now do the dynamic ones. Set the heat flux to not done (0) until we</span>
+0349     <span class="comment">% hit one of the holy trinity (shtfl, lhtfl, nlwrs).</span>
+0350     hf_done = 0;
+0351     <span class="keyword">for</span> ff=1:length(used_fnames)
+0352         <span class="keyword">if</span> strcmpi(used_fnames{ff}, <span class="string">'shtfl'</span>) || strcmpi(used_fnames{ff}, <span class="string">'lhtfl'</span>) || strcmpi(used_fnames{ff}, <span class="string">'nlwrs'</span>)
+0353             hf_done = hf_done + 1;
+0354             <span class="keyword">if</span> hf_done == 3
+0355                 <span class="comment">% We've got all three heat parameters, so dump them into the file.</span>
+0356                 hf = data.shtfl.node + data.lhtfl.node + data.nlwrs.node;
+0357                 netcdf.putVar(nc,nhf_varid,[0,0],[nNodes,ntimes],hf)
+0358             <span class="keyword">end</span>
+0359         <span class="keyword">else</span>
+0360             <span class="comment">% One of the other data sets for which we can simply dump the</span>
+0361             <span class="comment">% existing array without waiting for other data</span>
+0362             <span class="keyword">if</span> strcmpi(used_dims{ff}, <span class="string">'nNodes'</span>)
+0363                 eval([<span class="string">'netcdf.putVar(nc,'</span>,used_varids{ff},<span class="string">',[0,0],['</span>,used_dims{ff},<span class="string">',ntimes],data.'</span>,used_fnames{ff},<span class="string">'.node);'</span>])
+0364             <span class="keyword">else</span>
+0365                 eval([<span class="string">'netcdf.putVar(nc,'</span>,used_varids{ff},<span class="string">',[0,0],['</span>,used_dims{ff},<span class="string">',ntimes],data.'</span>,used_fnames{ff},<span class="string">'.data);'</span>])
+0366             <span class="keyword">end</span>
+0367         <span class="keyword">end</span>
+0368     <span class="keyword">end</span>
+0369     <span class="keyword">if</span> hf_done ~= 3
+0370         warning(<span class="string">'Did not have all the required heat flux parameters. Need ''shtfl'', ''lhtfl'', ''nlwrs'''</span>)
+0371     <span class="keyword">end</span>
+0372 
+0373     <span class="comment">% Close the NetCDF file(s)</span>
+0374     netcdf.close(nc);
+0375 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

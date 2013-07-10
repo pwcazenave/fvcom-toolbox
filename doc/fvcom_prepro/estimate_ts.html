@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of estimate_ts</title>
+  <meta name="keywords" content="estimate_ts">
+  <meta name="description" content="Estimate time step at each node">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; estimate_ts.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>estimate_ts
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Estimate time step at each node</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Mobj] = estimate_ts(Mobj,u,zeta) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Estimate time step at each node
+
+ [Mobj] = function estimate_ts(Mobj)
+
+ DESCRIPTION:
+    Calculate barotropic time step
+
+ INPUT
+    Mobj = matlab mesh object
+
+ OUTPUT:
+    Mobj = matlab structure containing mesh time step
+
+ EXAMPLE USAGE
+    Mobj = estimate_ts(Mobj)
+
+ Author(s):
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history
+    2012-07-14 Add great circle approximation if only provided with
+    latitude and longitudes. Also add arguments to the function to define
+    current velocity and tidal amplitudes.
+
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="example.html" class="code" title="">example</a>	example demonstrating reading in a 2DM file and constructing a model</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [km]=haversine(lat1,lon1,lat2,lon2)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = estimate_ts(Mobj,u,zeta)</a>
+0002 
+0003 <span class="comment">% Estimate time step at each node</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% [Mobj] = function estimate_ts(Mobj)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Calculate barotropic time step</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT</span>
+0011 <span class="comment">%    Mobj = matlab mesh object</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% OUTPUT:</span>
+0014 <span class="comment">%    Mobj = matlab structure containing mesh time step</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% EXAMPLE USAGE</span>
+0017 <span class="comment">%    Mobj = estimate_ts(Mobj)</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% Author(s):</span>
+0020 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Revision history</span>
+0023 <span class="comment">%    2012-07-14 Add great circle approximation if only provided with</span>
+0024 <span class="comment">%    latitude and longitudes. Also add arguments to the function to define</span>
+0025 <span class="comment">%    current velocity and tidal amplitudes.</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">%==============================================================================</span>
+0028 
+0029 subname = <span class="string">'estimate_ts'</span>;
+0030 <span class="keyword">global</span> ftbverbose
+0031 <span class="keyword">if</span>(ftbverbose)
+0032     fprintf(<span class="string">'\n'</span>)
+0033     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0034 <span class="keyword">end</span>;
+0035 
+0036 <span class="comment">%------------------------------------------------------------------------------</span>
+0037 <span class="comment">% Set constants</span>
+0038 <span class="comment">%------------------------------------------------------------------------------</span>
+0039 
+0040 g    = 9.81; <span class="comment">%gravitational acceleration</span>
+0041 <span class="comment">%u    = 3.0;  %u-velocity</span>
+0042 <span class="comment">%zeta = 11.0;  %tide amp</span>
+0043 
+0044 <span class="keyword">if</span>(~Mobj.have_bath)
+0045     error(<span class="string">'can''t estimate the time step without bathymetry'</span>)
+0046 <span class="keyword">end</span>;
+0047 
+0048 <span class="comment">%------------------------------------------------------------------------------</span>
+0049 <span class="comment">% Compute the time step estimate</span>
+0050 <span class="comment">%------------------------------------------------------------------------------</span>
+0051 <span class="keyword">if</span> Mobj.have_xy
+0052     x = Mobj.x;
+0053     y = Mobj.y;
+0054 <span class="keyword">else</span>
+0055     <span class="comment">% Will convert to metres when calculating element edge length</span>
+0056     x = Mobj.lon;
+0057     y = Mobj.lat;
+0058 <span class="keyword">end</span>
+0059 h = max(Mobj.h,0);
+0060 tri = Mobj.tri;
+0061 nVerts = Mobj.nVerts;
+0062 nElems = Mobj.nElems;
+0063 
+0064 ts = ones(nVerts,1)*1e9;
+0065 lside = zeros(nVerts,1);
+0066 <span class="keyword">for</span> i=1:nElems
+0067     n1 = tri(i,1);
+0068     n2 = tri(i,2);
+0069     n3 = tri(i,3);
+0070     nds = [n1 n2 n3];
+0071     <span class="comment">% Check whether we have x and y values and use great circle</span>
+0072     <span class="comment">% approximations if we don't.</span>
+0073     <span class="keyword">if</span> Mobj.have_xy
+0074         lside(i) = sqrt( (x(n1)-x(n2))^2 + (y(n1)-y(n2))^2);
+0075     <span class="keyword">else</span>
+0076         lside(i) = <a href="#_sub1" class="code" title="subfunction [km]=haversine(lat1,lon1,lat2,lon2)">haversine</a>(x(n1),y(n1),x(n2),y(n2));
+0077     <span class="keyword">end</span>
+0078     dpth  = max(h(nds))+zeta;
+0079     dpth  = max(dpth,1);
+0080     ts(nds) = min(ts(nds),lside(i)/(sqrt(g*dpth) + u));
+0081 <span class="keyword">end</span>;
+0082 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'minimum time step: %f seconds\n'</span>,min(ts)); <span class="keyword">end</span>;
+0083 Mobj.ts = ts;
+0084 Mobj.have_ts = true;
+0085 
+0086 <span class="keyword">if</span>(ftbverbose)
+0087     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0088 <span class="keyword">end</span>
+0089 
+0090 <a name="_sub1" href="#_subfunctions" class="code">function [km]=haversine(lat1,lon1,lat2,lon2)</a>
+0091 <span class="comment">% Haversine function to calculate first order distance measurement. Assumes</span>
+0092 <span class="comment">% spherical Earth surface. Lifted from:</span>
+0093 <span class="comment">%</span>
+0094 <span class="comment">% http://www.mathworks.com/matlabcentral/fileexchange/27785</span>
+0095 <span class="comment">%</span>
+0096 R = 6371000;                    <span class="comment">% Earth's mean radius in metres</span>
+0097 delta_lat = lat2 - lat1;        <span class="comment">% difference in latitude</span>
+0098 delta_lon = lon2 - lon1;        <span class="comment">% difference in longitude</span>
+0099 a = sin(delta_lat/2)^2 + cos(lat1) * cos(lat2) * <span class="keyword">...</span>
+0100     sin(delta_lon/2)^2;
+0101 c = 2 * atan2(sqrt(a), sqrt(1-a));
+0102 km = R * c;                     <span class="comment">% distance in metres</span>
+0103</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

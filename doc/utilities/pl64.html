@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of pl64</title>
+  <meta name="keywords" content="pl64">
+  <meta name="description" content="low pass filter (33 hr)">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; pl64.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>pl64
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>low pass filter (33 hr)</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function xf=pl66tn(x,dt,T); </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> low pass filter (33 hr) 
+ PL66TN: pl66t for variable dt and T
+ xf=PL66TN(x,dt,T) computes low-passed series xf from x
+ using pl66 filter, with optional sample interval dt (hrs)
+ and filter half amplitude period T (hrs) as input for
+ non-hourly series.
+
+ INPUT:  x=time series (must be column array)
+         dt=sample interval time [hrs] (Default dt=1)
+         T=filter half-amp period [hrs] (Default T=33)
+
+ OUTPUT: xf=filtered series</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function xf=pl66tn(x,dt,T);</a>
+0002 <span class="comment">% low pass filter (33 hr)</span>
+0003 <span class="comment">% PL66TN: pl66t for variable dt and T</span>
+0004 <span class="comment">% xf=PL66TN(x,dt,T) computes low-passed series xf from x</span>
+0005 <span class="comment">% using pl66 filter, with optional sample interval dt (hrs)</span>
+0006 <span class="comment">% and filter half amplitude period T (hrs) as input for</span>
+0007 <span class="comment">% non-hourly series.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT:  x=time series (must be column array)</span>
+0010 <span class="comment">%         dt=sample interval time [hrs] (Default dt=1)</span>
+0011 <span class="comment">%         T=filter half-amp period [hrs] (Default T=33)</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% OUTPUT: xf=filtered series</span>
+0014 
+0015 <span class="comment">% NOTE: both pl64 and pl66 have the same 33 hr filter</span>
+0016 <span class="comment">% half-amplitude period. pl66 includes additional filter weights</span>
+0017 <span class="comment">% upto and including the fourth zero crossing at 2*T hrs.</span>
+0018 
+0019 <span class="comment">% The PL64 filter is described on p. 21, Rosenfeld (1983), WHOI</span>
+0020 <span class="comment">% Technical Report 85-35. Filter half amplitude period = 33 hrs.,</span>
+0021 <span class="comment">% half power period = 38 hrs. The time series x is folded over</span>
+0022 <span class="comment">% and cosine tapered at each end to return a filtered time series</span>
+0023 <span class="comment">% xf of the same length. Assumes length of x greater than 132.</span>
+0024 
+0025 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0026 <span class="comment">% 10/30/00</span>
+0027 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0028 
+0029 <span class="comment">% default to pl64</span>
+0030 <span class="keyword">if</span> (nargin==1); dt=1; T=33; <span class="keyword">end</span>
+0031 
+0032 cutoff=T/dt;
+0033 fq=1./cutoff;
+0034 nw=2*T./dt;
+0035 nw=round(nw);
+0036 <span class="comment">%disp(['number of weights = ',int2str(nw)])</span>
+0037 nw2=2.*nw;
+0038 
+0039 [npts,ncol]=size(x);
+0040 <span class="keyword">if</span> (npts&lt;ncol);x=x';[npts,ncol]=size(x);<span class="keyword">end</span>
+0041 xf=x;
+0042 
+0043 <span class="comment">% generate filter weights</span>
+0044 j=1:nw;
+0045 t=pi.*j;
+0046 den=fq.*fq.*t.^3;
+0047 wts=(2.*sin(2.*fq.*t)-sin(fq.*t)-sin(3.*fq.*t))./den;
+0048 <span class="comment">% make symmetric filter weights</span>
+0049 wts=[wts(nw:-1:1),2.*fq,wts];
+0050 wts=wts./sum(wts);<span class="comment">% normalize to exactly one</span>
+0051 <span class="comment">% plot(wts);grid;</span>
+0052 <span class="comment">% title(['pl64t filter weights for dt = ',num2str(dt),' and T = ',num2str(T)])</span>
+0053 <span class="comment">% xlabel(['number of weights = ',int2str(nw)]);pause;</span>
+0054 
+0055 <span class="comment">% fold tapered time series on each end</span>
+0056 cs=cos(t'./nw2);
+0057 jm=[nw:-1:1];
+0058 
+0059 <span class="keyword">for</span> ic=1:ncol
+0060 <span class="comment">% ['column #',num2str(ic)]</span>
+0061  jgd=find(~isnan(x(:,ic)));
+0062  npts=length(jgd);
+0063  <span class="keyword">if</span> (npts&gt;nw2)
+0064 <span class="comment">%detrend time series, then add trend back after filtering</span>
+0065   xdt=detrend(x(jgd,ic));
+0066   trnd=x(jgd,ic)-xdt;
+0067   y=[cs(jm).*xdt(jm);xdt;cs(j).*xdt(npts+1-j)];
+0068 <span class="comment">% filter</span>
+0069   yf=filter(wts,1.0,y);
+0070 <span class="comment">% strip off extra points</span>
+0071   xf(jgd,ic)=yf(nw2+1:npts+nw2);
+0072 <span class="comment">% add back trend</span>
+0073   xf(jgd,ic)=xf(jgd,ic)+trnd;
+0074  <span class="keyword">else</span>
+0075  <span class="string">'warning time series is too short'</span>
+0076  <span class="keyword">end</span>
+0077 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

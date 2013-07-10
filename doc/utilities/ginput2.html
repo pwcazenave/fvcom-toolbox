@@ -1,0 +1,831 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of ginput2</title>
+  <meta name="keywords" content="ginput2">
+  <meta name="description" content="GINPUT2   Graphical input from mouse with zoom, pan, plot and scaling.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; ginput2.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>ginput2
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>GINPUT2   Graphical input from mouse with zoom, pan, plot and scaling.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function  [X,Y,BUTTON,SCALEMAT] = ginput2(varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">GINPUT2   Graphical input from mouse with zoom, pan, plot and scaling.
+   
+   SYNTAX:
+                        XY = ginput2;
+                        XY = ginput2(DoScale);          true or false
+                        XY = ginput2(...,PlotOpt);      '.r' for example
+                        XY = ginput2(...,'KeepZoom');   vs. 'UnZoom'
+                        XY = ginput2(N,...);
+                        XY = ginput2(...);
+                     [X,Y] = ginput2(...);
+              [X,Y,BUTTON] = ginput2(...);
+     [X,Y,BUTTON,SCALEMAT] = ginput2(...);
+
+   INPUT:
+     DoScale    - Single logical specifying whether the IMAGE should be
+                  interactively scaled (georeferenced), or it can be the
+                  2x4 SCALEMAT matrix for automatically scaling.
+                  DEFAULT: false (do not scales/georeferences)
+     PlotOpt    - String and/or parameter/value pairs specifying the drawn
+                  points optional inputs (see PLOT for details). 
+                  DEFAULT: 'none' (do not plot any point)
+     'KeepZoom' - When finishing selection by default the zoom is
+                  restored. By using this option this feature is ignored.
+                  DEFAULT: 'UnZoom' (restores original axis limits)
+     N          - Number of points to be selected. One of 0,1,2,...,Inf
+                  DEFAULT: Inf (selects until ENTER or ESCAPE is pressed)
+
+   OUTPUT:
+     XY        - [X(:) Y(:)] axis coordinate(s).
+     X         - X-coordinate(s).
+     Y         - Y-coordinate(s).
+     BUTTON    - Last pressed button.
+     SCALEMAT  - 2x4 matrix specifying the coordinates of two different
+                 points (1) and (2) in the Image coordinates (pixels) and
+                 the User coordinates (data):
+                                                Point 1     Point 2
+                   Image coord (pixels):     [ (I1x,I1y)   (I2x,I2y) 
+                   User  coord (data)  :       (U1x,U1y)   (U2x,U2y) ]
+                 to be use for scaling/georeferencing.
+
+   DESCRIPTION:
+     This program uses MATLAB's GINPUT function to get the coordinates
+     of a mouse-selected point in the current figure (see GINPUT for
+     details), but with five major improvements:
+                  1. ZOOMING  (left click)
+                  2. PANNING  (dragging mouse)
+                  3. DELETING (last selected point)
+                  4. PLOTING  (temporarily the selected points)
+                  5. SCALING or GEOREFERENCE IMAGES.
+     The differences are:
+      a) Obviously, the SCALEOPT and PlotOpt optional arguments.
+      b) When click is made outside the axes, it is ignored.
+      c) When LEFT-click, ZOOM-IN is performed right into the selected
+         point (PANNING).
+      d) When RIGHT-click, the point is selected (normal).
+      e) When DOUBLE-click, ZOOM-OUT is done.
+      f) When MIDDLE-click, ZOOM-RESET is done (see ZOOM for details).
+      g) When dragging while pressed left-click PAN is done (until the
+         button is released).
+      h) When pressed any KEY follows the next rules: 
+          A) If ENTER is pressed, the selection is terminated. If no point
+             was already selected, the outputs are empty's.
+          B) If BACKSPACE key is pressed, the last selected point is
+             deleted and the selection continues.
+          C) If SPACEBAR the mouse current position or NANs coordinates
+             are saved, depending whether the mouse was inside or outside
+             any of the current figure axes, respectively. In this latter
+             case, the selection is NOT counted as one of the N points.
+             Besides, when drawing the color is changed. Then, the outputs
+             may not be of length N.
+
+   NOTE:
+     * Optional inputs use its DEFAULT value when not given or [].
+     * Optional outputs may or not be called.
+     * String inputs may be shortened, as long as they are unambiguous.
+       Case is ignored.
+     * The function can be used for interactively digitalize/vectorize
+       RASTER images with:
+       &gt;&gt; ginput(true)
+     * The function can be used only as a georeference function with 
+       &gt;&gt; ginput2(0,true)
+     * The scale/georeference only works when the current axes has an
+       IMAGE type children (see Image for details). 
+     * The x and y data from axes and image are changed when scale/
+       georeference is used.
+     * The drawn points are deleted from the graphics once the selection
+       is finished. 
+     * The priority of the inputs are: N, then SCALEOPT and finally
+       PlotOpt. If the first (integer) is missing, the next is taken into
+       account (logical or 2x4 matrix) and so on.
+
+   EXAMPLE:
+     % Selects until ENTER is pressed:
+         xy = ginput2;
+     % Selects 5 points:
+         [x,y] = ginput2(5);
+     % Gets pressed button:
+         [x,y,button] = ginput2(1);
+     % Scales image and select 4 points temporarily coloring them in
+       black. Besides to not ZOOM OUT at the end:
+         imagesc(peaks(40))
+         [x,y,button,scalemat] = ginput2(4,true,'k*','KeepZoom');
+         hold on, plot(x,y,'or'), hold off
+
+   SEE ALSO:
+     GINPUT, PLOT.
+
+
+   ---
+   MFILE:   <a href="ginput2.html" class="code" title="function  [X,Y,BUTTON,SCALEMAT] = ginput2(varargin)">ginput2</a>.m
+   VERSION: 3.1 (Nov 12, 2009) (&lt;a href=&quot;matlab:web('http://www.mathworks.com/matlabcentral/fileexchange/authors/11258')&quot;&gt;download&lt;/a&gt;)
+   MATLAB:  7.7.0.471 (R2008b)
+   AUTHOR:  Carlos Adrian Vargas Aguilera (MEXICO)
+   CONTACT: nubeobscura@hotmail.com</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ginput2.html" class="code" title="function  [X,Y,BUTTON,SCALEMAT] = ginput2(varargin)">ginput2</a>	GINPUT2   Graphical input from mouse with zoom, pan, plot and scaling.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ginput2.html" class="code" title="function  [X,Y,BUTTON,SCALEMAT] = ginput2(varargin)">ginput2</a>	GINPUT2   Graphical input from mouse with zoom, pan, plot and scaling.</li><li><a href="transect_nodes_screen.html" class="code" title="function [transect]  = transect_nodes_screen(Mobj,VarType)">transect_nodes_screen</a>	function to select and output index of nodes along a defined transect</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function  [X,Y,BUTTON,SCALEMAT] = ginput2(varargin)</a>
+0002 <span class="comment">%GINPUT2   Graphical input from mouse with zoom, pan, plot and scaling.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">%   SYNTAX:</span>
+0005 <span class="comment">%                        XY = ginput2;</span>
+0006 <span class="comment">%                        XY = ginput2(DoScale);          true or false</span>
+0007 <span class="comment">%                        XY = ginput2(...,PlotOpt);      '.r' for example</span>
+0008 <span class="comment">%                        XY = ginput2(...,'KeepZoom');   vs. 'UnZoom'</span>
+0009 <span class="comment">%                        XY = ginput2(N,...);</span>
+0010 <span class="comment">%                        XY = ginput2(...);</span>
+0011 <span class="comment">%                     [X,Y] = ginput2(...);</span>
+0012 <span class="comment">%              [X,Y,BUTTON] = ginput2(...);</span>
+0013 <span class="comment">%     [X,Y,BUTTON,SCALEMAT] = ginput2(...);</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">%   INPUT:</span>
+0016 <span class="comment">%     DoScale    - Single logical specifying whether the IMAGE should be</span>
+0017 <span class="comment">%                  interactively scaled (georeferenced), or it can be the</span>
+0018 <span class="comment">%                  2x4 SCALEMAT matrix for automatically scaling.</span>
+0019 <span class="comment">%                  DEFAULT: false (do not scales/georeferences)</span>
+0020 <span class="comment">%     PlotOpt    - String and/or parameter/value pairs specifying the drawn</span>
+0021 <span class="comment">%                  points optional inputs (see PLOT for details).</span>
+0022 <span class="comment">%                  DEFAULT: 'none' (do not plot any point)</span>
+0023 <span class="comment">%     'KeepZoom' - When finishing selection by default the zoom is</span>
+0024 <span class="comment">%                  restored. By using this option this feature is ignored.</span>
+0025 <span class="comment">%                  DEFAULT: 'UnZoom' (restores original axis limits)</span>
+0026 <span class="comment">%     N          - Number of points to be selected. One of 0,1,2,...,Inf</span>
+0027 <span class="comment">%                  DEFAULT: Inf (selects until ENTER or ESCAPE is pressed)</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">%   OUTPUT:</span>
+0030 <span class="comment">%     XY        - [X(:) Y(:)] axis coordinate(s).</span>
+0031 <span class="comment">%     X         - X-coordinate(s).</span>
+0032 <span class="comment">%     Y         - Y-coordinate(s).</span>
+0033 <span class="comment">%     BUTTON    - Last pressed button.</span>
+0034 <span class="comment">%     SCALEMAT  - 2x4 matrix specifying the coordinates of two different</span>
+0035 <span class="comment">%                 points (1) and (2) in the Image coordinates (pixels) and</span>
+0036 <span class="comment">%                 the User coordinates (data):</span>
+0037 <span class="comment">%                                                Point 1     Point 2</span>
+0038 <span class="comment">%                   Image coord (pixels):     [ (I1x,I1y)   (I2x,I2y)</span>
+0039 <span class="comment">%                   User  coord (data)  :       (U1x,U1y)   (U2x,U2y) ]</span>
+0040 <span class="comment">%                 to be use for scaling/georeferencing.</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">%   DESCRIPTION:</span>
+0043 <span class="comment">%     This program uses MATLAB's GINPUT function to get the coordinates</span>
+0044 <span class="comment">%     of a mouse-selected point in the current figure (see GINPUT for</span>
+0045 <span class="comment">%     details), but with five major improvements:</span>
+0046 <span class="comment">%                  1. ZOOMING  (left click)</span>
+0047 <span class="comment">%                  2. PANNING  (dragging mouse)</span>
+0048 <span class="comment">%                  3. DELETING (last selected point)</span>
+0049 <span class="comment">%                  4. PLOTING  (temporarily the selected points)</span>
+0050 <span class="comment">%                  5. SCALING or GEOREFERENCE IMAGES.</span>
+0051 <span class="comment">%     The differences are:</span>
+0052 <span class="comment">%      a) Obviously, the SCALEOPT and PlotOpt optional arguments.</span>
+0053 <span class="comment">%      b) When click is made outside the axes, it is ignored.</span>
+0054 <span class="comment">%      c) When LEFT-click, ZOOM-IN is performed right into the selected</span>
+0055 <span class="comment">%         point (PANNING).</span>
+0056 <span class="comment">%      d) When RIGHT-click, the point is selected (normal).</span>
+0057 <span class="comment">%      e) When DOUBLE-click, ZOOM-OUT is done.</span>
+0058 <span class="comment">%      f) When MIDDLE-click, ZOOM-RESET is done (see ZOOM for details).</span>
+0059 <span class="comment">%      g) When dragging while pressed left-click PAN is done (until the</span>
+0060 <span class="comment">%         button is released).</span>
+0061 <span class="comment">%      h) When pressed any KEY follows the next rules:</span>
+0062 <span class="comment">%          A) If ENTER is pressed, the selection is terminated. If no point</span>
+0063 <span class="comment">%             was already selected, the outputs are empty's.</span>
+0064 <span class="comment">%          B) If BACKSPACE key is pressed, the last selected point is</span>
+0065 <span class="comment">%             deleted and the selection continues.</span>
+0066 <span class="comment">%          C) If SPACEBAR the mouse current position or NANs coordinates</span>
+0067 <span class="comment">%             are saved, depending whether the mouse was inside or outside</span>
+0068 <span class="comment">%             any of the current figure axes, respectively. In this latter</span>
+0069 <span class="comment">%             case, the selection is NOT counted as one of the N points.</span>
+0070 <span class="comment">%             Besides, when drawing the color is changed. Then, the outputs</span>
+0071 <span class="comment">%             may not be of length N.</span>
+0072 <span class="comment">%</span>
+0073 <span class="comment">%   NOTE:</span>
+0074 <span class="comment">%     * Optional inputs use its DEFAULT value when not given or [].</span>
+0075 <span class="comment">%     * Optional outputs may or not be called.</span>
+0076 <span class="comment">%     * String inputs may be shortened, as long as they are unambiguous.</span>
+0077 <span class="comment">%       Case is ignored.</span>
+0078 <span class="comment">%     * The function can be used for interactively digitalize/vectorize</span>
+0079 <span class="comment">%       RASTER images with:</span>
+0080 <span class="comment">%       &gt;&gt; ginput(true)</span>
+0081 <span class="comment">%     * The function can be used only as a georeference function with</span>
+0082 <span class="comment">%       &gt;&gt; ginput2(0,true)</span>
+0083 <span class="comment">%     * The scale/georeference only works when the current axes has an</span>
+0084 <span class="comment">%       IMAGE type children (see Image for details).</span>
+0085 <span class="comment">%     * The x and y data from axes and image are changed when scale/</span>
+0086 <span class="comment">%       georeference is used.</span>
+0087 <span class="comment">%     * The drawn points are deleted from the graphics once the selection</span>
+0088 <span class="comment">%       is finished.</span>
+0089 <span class="comment">%     * The priority of the inputs are: N, then SCALEOPT and finally</span>
+0090 <span class="comment">%       PlotOpt. If the first (integer) is missing, the next is taken into</span>
+0091 <span class="comment">%       account (logical or 2x4 matrix) and so on.</span>
+0092 <span class="comment">%</span>
+0093 <span class="comment">%   EXAMPLE:</span>
+0094 <span class="comment">%     % Selects until ENTER is pressed:</span>
+0095 <span class="comment">%         xy = ginput2;</span>
+0096 <span class="comment">%     % Selects 5 points:</span>
+0097 <span class="comment">%         [x,y] = ginput2(5);</span>
+0098 <span class="comment">%     % Gets pressed button:</span>
+0099 <span class="comment">%         [x,y,button] = ginput2(1);</span>
+0100 <span class="comment">%     % Scales image and select 4 points temporarily coloring them in</span>
+0101 <span class="comment">%       black. Besides to not ZOOM OUT at the end:</span>
+0102 <span class="comment">%         imagesc(peaks(40))</span>
+0103 <span class="comment">%         [x,y,button,scalemat] = ginput2(4,true,'k*','KeepZoom');</span>
+0104 <span class="comment">%         hold on, plot(x,y,'or'), hold off</span>
+0105 <span class="comment">%</span>
+0106 <span class="comment">%   SEE ALSO:</span>
+0107 <span class="comment">%     GINPUT, PLOT.</span>
+0108 <span class="comment">%</span>
+0109 <span class="comment">%</span>
+0110 <span class="comment">%   ---</span>
+0111 <span class="comment">%   MFILE:   ginput2.m</span>
+0112 <span class="comment">%   VERSION: 3.1 (Nov 12, 2009) (&lt;a href=&quot;matlab:web('http://www.mathworks.com/matlabcentral/fileexchange/authors/11258')&quot;&gt;download&lt;/a&gt;)</span>
+0113 <span class="comment">%   MATLAB:  7.7.0.471 (R2008b)</span>
+0114 <span class="comment">%   AUTHOR:  Carlos Adrian Vargas Aguilera (MEXICO)</span>
+0115 <span class="comment">%   CONTACT: nubeobscura@hotmail.com</span>
+0116 
+0117 <span class="comment">%   REVISIONS:</span>
+0118 <span class="comment">%   1.0      Released. (Jul 09, 2008)</span>
+0119 <span class="comment">%   2.0      Changed default YESERROR value and fixed a bug there. Changed</span>
+0120 <span class="comment">%            behavior when N==1. Fixed bug with zoom out. Changed default</span>
+0121 <span class="comment">%            selection keys. Changed default selection click mouse: from</span>
+0122 <span class="comment">%            left one to the right one. (Jun 08, 2009)</span>
+0123 <span class="comment">%   2.1      Fixed bugs related with points deletion. Added new 'KeepZoom'</span>
+0124 <span class="comment">%            feature. (Aug 20, 2009)</span>
+0125 <span class="comment">%   3.0      Now it PANs when dragging. Updated help. (Nov 05, 2009)</span>
+0126 <span class="comment">%   3.1      Now returns when N==1 and pressed not predefined KEYS or one</span>
+0127 <span class="comment">%            of DELECTION or RETURN buttons. (Nov 12, 2009)</span>
+0128 
+0129 <span class="comment">%   DISCLAIMER:</span>
+0130 <span class="comment">%   ginput2.m is provided &quot;as is&quot; without warranty of any kind, under the</span>
+0131 <span class="comment">%   revised BSD license.</span>
+0132 
+0133 <span class="comment">%   Copyright (c) 2008-2009 Carlos Adrian Vargas Aguilera</span>
+0134 
+0135 
+0136 <span class="comment">% INPUTS CHECK-IN</span>
+0137 <span class="comment">% -------------------------------------------------------------------------</span>
+0138 
+0139 <span class="comment">% PARAMETERS</span>
+0140 <span class="comment">% Defaults:</span>
+0141 X        = [];
+0142 Y        = [];
+0143 BUTTON   = [];
+0144 SCALEMAT = [];
+0145 N        = Inf;
+0146 DoScale  = false;
+0147 PlotOpt  = {<span class="string">'none'</span>};
+0148 UnZoom   = <span class="string">'UnZoom'</span>;
+0149 <span class="comment">% Constants KEYs (on my personal keyboard):</span>
+0150 DOUBLECLICK    =   0;
+0151 LEFTCLICK      =   1;
+0152 MIDDLECLICK    =   2;
+0153 RIGHTCLICK     =   3;
+0154 BACKSPACE      =   8;
+0155 ESCAPE         =  27;
+0156 LEFTARROW      =  28;
+0157 RIGHTARROW     =  29;
+0158 UPARROW        =  30;
+0159 DOWNARROW      =  31;
+0160 SPACEBAR       =  32;
+0161 DELETE         = 127;
+0162 ASCII          = [ <span class="keyword">...</span>
+0163                     33:64  <span class="keyword">...</span><span class="comment">  UP-KEYS</span>
+0164                     65:90  <span class="keyword">...</span><span class="comment">  UP-LETTERS</span>
+0165                     91:96  <span class="keyword">...</span><span class="comment"> LOW-KEYS</span>
+0166                     97:122 <span class="keyword">...</span><span class="comment"> LOW-LETTERS</span>
+0167                    123:126 <span class="keyword">...</span><span class="comment"> LOW-KEY</span>
+0168                    161:255 <span class="keyword">...</span><span class="comment">     FOREING</span>
+0169                    ];
+0170 <span class="comment">% Functionality:</span>
+0171 <span class="comment">% NOTE: I left all this KEYs because the user may use this special case for</span>
+0172 <span class="comment">% other special purposes outside this function.</span>
+0173 <span class="comment">% % First version default:</span>
+0174 <span class="comment">% % SELECTS   = [LEFTCLICK ASCII ESCAPE LEFTARROW RIGHTARROW ...</span>
+0175 <span class="comment">% %              UPARROW DOWNARROW SPACEBAR DELETE];</span>
+0176 <span class="comment">% % ZOOMIN    = RIGHTCLICK;</span>
+0177 SELECTS   = [RIGHTCLICK SPACEBAR]; <span class="comment">% Selection  buttons</span>
+0178 DELETES   = BACKSPACE;             <span class="comment">% Deletion   buttons</span>
+0179 FINISHES  = [];                    <span class="comment">% Finishes   buttons</span>
+0180 ZOOMIN    = LEFTCLICK;             <span class="comment">% ZOOM(2)    buttons</span>
+0181 ZOOMRESET = MIDDLECLICK;           <span class="comment">% ZOOM RESET buttons</span>
+0182 ZOOMOUT   = DOUBLECLICK;           <span class="comment">% ZOOM OUT   buttons</span>
+0183 <span class="comment">% Other parameters</span>
+0184 secpause  = 0.3;    <span class="comment">% Seconds to wait for double-click response.</span>
+0185 YESERROR  = false;  <span class="comment">% If there is an error with GINPUT, it tells to display</span>
+0186                     <span class="comment">% an ERROR or a WARNING message.</span>
+0187                     
+0188 <span class="comment">% Checks number of inputs:</span>
+0189 <span class="keyword">if</span> nargout&gt;4
+0190  error(<span class="string">'CVARGAS:ginput2:tooManyOutputs'</span>,<span class="keyword">...</span>
+0191   <span class="string">'At most 4 outputs are allowed.'</span>)
+0192 <span class="keyword">end</span>
+0193 
+0194 <span class="comment">% Checks N:</span>
+0195 <span class="keyword">if</span> ~isempty(varargin) &amp;&amp; ~isempty(varargin{1}) &amp;&amp; <span class="keyword">...</span>
+0196   isfloat(varargin{1}) 
+0197  N           = round(abs(varargin{1}(1))); <span class="comment">% Forced unique, positive</span>
+0198  varargin(1) = [];                         <span class="comment">% integer.</span>
+0199 <span class="keyword">end</span>
+0200 
+0201 <span class="comment">% Checks DoScale:</span>
+0202 <span class="keyword">if</span> ~isempty(varargin) &amp;&amp; ~isempty(varargin{1}) &amp;&amp; <span class="keyword">...</span>
+0203    ((islogical(varargin{1})) || (ndims(varargin{1})==2 &amp;&amp; <span class="keyword">...</span>
+0204     all(size(varargin{1})==[2 4])))
+0205  DoScale     = varargin{1};
+0206  varargin(1) = [];
+0207 <span class="keyword">end</span>
+0208 
+0209 <span class="comment">% Checks UnZoom:</span>
+0210 <span class="keyword">if</span> ~isempty(varargin) 
+0211  <span class="keyword">if</span> ~isempty(varargin{1}) &amp;&amp; ischar(varargin{1})
+0212   <span class="keyword">if</span>     strncmpi(varargin(1),<span class="string">'UnZoom'</span>  ,max(length(varargin{1}),2))
+0213    UnZoom = <span class="string">'UnZoom'</span>;
+0214    varargin(1) = [];
+0215   <span class="keyword">elseif</span> strncmpi(varargin(1),<span class="string">'KeepZoom'</span>,max(length(varargin{1}),2))
+0216    UnZoom = <span class="string">'KeepZoom'</span>;
+0217    varargin(1) = [];
+0218   <span class="keyword">end</span>
+0219  <span class="keyword">elseif</span> (length(varargin)&gt;1) &amp;&amp; ~isempty(varargin{end}) &amp;&amp; <span class="keyword">...</span>
+0220      ischar(varargin{end})
+0221   <span class="keyword">if</span>     strncmpi(varargin(end),<span class="string">'UnZoom'</span>  ,max(length(varargin{1}),2))
+0222    UnZoom = <span class="string">'UnZoom'</span>;
+0223    varargin(end) = [];
+0224   <span class="keyword">elseif</span> strncmpi(varargin(end),<span class="string">'KeepZoom'</span>,max(length(varargin{1}),2))
+0225    UnZoom = <span class="string">'KeepZoom'</span>;
+0226    varargin(end) = [];
+0227   <span class="keyword">end</span>
+0228  <span class="keyword">end</span>
+0229 <span class="keyword">end</span>
+0230 
+0231 <span class="comment">% Checks PlotOpt:</span>
+0232 <span class="keyword">if</span> ~isempty(varargin) &amp;&amp; ~isempty(varargin{1})
+0233  PlotOpt = varargin;
+0234 <span class="keyword">end</span>
+0235 clear varargin
+0236 
+0237 <span class="comment">% Checks DoScale:</span>
+0238 <span class="keyword">if</span> ~islogical(DoScale)
+0239  SCALEMAT = DoScale;
+0240  DoScale = true;
+0241 <span class="keyword">end</span>
+0242 
+0243 <span class="comment">% SCALES/GEOREFERENCE?:</span>
+0244 <span class="keyword">if</span> DoScale
+0245  method = <span class="string">'linear'</span>;
+0246  extrap = <span class="string">'extrap'</span>;
+0247  ha     = gca;
+0248  hi     = findobj(get(ha,<span class="string">'Children'</span>),<span class="string">'Type'</span>,<span class="string">'image'</span>);
+0249  axes(ha)
+0250  <span class="keyword">if</span> ~isempty(hi)
+0251   hi    = hi(1);
+0252   xlim  = get(ha,<span class="string">'XLim'</span>);
+0253   ylim  = get(ha,<span class="string">'YLim'</span>);
+0254   zlim  = get(ha,<span class="string">'ZLim'</span>);
+0255   z     = repmat(max(zlim),1,5);
+0256   xdata = get(hi,<span class="string">'XData'</span>);
+0257   ydata = get(hi,<span class="string">'YData'</span>);
+0258   <span class="keyword">if</span> isempty(SCALEMAT) <span class="comment">% interactively</span>
+0259    I1x = round(min(xdata)); I2x = round(max(xdata));
+0260    I1y = round(min(ydata)); I2y = round(max(ydata));
+0261    <span class="comment">% Default (equal):</span>
+0262    U1x = I1x; U2x = I2x;
+0263    U1y = I1y; U2y = I2y;
+0264    hgeo     = [];
+0265    dlgTitle = <span class="string">'Georeference image'</span>;
+0266    lineNo   = 1;
+0267   
+0268    <span class="keyword">while</span> true
+0269     <span class="comment">% Selects first corner:</span>
+0270     theans = <span class="keyword">...</span>
+0271           questdlg(<span class="string">'Select the first corner (1 of 2):'</span>,dlgTitle,<span class="string">'OK'</span>,<span class="string">'OK'</span>);
+0272     <span class="keyword">if</span> ~strcmp(theans,<span class="string">'OK'</span>), <span class="keyword">return</span>, <span class="keyword">end</span>
+0273     pause(secpause)
+0274     
+0275     [I1x,I1y] = <a href="ginput2.html" class="code" title="function  [X,Y,BUTTON,SCALEMAT] = ginput2(varargin)">ginput2</a>(1,false,<span class="string">'none'</span>,<span class="string">'UnZoom'</span>);
+0276     I1x       = round(I1x);
+0277     I1y       = round(I1y);
+0278     <span class="keyword">if</span> ~ishandle(ha), <span class="keyword">return</span>, <span class="keyword">end</span>
+0279     <span class="keyword">if</span> (ha==gca) &amp;&amp; ~isempty(I1x) &amp;&amp; ~isnan(I1x)
+0280      axis(ha,[xlim ylim])
+0281      hgeo(1) = line([xlim NaN I1x I1x],[I1y I1y NaN ylim],z,<span class="string">'color'</span>,<span class="string">'m'</span>);
+0282      prompt  = {<span class="string">'X-coordinate at 1st corner:'</span>,<span class="keyword">...</span>
+0283                 <span class="string">'Y-coordinate at 1st corner:'</span>};
+0284      def     = {int2str(I1x),int2str(I1y)};
+0285      answer  = inputdlg(prompt,dlgTitle,lineNo,def);
+0286      answer  = str2num(char(answer{:}));
+0287      <span class="keyword">break</span>
+0288     <span class="keyword">end</span>
+0289    <span class="keyword">end</span>
+0290    axes(ha)
+0291    
+0292    <span class="comment">% Checks inputs:</span>
+0293    <span class="keyword">if</span> ~isempty(answer) &amp;&amp; isfloat(answer) &amp;&amp; (length(answer)==2) &amp;&amp; <span class="keyword">...</span>
+0294                                                       all(isfinite(answer))
+0295     U1x = answer(1); U1y = answer(2);
+0296     secondcorner = true;
+0297    <span class="keyword">else</span>
+0298     secondcorner = false;
+0299     warning(<span class="string">'CVARGAS:ginput2:incorrectGeoreference'</span>,<span class="keyword">...</span>
+0300             <span class="string">'Ignored incorrect georeference corners.'</span>)
+0301    <span class="keyword">end</span>
+0302   
+0303    <span class="keyword">while</span> secondcorner
+0304     <span class="comment">% Selects second corner:</span>
+0305     theans = <span class="keyword">...</span>
+0306          questdlg(<span class="string">'Select the second corner (2 of 2):'</span>,dlgTitle,<span class="string">'OK'</span>,<span class="string">'OK'</span>);
+0307     <span class="keyword">if</span> ~strcmp(theans,<span class="string">'OK'</span>), <span class="keyword">return</span>, <span class="keyword">end</span>
+0308     pause(secpause)
+0309    
+0310     [I2x,I2y] = <a href="ginput2.html" class="code" title="function  [X,Y,BUTTON,SCALEMAT] = ginput2(varargin)">ginput2</a>(1,false,<span class="string">'none'</span>,<span class="string">'UnZoom'</span>);
+0311     I2x       = round(I2x);
+0312     I2y       = round(I2y);
+0313     <span class="keyword">if</span> ~ishandle(ha), <span class="keyword">return</span>, <span class="keyword">end</span>
+0314     <span class="keyword">if</span> (ha==gca) &amp;&amp; ~isempty(I2x) &amp;&amp; ~isnan(I2x) &amp;&amp; <span class="keyword">...</span>
+0315       (I2x~=I1x) &amp;&amp; (I2y~=I1y)
+0316      axis(ha,[xlim ylim])
+0317      hgeo(2) = line([xlim NaN I2x I2x],[I2y I2y NaN ylim],z,<span class="string">'color'</span>,<span class="string">'c'</span>);
+0318      prompt  = {<span class="string">'X-coordinate at 2nd corner:'</span>,<span class="keyword">...</span>
+0319                 <span class="string">'Y-coordinate at 2nd corner:'</span>};
+0320      def     = {int2str(I2x),int2str(I2y)};
+0321      answer  = inputdlg(prompt,dlgTitle,lineNo,def);
+0322      answer  = str2num(char(answer{:}));
+0323      <span class="keyword">break</span>
+0324     <span class="keyword">end</span>
+0325    <span class="keyword">end</span>
+0326    axes(ha)
+0327    
+0328    <span class="comment">% Checks inputs:</span>
+0329    <span class="keyword">if</span> secondcorner &amp;&amp; ~isempty(answer) &amp;&amp; isfloat(answer) &amp;&amp; <span class="keyword">...</span>
+0330                          (length(answer)==2) &amp;&amp; all(isfinite(answer))
+0331     U2x = answer(1); U2y = answer(2);
+0332    <span class="keyword">else</span>
+0333     warning(<span class="string">'CVARGAS:ginput2:incorrectGeoreference'</span>,<span class="keyword">...</span>
+0334             <span class="string">'Ignored incorrect georeference corners.'</span>)
+0335    <span class="keyword">end</span>
+0336   
+0337    <span class="comment">% Deletes corner's lines:</span>
+0338    <span class="keyword">if</span> any(ishandle(hgeo))
+0339     delete(hgeo(ishandle(hgeo)))
+0340    <span class="keyword">end</span>
+0341    
+0342    <span class="comment">% Scale matrix:</span>
+0343     SCALEMAT = [I1x I1y I2x I2y; U1x U1y U2x U2y];
+0344   <span class="keyword">else</span>
+0345    <span class="comment">% Continue</span>
+0346   <span class="keyword">end</span>
+0347  <span class="keyword">else</span>
+0348   warning(<span class="string">'CVARGAS:ginput2:noImageFound'</span>,<span class="keyword">...</span>
+0349    <span class="string">'No image found in the current axes to georeference.'</span>)
+0350  <span class="keyword">end</span>
+0351  
+0352  <span class="comment">% OK, set the scaling then:</span>
+0353  <span class="keyword">if</span> ~isempty(SCALEMAT)
+0354   xdata = interp1(SCALEMAT(1,[1 3]),SCALEMAT(2,[1 3]),xdata,method,extrap);
+0355   ydata = interp1(SCALEMAT(1,[2 4]),SCALEMAT(2,[2 4]),ydata,method,extrap);
+0356   xlim2 = interp1(SCALEMAT(1,[1 3]),SCALEMAT(2,[1 3]),xlim ,method,extrap);
+0357   ylim2 = interp1(SCALEMAT(1,[2 4]),SCALEMAT(2,[2 4]),ylim ,method,extrap);
+0358   set(hi,<span class="string">'XData'</span>,xdata);
+0359   set(hi,<span class="string">'YData'</span>,ydata);  
+0360   set(ha,<span class="string">'XLim'</span> ,sort(xlim2,<span class="string">'ascend'</span>));
+0361   set(ha,<span class="string">'YLim'</span> ,sort(ylim2,<span class="string">'ascend'</span>));
+0362   <span class="comment">% Reverses axis directions:</span>
+0363   <span class="keyword">if</span> diff(xlim)*diff(xlim2)&lt;1
+0364    <span class="keyword">if</span> strcmp(get(ha,<span class="string">'XDir'</span>),<span class="string">'normal'</span>)
+0365     set(ha,<span class="string">'XDir'</span>,<span class="string">'reverse'</span>)
+0366    <span class="keyword">else</span>
+0367     set(ha,<span class="string">'XDir'</span>,<span class="string">'normal'</span>)
+0368    <span class="keyword">end</span>
+0369   <span class="keyword">end</span>
+0370   <span class="keyword">if</span> diff(ylim)*diff(ylim2)&lt;1
+0371    <span class="keyword">if</span> strcmp(get(ha,<span class="string">'YDir'</span>),<span class="string">'normal'</span>)
+0372     set(ha,<span class="string">'YDir'</span>,<span class="string">'reverse'</span>)
+0373    <span class="keyword">else</span>
+0374     set(ha,<span class="string">'YDir'</span>,<span class="string">'normal'</span>)
+0375    <span class="keyword">end</span>
+0376   <span class="keyword">end</span>
+0377  <span class="keyword">end</span>
+0378  axis(ha,<span class="string">'normal'</span>)
+0379  
+0380 <span class="keyword">end</span>
+0381 
+0382 <span class="comment">% DRAWS?:</span>
+0383 <span class="keyword">if</span> strcmpi(PlotOpt{1},<span class="string">'none'</span>)
+0384  yesdraw = false;
+0385 <span class="keyword">else</span>
+0386  yesdraw = true;
+0387 <span class="keyword">end</span>
+0388 <span class="comment">% Optional parameters:</span>
+0389 <span class="keyword">if</span> yesdraw
+0390  hpoints  = [];
+0391  <span class="comment">% Check for linestyle color:</span>
+0392  yescolor     = true;
+0393  Nplotopt     = length(PlotOpt);
+0394  yeslinestyle = rem(Nplotopt,2);
+0395  <span class="keyword">if</span> yeslinestyle <span class="comment">% Given LineStyle</span>
+0396   <span class="keyword">for</span> k = 1:length(PlotOpt{1})
+0397    <span class="keyword">switch</span> lower(PlotOpt{1}(k))
+0398     <span class="keyword">case</span> <span class="string">'y'</span>, yescolor = false; <span class="keyword">break</span>
+0399     <span class="keyword">case</span> <span class="string">'m'</span>, yescolor = false; <span class="keyword">break</span>
+0400     <span class="keyword">case</span> <span class="string">'c'</span>, yescolor = false; <span class="keyword">break</span>
+0401     <span class="keyword">case</span> <span class="string">'r'</span>, yescolor = false; <span class="keyword">break</span>
+0402     <span class="keyword">case</span> <span class="string">'g'</span>, yescolor = false; <span class="keyword">break</span>
+0403     <span class="keyword">case</span> <span class="string">'b'</span>, yescolor = false; <span class="keyword">break</span>
+0404     <span class="keyword">case</span> <span class="string">'w'</span>, yescolor = false; <span class="keyword">break</span>
+0405     <span class="keyword">case</span> <span class="string">'k'</span>, yescolor = false; <span class="keyword">break</span>
+0406     <span class="keyword">otherwise</span>, <span class="comment">% no color specified</span>
+0407    <span class="keyword">end</span>
+0408   <span class="keyword">end</span>
+0409  <span class="keyword">end</span>
+0410  <span class="keyword">if</span> ~yescolor &amp;&amp; (Nplotopt*yeslinestyle~=1)
+0411   <span class="keyword">for</span> k = yeslinestyle+1:2:Nplotopt    <span class="comment">% Given 'Color'</span>
+0412    <span class="keyword">if</span> strncmpi(PlotOpt{k},<span class="string">'co'</span>,2), yescolor = false; <span class="keyword">break</span>, <span class="keyword">end</span>
+0413   <span class="keyword">end</span>
+0414  <span class="keyword">end</span>
+0415  <span class="keyword">if</span> yescolor
+0416   contnan  = 1;
+0417   colors   = get(gca,<span class="string">'ColorOrder'</span>);
+0418   ncolors  = size(colors,1);
+0419   color    = colors(1,:);
+0420  <span class="keyword">end</span>
+0421 <span class="keyword">end</span>
+0422 
+0423 
+0424 <span class="comment">% -------------------------------------------------------------------------</span>
+0425 <span class="comment">% MAIN</span>
+0426 <span class="comment">% -------------------------------------------------------------------------</span>
+0427 
+0428 cont       = 0;
+0429 alim.ha    = [];
+0430 alim.la    = {};
+0431 undoPtrFig = [];
+0432 
+0433 <span class="keyword">while</span> cont&lt;N     <span class="comment">% Principal loop</span>
+0434  
+0435  <span class="comment">% GINPUT:</span>
+0436  <span class="keyword">try</span>
+0437   [x,y,button] = ginput(1);
+0438  <span class="keyword">catch</span> <span class="comment">% Changed for compatibility.</span>
+0439   <span class="comment">% GINPUT error:</span>
+0440   <span class="keyword">if</span> YESERROR
+0441      error(<span class="string">'CVARGAS:ginput2:executionError'</span>,lasterr)
+0442   <span class="keyword">else</span>
+0443    warning(<span class="string">'CVARGAS:ginput2:executionError'</span>,lasterr)
+0444    <span class="keyword">if</span> nargout&lt;2  <span class="comment">% Fixed BUG 29 SEP, 2008</span>
+0445     X = [X Y]; 
+0446    <span class="keyword">end</span>
+0447    <span class="keyword">return</span>
+0448   <span class="keyword">end</span>
+0449  <span class="keyword">end</span>
+0450  
+0451  <span class="comment">% Axes clicked:</span>
+0452  ha = gca;
+0453  
+0454  <span class="comment">% Gets limits:</span>
+0455  <span class="keyword">if</span> ~any(alim.ha==ha)
+0456   alim.ha(end+1) = ha;
+0457   alim.la{end+1} = axis;
+0458  <span class="keyword">end</span>
+0459  
+0460  <span class="comment">% Sets zoom:</span>
+0461  zlim = getappdata(ha,<span class="string">'zoom_zoomOrigAxesLimits'</span>);
+0462  <span class="keyword">if</span> isempty(zlim) <span class="comment">% Fixed BUG, SEP 2008</span>
+0463   zoom reset
+0464   zlim = getappdata(ha,<span class="string">'zoom_zoomOrigAxesLimits'</span>);
+0465  <span class="keyword">end</span>
+0466  
+0467  <span class="comment">% Checks if DOUBLE clicks:</span>
+0468  pause(secpause) <span class="comment">% Gives time for response</span>
+0469  <span class="keyword">if</span> strcmp(get(gcf,<span class="string">'selectiontype'</span>),<span class="string">'open'</span>)
+0470   button = DOUBLECLICK;
+0471  <span class="keyword">end</span>
+0472 
+0473  <span class="comment">% Checks if ENTER or FINISHES button:</span>
+0474  <span class="keyword">if</span> isempty(button) || ismember(button,FINISHES)
+0475   <span class="comment">% Finishes selection:</span>
+0476   <span class="keyword">if</span> (N==1) &amp;&amp; isempty(X) <span class="comment">% New feature v3.1</span>
+0477    BUTTON = button;
+0478   <span class="keyword">end</span>
+0479   <span class="keyword">break</span>
+0480  <span class="keyword">end</span>
+0481  
+0482  <span class="comment">% Checks if DELETION button:</span>
+0483  <span class="keyword">if</span> ismember(button,DELETES)
+0484   <span class="keyword">if</span> ~isempty(X)
+0485    inan = isnan(X(end));
+0486    <span class="keyword">if</span> yesdraw
+0487     <span class="keyword">if</span> ~inan
+0488      <span class="comment">% Deletes last drawn point:</span>
+0489      <span class="keyword">if</span> ~isempty(hpoints) &amp;&amp; ishandle(hpoints(end)) <span class="comment">% Fixed bug Aug 2009</span>
+0490       delete(hpoints(end)), hpoints(end) = [];
+0491      <span class="keyword">end</span>
+0492     <span class="keyword">elseif</span> yescolor
+0493      <span class="comment">% Change color as necessary:</span>
+0494      contnan = contnan-1;
+0495      color   = colors(mod(contnan-1,ncolors)+1,:);
+0496     <span class="keyword">end</span>
+0497    <span class="keyword">end</span>
+0498    <span class="comment">% Deletes the last selected point:</span>
+0499    X(end)      = [];
+0500    Y(end)      = [];
+0501    BUTTON(end) = [];
+0502    <span class="comment">% Checks if the last point was NaN:</span>
+0503    <span class="keyword">if</span> ~inan
+0504     cont = cont-1;
+0505    <span class="keyword">end</span>
+0506   <span class="keyword">elseif</span> N==1
+0507    <span class="comment">% Finishes selection: New feature v3.1</span>
+0508    BUTTON = button;
+0509    <span class="keyword">break</span>
+0510   <span class="keyword">end</span>
+0511   <span class="keyword">continue</span>
+0512  <span class="keyword">end</span>
+0513  
+0514  <span class="comment">% Checks if ZOOM OUT button:</span>
+0515  <span class="keyword">if</span> ismember(button,ZOOMOUT)
+0516   undoPtrFig = gcf;
+0517   setptr(undoPtrFig,<span class="string">'glassminus'</span>)
+0518   zoom out
+0519   <span class="keyword">continue</span>
+0520  <span class="keyword">end</span>
+0521  
+0522  <span class="comment">% Checks if ZOOM RESET button:</span>
+0523  <span class="keyword">if</span> ismember(button,ZOOMRESET)
+0524   zoom reset
+0525   <span class="keyword">continue</span>
+0526  <span class="keyword">end</span>
+0527  
+0528  <span class="comment">% Checks if the mouse was inside an axes of the current figure;</span>
+0529  lim     = axis;
+0530  outside = x&lt;lim(1) || x&gt;lim(2) || y&lt;lim(3) || y&gt;lim(4);
+0531  
+0532  <span class="comment">% Checks if ZOOM IN with PAN:</span>
+0533  <span class="keyword">if</span> ismember(button,ZOOMIN) &amp;&amp; ~outside
+0534   <span class="comment">% Dragging rectangle:</span>
+0535   undoPtrFig = gcf;
+0536   setptr(undoPtrFig,<span class="string">'closedhand'</span>)
+0537   rbbox
+0538   ydrag = get(gca,<span class="string">'CurrentPoint'</span>);
+0539   xdrag = ydrag(1,1)-x;
+0540   ydrag = ydrag(1,2)-y;
+0541   <span class="comment">% Do the PANNING:</span>
+0542   <span class="keyword">if</span>  any(abs([xdrag ydrag])&gt;eps*1000000)
+0543    <span class="comment">% Only PAN (dragging):</span>
+0544    lim(1:4) = lim(1:4) - [xdrag xdrag ydrag ydrag]; 
+0545    axis(lim)
+0546   <span class="keyword">else</span>
+0547    <span class="comment">% PAN (centers the last point) and ZOOM in:</span>
+0548    setptr(undoPtrFig,<span class="string">'glassplus'</span>)
+0549    lim = [x+diff(lim(1:2))/2*[-1 1] y+diff(lim(3:4))/2*[-1 1]]; 
+0550    axis(lim)
+0551    zoom(2)
+0552   <span class="keyword">end</span>
+0553   <span class="keyword">continue</span>
+0554  <span class="keyword">end</span>
+0555  
+0556  <span class="comment">% Checks if SELECTS button:</span>
+0557  <span class="keyword">if</span> ismember(button,SELECTS)
+0558   
+0559   <span class="comment">% Sets NaNs if outside the axes:</span>
+0560   <span class="keyword">if</span> outside 
+0561    <span class="keyword">if</span> ~isnumeric(N) 
+0562     <span class="comment">% Change color:</span>
+0563     <span class="keyword">if</span> yesdraw &amp;&amp; yescolor 
+0564      contnan = contnan+1;
+0565      color   = colors(mod(contnan-1,ncolors)+1,:);
+0566     <span class="keyword">end</span>
+0567     <span class="comment">% Adds NaNs but the point counters do not take it into account:</span>
+0568     X      = [X;      NaN];
+0569     Y      = [Y;      NaN];
+0570     BUTTON = [BUTTON; button];
+0571    <span class="keyword">else</span>
+0572     <span class="comment">% Ignores the point</span>
+0573    <span class="keyword">end</span>
+0574   <span class="keyword">else</span>
+0575    <span class="comment">% Draws the result:</span>
+0576    <span class="keyword">if</span> yesdraw
+0577     <span class="comment">% Search for last point:</span>
+0578     x0 = []; y0 = []; z0 = [];
+0579     inan = isnan([NaN; X; NaN]);
+0580     <span class="keyword">if</span> ~inan(end-1)
+0581      inan        = find(inan);
+0582      nlastpoints = inan(end)-inan(end-1)-1;
+0583      npoints     = length(hpoints);
+0584      range       = npoints-nlastpoints+1:npoints;
+0585      hlastaxes   = get(hpoints(range),<span class="string">'Parent'</span>);
+0586      <span class="keyword">if</span> iscell(hlastaxes), hlastaxes  = cell2mat(hlastaxes); <span class="keyword">end</span>
+0587      [loc,loc] = ismember(ha,hlastaxes);
+0588      <span class="keyword">if</span> loc
+0589       x0 = get(hpoints(range(loc)),<span class="string">'XData'</span>);
+0590       y0 = get(hpoints(range(loc)),<span class="string">'YData'</span>);
+0591       z0 = get(hpoints(range(loc)),<span class="string">'ZData'</span>);
+0592      <span class="keyword">end</span>
+0593     <span class="keyword">end</span>
+0594     holdon = ishold;
+0595     <span class="keyword">if</span> ~holdon, hold on, <span class="keyword">end</span> 
+0596      h = plot([x0 x],[y0 y],PlotOpt{:});
+0597      <span class="comment">% Elevates the value:</span>
+0598      z = get(ha,<span class="string">'ZLim'</span>); z = z(2);
+0599      set(h,<span class="string">'Zdata'</span>,[z0 z])
+0600      <span class="comment">% Sets the color:</span>
+0601      <span class="keyword">if</span> yescolor
+0602       set(h,<span class="string">'Color'</span>,color)
+0603      <span class="keyword">end</span>
+0604      hpoints = [hpoints; h];
+0605     <span class="keyword">if</span> ~holdon, hold off, <span class="keyword">end</span> 
+0606     <span class="comment">% Restores limits:</span>
+0607     axis(lim)
+0608    <span class="keyword">end</span>
+0609    
+0610    <span class="comment">% Centers the selected point if ZOOM-IN: 29 SEP,2008</span>
+0611    <span class="keyword">if</span> all((lim~=zlim))
+0612     lim = [x+diff(lim(1:2))/2*[-1 1] y+diff(lim(3:4))/2*[-1 1]];
+0613     axis(lim)
+0614    <span class="keyword">end</span>
+0615    
+0616    <span class="comment">% Saves the result:</span>
+0617    X      = [X;      x];
+0618    Y      = [Y;      y];
+0619    BUTTON = [BUTTON; button];
+0620    cont   = cont+1;
+0621   <span class="keyword">end</span>
+0622   <span class="keyword">continue</span>
+0623  <span class="keyword">end</span>
+0624 
+0625  <span class="comment">% Checks if any other button pressed inside the axes:</span>
+0626  <span class="keyword">if</span> ~outside
+0627   X      = [X;      x];
+0628   Y      = [Y;      y];
+0629   BUTTON = [BUTTON; button];
+0630   cont   = cont+1;
+0631  <span class="keyword">else</span>
+0632   <span class="keyword">if</span> N==1 <span class="comment">% New feature v3.1</span>
+0633    BUTTON = button;
+0634    <span class="keyword">break</span>
+0635   <span class="keyword">end</span>
+0636   <span class="comment">% ignores the selection</span>
+0637  <span class="keyword">end</span>
+0638  
+0639 <span class="keyword">end</span>
+0640 
+0641 <span class="comment">% Returns pointer.</span>
+0642 <span class="keyword">if</span> ~isempty(undoPtrFig) &amp;&amp; ishandle(undoPtrFig)
+0643  setptr(undoPtrFig,<span class="string">'arrow'</span>)
+0644 <span class="keyword">end</span>
+0645 
+0646 <span class="comment">% Deletes drawn points if still exist:</span>
+0647 <span class="keyword">if</span> yesdraw &amp;&amp; any(ishandle(hpoints))
+0648  delete(hpoints(ishandle(hpoints)))
+0649 <span class="keyword">end</span>
+0650 
+0651 <span class="comment">% Returns original limits.</span>
+0652 <span class="keyword">if</span> ~strcmp(UnZoom,<span class="string">'KeepZoom'</span>) &amp;&amp; ~isempty(alim.ha)
+0653  alim.ha(~ishandle(alim.ha)) = [];
+0654  <span class="keyword">for</span> k = 1:length(alim.ha)
+0655   temp = axis(alim.ha(k));
+0656   <span class="keyword">if</span> ~all(temp(1:4)==alim.la{k}(1:4))
+0657    axis(alim.ha(k),alim.la{k})
+0658   <span class="keyword">end</span>
+0659  <span class="keyword">end</span>
+0660 <span class="keyword">end</span>
+0661 
+0662 
+0663 <span class="comment">% OUTPUTS CHECK-OUT</span>
+0664 <span class="comment">% -------------------------------------------------------------------------</span>
+0665 
+0666 <span class="keyword">if</span> nargout&lt;2
+0667  X = [X Y]; 
+0668 <span class="keyword">end</span>
+0669 
+0670 
+0671 <span class="comment">% [EOF]   ginput2.m</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

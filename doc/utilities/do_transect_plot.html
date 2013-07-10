@@ -1,0 +1,191 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of do_transect_plot</title>
+  <meta name="keywords" content="do_transect_plot">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; do_transect_plot.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>do_transect_plot
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Plots]=do_transect_plot(plotOPTS,FVCOM) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+ Function to display transect plots of FVCOM variables (i.e. temperature)
+
+  [Plots]=do_transect_plot(plotOPTS,FVCOM)
+
+ DESCRIPTION:
+    Generates transect plots of variables
+
+ INPUT:
+   plotOPTS   = structure array with predefined options for generating the
+   maps
+   FVCOM  = data extracted from FVCOM NC file. See read_netCDF_FVCOM for
+   details
+
+   plotOPTS.range_lat: [50.1000 50.4000]
+   plotOPTS.range_lon: [-4.5000 -3.8500]
+   If the above exist, it will generate an m_map plot with transect
+   position
+   plotOPTS.mesh: [1x1 struct]
+   plotOPTS.coastline_file: '../mat/tamar3_0coast.mat'
+   plotOPTS.zone: 30
+   plotOPTS.ell: 'grs80'
+   plotOPTS.fig_name: 'co2_S5_slowleak'
+   plotOPTS.mesh: [1x1 struct]
+   plotOPTS.var_plot: 'PH'
+   plotOPTS.clims: [6 8]
+   plotOPTS.nz_plot: 1
+   plotOPTS.figure: 1
+   plotOPTS.Time_record: 7.3271e+05
+   plotOPTS.data_dec: 5
+   plotOPTS.vel_sca: 5
+   plotOPTS.pause: 0.5000</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="m_ll2ll.html" class="code" title="function [X,Y]=m_ll2ll(lon1,lat1, zone, hemisphere,ellipsoid);">m_ll2ll</a>	M_ll2LL Converts LON,LAT to long,lat coordinates using the current projection</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Plots]=do_transect_plot(plotOPTS,FVCOM)</a>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% Function to display transect plots of FVCOM variables (i.e. temperature)</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%  [Plots]=do_transect_plot(plotOPTS,FVCOM)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Generates transect plots of variables</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   plotOPTS   = structure array with predefined options for generating the</span>
+0012 <span class="comment">%   maps</span>
+0013 <span class="comment">%   FVCOM  = data extracted from FVCOM NC file. See read_netCDF_FVCOM for</span>
+0014 <span class="comment">%   details</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">%   plotOPTS.range_lat: [50.1000 50.4000]</span>
+0017 <span class="comment">%   plotOPTS.range_lon: [-4.5000 -3.8500]</span>
+0018 <span class="comment">%   If the above exist, it will generate an m_map plot with transect</span>
+0019 <span class="comment">%   position</span>
+0020 <span class="comment">%   plotOPTS.mesh: [1x1 struct]</span>
+0021 <span class="comment">%   plotOPTS.coastline_file: '../mat/tamar3_0coast.mat'</span>
+0022 <span class="comment">%   plotOPTS.zone: 30</span>
+0023 <span class="comment">%   plotOPTS.ell: 'grs80'</span>
+0024 <span class="comment">%   plotOPTS.fig_name: 'co2_S5_slowleak'</span>
+0025 <span class="comment">%   plotOPTS.mesh: [1x1 struct]</span>
+0026 <span class="comment">%   plotOPTS.var_plot: 'PH'</span>
+0027 <span class="comment">%   plotOPTS.clims: [6 8]</span>
+0028 <span class="comment">%   plotOPTS.nz_plot: 1</span>
+0029 <span class="comment">%   plotOPTS.figure: 1</span>
+0030 <span class="comment">%   plotOPTS.Time_record: 7.3271e+05</span>
+0031 <span class="comment">%   plotOPTS.data_dec: 5</span>
+0032 <span class="comment">%   plotOPTS.vel_sca: 5</span>
+0033 <span class="comment">%   plotOPTS.pause: 0.5000</span>
+0034 
+0035 <span class="comment">%</span>
+0036 <span class="comment">% OUTPUT:</span>
+0037 <span class="comment">%   Plots = structure array with figure handles</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">% EXAMPLE USAGE</span>
+0040 <span class="comment">%    [Plots]=do_transect_plot(plotOPTS,FVCOM)</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">% Author(s):</span>
+0043 <span class="comment">%    Ricardo Torres (Plymouth Marine Laboratory)</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">% Revision history</span>
+0046 <span class="comment">%</span>
+0047 <span class="comment">%==============================================================================</span>
+0048 figure(plotOPTS.figure);
+0049 <span class="keyword">if</span> ~(isfield(FVCOM,<span class="string">'zeta'</span>) | ~isfield(FVCOM,<span class="string">'h'</span>) | ~isfield(FVCOM,<span class="string">'siglay'</span>))
+0050     fprintf(<span class="string">'You seem to be missing either  zeta, h, or siglay from FVCOM variable\n'</span>);
+0051     fprintf(<span class="string">' Stoping. Try again\n'</span>);
+0052     Plots=[];
+0053     <span class="keyword">return</span>
+0054 <span class="keyword">end</span>
+0055 
+0056 <span class="comment">% convert sigma levels to z levels</span>
+0057 nz=size(FVCOM.(plotOPTS.var_plot),2)
+0058 <span class="keyword">if</span> isfield(plotOPTS,<span class="string">'Time_record'</span>)
+0059     nt=length(plotOPTS.Time_record)
+0060 <span class="keyword">else</span>
+0061     nt=1;
+0062 <span class="keyword">end</span>
+0063 
+0064 nxy=length(plotOPTS.trn_nodes.y)
+0065 FVCOM.z=ones(nxy,nz,nt);
+0066 <span class="keyword">for</span> tt=1:nt
+0067     z=FVCOM.h(:)+FVCOM.zeta(:,tt);
+0068     <span class="keyword">for</span> zz=1:nz
+0069         FVCOM.z(:,zz,tt)=z+z.*FVCOM.siglay(:,zz);
+0070     <span class="keyword">end</span>
+0071 <span class="keyword">end</span>
+0072 <span class="comment">% plot animation of timeseries of transect</span>
+0073 XX=repmat(plotOPTS.trn_dis(:)',nz,1)';
+0074 <span class="keyword">for</span> tt=1:nt
+0075     YY=squeeze(FVCOM.z(:,:,tt));
+0076     ZZ=squeeze(FVCOM.(plotOPTS.var_plot)(:,:,tt));
+0077     Plots(plotOPTS.figure).handles=contourf(XX/100000,-YY,(ZZ),200,<span class="string">'edgecolor'</span>,<span class="string">'none'</span>);
+0078     caxis(plotOPTS.clims);
+0079     colorbar
+0080     xlabel(<span class="string">'Distance along Transect'</span>)
+0081     ylabel(<span class="string">'Depth m'</span>)
+0082     ylim([-max(FVCOM.h(:)) 0])
+0083     pause(.5)
+0084 <span class="keyword">end</span>
+0085 
+0086 
+0087 <span class="keyword">if</span> isfield(plotOPTS,<span class="string">'range_lat'</span>)
+0088     m_mappath;
+0089     <span class="comment">%plot map with transect overlaid</span>
+0090     figure(plotOPTS.figure+1);clf
+0091     m_proj(<span class="string">'UTM'</span>,<span class="string">'lon'</span>,[ plotOPTS.range_lon],<span class="string">'lat'</span>,[plotOPTS.range_lat],<span class="string">'zon'</span>,plotOPTS.zone,<span class="string">'ell'</span>,plotOPTS.ell)
+0092     m_grid(<span class="string">'box'</span>,<span class="string">'fancy'</span>)
+0093     <span class="comment">% add coastline if present</span>
+0094     <span class="keyword">if</span> (isfield(plotOPTS,<span class="string">'coastline_file'</span>) &amp;&amp; ~isempty(plotOPTS.coastline_file) )
+0095         m_usercoast(plotOPTS.coastline_file,<span class="string">'Color'</span>,<span class="string">'k'</span>,<span class="string">'LineWidth'</span>,3);
+0096     <span class="keyword">end</span>
+0097     
+0098     <span class="comment">%plot vertices</span>
+0099     col=0.7*[1 1 1];
+0100     <span class="keyword">if</span> plotOPTS.do_mesh
+0101         <span class="comment">%plot vertices</span>
+0102         [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0103         Plots(plotOPTS.figure).mesh=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0104             <span class="string">'EdgeColor'</span>,[0.6 0.6 0.6],<span class="string">'FaceColor'</span>,<span class="string">'none'</span>);hold on
+0105         
+0106     <span class="keyword">end</span>
+0107     <span class="comment">% plot with matlab</span>
+0108     hold on
+0109     [x,y]=<a href="m_ll2ll.html" class="code" title="function [X,Y]=m_ll2ll(lon1,lat1, zone, hemisphere,ellipsoid);">m_ll2ll</a>(plotOPTS.trn_nodes.x,plotOPTS.trn_nodes.y);
+0110     [X,Y]=m_ll2xy(x+6,y,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0111     plot(X,Y,<span class="string">'r'</span>,<span class="string">'LineWidth'</span>,2.5)
+0112 <span class="keyword">end</span>
+0113</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

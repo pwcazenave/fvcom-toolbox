@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of make_blank_mesh</title>
+  <meta name="keywords" content="make_blank_mesh">
+  <meta name="description" content="Make a blank mesh object with default params">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; make_blank_mesh.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>make_blank_mesh
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Make a blank mesh object with default params</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Mobj] = make_blank_mesh </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Make a blank mesh object with default params  
+
+ [Mobj] = function make_blank_mesh
+
+ DESCRIPTION:
+    Make a blank Matlab mesh object
+
+ INPUT:
+
+ OUTPUT:
+    Mobj = matlab structure containing default
+
+ EXAMPLE USAGE
+    Mobj = make_blank_mesh()
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="gen_semistructured_mesh.html" class="code" title="function [Mobj] = gen_semistructured_mesh(lx,ly,nx,ny,cornermod)">gen_semistructured_mesh</a>	Generate a semistructured mesh</li><li><a href="gen_unstructured_mesh.html" class="code" title="function [Mobj] = gen_unstructured_mesh(lx,ly,res,cornermod)">gen_unstructured_mesh</a>	function gen_unstructured_mesh(lx,ly,res,cornermod)</li><li><a href="read_fvcom_mesh.html" class="code" title="function [Mobj] = read_fvcom_mesh(gridfile)">read_fvcom_mesh</a>	Read fvcom mesh file into Matlab mesh object</li><li><a href="read_sms_mesh.html" class="code" title="function [Mobj] = read_sms_mesh(varargin)">read_sms_mesh</a>	Read sms mesh files into Matlab mesh object</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = make_blank_mesh</a>
+0002 
+0003 <span class="comment">% Make a blank mesh object with default params</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% [Mobj] = function make_blank_mesh</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Make a blank Matlab mesh object</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% OUTPUT:</span>
+0013 <span class="comment">%    Mobj = matlab structure containing default</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% EXAMPLE USAGE</span>
+0016 <span class="comment">%    Mobj = make_blank_mesh()</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% Author(s):</span>
+0019 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% Revision history</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">%==============================================================================</span>
+0024 <span class="keyword">global</span> ftbverbose
+0025 subname = <span class="string">'make_blank_mesh'</span>;
+0026 <span class="keyword">if</span>(ftbverbose)
+0027   fprintf(<span class="string">'\n'</span>)
+0028   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0029 <span class="keyword">end</span>;
+0030 
+0031 <span class="comment">%------------------------------------------------------------------------------</span>
+0032 <span class="comment">% Set defaults</span>
+0033 <span class="comment">%------------------------------------------------------------------------------</span>
+0034 
+0035 
+0036 <span class="comment">% dimensions</span>
+0037 Mobj.nVerts  = 0;
+0038 Mobj.nElems  = 0;
+0039 Mobj.nRivers = 0;
+0040 Mobj.nObs    = 0;
+0041 Mobj.nSponge = 0;
+0042 Mobj.riv_nodes = zeros(50,10);
+0043 Mobj.obc_nodes = zeros(10,500);
+0044 Mobj.sponge_nodes = zeros(10,500);
+0045 
+0046 <span class="comment">% flags</span>
+0047 Mobj.nativeCoords = <span class="string">'cartesian'</span>;
+0048 Mobj.have_lonlat  = false;
+0049 Mobj.have_cor     = false;
+0050 Mobj.have_xy      = false;
+0051 Mobj.have_bath    = false;
+0052 Mobj.have_mets    = false;
+0053 
+0054 
+0055 <span class="keyword">if</span>(ftbverbose)
+0056   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0057 <span class="keyword">end</span>;
+0058 
+0059</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

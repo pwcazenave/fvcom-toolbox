@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of SW_Viscosity</title>
+  <meta name="keywords" content="SW_Viscosity">
+  <meta name="description" content="SW_Viscosity    Dynamic viscosity of seawater">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; SW_Viscosity.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>SW_Viscosity
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>SW_Viscosity    Dynamic viscosity of seawater</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function mu = SW_Viscosity(T,S) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> SW_Viscosity    Dynamic viscosity of seawater
+=========================================================================
+ USAGE:  mu = SW_Viscosity(T,S)
+
+ DESCRIPTION:
+   Dynamic viscosity of seawater at atmospheric pressure (0.1 MPa) using 
+   Eq. (22) given in [1] which best fit the data of [2], [3] and [4]. 
+   The pure water viscosity equation is a best fit to the data of [5]. 
+   Values at temperature higher than the normal boiling temperature 
+   are calculated at the saturation pressure.
+
+ INPUT:  (all must have same dimensions)
+   T = temperature [degree C] (ITS-90)
+   S = salinity    [g/kg] (reference-composition salinity)
+
+ OUTPUT:
+   mu = dynamic viscosity  [kg/m s]
+
+ AUTHOR:  
+   Mostafa H. Sharqawy 12-18-2009, MIT (mhamed@mit.edu)
+
+ DISCLAIMER:
+   This software is provided &quot;as is&quot; without warranty of any kind.
+   See the file sw_copy.m for conditions of use and licence.
+ 
+ VALIDITY: 0 &lt; T &lt; 180 C and 0 &lt; S &lt; 150 g/kg;
+ 
+ ACCURACY: 1.5%
+ 
+ REFERENCES:
+   [1] Sharqawy M. H., Lienhard J. H., and Zubair, S. M., Desalination and Water Treatment, 2009
+   [2] B. M. Fabuss, A. Korosi, and D. F. Othmer, J., Chem. Eng. Data 14(2), 192, 1969.
+   [3] J. D. Isdale, C. M. Spence, and J. S. Tudhope, Desalination, 10(4), 319 - 328, 1972
+   [4] F. J. Millero, The Sea, Vol. 5, 3 � 80, John Wiley, New York, 1974
+   [5] IAPWS release on the viscosity of ordinary water substance 2008
+=========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="SW_Kviscosity.html" class="code" title="function new = SW_Kviscosity(T,S)">SW_Kviscosity</a>	Calculates the kinemtic viscosity [m^2/s] from the dynamic viscosity and</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function mu = SW_Viscosity(T,S)</a>
+0002 <span class="comment">% SW_Viscosity    Dynamic viscosity of seawater</span>
+0003 <span class="comment">%=========================================================================</span>
+0004 <span class="comment">% USAGE:  mu = SW_Viscosity(T,S)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Dynamic viscosity of seawater at atmospheric pressure (0.1 MPa) using</span>
+0008 <span class="comment">%   Eq. (22) given in [1] which best fit the data of [2], [3] and [4].</span>
+0009 <span class="comment">%   The pure water viscosity equation is a best fit to the data of [5].</span>
+0010 <span class="comment">%   Values at temperature higher than the normal boiling temperature</span>
+0011 <span class="comment">%   are calculated at the saturation pressure.</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% INPUT:  (all must have same dimensions)</span>
+0014 <span class="comment">%   T = temperature [degree C] (ITS-90)</span>
+0015 <span class="comment">%   S = salinity    [g/kg] (reference-composition salinity)</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% OUTPUT:</span>
+0018 <span class="comment">%   mu = dynamic viscosity  [kg/m s]</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% AUTHOR:</span>
+0021 <span class="comment">%   Mostafa H. Sharqawy 12-18-2009, MIT (mhamed@mit.edu)</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% DISCLAIMER:</span>
+0024 <span class="comment">%   This software is provided &quot;as is&quot; without warranty of any kind.</span>
+0025 <span class="comment">%   See the file sw_copy.m for conditions of use and licence.</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% VALIDITY: 0 &lt; T &lt; 180 C and 0 &lt; S &lt; 150 g/kg;</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% ACCURACY: 1.5%</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% REFERENCES:</span>
+0032 <span class="comment">%   [1] Sharqawy M. H., Lienhard J. H., and Zubair, S. M., Desalination and Water Treatment, 2009</span>
+0033 <span class="comment">%   [2] B. M. Fabuss, A. Korosi, and D. F. Othmer, J., Chem. Eng. Data 14(2), 192, 1969.</span>
+0034 <span class="comment">%   [3] J. D. Isdale, C. M. Spence, and J. S. Tudhope, Desalination, 10(4), 319 - 328, 1972</span>
+0035 <span class="comment">%   [4] F. J. Millero, The Sea, Vol. 5, 3 � 80, John Wiley, New York, 1974</span>
+0036 <span class="comment">%   [5] IAPWS release on the viscosity of ordinary water substance 2008</span>
+0037 <span class="comment">%=========================================================================</span>
+0038 
+0039 <span class="comment">%----------------------</span>
+0040 <span class="comment">% CHECK INPUT ARGUMENTS</span>
+0041 <span class="comment">%----------------------</span>
+0042 <span class="keyword">if</span> nargin ~=2
+0043     error(<span class="string">'SW_Viscosity.m: Must pass 2 parameters'</span>)
+0044 <span class="keyword">end</span>
+0045 
+0046 <span class="comment">% CHECK S,T dimensions and verify consistent</span>
+0047 [ms,ns] = size(S);
+0048 [mt,nt] = size(T);
+0049 
+0050 <span class="comment">% CHECK THAT S &amp; T HAVE SAME SHAPE</span>
+0051 <span class="keyword">if</span> (ms~=mt) | (ns~=nt)
+0052     error(<span class="string">'check_stp: S &amp; T must have same dimensions'</span>)
+0053 <span class="keyword">end</span>
+0054 
+0055 <span class="comment">% CHECK THAT S &amp; T ARE WITHIN THE FUNCTION RANGE</span>
+0056 vectorsize=size(S);
+0057 <span class="keyword">for</span> i = 1:vectorsize(1,1)
+0058     <span class="keyword">for</span> j = 1:vectorsize(1,2)
+0059         <span class="keyword">if</span> T(i,j)&lt;0 | T(i,j)&gt;180
+0060             disp(<span class="string">'Temperature is out of range for Viscosity function 10&lt;T&lt;180 C'</span>);
+0061         <span class="keyword">end</span>
+0062         <span class="keyword">if</span> S(i,j)&lt;0 | S(i,j)&gt;150
+0063             disp(<span class="string">'Salinity is out of range for Viscosity function 0&lt;S&lt;150 g/kg'</span>);
+0064         <span class="keyword">end</span>
+0065         
+0066         <span class="comment">%------</span>
+0067         <span class="comment">% BEGIN</span>
+0068         <span class="comment">%------</span>
+0069         S(i,j)=S(i,j)/1000;
+0070         a1 = 1.5700386464E-01;a2 = 6.4992620050E+01;a3 = -9.1296496657E+01;a4 = 4.2844324477E-05;
+0071         mu_w(i,j) = a4 + 1/(a1*(T(i,j)+a2)^2+a3);
+0072         a5 = 1.5409136040E+00;a6 = 1.9981117208E-02;a7 = -9.5203865864E-05;
+0073         a8 = 7.9739318223E+00;a9 = -7.5614568881E-02;a10 = 4.7237011074E-04;
+0074         A = a5 + a6 * T(i,j) + a7 * T(i,j)^2;
+0075         B = a8 + a9 * T(i,j) + a10* T(i,j)^2;
+0076         mu(i,j) = mu_w(i,j)*(1 + A*S(i,j) + B*S(i,j)^2);
+0077     <span class="keyword">end</span>
+0078 <span class="keyword">end</span>
+0079 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of inkmlbb</title>
+  <meta name="keywords" content="inkmlbb">
+  <meta name="description" content="fname = 'Wet_Skagit_BB.kml';">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; inkmlbb.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>inkmlbb
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>fname = 'Wet_Skagit_BB.kml';</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [pts] = inkmlbb(fname,x,y) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">fname = 'Wet_Skagit_BB.kml';
+x = geog(:,1);
+y = geog(:,2);</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="inbox.html" class="code" title="function [pts] = inbox(box,x,y)">inbox</a>	determine if points lie in a box</li><li><a href="isintriangle.html" class="code" title="function res = isintriangle(xt,yt,x0,y0)">isintriangle</a>	determine if point (x0,y0) is in triangle defined by nodes (xt(3),yt(3))</li><li><a href="read_kml.html" class="code" title="function [lat,lon,z] = read_kml(fileName)">read_kml</a>	READ_KML reads a Google Earth kml file into Matlab</li><li><a href="tri_from_bndry.html" class="code" title="function [tri,x,y] = tri_from_bndry(xb,yb,path_to_triangle);">tri_from_bndry</a>	tesselate a triangular mesh using "triangle" from a single, unclosed boundary</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [pts] = inkmlbb(fname,x,y)</a>
+0002 <span class="comment">%fname = 'Wet_Skagit_BB.kml';</span>
+0003 <span class="comment">%x = geog(:,1);</span>
+0004 <span class="comment">%y = geog(:,2);</span>
+0005 
+0006 
+0007 triangle = <span class="string">'/usr/local/bin/triangle'</span>;
+0008 
+0009 [latb,lonb,dumz] = <a href="read_kml.html" class="code" title="function [lat,lon,z] = read_kml(fileName)">read_kml</a>(fname);
+0010 [ktri,kx,ky] = <a href="tri_from_bndry.html" class="code" title="function [tri,x,y] = tri_from_bndry(xb,yb,path_to_triangle);">tri_from_bndry</a>(lonb,latb,triangle);
+0011 
+0012 box = [min(kx),max(kx),min(ky),max(ky)];
+0013 pts1 = <a href="inbox.html" class="code" title="function [pts] = inbox(box,x,y)">inbox</a>(box,x,y);
+0014 
+0015 mark = zeros(length(x),1);
+0016 
+0017 dims = size(ktri);
+0018 
+0019 <span class="keyword">for</span> ii=1:length(pts1);
+0020 i = pts1(ii);
+0021 <span class="keyword">for</span> j=1:dims(1);
+0022   xtri = kx(ktri(j,1:3));
+0023   ytri = ky(ktri(j,1:3));
+0024   <span class="keyword">if</span>(<a href="isintriangle.html" class="code" title="function res = isintriangle(xt,yt,x0,y0)">isintriangle</a>(xtri,ytri,x(i),y(i)) ) ; mark(i) = 1; <span class="keyword">end</span>;
+0025 <span class="keyword">end</span>;
+0026 <span class="keyword">end</span>;
+0027 
+0028 pts = find(mark==1);
+0029 
+0030 <span class="comment">%figure</span>
+0031 <span class="comment">%patch('Vertices',[kx(:),ky(:)],'Faces',ktri,...</span>
+0032 <span class="comment">%       'Cdata',kx,'edgecolor','k','facecolor','k');</span>
+0033 <span class="comment">%hold on;</span>
+0034 <span class="comment">%plot(x(pts1),y(pts1),'r+');</span>
+0035 <span class="comment">%plot(x(pts),y(pts),'g+');</span>
+0036 <span class="comment">%axis equal</span>
+0037 <span class="comment">%colorbar</span>
+0038</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_dtank</title>
+  <meta name="keywords" content="write_dtank">
+  <meta name="description" content="Dump mesh to datatank file">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_dtank.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_dtank
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Dump mesh to datatank file</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_dtank(fname,Mobj,geographic) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Dump mesh to datatank file 
+
+ function dump_dtascii(fname,Mobj) 
+
+ DESCRIPTION:
+    Dump mesh, open boundary nodes, river nodes, and probe nodes to DTascii file 
+
+ INPUT 
+   fname = datatank file name
+   Mobj  = mesh object
+
+ OUTPUT:
+    fname:  ascii datatank file 
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_dtank(fname,Mobj,geographic)</a>
+0002 <span class="comment">% Dump mesh to datatank file</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function dump_dtascii(fname,Mobj)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Dump mesh, open boundary nodes, river nodes, and probe nodes to DTascii file</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT</span>
+0010 <span class="comment">%   fname = datatank file name</span>
+0011 <span class="comment">%   Mobj  = mesh object</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% OUTPUT:</span>
+0014 <span class="comment">%    fname:  ascii datatank file</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Author(s):</span>
+0017 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% Revision history</span>
+0020 
+0021 <span class="comment">% parse input args</span>
+0022 cartesian = true;
+0023 <span class="keyword">if</span>(exist(<span class="string">'geographic'</span>))
+0024   cartesian = false;
+0025 <span class="keyword">end</span>;
+0026 
+0027 <span class="keyword">if</span>(~cartesian)
+0028   <span class="comment">% open datatank file</span>
+0029   fid = fopen(fname,<span class="string">'w'</span>);
+0030   fprintf(fid,<span class="string">'DataTank Binary File\n'</span>);
+0031   fprintf(fid,<span class="string">'Bathymetry_Geog\n'</span>);
+0032   fprintf(fid,<span class="string">'TriangularMesh2D\n'</span>);
+0033   
+0034   <span class="comment">%Grid</span>
+0035   fprintf(fid,<span class="string">'Points\n'</span>);
+0036   fprintf(fid,<span class="string">'%d %d \n'</span>,2,Mobj.nVerts);
+0037   <span class="keyword">for</span> i=1:Mobj.nVerts
+0038     fprintf(fid,<span class="string">'%f %f \n'</span>,Mobj.lon(i),Mobj.lat(i));
+0039   <span class="keyword">end</span>;
+0040   
+0041   <span class="comment">% elements</span>
+0042   fprintf(fid,<span class="string">'Triangles\n'</span>);
+0043   fprintf(fid,<span class="string">'%d %d\n'</span>,3,Mobj.nElems);
+0044   <span class="keyword">for</span> i=1:Mobj.nElems
+0045     fprintf(fid,<span class="string">'%d %d %d \n'</span>,Mobj.tri(i,1)-1,Mobj.tri(i,2)-1,Mobj.tri(i,3)-1);
+0046   <span class="keyword">end</span>;
+0047 <span class="keyword">else</span>
+0048   <span class="comment">% open datatank file</span>
+0049   fid = fopen(fname,<span class="string">'w'</span>);
+0050   fprintf(fid,<span class="string">'DataTank Binary File\n'</span>);
+0051   fprintf(fid,<span class="string">'Bathymetry_Cart\n'</span>);
+0052   fprintf(fid,<span class="string">'TriangularMesh2D\n'</span>);
+0053 
+0054   <span class="comment">%Grid</span>
+0055   fprintf(fid,<span class="string">'Points\n'</span>);
+0056   fprintf(fid,<span class="string">'%d %d \n'</span>,2,Mobj.nVerts);
+0057   <span class="keyword">for</span> i=1:Mobj.nVerts
+0058     fprintf(fid,<span class="string">'%f %f \n'</span>,Mobj.x(i),Mobj.y(i));
+0059   <span class="keyword">end</span>;
+0060 
+0061   <span class="comment">% elements</span>
+0062   fprintf(fid,<span class="string">'Triangles\n'</span>);
+0063   fprintf(fid,<span class="string">'%d %d\n'</span>,3,Mobj.nElems);
+0064   <span class="keyword">for</span> i=1:Mobj.nElems
+0065     fprintf(fid,<span class="string">'%d %d %d \n'</span>,Mobj.tri(i,1)-1,Mobj.tri(i,2)-1,Mobj.tri(i,3)-1);
+0066   <span class="keyword">end</span>;
+0067 <span class="keyword">end</span>;
+0068 
+0069 
+0070 
+0071 <span class="comment">% bathymetry</span>
+0072 fprintf(fid,<span class="string">'Values\n'</span>);
+0073 fprintf(fid,<span class="string">'%d\n'</span>,Mobj.nVerts);
+0074 <span class="keyword">for</span> i=1:Mobj.nVerts
+0075   fprintf(fid,<span class="string">'%d \n'</span>,Mobj.h(i));
+0076 <span class="keyword">end</span>;
+0077 
+0078 
+0079 <span class="comment">% time step</span>
+0080 fprintf(fid,<span class="string">'Time Step\n'</span>);
+0081 fprintf(fid,<span class="string">'TriangularMesh2D\n'</span>);
+0082 fprintf(fid,<span class="string">'Use Last Grid\n'</span>);
+0083 fprintf(fid,<span class="string">'Values\n'</span>);
+0084 fprintf(fid,<span class="string">'%d\n'</span>,Mobj.nVerts);
+0085 <span class="keyword">for</span> i=1:Mobj.nVerts
+0086   fprintf(fid,<span class="string">'%d \n'</span>,Mobj.ts(i));
+0087 <span class="keyword">end</span>;
+0088 
+0089 <span class="comment">% open boundary nodes</span>
+0090 <span class="keyword">if</span>(Mobj.nObs &gt; 0)
+0091 fprintf(fid,<span class="string">'ObcNodes\n'</span>);  
+0092 fprintf(fid,<span class="string">'NumberList\n'</span>);  
+0093 fprintf(fid,<span class="string">'%d\n'</span>,sum(Mobj.nObcNodes)); 
+0094 <span class="keyword">for</span> i=1:Mobj.nObcNodes(1) 
+0095   fprintf(fid,<span class="string">'%d\n'</span>,Mobj.obc_nodes(1,i)); 
+0096 <span class="keyword">end</span>;
+0097 <span class="keyword">end</span>;
+0098 
+0099 <span class="comment">% river nodes</span>
+0100 <span class="keyword">if</span>(Mobj.nRivers &gt; 0)
+0101 fprintf(fid,<span class="string">'RivNodes\n'</span>);  
+0102 fprintf(fid,<span class="string">'NumberList\n'</span>);  
+0103 fprintf(fid,<span class="string">'%d\n'</span>,Mobj.nRivNodes(1)); 
+0104 <span class="keyword">for</span> i=1:Mobj.nRivNodes(1); 
+0105   fprintf(fid,<span class="string">'%d\n'</span>,Mobj.riv_nodes(1,i)); 
+0106 <span class="keyword">end</span>;
+0107 <span class="keyword">end</span>;
+0108   
+0109 fclose(fid);
+0110</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

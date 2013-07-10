@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of connectivity</title>
+  <meta name="keywords" content="connectivity">
+  <meta name="description" content="CONNECTIVITY: Assemble connectivity data for a triangular mesh.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; connectivity.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>connectivity
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>CONNECTIVITY: Assemble connectivity data for a triangular mesh.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [e,te,e2t,bnd] = connectivity(p,t) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">  CONNECTIVITY: Assemble connectivity data for a triangular mesh.
+
+ The edge based connectivity is built for a triangular mesh and the
+ boundary nodes identified. This data should be useful when implementing
+ FE/FV methods using triangular meshes.
+
+  [e,te,et2,bnd] = connectivity(p,t);
+
+  p   : Nx2 array of nodes coordinates, [x1,y1; x2,y2; etc]
+  t   : Mx3 array of triangles as indices, [n11,n12,n13; n21,n22,n23; etc]
+
+  e   : Kx2 array of unique mesh edges - [n11,n12; n21,n22; etc]
+  te  : Mx3 array of triangles as indices into E, [e11,e12,e13; 
+                                                   e21,e22,e23; etc]
+  e2t : Kx2 array of triangle neighbours for unique mesh edges -
+        [t11,t12; t21,t22; etc]. Each row has two entries corresponding to
+        the triangle numbers associated with each edge in E. Boundary
+        edges have e2t(i,2)=0.
+  bnd : Nx1 logical array identifying boundary nodes. P(i,:) is a boundary
+        node if BND(i)=TRUE.
+
+ See also MESH2D, REFINE</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [e,te,e2t,bnd] = connectivity(p,t)</a>
+0002 <span class="comment">%  CONNECTIVITY: Assemble connectivity data for a triangular mesh.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% The edge based connectivity is built for a triangular mesh and the</span>
+0005 <span class="comment">% boundary nodes identified. This data should be useful when implementing</span>
+0006 <span class="comment">% FE/FV methods using triangular meshes.</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">%  [e,te,et2,bnd] = connectivity(p,t);</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">%  p   : Nx2 array of nodes coordinates, [x1,y1; x2,y2; etc]</span>
+0011 <span class="comment">%  t   : Mx3 array of triangles as indices, [n11,n12,n13; n21,n22,n23; etc]</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">%  e   : Kx2 array of unique mesh edges - [n11,n12; n21,n22; etc]</span>
+0014 <span class="comment">%  te  : Mx3 array of triangles as indices into E, [e11,e12,e13;</span>
+0015 <span class="comment">%                                                   e21,e22,e23; etc]</span>
+0016 <span class="comment">%  e2t : Kx2 array of triangle neighbours for unique mesh edges -</span>
+0017 <span class="comment">%        [t11,t12; t21,t22; etc]. Each row has two entries corresponding to</span>
+0018 <span class="comment">%        the triangle numbers associated with each edge in E. Boundary</span>
+0019 <span class="comment">%        edges have e2t(i,2)=0.</span>
+0020 <span class="comment">%  bnd : Nx1 logical array identifying boundary nodes. P(i,:) is a boundary</span>
+0021 <span class="comment">%        node if BND(i)=TRUE.</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% See also MESH2D, REFINE</span>
+0024 
+0025 <span class="comment">% Darren Engwirda - 2007</span>
+0026 
+0027 <span class="keyword">if</span> nargin&lt;2
+0028    error(<span class="string">'Wrong number of inputs'</span>);
+0029 <span class="keyword">end</span>
+0030 <span class="keyword">if</span> nargout&gt;4
+0031    error(<span class="string">'Wrong number of outputs'</span>);
+0032 <span class="keyword">end</span>
+0033 <span class="keyword">if</span> numel(p)~=2*size(p,1)
+0034    error(<span class="string">'P must be an Nx2 array'</span>);
+0035 <span class="keyword">end</span>
+0036 <span class="keyword">if</span> numel(t)~=3*size(t,1)
+0037    error(<span class="string">'T must be an Mx3 array'</span>);
+0038 <span class="keyword">end</span>
+0039 <span class="keyword">if</span> any(t(:)&lt;1) || max(t(:)&gt;size(p,1))
+0040    error(<span class="string">'Invalid T'</span>);
+0041 <span class="keyword">end</span>
+0042 
+0043 <span class="comment">% Unique mesh edges as indices into P</span>
+0044 numt = size(t,1);
+0045 vect = 1:numt;                                 <span class="comment">% Triangle indices</span>
+0046 e = [t(:,[1,2]); t(:,[2,3]); t(:,[3,1])];      <span class="comment">% Edges - not unique</span>
+0047 [e,j,j] = unique(sort(e,2),<span class="string">'rows'</span>);            <span class="comment">% Unique edges</span>
+0048 te = [j(vect), j(vect+numt), j(vect+2*numt)];  <span class="comment">% Unique edges in each triangle</span>
+0049 
+0050 <span class="comment">% Edge-to-triangle connectivity</span>
+0051 <span class="comment">% Each row has two entries corresponding to the triangle numbers</span>
+0052 <span class="comment">% associated with each edge. Boundary edges have e2t(i,2)=0.</span>
+0053 nume = size(e,1);
+0054 e2t  = zeros(nume,2);
+0055 <span class="keyword">for</span> k = 1:numt
+0056    j = 1;
+0057    <span class="keyword">while</span> j&lt;=3
+0058       ce = te(k,j);
+0059       <span class="keyword">if</span> e2t(ce,1)==0
+0060          e2t(ce,1) = k;
+0061       <span class="keyword">else</span>
+0062          e2t(ce,2) = k;
+0063       <span class="keyword">end</span>
+0064       j = j+1;
+0065    <span class="keyword">end</span>
+0066 <span class="keyword">end</span>
+0067 
+0068 <span class="comment">% Flag boundary nodes</span>
+0069 bnd = false(size(p,1),1);
+0070 bnd(e(e2t(:,2)==0,:)) = true;                  <span class="comment">% True for bnd nodes</span>
+0071 
+0072 <span class="keyword">end</span>      <span class="comment">% connectivity()</span></pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

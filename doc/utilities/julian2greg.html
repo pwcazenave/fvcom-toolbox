@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of julian2greg</title>
+  <meta name="keywords" content="julian2greg">
+  <meta name="description" content="This function converts the Julian dates to Gregorian dates.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; julian2greg.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>julian2greg
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This function converts the Julian dates to Gregorian dates.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [year,month,day,hour,minu,sec,dayweek,dategreg] = julian2greg(JD) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> This function converts the Julian dates to Gregorian dates.
+
+ 0. Syntax:
+ [day,month,year,hour,min,sec,dayweek] = julian2greg(JD)
+
+ 1. Inputs:
+     JD = Julian date.   
+
+ 2. Outputs:
+     year, month, day, dayweek = date in Gregorian calendar.
+     hour, min, sec = time at universal time.
+
+ 3. Example:
+  &gt;&gt; [a,b,c,d,e,f,g,h] = julian2greg(2453887.60481)
+  a = 
+     2006      
+  b =
+     6
+  c =
+     1
+  d =
+     2
+  e =
+     30
+  f =
+     56
+  g = 
+     Thursday
+  h =
+       1     6     2006     2     30     56
+
+ 4. Notes:
+     - For all common era (CE) dates in the Gregorian calendar.
+     - The function was tested, using  the julian date converter of U.S. Naval Observatory and
+     the results were similar. You can check it.
+     - Trying to do the life... more easy with the conversions.
+
+ 5. Referents:
+     Astronomical Applications Department. &quot;Julian Date Converter&quot;. From U.S. Naval Observatory.
+               http://aa.usno.navy.mil/data/docs/JulianDate.html
+     Duffett-Smith, P. (1992).  Practical Astronomy with Your Calculator.
+               Cambridge University Press, England:  pp. 8,9.
+
+ Gabriel Ruiz Mtz.
+ Jun-2006
+ ____________________________________________________________________________________________</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="mjulian2greg.html" class="code" title="function [year,month,day,hour,minu,sec,dayweek,dategreg] = julian2greg(MJD)">mjulian2greg</a>	This function converts Modified Julian dates to Gregorian dates.</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [year,month,day,hour,minu,sec,dayweek,dategreg] = julian2greg(JD)</a>
+0002 <span class="comment">% This function converts the Julian dates to Gregorian dates.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% 0. Syntax:</span>
+0005 <span class="comment">% [day,month,year,hour,min,sec,dayweek] = julian2greg(JD)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% 1. Inputs:</span>
+0008 <span class="comment">%     JD = Julian date.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% 2. Outputs:</span>
+0011 <span class="comment">%     year, month, day, dayweek = date in Gregorian calendar.</span>
+0012 <span class="comment">%     hour, min, sec = time at universal time.</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% 3. Example:</span>
+0015 <span class="comment">%  &gt;&gt; [a,b,c,d,e,f,g,h] = julian2greg(2453887.60481)</span>
+0016 <span class="comment">%  a =</span>
+0017 <span class="comment">%     2006</span>
+0018 <span class="comment">%  b =</span>
+0019 <span class="comment">%     6</span>
+0020 <span class="comment">%  c =</span>
+0021 <span class="comment">%     1</span>
+0022 <span class="comment">%  d =</span>
+0023 <span class="comment">%     2</span>
+0024 <span class="comment">%  e =</span>
+0025 <span class="comment">%     30</span>
+0026 <span class="comment">%  f =</span>
+0027 <span class="comment">%     56</span>
+0028 <span class="comment">%  g =</span>
+0029 <span class="comment">%     Thursday</span>
+0030 <span class="comment">%  h =</span>
+0031 <span class="comment">%       1     6     2006     2     30     56</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">% 4. Notes:</span>
+0034 <span class="comment">%     - For all common era (CE) dates in the Gregorian calendar.</span>
+0035 <span class="comment">%     - The function was tested, using  the julian date converter of U.S. Naval Observatory and</span>
+0036 <span class="comment">%     the results were similar. You can check it.</span>
+0037 <span class="comment">%     - Trying to do the life... more easy with the conversions.</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">% 5. Referents:</span>
+0040 <span class="comment">%     Astronomical Applications Department. &quot;Julian Date Converter&quot;. From U.S. Naval Observatory.</span>
+0041 <span class="comment">%               http://aa.usno.navy.mil/data/docs/JulianDate.html</span>
+0042 <span class="comment">%     Duffett-Smith, P. (1992).  Practical Astronomy with Your Calculator.</span>
+0043 <span class="comment">%               Cambridge University Press, England:  pp. 8,9.</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">% Gabriel Ruiz Mtz.</span>
+0046 <span class="comment">% Jun-2006</span>
+0047 <span class="comment">% ____________________________________________________________________________________________</span>
+0048 
+0049 error(nargchk(1,1,nargin))
+0050 
+0051 I = floor( JD + 0.5);
+0052 Fr = abs( I - ( JD + 0.5) );     
+0053 
+0054 <span class="keyword">if</span> I &gt;= 2299160 
+0055      A = floor( ( I- 1867216.25 ) / 36524.25 );
+0056      a4 = floor( A / 4 );
+0057      B = I + 1 + A - a4;
+0058 <span class="keyword">else</span>
+0059      B = I;
+0060 <span class="keyword">end</span> 
+0061 
+0062 C = B + 1524;
+0063 D = floor( ( C - 122.1 ) / 365.25 );
+0064 E = floor( 365.25 * D );
+0065 G = floor( ( C - E ) / 30.6001 );
+0066 day = floor( C - E + Fr - floor( 30.6001 * G ) );
+0067 
+0068 <span class="keyword">if</span> G &lt;= 13.5 
+0069     month = G - 1;
+0070 <span class="keyword">else</span>
+0071     month = G - 13;
+0072 <span class="keyword">end</span>
+0073 
+0074 <span class="keyword">if</span> month &gt; 2.5
+0075     year = D - 4716;
+0076 <span class="keyword">else</span>
+0077     year = D - 4715;
+0078 <span class="keyword">end</span>
+0079 
+0080 hour = floor( Fr * 24 );
+0081 minu = floor( abs( hour -( Fr * 24 ) ) * 60 );
+0082 minufrac = ( abs( hour - ( Fr * 24 ) ) * 60 ); 
+0083 sec = ceil( abs( minu - minufrac ) * 60);
+0084 AA = ( JD + 1.5 ) / 7;
+0085 nd = floor( (abs( floor(AA) - AA ) ) * 7 );
+0086 dayweek ={ <span class="string">'Sunday'</span> <span class="string">'Monday'</span> <span class="string">'Tuesday'</span> <span class="string">'Wednesday'</span> <span class="string">'Thursday'</span> <span class="string">'Friday'</span> <span class="string">'Saturday'</span>};
+0087 dayweek = dayweek{ nd+1};
+0088 format(<span class="string">'long'</span>, <span class="string">'g'</span>);
+0089 dategreg = [ day month year hour minu sec ];
+0090</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

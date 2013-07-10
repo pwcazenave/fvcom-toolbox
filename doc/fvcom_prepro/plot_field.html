@@ -1,0 +1,228 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of plot_field</title>
+  <meta name="keywords" content="plot_field">
+  <meta name="description" content="Plot the mesh, user defined field, open boundary nodes, and river points">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; plot_field.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>plot_field
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Plot the mesh, user defined field, open boundary nodes, and river points</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function plot_field(Mobj,PlotField,varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Plot the mesh, user defined field, open boundary nodes, and river points 
+
+ function plot_field(Mobj,field,varargin)
+
+ DESCRIPTION:
+    Plot a field from the Mesh structure
+
+ INPUT 
+   Mobj                    = matlab mesh object 
+   PlotField               = vertex-based field to plot
+   [optional] coordinate   = coordinate system 
+                             'cartesian'(default)
+                             'spherical'  
+   [optional] showgrid     = show the grid
+                             [true ; false (default)] 
+   [optional] withextra    = display river nodes and obc nodes
+                             [true ; false (default)]
+
+ OUTPUT:
+    Figure Plot to Screen
+
+ EXAMPLE USAGE
+    plot_field(Mobj,Mobj.h,'coordinate','spherical')
+    plot_field(Mobj,Mobj.ts,'showgrid',true)
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="example.html" class="code" title="">example</a>	example demonstrating reading in a 2DM file and constructing a model</li><li><a href="example2.html" class="code" title="">example2</a>	example demonstrating reading in an FVCOM mesh and smoothing the bathymetry</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function plot_field(Mobj,PlotField,varargin) </a>
+0002 
+0003 <span class="comment">% Plot the mesh, user defined field, open boundary nodes, and river points</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function plot_field(Mobj,field,varargin)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Plot a field from the Mesh structure</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT</span>
+0011 <span class="comment">%   Mobj                    = matlab mesh object</span>
+0012 <span class="comment">%   PlotField               = vertex-based field to plot</span>
+0013 <span class="comment">%   [optional] coordinate   = coordinate system</span>
+0014 <span class="comment">%                             'cartesian'(default)</span>
+0015 <span class="comment">%                             'spherical'</span>
+0016 <span class="comment">%   [optional] showgrid     = show the grid</span>
+0017 <span class="comment">%                             [true ; false (default)]</span>
+0018 <span class="comment">%   [optional] withextra    = display river nodes and obc nodes</span>
+0019 <span class="comment">%                             [true ; false (default)]</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% OUTPUT:</span>
+0022 <span class="comment">%    Figure Plot to Screen</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% EXAMPLE USAGE</span>
+0025 <span class="comment">%    plot_field(Mobj,Mobj.h,'coordinate','spherical')</span>
+0026 <span class="comment">%    plot_field(Mobj,Mobj.ts,'showgrid',true)</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Author(s):</span>
+0029 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Revision history</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">%==============================================================================</span>
+0034 
+0035 subname = <span class="string">'plot_field'</span>;
+0036 <span class="keyword">global</span> ftbverbose
+0037 <span class="keyword">if</span>(ftbverbose);
+0038   fprintf(<span class="string">'\n'</span>); fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0039 <span class="keyword">end</span>;
+0040 
+0041 <span class="comment">%------------------------------------------------------------------------------</span>
+0042 <span class="comment">% Parse input arguments</span>
+0043 <span class="comment">%------------------------------------------------------------------------------</span>
+0044 PlotCartesian = <span class="string">'cartesian'</span>;
+0045 ShowGrid = false;
+0046 HaveTitle = false;
+0047 PlotExtra = false;
+0048 
+0049 nArgs = length(varargin);
+0050 <span class="keyword">if</span>(mod(nArgs,2) ~= 0)
+0051     error(<span class="string">'incorrect usage of plot_mesh'</span>)
+0052 <span class="keyword">end</span>;
+0053 
+0054 
+0055 <span class="keyword">for</span> i=1:2:length(varargin)-1
+0056     keyword  = lower(varargin{i});
+0057     <span class="keyword">if</span>( ~ischar(keyword) )
+0058         error(<span class="string">'incorrect usage of plot_mesh'</span>)
+0059     <span class="keyword">end</span>;
+0060     
+0061     <span class="keyword">switch</span>(keyword(1:3))
+0062     
+0063     <span class="keyword">case</span>'coo'
+0064         coord = lower(varargin{i+1});
+0065         <span class="keyword">if</span>(coord(1:3) == <span class="string">'car'</span>)
+0066             PlotCartesian = true;
+0067         <span class="keyword">else</span>
+0068             PlotCartesian = false;
+0069         <span class="keyword">end</span>;
+0070     <span class="keyword">case</span>'sho'
+0071         showg = lower(varargin{i+1});
+0072         <span class="keyword">if</span>(showg)
+0073             ShowGrid = true;
+0074         <span class="keyword">else</span>
+0075             ShowGrid = false;
+0076         <span class="keyword">end</span>;
+0077     <span class="keyword">case</span>'tit'
+0078         MyTitle = varargin{i+1};
+0079         HaveTitle = true;
+0080     <span class="keyword">case</span>'wit'
+0081         showg = lower(varargin{i+1});
+0082         <span class="keyword">if</span>(showg)
+0083             PlotExtra = true;
+0084         <span class="keyword">else</span>
+0085             PlotExtra = false;
+0086         <span class="keyword">end</span>;
+0087     <span class="keyword">otherwise</span>
+0088         error([<span class="string">'Can''t understand value for:'</span> keyword]);
+0089     <span class="keyword">end</span>; <span class="comment">%switch keyword</span>
+0090 <span class="keyword">end</span>;
+0091 
+0092 <span class="comment">%------------------------------------------------------------------------------</span>
+0093 <span class="comment">% Plot the mesh and bathymetry</span>
+0094 <span class="comment">%------------------------------------------------------------------------------</span>
+0095 
+0096 <span class="keyword">if</span>(ShowGrid)
+0097     edgecolor = <span class="string">'k'</span>;
+0098 <span class="keyword">else</span>
+0099     edgecolor = <span class="string">'interp'</span>;
+0100 <span class="keyword">end</span>;
+0101 
+0102 field = PlotField;
+0103 
+0104 <span class="keyword">if</span>(PlotCartesian)
+0105     <span class="keyword">if</span>(~Mobj.have_xy)
+0106         error(<span class="string">'no (x,y) coordinates available for Mesh structure'</span>)
+0107     <span class="keyword">end</span>;
+0108     x = Mobj.x;
+0109     y = Mobj.y;
+0110 <span class="keyword">else</span>
+0111     <span class="keyword">if</span>(~Mobj.have_lonlat)
+0112         error(<span class="string">'no (lon,lat) coordinates available for Mesh structure'</span>)
+0113     <span class="keyword">end</span>;
+0114     x = Mobj.lon;
+0115     y = Mobj.lat;
+0116 <span class="keyword">end</span>;
+0117 
+0118 figure
+0119 patch(<span class="string">'Vertices'</span>,[x,y],<span class="string">'Faces'</span>,Mobj.tri,<span class="keyword">...</span>
+0120           <span class="string">'Cdata'</span>,field,<span class="string">'edgecolor'</span>,edgecolor,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0121 colorbar
+0122 hold on;
+0123 
+0124 <span class="keyword">if</span>(HaveTitle)
+0125     title(MyTitle)
+0126 <span class="keyword">end</span>;
+0127 
+0128 <span class="comment">%------------------------------------------------------------------------------</span>
+0129 <span class="comment">% Plot the mesh and bathymetry</span>
+0130 <span class="comment">%------------------------------------------------------------------------------</span>
+0131 <span class="keyword">if</span>(PlotExtra)
+0132     <span class="keyword">for</span> i=1:Mobj.nRivers
+0133         nodes = Mobj.riv_nodes(i,1:Mobj.nRivNodes(i));
+0134         plot(x(nodes),y(nodes),<span class="string">'go'</span>,<span class="string">'MarkerFaceColor'</span>,<span class="string">'g'</span>);
+0135     <span class="keyword">end</span>;
+0136     <span class="keyword">for</span> i=1:Mobj.nObs
+0137         nodes = Mobj.obc_nodes(i,1:Mobj.nObcNodes(i));
+0138         plot(x(nodes),y(nodes),<span class="string">'ks'</span>,<span class="string">'MarkerFaceColor'</span>,<span class="string">'k'</span>);
+0139     <span class="keyword">end</span>;
+0140     <span class="keyword">for</span> i=1:Mobj.nSponge
+0141         nodes = Mobj.sponge_nodes(i,1:Mobj.nSpongeNodes(i));
+0142         plot(x(nodes),y(nodes),<span class="string">'rd'</span>,<span class="string">'MarkerSize'</span>,5,<span class="string">'MarkerFaceColor'</span>,<span class="string">'k'</span>);
+0143     <span class="keyword">end</span>;
+0144 <span class="keyword">end</span>;
+0145 
+0146 
+0147 <span class="keyword">if</span>(ftbverbose);
+0148   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0149 <span class="keyword">end</span>;
+0150 
+0151</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

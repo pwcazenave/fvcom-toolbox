@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of ideal_swan_obc</title>
+  <meta name="keywords" content="ideal_swan_obc">
+  <meta name="description" content="Generate idealized SWAN boundary forcing">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">swan_scripts</a> &gt; ideal_swan_obc.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for swan_scripts&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>ideal_swan_obc
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Generate idealized SWAN boundary forcing</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function ideal_swan_obc(SwanNodeFile,time,hs,tp,dir,inc,DirectSpread); </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Generate idealized SWAN boundary forcing
+
+ function  ideal_swan_obc(SwanNodeFile,time,hs,tp,dir,inc,DirectSpread);
+
+ DESCRIPTION:
+    interpolate Hs,Tp,Dir from WW3 from time series to unstructured SWAN forcing file
+    this is an example file and will need to be modified for specific cases
+    Note that for the unstructured SWAN you can specify separate TPAR files
+    containing time series of hs,tp,dir for each node.  Also note that the nodes
+    are not necessarily nodes of the SWAN mesh.  They are specified in arclength
+    of the grid units from the first open boundary node (arclength 0).  SWAN
+    assembles a boundary segment by piecing together the nodes marked as boundary 
+    nodes in the node file (mark = 2).  This assumes somehow that the nodes are ordered
+    sequentially along the boundary arc which is in fact a major assumption.
+
+    Sample OBC section of a swan input file for the GoM domain is as follows where
+    15 points are used to specify the boundary forcing while the domain in fact has 
+    60 boundary points.  SWAN interpolates as necessary to force all the boundary nodes.
+    The large numbers are the arclengths in meters
+
+ BOUNDSPEC SIDE 2 CLOCKWISE VARIABLE FILE &amp;
+         0.00 'obc1.bnd' 1 &amp;
+     52704.26 'obc2.bnd' 1 &amp;
+    131926.06 'obc3.bnd' 1 &amp;
+    255117.10 'obc4.bnd' 1 &amp;
+    390381.71 'obc5.bnd' 1 &amp;
+    559989.50 'obc6.bnd' 1 &amp;
+    740759.98 'obc7.bnd' 1 &amp;
+    924330.66 'obc8.bnd' 1 &amp;
+   1104489.93 'obc9.bnd' 1 &amp;
+   1295381.43 'obc10.bnd' 1 &amp;
+   1480466.74 'obc11.bnd' 1 &amp;
+   1641071.70 'obc12.bnd' 1 &amp;
+   1750424.20 'obc13.bnd' 1 &amp;
+   1828825.67 'obc14.bnd' 1 &amp;
+   1951072.38 'obc15.bnd' 1</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ideal_swan_obc_driver_example.html" class="code" title="function ideal_swan_obc_driver();">ideal_swan_obc_driver_example</a>	Example Driver to Generate idealized SWAN boundary forcing using ideal_swan_obc</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function ideal_swan_obc(SwanNodeFile,time,hs,tp,dir,inc,DirectSpread);</a>
+0002     
+0003 <span class="comment">% Generate idealized SWAN boundary forcing</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function  ideal_swan_obc(SwanNodeFile,time,hs,tp,dir,inc,DirectSpread);</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    interpolate Hs,Tp,Dir from WW3 from time series to unstructured SWAN forcing file</span>
+0009 <span class="comment">%    this is an example file and will need to be modified for specific cases</span>
+0010 <span class="comment">%    Note that for the unstructured SWAN you can specify separate TPAR files</span>
+0011 <span class="comment">%    containing time series of hs,tp,dir for each node.  Also note that the nodes</span>
+0012 <span class="comment">%    are not necessarily nodes of the SWAN mesh.  They are specified in arclength</span>
+0013 <span class="comment">%    of the grid units from the first open boundary node (arclength 0).  SWAN</span>
+0014 <span class="comment">%    assembles a boundary segment by piecing together the nodes marked as boundary</span>
+0015 <span class="comment">%    nodes in the node file (mark = 2).  This assumes somehow that the nodes are ordered</span>
+0016 <span class="comment">%    sequentially along the boundary arc which is in fact a major assumption.</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">%    Sample OBC section of a swan input file for the GoM domain is as follows where</span>
+0019 <span class="comment">%    15 points are used to specify the boundary forcing while the domain in fact has</span>
+0020 <span class="comment">%    60 boundary points.  SWAN interpolates as necessary to force all the boundary nodes.</span>
+0021 <span class="comment">%    The large numbers are the arclengths in meters</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% BOUNDSPEC SIDE 2 CLOCKWISE VARIABLE FILE &amp;</span>
+0024 <span class="comment">%         0.00 'obc1.bnd' 1 &amp;</span>
+0025 <span class="comment">%     52704.26 'obc2.bnd' 1 &amp;</span>
+0026 <span class="comment">%    131926.06 'obc3.bnd' 1 &amp;</span>
+0027 <span class="comment">%    255117.10 'obc4.bnd' 1 &amp;</span>
+0028 <span class="comment">%    390381.71 'obc5.bnd' 1 &amp;</span>
+0029 <span class="comment">%    559989.50 'obc6.bnd' 1 &amp;</span>
+0030 <span class="comment">%    740759.98 'obc7.bnd' 1 &amp;</span>
+0031 <span class="comment">%    924330.66 'obc8.bnd' 1 &amp;</span>
+0032 <span class="comment">%   1104489.93 'obc9.bnd' 1 &amp;</span>
+0033 <span class="comment">%   1295381.43 'obc10.bnd' 1 &amp;</span>
+0034 <span class="comment">%   1480466.74 'obc11.bnd' 1 &amp;</span>
+0035 <span class="comment">%   1641071.70 'obc12.bnd' 1 &amp;</span>
+0036 <span class="comment">%   1750424.20 'obc13.bnd' 1 &amp;</span>
+0037 <span class="comment">%   1828825.67 'obc14.bnd' 1 &amp;</span>
+0038 <span class="comment">%   1951072.38 'obc15.bnd' 1</span>
+0039 
+0040 <span class="comment">% INPUT</span>
+0041 <span class="comment">%   SwanNodeFile:   Swan node file (e.g. tst.node)</span>
+0042 <span class="comment">%   time:           time stamp of time series in modified Julian day</span>
+0043 <span class="comment">%   hs:             time series for significant wave height</span>
+0044 <span class="comment">%   tp:             time series for peak period</span>
+0045 <span class="comment">%   dir:            time series for wave direction</span>
+0046 <span class="comment">%   inc:            dump TPAR obc forcing file every inc boundary points</span>
+0047 <span class="comment">%   DirectSpread    directional spreading of incoming waves in degrees</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">% OUTPUT:</span>
+0050 <span class="comment">%   SWAN open boundary TPAR files obcXX.bnd</span>
+0051 <span class="comment">%   cntrllist.txt:  list of open boundary arclengths and obc file names</span>
+0052 <span class="comment">%                   this can essentially be pasted into the swan input file</span>
+0053 <span class="comment">%</span>
+0054 <span class="comment">% Author(s):</span>
+0055 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0056 <span class="comment">%</span>
+0057 <span class="comment">% Revision history</span>
+0058 <span class="comment">%</span>
+0059 <span class="comment">%==============================================================================</span>
+0060 
+0061 
+0062 <span class="comment">% read the swan node file and grab boundary nodes</span>
+0063 [num,x,y,mark] = textread(SwanNodeFile,<span class="string">'%d %f %f %d\n'</span>,<span class="string">'headerlines'</span>,1);
+0064 obc_nodes = find(mark==2);
+0065 nobc = prod(size(obc_nodes));
+0066 xtmp = x(obc_nodes);
+0067 ytmp = y(obc_nodes);
+0068 arc = zeros(nobc,1); 
+0069 <span class="keyword">for</span> i=2:nobc
+0070   arc(i) = arc(i-1) + sqrt( (xtmp(i)-xtmp(i-1))^2 + (ytmp(i)-ytmp(i-1))^2); 
+0071 <span class="keyword">end</span>;  
+0072 
+0073 <span class="comment">% shift to discrete locations</span>
+0074 pts = 1:inc:nobc;
+0075 pts(end) = nobc;
+0076 xobc = xtmp(pts); 
+0077 yobc = ytmp(pts); 
+0078 aobc = arc(pts); 
+0079 nTPAR = prod(size(xobc));
+0080 
+0081 
+0082 <span class="comment">%---------------------------------------------------------</span>
+0083 <span class="comment">% set TPAR files for each open boundary forcing point</span>
+0084 <span class="comment">%---------------------------------------------------------</span>
+0085 
+0086 
+0087 <span class="comment">% preallocate arrays</span>
+0088 nTimes = prod(size(time));
+0089 
+0090 <span class="comment">%dump to separate swan forcing files</span>
+0091 <span class="keyword">for</span> i=1:nTPAR
+0092   fname = [<span class="string">'obc'</span> num2str(i) <span class="string">'.bnd'</span>];
+0093   fid = fopen(fname,<span class="string">'w'</span>);
+0094   fid = fprintf(fid,<span class="string">'TPAR\n'</span>);
+0095   <span class="keyword">for</span> j=1:nTimes
+0096     [year,month,day,hour,mint,sec] = mjulian2greg(time(j));
+0097     <span class="keyword">if</span>(day &lt; 10)
+0098       daystr = [<span class="string">'0'</span> int2str(day)];
+0099     <span class="keyword">else</span>
+0100       daystr = int2str(day);
+0101     <span class="keyword">end</span>;
+0102     <span class="keyword">if</span>(month &lt; 10)
+0103       monthstr = [<span class="string">'0'</span> int2str(month)];
+0104     <span class="keyword">else</span>
+0105       monthstr = int2str(month);
+0106     <span class="keyword">end</span>;
+0107     <span class="keyword">if</span>(hour &lt; 10)
+0108       hourstr = [<span class="string">'0'</span> int2str(hour)];
+0109     <span class="keyword">else</span>
+0110       hourstr = int2str(hour);
+0111     <span class="keyword">end</span>;
+0112     date = [<span class="string">' '</span> int2str(year) monthstr daystr <span class="string">'.'</span> hourstr <span class="string">'00'</span>];
+0113     fprintf(fid,<span class="string">'%s %f %f %f %f\n'</span>,date,hs(j),tp(j),dir(j),DirectSpread);
+0114   <span class="keyword">end</span>;
+0115   fclose(fid);
+0116 <span class="keyword">end</span>;
+0117 
+0118  <span class="comment">% dump the main swan control file list</span>
+0119  fname = <span class="string">'cntrllist.txt'</span>;
+0120  fid = fopen(fname,<span class="string">'w'</span>);
+0121  <span class="keyword">for</span> i=1:nTPAR
+0122    fname = [<span class="string">' ''obc'</span> num2str(i) <span class="string">'.bnd'' '</span>];
+0123    fprintf(fid,<span class="string">'%12.2f %s %d %s\n'</span>,aobc(i),fname,1,<span class="string">'&amp;'</span>);
+0124  <span class="keyword">end</span>;
+0125</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

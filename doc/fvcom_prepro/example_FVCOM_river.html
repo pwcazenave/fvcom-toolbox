@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of example_FVCOM_river</title>
+  <meta name="keywords" content="example_FVCOM_river">
+  <meta name="description" content="example file for dumping an FVCOM river file and adding sediment concentration">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; example_FVCOM_river.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>example_FVCOM_river
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>example file for dumping an FVCOM river file and adding sediment concentration</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function example_FVCOM_river() </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> example file for dumping an FVCOM river file and adding sediment concentration
+
+ function example_FVCOM_river()
+
+ DESCRIPTION:
+    Setup a sample FVCOM river file
+
+ INPUT
+   
+ OUTPUT:
+    FVCOM RiverFile with flux,temp,salt,sediment
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="add_var_FVCOM_river.html" class="code" title="function add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)">add_var_FVCOM_river</a>	add time dependent scalar variable to a Riverfile</li><li><a href="write_FVCOM_river.html" class="code" title="function write_FVCOM_river(RiverFile,RiverName,nRivnodes,time,flux,temp,salt,RiverInfo1,RiverInfo2)">write_FVCOM_river</a>	write FVCOM 3.x NetCDF river file</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="example.html" class="code" title="">example</a>	example demonstrating reading in a 2DM file and constructing a model</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function example_FVCOM_river()</a>
+0002 <span class="comment">% example file for dumping an FVCOM river file and adding sediment concentration</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function example_FVCOM_river()</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Setup a sample FVCOM river file</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% OUTPUT:</span>
+0012 <span class="comment">%    FVCOM RiverFile with flux,temp,salt,sediment</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% Author(s):</span>
+0015 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% Revision history</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%==============================================================================</span>
+0020 
+0021 t1 = 0; <span class="comment">%greg2mjulian(2007,1,1,0,0,0);</span>
+0022 t2 = 31; <span class="comment">%greg2mjulian(2007,2,1,0,0,0);</span>
+0023 time = t1:1:t2;
+0024 nTimes = prod(size(time));
+0025 
+0026 <span class="comment">% setup an event using Gaussian function</span>
+0027 tmid = mean(time);
+0028 c    = .1*(tmid-time(1));
+0029 flux = 400+300*exp(-(time-tmid).^2/(2.*c^2));  
+0030 plot(time,flux);
+0031 ylabel(<span class="string">'flux m^3/s'</span>)
+0032 xlabel(<span class="string">'time'</span>)
+0033 title(<span class="string">'river flux'</span>)
+0034 sedload = .030*(flux.^1.40)/1000.; <span class="comment">%sed conc in g/l</span>
+0035 
+0036 temp = 20*ones(nTimes,1);
+0037 salt = zeros(nTimes,1);
+0038 RiverFile = <span class="string">'tst_riv.nc'</span>;
+0039 nRivnodes = 3;
+0040 RiverInfo1 = <span class="string">'idealized estuary river'</span>;
+0041 RiverInfo2 = <span class="string">'event profile'</span>;
+0042 RiverName = <span class="string">'tstRiver'</span>;
+0043 
+0044 
+0045 <a href="write_FVCOM_river.html" class="code" title="function write_FVCOM_river(RiverFile,RiverName,nRivnodes,time,flux,temp,salt,RiverInfo1,RiverInfo2)">write_FVCOM_river</a>(RiverFile,RiverName,nRivnodes,time,flux,temp,salt,RiverInfo1,RiverInfo2)
+0046 
+0047 <span class="comment">% add sediment to the file</span>
+0048 VarName = <span class="string">'fine_sand'</span>;
+0049 VarLongName = <span class="string">'concentration of fine sand'</span>;
+0050 VarUnits = <span class="string">'kgm^-3'</span>;
+0051 VarData = .333*sedload; 
+0052 <a href="add_var_FVCOM_river.html" class="code" title="function add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)">add_var_FVCOM_river</a>(RiverFile,VarName,VarLongName,VarUnits,VarData)
+0053 
+0054 VarName = <span class="string">'coarse_silt'</span>;
+0055 VarLongName = <span class="string">'concentration of coarse silt'</span>;
+0056 VarUnits = <span class="string">'kgm^-3'</span>;
+0057 VarData = .333*sedload; 
+0058 <a href="add_var_FVCOM_river.html" class="code" title="function add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)">add_var_FVCOM_river</a>(RiverFile,VarName,VarLongName,VarUnits,VarData)
+0059 
+0060 VarName = <span class="string">'fine_silt'</span>;   
+0061 VarLongName = <span class="string">'concentration of fine silt'</span>;   
+0062 VarUnits = <span class="string">'kgm^-3'</span>;
+0063 VarData = .333*sedload; 
+0064 <a href="add_var_FVCOM_river.html" class="code" title="function add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)">add_var_FVCOM_river</a>(RiverFile,VarName,VarLongName,VarUnits,VarData)</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

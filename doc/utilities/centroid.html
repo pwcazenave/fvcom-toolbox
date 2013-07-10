@@ -1,0 +1,73 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of centroid</title>
+  <meta name="keywords" content="centroid">
+  <meta name="description" content="x and y must be non-scalar vectors of equal sizes defining a polygonal">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; centroid.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>centroid
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>x and y must be non-scalar vectors of equal sizes defining a polygonal</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [x0,y0,a] = centroid(x,y) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> x and y must be non-scalar vectors of equal sizes defining a polygonal
+ region in counterclockwise sequence. a is returned with the polygon's
+ area, and (x0,y0) with the coordinates of the polygon's centroid. Note:
+ with clockwise order, x0 and y0 are still correct but a is the negative
+ of the area.
+ 
+ RAS - 1/17/05</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [x0,y0,a] = centroid(x,y)</a>
+0002 <span class="comment">% x and y must be non-scalar vectors of equal sizes defining a polygonal</span>
+0003 <span class="comment">% region in counterclockwise sequence. a is returned with the polygon's</span>
+0004 <span class="comment">% area, and (x0,y0) with the coordinates of the polygon's centroid. Note:</span>
+0005 <span class="comment">% with clockwise order, x0 and y0 are still correct but a is the negative</span>
+0006 <span class="comment">% of the area.</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% RAS - 1/17/05</span>
+0009 
+0010 [m1,n1] = size(x); [m2,n2] = size(y);
+0011 n = max(m1,n1);
+0012 <span class="keyword">if</span> [m1,n1] ~= [m2,n2] || min(m1,n1) ~= 1 || n &lt;= 1
+0013     error(<span class="string">'Args must be equal-sized non-scalar vectors'</span>)
+0014 <span class="keyword">end</span>
+0015 x = x(:); y = y(:);
+0016 x2 = [x(2:n);x(1)];
+0017 y2 = [y(2:n);y(1)];
+0018 a = 1/2*sum (x.*y2-x2.*y);
+0019 x0 = 1/6*sum((x.*y2-x2.*y).*(x+x2))/a;
+0020 y0 = 1/6*sum((x.*y2-x2.*y).*(y+y2))/a;</pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

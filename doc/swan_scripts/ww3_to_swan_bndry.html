@@ -1,0 +1,393 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of ww3_to_swan_bndry</title>
+  <meta name="keywords" content="ww3_to_swan_bndry">
+  <meta name="description" content="Generate SWAN boundary forcing by interpolating from WW3 output">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">swan_scripts</a> &gt; ww3_to_swan_bndry.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for swan_scripts&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>ww3_to_swan_bndry
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Generate SWAN boundary forcing by interpolating from WW3 output</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function ww3_to_swan_bndry(); </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Generate SWAN boundary forcing by interpolating from WW3 output
+
+ function swan2netcdf(matfile,ncfile,basename,first_time,last_time,increment);
+
+ DESCRIPTION:
+    interpolate Hs,Tp,Dir from WW3 to a boundary forcing file for 
+    unstructured swan
+    this is an example file and will need to be modified for specific cases
+    Note that for the unstructured SWAN you can specify separate TPAR files
+    containing time series of hs,tp,dir for each node.  Also note that the nodes
+    are not necessarily nodes of the SWAN mesh.  They are specified in arclength
+    of the grid units from the first open boundary node (arclength 0).  SWAN
+    assembles a boundary segment by piecing together the nodes marked as boundary 
+    nodes in the node file (mark = 2).  This assumes somehow that the nodes are ordered
+    sequentially along the boundary arc which is in fact a major assumption.
+
+    Sample OBC section of a swan input file for the GoM domain is as follows where
+    15 points are used to specify the boundary forcing while the domain in fact has 
+    60 boundary points.  SWAN interpolates as necessary to force all the boundary nodes.
+    The large numbers are the arclengths in meters
+
+ BOUNDSPEC SIDE 2 CLOCKWISE VARIABLE FILE &amp;
+         0.00 'obc1.bnd' 1 &amp;
+     52704.26 'obc2.bnd' 1 &amp;
+    131926.06 'obc3.bnd' 1 &amp;
+    255117.10 'obc4.bnd' 1 &amp;
+    390381.71 'obc5.bnd' 1 &amp;
+    559989.50 'obc6.bnd' 1 &amp;
+    740759.98 'obc7.bnd' 1 &amp;
+    924330.66 'obc8.bnd' 1 &amp;
+   1104489.93 'obc9.bnd' 1 &amp;
+   1295381.43 'obc10.bnd' 1 &amp;
+   1480466.74 'obc11.bnd' 1 &amp;
+   1641071.70 'obc12.bnd' 1 &amp;
+   1750424.20 'obc13.bnd' 1 &amp;
+   1828825.67 'obc14.bnd' 1 &amp;
+   1951072.38 'obc15.bnd' 1</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function ww3_to_swan_bndry();</a>
+0002     
+0003 <span class="comment">% Generate SWAN boundary forcing by interpolating from WW3 output</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function swan2netcdf(matfile,ncfile,basename,first_time,last_time,increment);</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    interpolate Hs,Tp,Dir from WW3 to a boundary forcing file for</span>
+0009 <span class="comment">%    unstructured swan</span>
+0010 <span class="comment">%    this is an example file and will need to be modified for specific cases</span>
+0011 <span class="comment">%    Note that for the unstructured SWAN you can specify separate TPAR files</span>
+0012 <span class="comment">%    containing time series of hs,tp,dir for each node.  Also note that the nodes</span>
+0013 <span class="comment">%    are not necessarily nodes of the SWAN mesh.  They are specified in arclength</span>
+0014 <span class="comment">%    of the grid units from the first open boundary node (arclength 0).  SWAN</span>
+0015 <span class="comment">%    assembles a boundary segment by piecing together the nodes marked as boundary</span>
+0016 <span class="comment">%    nodes in the node file (mark = 2).  This assumes somehow that the nodes are ordered</span>
+0017 <span class="comment">%    sequentially along the boundary arc which is in fact a major assumption.</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%    Sample OBC section of a swan input file for the GoM domain is as follows where</span>
+0020 <span class="comment">%    15 points are used to specify the boundary forcing while the domain in fact has</span>
+0021 <span class="comment">%    60 boundary points.  SWAN interpolates as necessary to force all the boundary nodes.</span>
+0022 <span class="comment">%    The large numbers are the arclengths in meters</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% BOUNDSPEC SIDE 2 CLOCKWISE VARIABLE FILE &amp;</span>
+0025 <span class="comment">%         0.00 'obc1.bnd' 1 &amp;</span>
+0026 <span class="comment">%     52704.26 'obc2.bnd' 1 &amp;</span>
+0027 <span class="comment">%    131926.06 'obc3.bnd' 1 &amp;</span>
+0028 <span class="comment">%    255117.10 'obc4.bnd' 1 &amp;</span>
+0029 <span class="comment">%    390381.71 'obc5.bnd' 1 &amp;</span>
+0030 <span class="comment">%    559989.50 'obc6.bnd' 1 &amp;</span>
+0031 <span class="comment">%    740759.98 'obc7.bnd' 1 &amp;</span>
+0032 <span class="comment">%    924330.66 'obc8.bnd' 1 &amp;</span>
+0033 <span class="comment">%   1104489.93 'obc9.bnd' 1 &amp;</span>
+0034 <span class="comment">%   1295381.43 'obc10.bnd' 1 &amp;</span>
+0035 <span class="comment">%   1480466.74 'obc11.bnd' 1 &amp;</span>
+0036 <span class="comment">%   1641071.70 'obc12.bnd' 1 &amp;</span>
+0037 <span class="comment">%   1750424.20 'obc13.bnd' 1 &amp;</span>
+0038 <span class="comment">%   1828825.67 'obc14.bnd' 1 &amp;</span>
+0039 <span class="comment">%   1951072.38 'obc15.bnd' 1</span>
+0040 
+0041 <span class="comment">% INPUT</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">% OUTPUT:</span>
+0044 <span class="comment">%   SWAN open boundary TPAR files obcXX.bnd</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">% Author(s):</span>
+0047 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">% Revision history</span>
+0050 <span class="comment">%</span>
+0051 <span class="comment">%==============================================================================</span>
+0052 
+0053 
+0054 swan_node_file = <span class="string">'../gom1/gom1.node'</span>;
+0055 
+0056 <span class="comment">% set year range</span>
+0057 ybeg = 2007;
+0058 yend = 2007;
+0059 
+0060 <span class="comment">% increment for dumping forcing:</span>
+0061 <span class="comment">% swan does not force at nodes, just at locations along the arclength</span>
+0062 <span class="comment">% of the boundary segment.</span>
+0063 inc = 4;
+0064 
+0065 <span class="comment">% matlab output file</span>
+0066 outfile = [<span class="string">'swan_gom0_obc_2007'</span> num2str(ybeg)];
+0067 
+0068 <span class="comment">% datadir - location of all ww3 grib files</span>
+0069 ddir = <span class="string">'/Volumes/Data/Users/gcowles/Data/SCALLOP_RSA_2009/wavewatch_wna_grib/'</span>; 
+0070 
+0071 <span class="comment">% read the swan node file and grab boundary nodes</span>
+0072 [num,x,y,mark] = textread(swan_node_file,<span class="string">'%d %f %f %d\n'</span>,<span class="string">'headerlines'</span>,1);
+0073 obc_nodes = find(mark==2);
+0074 nobc = prod(size(obc_nodes));
+0075 xtmp = x(obc_nodes);
+0076 ytmp = y(obc_nodes);
+0077 arc = zeros(nobc,1); 
+0078 <span class="keyword">for</span> i=2:nobc
+0079   arc(i) = arc(i-1) + sqrt( (xtmp(i)-xtmp(i-1))^2 + (ytmp(i)-ytmp(i-1))^2); 
+0080 <span class="keyword">end</span>;  
+0081 
+0082 <span class="comment">% shift to discrete locations</span>
+0083 pts = 1:inc:nobc;
+0084 pts(end) = nobc;
+0085 xobc = xtmp(pts); 
+0086 yobc = ytmp(pts); 
+0087 aobc = arc(pts); 
+0088 ndisc = prod(size(xobc));
+0089 
+0090 
+0091 <span class="comment">% inverse project discrete locations to lon/lat</span>
+0092 <span class="comment">%junk = 0;</span>
+0093 fid = fopen(<span class="string">'in.dat'</span>,<span class="string">'w'</span>);
+0094 <span class="keyword">for</span> i=1:ndisc  
+0095   fprintf(fid,<span class="string">'%f %f\n'</span>,xobc(i),yobc(i));
+0096 <span class="keyword">end</span>;
+0097 fclose(fid);
+0098 system(<span class="string">'./project_cmd'</span>);
+0099 fid = fopen(<span class="string">'out.dat'</span>,<span class="string">'r'</span>);
+0100 <span class="keyword">for</span> i=1:ndisc  
+0101   C = textscan(fid, <span class="string">'%f %f'</span>, 1);
+0102   lon_obc(i) = C{1};
+0103   lat_obc(i) = C{2};
+0104 <span class="keyword">end</span>;
+0105 fclose(fid);
+0106 fprintf(<span class="string">'finished: projecting to lon/lat\n'</span>)
+0107 
+0108 
+0109 <span class="comment">%---------------------------------------------------------</span>
+0110 <span class="comment">% read a sample grib file and reconstruct WW3 grid =&gt; xg,yg</span>
+0111 <span class="comment">%---------------------------------------------------------</span>
+0112 fname = [ddir <span class="string">'wna.hs.200711.grb'</span>];
+0113 grib_struct=read_grib(fname,[1],<span class="string">'ScreenDiag'</span>,0);
+0114 xmin = grib_struct.gds.Lo1;
+0115 xmax = grib_struct.gds.Lo2;
+0116 ymin = grib_struct.gds.La1;
+0117 ymax = grib_struct.gds.La2;
+0118 il = grib_struct.gds.Ni;
+0119 jl = grib_struct.gds.Nj;
+0120 dlon = (xmax-xmin)/(il-1);
+0121 dlat = (ymax-ymin)/(jl-1);
+0122 lon = xmin:dlon:xmax;
+0123 lon = lon-360;
+0124 lat = ymin:dlat:ymax;  
+0125 [xg,yg] = meshgrid(lon,lat);
+0126 
+0127 
+0128 <span class="comment">%---------------------------------------------------------</span>
+0129 <span class="comment">% extract Hs,Tp,Dir from each WWIII file</span>
+0130 <span class="comment">%---------------------------------------------------------</span>
+0131 ndays      = [31,28,31,30,31,30,31,31,30,31,30,31];
+0132 ndays_leap = [31,29,31,30,31,30,31,31,30,31,30,31];
+0133 
+0134 <span class="comment">% loop over data and count number of days of data to preallocate</span>
+0135 icnt = 0;
+0136 <span class="keyword">for</span> y=ybeg:yend  
+0137 <span class="keyword">for</span> m=1:1 <span class="comment">%debug 12;</span>
+0138   year = int2str(y);
+0139   mnth = int2str(m);
+0140   <span class="keyword">if</span>(m&gt;9)
+0141     fname = [ddir <span class="string">'wna.hs.'</span> year mnth <span class="string">'.grb'</span>];  
+0142   <span class="keyword">else</span>
+0143     fname = [ddir <span class="string">'wna.hs.'</span> year <span class="string">'0'</span> mnth <span class="string">'.grb'</span>];  
+0144   <span class="keyword">end</span>;
+0145   <span class="keyword">if</span>(exist(fname)) 
+0146     fprintf(<span class="string">'file %s exists\n'</span>,fname)
+0147     <span class="keyword">if</span>(mod(y,4)==0) <span class="comment">%leap year (note 2OOO was a leap year, 1900, 2100 are not)</span>
+0148       icnt = icnt + 8*ndays_leap(m);
+0149     <span class="keyword">else</span>
+0150       icnt = icnt + 8*ndays(m);
+0151     <span class="keyword">end</span>; 
+0152   <span class="keyword">else</span> 
+0153     fprintf(<span class="string">'file %s does not exist\n'</span>,fname)
+0154   <span class="keyword">end</span>;
+0155 <span class="keyword">end</span>;
+0156 <span class="keyword">end</span>;
+0157 fprintf(<span class="string">'number of frames in year %d\n'</span>,icnt);
+0158 
+0159 <span class="comment">% preallocate arrays</span>
+0160 hs = zeros(ndisc,icnt);
+0161 tp = zeros(ndisc,icnt);
+0162 dir = zeros(ndisc,icnt);
+0163 time = zeros(icnt,1);
+0164 
+0165 <span class="comment">%</span>
+0166 hour = [0,3,6,9,12,15,18,21];
+0167 
+0168 <span class="comment">% read data into the arrays</span>
+0169 icnt = 0;
+0170 <span class="keyword">for</span> y=ybeg:yend;
+0171 <span class="keyword">for</span> m=1:1 <span class="comment">%debug 12;</span>
+0172   year = int2str(y);
+0173   mnth = int2str(m);
+0174   <span class="keyword">if</span>(m&gt;9)
+0175     hsname = [ddir <span class="string">'wna.hs.'</span> year mnth <span class="string">'.grb'</span>];
+0176     tpname = [ddir <span class="string">'wna.tp.'</span> year mnth <span class="string">'.grb'</span>];
+0177     drname = [ddir <span class="string">'wna.dp.'</span> year mnth <span class="string">'.grb'</span>];
+0178   <span class="keyword">else</span>
+0179     hsname = [ddir <span class="string">'wna.hs.'</span> year <span class="string">'0'</span> mnth <span class="string">'.grb'</span>];
+0180     tpname = [ddir <span class="string">'wna.tp.'</span> year <span class="string">'0'</span> mnth <span class="string">'.grb'</span>];
+0181     drname = [ddir <span class="string">'wna.dp.'</span> year <span class="string">'0'</span> mnth <span class="string">'.grb'</span>];
+0182   <span class="keyword">end</span>;
+0183   <span class="keyword">if</span>(exist(hsname)) 
+0184     fprintf(<span class="string">'processing year %d month %d\n'</span>,y,m);
+0185     <span class="keyword">if</span>(mod(y,4)==0) <span class="comment">%leap year</span>
+0186        
+0187        nd = ndays_leap(m);
+0188     <span class="keyword">else</span>
+0189        nd = ndays(m);
+0190     <span class="keyword">end</span>;
+0191   
+0192     n = 0;
+0193     <span class="keyword">for</span> d=1:nd  <span class="comment">%day loop</span>
+0194     <span class="keyword">for</span> l=1:8   <span class="comment">%hour loop</span>
+0195 
+0196       n = n + 1;
+0197       icnt = icnt + 1;
+0198   
+0199       <span class="comment">% read hs and interpolate onto boundary points</span>
+0200       grib_struct=read_grib(hsname,[n],<span class="string">'ScreenDiag'</span>,0);
+0201       var = reshape(grib_struct.fltarray,il,jl);
+0202       hs(:,icnt) = interp2(xg,yg,var',lon_obc,lat_obc,<span class="string">'linear'</span>);
+0203   
+0204       <span class="comment">%read tp from grib and interpolate onto boundary points</span>
+0205       grib_struct=read_grib(tpname,[n],<span class="string">'ScreenDiag'</span>,0);
+0206       var = reshape(grib_struct.fltarray,il,jl);
+0207       tp(:,icnt) = interp2(xg,yg,var',lon_obc,lat_obc,<span class="string">'linear'</span>);
+0208 
+0209       <span class="comment">%read dir from grib and interpolate onto boundary points</span>
+0210       grib_struct=read_grib(drname,[n],<span class="string">'ScreenDiag'</span>,0);
+0211       var = reshape(grib_struct.fltarray,il,jl);
+0212       dir(:,icnt) = interp2(xg,yg,var',lon_obc,lat_obc,<span class="string">'linear'</span>);
+0213 
+0214       fprintf(<span class="string">'processing time %s\n'</span>,grib_struct.stime);
+0215   
+0216       time(icnt) = greg2julian(y,m,d,hour(l),0,0);
+0217       <span class="keyword">if</span>(icnt&gt;1);
+0218       fprintf(<span class="string">'processing frame %d %d %d %d %d %f\n'</span>,n,y,m,d,hour(l),time(icnt)-time(icnt-1));
+0219        <span class="keyword">end</span>;
+0220     <span class="keyword">end</span>;
+0221     <span class="keyword">end</span>;
+0222   <span class="keyword">end</span>; <span class="comment">%file exists</span>
+0223   
+0224 <span class="keyword">end</span>;
+0225 <span class="keyword">end</span>;
+0226 
+0227 <span class="comment">% process data to fix boundaries where GOM open boundary is considered land in WaveWatch</span>
+0228 <span class="keyword">for</span> i=1:icnt
+0229   hs(1:2,i) = hs(3,i);
+0230   hs(end-1:<span class="keyword">end</span>,i) = hs(end-2,i);
+0231   tp(1:2,i) = tp(3,i);
+0232   tp(end-1:<span class="keyword">end</span>,i) = tp(end-2,i);
+0233   dir(1:2,i) = dir(3,i);
+0234   dir(end-1:<span class="keyword">end</span>,i) = dir(end-2,i);
+0235 <span class="keyword">end</span>;
+0236 
+0237 <span class="comment">% find points with NaN type data and use data from nearest neighbor</span>
+0238 pts = 1:ndisc;
+0239 ney = pts + 1;
+0240 ney2 = pts - 1;
+0241 ney(end) = pts(end)-1;
+0242 ney2(1)   = pts(1)+1;
+0243 obcs = pts;
+0244 
+0245 <span class="keyword">for</span> j=1:15
+0246 <span class="keyword">for</span> i=1:icnt
+0247   pts = find(hs(:,i)&gt;99); hs(pts,i) = hs(ney(pts),i);
+0248   pts = find(hs(:,i)&gt;99); hs(pts,i) = hs(ney2(pts),i);
+0249   pts = find(tp(:,i)&gt;99); tp(pts,i) = tp(ney(pts),i);
+0250   pts = find(tp(:,i)&gt;99); tp(pts,i) = tp(ney2(pts),i);
+0251   pts = find(dir(:,i)&gt;1000); dir(pts,i) = dir(ney(pts),i);
+0252   pts = find(dir(:,i)&gt;1000); dir(pts,i) = dir(ney2(pts),i);
+0253 <span class="keyword">end</span>;  
+0254 <span class="keyword">end</span>;  
+0255 
+0256 <span class="comment">% dump data to a matlab object and save</span>
+0257 info = <span class="string">'ww3 data interpolated onto gom0 open boundary'</span>;
+0258 info2 = <span class="string">'time in julian day'</span>;
+0259 save(outfile,<span class="string">'info'</span>,<span class="string">'info2'</span>,<span class="string">'time'</span>,<span class="string">'hs'</span>,<span class="string">'tp'</span>,<span class="string">'dir'</span>,<span class="string">'lon_obc'</span>,<span class="string">'lat_obc'</span>);  
+0260 
+0261 figure
+0262 subplot(3,1,1)
+0263 <span class="keyword">for</span> i=1:ndisc 
+0264 plot(hs(i,:)); hold on;
+0265 <span class="keyword">end</span>;
+0266 subplot(3,1,2)
+0267 <span class="keyword">for</span> i=1:ndisc
+0268 plot(tp(i,:)); hold on;
+0269 <span class="keyword">end</span>;
+0270 subplot(3,1,3)
+0271 <span class="keyword">for</span> i=1:ndisc
+0272 plot(dir(i,:)); hold on;
+0273 <span class="keyword">end</span>;
+0274 
+0275 <span class="comment">%dump to separate swan forcing files</span>
+0276 <span class="keyword">for</span> i=1:ndisc
+0277   fname = [<span class="string">'obc'</span> num2str(i) <span class="string">'.bnd'</span>];
+0278   fid = fopen(fname,<span class="string">'w'</span>);
+0279   fid = fprintf(fid,<span class="string">'TPAR\n'</span>);
+0280   <span class="keyword">for</span> j=1:icnt
+0281     [year,month,day,hour,mint,sec] = julian2greg(time(j));
+0282     <span class="keyword">if</span>(day &lt; 10)
+0283       daystr = [<span class="string">'0'</span> int2str(day)];
+0284     <span class="keyword">else</span>
+0285       daystr = int2str(day);
+0286     <span class="keyword">end</span>;
+0287     <span class="keyword">if</span>(month &lt; 10)
+0288       monthstr = [<span class="string">'0'</span> int2str(month)];
+0289     <span class="keyword">else</span>
+0290       monthstr = int2str(month);
+0291     <span class="keyword">end</span>;
+0292     <span class="keyword">if</span>(hour &lt; 10)
+0293       hourstr = [<span class="string">'0'</span> int2str(hour)];
+0294     <span class="keyword">else</span>
+0295       hourstr = int2str(hour);
+0296     <span class="keyword">end</span>;
+0297     date = [<span class="string">' '</span> int2str(year) monthstr daystr <span class="string">'.'</span> hourstr <span class="string">'00'</span>];
+0298     fprintf(fid,<span class="string">'%s %f %f %f %f\n'</span>,date,hs(i,j),tp(i,j),dir(i,j),10.);
+0299   <span class="keyword">end</span>;
+0300   fclose(fid);
+0301 <span class="keyword">end</span>;
+0302 
+0303 <span class="comment">% dump the main swan control file list</span>
+0304 fname = <span class="string">'cntrllist.txt'</span>;
+0305 fid = fopen(fname,<span class="string">'w'</span>);
+0306 <span class="keyword">for</span> i=1:ndisc
+0307   fname = [<span class="string">'&quot;'</span> <span class="string">'obc'</span> num2str(i) <span class="string">'.bnd'</span> <span class="string">'&quot;'</span>];
+0308   fprintf(fid,<span class="string">'%12.2f %s %d %s\n'</span>,aobc(i),fname,1,<span class="string">'&amp;'</span>);
+0309 <span class="keyword">end</span>;
+0310</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

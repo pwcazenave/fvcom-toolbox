@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of ST_example</title>
+  <meta name="keywords" content="ST_example">
+  <meta name="description" content="Example usage of Sediment Toolbox">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; ST_example.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>ST_example
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Example usage of Sediment Toolbox</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function ST_example </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Example usage of Sediment Toolbox
+
+ function example
+
+ DESCRIPTION:
+    Demonstrate ST Toolbox functionality 
+
+ INPUT:
+
+ OUTPUT:
+    
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="ST_Dstar.html" class="code" title="function [dstar] = ST_Dstar(d,varargin)">ST_Dstar</a>	Calculate non-dimensional grain size D*</li><li><a href="ST_erate.html" class="code" title="function [erate] = ST_erate(d,varargin)">ST_erate</a>	Calculate erosion rate in kg/(m^2-s)</li><li><a href="ST_phi2d.html" class="code" title="function [d] = ST_phi2d(phi)">ST_phi2d</a>	Convert sediment grain size from phi to d (m)</li><li><a href="ST_taucr.html" class="code" title="function [taucr] = ST_taucr(d,varargin)">ST_taucr</a>	Calculate critical shear stress in Pascals</li><li><a href="ST_wentworth.html" class="code" title="function [Sclass] = wentworth(phi)">ST_wentworth</a>	Report wentworth class of a particular grain size phi</li><li><a href="ST_wset.html" class="code" title="function [wset] = ST_wset(d,varargin)">ST_wset</a>	Calculate settling velocity of particle diameter d (m) in m/s</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function ST_example</a>
+0002 <span class="comment">% Example usage of Sediment Toolbox</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function example</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Demonstrate ST Toolbox functionality</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT:</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% OUTPUT:</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% Author(s):</span>
+0014 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Revision history</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">%==============================================================================</span>
+0019 close all;
+0020 fprintf(<span class="string">'       phi          class       d(mm)    Dstar    wset(mm/s)  taucr (Pa)  erate x1e-3(kg/(m^2-s))\n'</span>)
+0021 i = 0;
+0022 <span class="keyword">for</span> phi=-8:11
+0023     i = i + 1;
+0024     phiclass    = <a href="ST_wentworth.html" class="code" title="function [Sclass] = wentworth(phi)">ST_wentworth</a>(phi);
+0025     d(i)        = <a href="ST_phi2d.html" class="code" title="function [d] = ST_phi2d(phi)">ST_phi2d</a>(phi);
+0026     Dstar(i)    = <a href="ST_Dstar.html" class="code" title="function [dstar] = ST_Dstar(d,varargin)">ST_Dstar</a>(d(i));
+0027     Wset(i)     = <a href="ST_wset.html" class="code" title="function [wset] = ST_wset(d,varargin)">ST_wset</a>(d(i));
+0028     Taucr(i)    = <a href="ST_taucr.html" class="code" title="function [taucr] = ST_taucr(d,varargin)">ST_taucr</a>(d(i));
+0029     erate(i)    = <a href="ST_erate.html" class="code" title="function [erate] = ST_erate(d,varargin)">ST_erate</a>(d(i));
+0030     fprintf(<span class="string">'%10d %20s %8.4f %8.2f %9.4f %8.3f %8.3f\n'</span>,phi,phiclass,d(i)*1000,Dstar(i),Wset(i)*1000,Taucr(i),1000*erate(i))
+0031 <span class="keyword">end</span>;
+0032 
+0033 loglog(d*1000,Taucr)
+0034 title(<span class="string">'critical shear stress'</span>)
+0035 xlabel(<span class="string">'Grain diameter (mm)'</span>)
+0036 ylabel(<span class="string">'critical shear Pa'</span>)
+0037 axis([.01,10,.01,10])</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

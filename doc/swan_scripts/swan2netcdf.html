@@ -1,0 +1,523 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of swan2netcdf</title>
+  <meta name="keywords" content="swan2netcdf">
+  <meta name="description" content="matfile = 'c4.mat';">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">swan_scripts</a> &gt; swan2netcdf.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for swan_scripts&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>swan2netcdf
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>matfile = 'c4.mat';</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function swan2netcdf(matfile,ncfile,basename,first_time,last_time,increment,isforcing,kn) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">matfile = 'c4.mat';
+ncfile = 'case_s0004.nc';
+basename = 'skg4.3';
+first_time = '20090618_000000';
+last_time = '20090621_000000';
+increment = 3600;
+isforcing = true;
+kn = .003;
+ Convert a SWAN output file (Matlab) into a NetCDF file
+
+ function swan2netcdf(matfile,ncfile,basename,first_time,last_time,increment);
+
+ DESCRIPTION:
+    read output from unstructured SWAN model (currently 40.82) and
+    dump to a NetCDF file which is far more useful than a Matlab file.
+
+ INPUT
+   matfile  = Unstructured SWAN Matlab file
+   ncfile   = NetCDF file for output
+   basename = prefix for SWAN mesh, bathymetry, connectivity files
+   first_time:  first time frame in Matlab object frame time
+   last_time:   last time frame in Matlab object frame time
+   increment:   increment in seconds
+   isforcing:   converts NaNs from .mat file to 1.0's or 0.0's
+   kn:          Nikuradse roughness in meters  [OPTIONAL, default = .01]
+ OUTPUT:
+    NetCDF file containing:
+      a.) time in modified Julian day
+      b.) significant wave height (hs)
+      c.) wave direction
+      d.) mesh
+      e.) peak period
+      f.) U10
+      g.) V10
+      h.) bottom orbital velocity
+      i.) bottom period
+      j.) H/h ratio
+      k.) wave-induced bed stress
+
+ EXAMPLE USAGE
+   swan2netcdf('gom1.mat','gom1.nc','gom1','20070101_000000','20070131_000000',3600,true,.045)
+     this converts gom1.mat to gom1.nc using SWAN grid files gom1.ele, gom1.bot
+     and gom1.node from Jan 1, 2007 00:00:00 to Jan 31, 2007 00:00:00 in increments
+     of 1 hour.
+
+ NOTE
+    routine is not refined, e.g. will not check if files exist and will
+    probably crash if you do not have the variables above in the SWAN
+    output file.
+    You will need approximately the following BLOCK command in your SWAN runfile
+
+    BLOCK 'COMPGRID' NOHEAD 'gom1.mat' LAY 3 XP YP DEP HS RTP TPS DIR WLEN &amp;
+                WINDV OUTPUT 20070101_000000 3600 SEC
+
+ Author(s):
+    Geoff Cowles (University of Massachusetts Dartmouth)
+    Eric Holmes (University of Massachusetts Dartmouth)
+
+ Revision history
+    09-29-2010 -Now warns you if variable was not found in SWAN output
+    .mat file and added two variables from SWAN output Ubot and TmBot.
+    12-01-2010 Added 'isforcing' option
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function swan2netcdf(matfile,ncfile,basename,first_time,last_time,increment,isforcing,kn)</a>
+0002 <span class="comment">%matfile = 'c4.mat';</span>
+0003 <span class="comment">%ncfile = 'case_s0004.nc';</span>
+0004 <span class="comment">%basename = 'skg4.3';</span>
+0005 <span class="comment">%first_time = '20090618_000000';</span>
+0006 <span class="comment">%last_time = '20090621_000000';</span>
+0007 <span class="comment">%increment = 3600;</span>
+0008 <span class="comment">%isforcing = true;</span>
+0009 <span class="comment">%kn = .003;</span>
+0010 <span class="comment">% Convert a SWAN output file (Matlab) into a NetCDF file</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% function swan2netcdf(matfile,ncfile,basename,first_time,last_time,increment);</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% DESCRIPTION:</span>
+0015 <span class="comment">%    read output from unstructured SWAN model (currently 40.82) and</span>
+0016 <span class="comment">%    dump to a NetCDF file which is far more useful than a Matlab file.</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% INPUT</span>
+0019 <span class="comment">%   matfile  = Unstructured SWAN Matlab file</span>
+0020 <span class="comment">%   ncfile   = NetCDF file for output</span>
+0021 <span class="comment">%   basename = prefix for SWAN mesh, bathymetry, connectivity files</span>
+0022 <span class="comment">%   first_time:  first time frame in Matlab object frame time</span>
+0023 <span class="comment">%   last_time:   last time frame in Matlab object frame time</span>
+0024 <span class="comment">%   increment:   increment in seconds</span>
+0025 <span class="comment">%   isforcing:   converts NaNs from .mat file to 1.0's or 0.0's</span>
+0026 <span class="comment">%   kn:          Nikuradse roughness in meters  [OPTIONAL, default = .01]</span>
+0027 <span class="comment">% OUTPUT:</span>
+0028 <span class="comment">%    NetCDF file containing:</span>
+0029 <span class="comment">%      a.) time in modified Julian day</span>
+0030 <span class="comment">%      b.) significant wave height (hs)</span>
+0031 <span class="comment">%      c.) wave direction</span>
+0032 <span class="comment">%      d.) mesh</span>
+0033 <span class="comment">%      e.) peak period</span>
+0034 <span class="comment">%      f.) U10</span>
+0035 <span class="comment">%      g.) V10</span>
+0036 <span class="comment">%      h.) bottom orbital velocity</span>
+0037 <span class="comment">%      i.) bottom period</span>
+0038 <span class="comment">%      j.) H/h ratio</span>
+0039 <span class="comment">%      k.) wave-induced bed stress</span>
+0040 <span class="comment">%</span>
+0041 <span class="comment">% EXAMPLE USAGE</span>
+0042 <span class="comment">%   swan2netcdf('gom1.mat','gom1.nc','gom1','20070101_000000','20070131_000000',3600,true,.045)</span>
+0043 <span class="comment">%     this converts gom1.mat to gom1.nc using SWAN grid files gom1.ele, gom1.bot</span>
+0044 <span class="comment">%     and gom1.node from Jan 1, 2007 00:00:00 to Jan 31, 2007 00:00:00 in increments</span>
+0045 <span class="comment">%     of 1 hour.</span>
+0046 <span class="comment">%</span>
+0047 <span class="comment">% NOTE</span>
+0048 <span class="comment">%    routine is not refined, e.g. will not check if files exist and will</span>
+0049 <span class="comment">%    probably crash if you do not have the variables above in the SWAN</span>
+0050 <span class="comment">%    output file.</span>
+0051 <span class="comment">%    You will need approximately the following BLOCK command in your SWAN runfile</span>
+0052 <span class="comment">%</span>
+0053 <span class="comment">%    BLOCK 'COMPGRID' NOHEAD 'gom1.mat' LAY 3 XP YP DEP HS RTP TPS DIR WLEN &amp;</span>
+0054 <span class="comment">%                WINDV OUTPUT 20070101_000000 3600 SEC</span>
+0055 <span class="comment">%</span>
+0056 <span class="comment">% Author(s):</span>
+0057 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0058 <span class="comment">%    Eric Holmes (University of Massachusetts Dartmouth)</span>
+0059 <span class="comment">%</span>
+0060 <span class="comment">% Revision history</span>
+0061 <span class="comment">%    09-29-2010 -Now warns you if variable was not found in SWAN output</span>
+0062 <span class="comment">%    .mat file and added two variables from SWAN output Ubot and TmBot.</span>
+0063 <span class="comment">%    12-01-2010 Added 'isforcing' option</span>
+0064 <span class="comment">%==============================================================================</span>
+0065 
+0066 <span class="comment">% set Nikaradse roughness to 1 cm if user does not specify</span>
+0067 <span class="keyword">if</span>(~exist(<span class="string">'kn'</span>))
+0068   kn = .01;
+0069 <span class="keyword">end</span>;
+0070 z0 = kn/30.;  <span class="comment">%hydraulic roughness</span>
+0071 
+0072 eval([<span class="string">'load '</span> matfile]);              <span class="comment">% load binary file containing SWAN results</span>
+0073 <span class="comment">% obtained using BLOCK command with COMPGRID-set</span>
+0074 <span class="comment">% load the connectivity</span>
+0075 elefile=[basename <span class="string">'.ele'</span>];
+0076 fid = fopen(elefile);                 <span class="comment">% load TRIANGLE element based connectivity file</span>
+0077 [nele] = fscanf(fid,<span class="string">'%i'</span>,[1 3]);     <span class="comment">% get number of triangles</span>
+0078 jnk = fscanf(fid,<span class="string">'%i'</span>,[4 nele(1)])'; <span class="comment">% get connectivity table</span>
+0079 tri = jnk(:,2:4);
+0080 
+0081 <span class="comment">% load the bathymetry</span>
+0082 bathfile=[basename <span class="string">'.bot'</span>];
+0083 h = textread(bathfile,<span class="string">'%f\n'</span>);
+0084 node = prod(size(h));
+0085 
+0086 <span class="comment">% check if variable range exists</span>
+0087 f = first_time;
+0088 l = last_time;
+0089 tbeg = datenum(str2num(f(1:4)),str2num(f(5:6)),str2num(f(7:8)),str2num(f(10:11)),str2num(f(12:13)),str2num(f(14:15)));
+0090 tend = datenum(str2num(l(1:4)),str2num(l(5:6)),str2num(l(7:8)),str2num(l(10:11)),str2num(l(12:13)),str2num(l(14:15)));
+0091 tinc  = increment/(24*3600);
+0092 times = tbeg:tinc:tend;
+0093 ntimes = prod(size(times));
+0094 <span class="keyword">for</span> i=1:ntimes;
+0095     <span class="comment">%  datestr(times(i))</span>
+0096     date = datestr(times(i),30);
+0097     vname = [<span class="string">'Hsig_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0098     <span class="keyword">if</span>(exist(vname) == 0)
+0099         error(<span class="string">'variable frame %s\n does not exist'</span>,vname)
+0100     <span class="keyword">end</span>;
+0101 <span class="keyword">end</span>;
+0102 
+0103 
+0104 <span class="comment">% dump the netcdf file</span>
+0105 nc = netcdf(ncfile, <span class="string">'clobber'</span>);
+0106 nc.info = <span class="string">'created from SWAN unstructured grid output file'</span>;
+0107 nc.source = <span class="string">'fvcom grid (unstructured) surface forcing'</span>;
+0108 
+0109 <span class="comment">% dimensions</span>
+0110 nc(<span class="string">'nele'</span>) = nele;
+0111 nc(<span class="string">'node'</span>) = node;
+0112 nc(<span class="string">'three'</span>) = 3;
+0113 nc(<span class="string">'time'</span>) = 0;
+0114 
+0115 <span class="comment">% variables</span>
+0116 date = datestr(times(1),30);
+0117 
+0118 
+0119 
+0120 nc{<span class="string">'x'</span>} = ncfloat(<span class="string">'node'</span>);
+0121 nc{<span class="string">'x'</span>}.long_name = <span class="string">'nodal x-coordinate'</span>;
+0122 nc{<span class="string">'x'</span>}.units     = <span class="string">'m'</span>;
+0123 
+0124 nc{<span class="string">'y'</span>} = ncfloat(<span class="string">'node'</span>);
+0125 nc{<span class="string">'y'</span>}.long_name = <span class="string">'nodal y-coordinate'</span>;
+0126 nc{<span class="string">'y'</span>}.units     = <span class="string">'m'</span>;
+0127 
+0128 nc{<span class="string">'h'</span>} = ncfloat(<span class="string">'node'</span>);
+0129 nc{<span class="string">'h'</span>}.long_name = <span class="string">'Bathymetry'</span>;
+0130 nc{<span class="string">'h'</span>}.units     = <span class="string">'m'</span>;
+0131 
+0132 nc{<span class="string">'d'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0133 nc{<span class="string">'d'</span>}.long_name = <span class="string">'Depth'</span>;
+0134 nc{<span class="string">'d'</span>}.units     = <span class="string">'m'</span>;
+0135 
+0136 nc{<span class="string">'nv'</span>} = ncint(<span class="string">'three'</span>,<span class="string">'nele'</span>);
+0137 nc{<span class="string">'nv'</span>}.long_name = <span class="string">'nodes surrounding element'</span>;
+0138 
+0139 
+0140 nc{<span class="string">'time'</span>} = ncfloat(<span class="string">'time'</span>);
+0141 nc{<span class="string">'time'</span>}.long_name = <span class="string">'time'</span>;
+0142 nc{<span class="string">'time'</span>}.units = <span class="string">'days since 1858-11-17 00:00:00'</span>;
+0143 nc{<span class="string">'time'</span>}.format = <span class="string">'modified julian day (MJD)'</span>;
+0144 nc{<span class="string">'time'</span>}.time_zone = <span class="string">'UTC'</span>;
+0145 
+0146 nc{<span class="string">'Itime'</span>} = ncint(<span class="string">'time'</span>);
+0147 nc{<span class="string">'Itime'</span>}.units = <span class="string">'days since 1858-11-17 00:00:00'</span>;
+0148 nc{<span class="string">'Itime'</span>}.format = <span class="string">'modified julian day (MJD)'</span>;
+0149 nc{<span class="string">'Itime'</span>}.time_zone = <span class="string">'UTC'</span>;
+0150 
+0151 nc{<span class="string">'Itime2'</span>} = ncint(<span class="string">'time'</span>);
+0152 nc{<span class="string">'Itime2'</span>}.units = <span class="string">'msec since 00:00:00'</span>;
+0153 nc{<span class="string">'Itime2'</span>}.time_zone = <span class="string">'UTC'</span>;
+0154 
+0155 vname = [<span class="string">'Hsig_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0156 <span class="keyword">if</span>(exist(vname) == 0)
+0157     warning(<span class="string">'Variable Hsig does not exist not being added to netCDF output'</span>)
+0158 <span class="keyword">else</span>
+0159     nc{<span class="string">'hs'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0160     nc{<span class="string">'hs'</span>}.long_name = <span class="string">'Significant Wave Height'</span>;
+0161     nc{<span class="string">'hs'</span>}.units     = <span class="string">'m'</span>;
+0162 <span class="keyword">end</span>;
+0163 
+0164 vname = [<span class="string">'Dir_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0165 <span class="keyword">if</span>(exist(vname) == 0)
+0166     warning(<span class="string">'Variable Dir does not exist not being added to netCDF output'</span>)
+0167 <span class="keyword">else</span>
+0168     nc{<span class="string">'wdir'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0169     nc{<span class="string">'wdir'</span>}.long_name = <span class="string">'Wave  Direction'</span>;
+0170     nc{<span class="string">'wdir'</span>}.units     = <span class="string">'degree'</span>;
+0171 <span class="keyword">end</span>;
+0172 
+0173 vname = [<span class="string">'RTpeak_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0174 <span class="keyword">if</span>(exist(vname) == 0)
+0175     warning(<span class="string">'Variable RTpeak does not exist not being added to netCDF output'</span>)
+0176 <span class="keyword">else</span>
+0177     nc{<span class="string">'tpeak'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0178     nc{<span class="string">'tpeak'</span>}.long_name = <span class="string">'Relative Peak Period'</span>;
+0179     nc{<span class="string">'tpeak'</span>}.units     = <span class="string">'s'</span>;
+0180 <span class="keyword">end</span>;
+0181 
+0182 vname = [<span class="string">'Windv_x_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0183 <span class="keyword">if</span>(exist(vname) == 0)
+0184     warning(<span class="string">'Variable WindV_x_ does not exist not being added to netCDF output'</span>)
+0185 <span class="keyword">else</span>
+0186     nc{<span class="string">'U10'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0187     nc{<span class="string">'U10'</span>}.long_name = <span class="string">'Wind Velocity x-direction'</span>;
+0188     nc{<span class="string">'U10'</span>}.units     = <span class="string">'m/s'</span>;
+0189 <span class="keyword">end</span>;
+0190 
+0191 vname = [<span class="string">'Windv_y_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0192 <span class="keyword">if</span>(exist(vname) == 0)
+0193     warning(<span class="string">'Variable WindV_y_ does not exist not being added to netCDF output'</span>)
+0194 <span class="keyword">else</span>
+0195     nc{<span class="string">'V10'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0196     nc{<span class="string">'V10'</span>}.long_name = <span class="string">'Wind Velocity y-direction'</span>;
+0197     nc{<span class="string">'V10'</span>}.units     = <span class="string">'m/s'</span>;
+0198 <span class="keyword">end</span>;
+0199 
+0200 vname = [<span class="string">'Wlen_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0201 <span class="keyword">if</span>(exist(vname) == 0)
+0202     warning(<span class="string">'Variable Wlen does not exist not being added to netCDF output'</span>)
+0203 <span class="keyword">else</span>
+0204     nc{<span class="string">'wlen'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0205     nc{<span class="string">'wlen'</span>}.long_name = <span class="string">'wavelength'</span>;
+0206     nc{<span class="string">'wlen'</span>}.units     = <span class="string">'m'</span>;
+0207 <span class="keyword">end</span>;
+0208 
+0209 vname = [<span class="string">'Ubot_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0210 <span class="keyword">if</span>(exist(vname) == 0)
+0211     warning(<span class="string">'Variable Ubot does not exist not being added to netCDF output'</span>)
+0212 <span class="keyword">else</span>
+0213     nc{<span class="string">'Ubot'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0214     nc{<span class="string">'Ubot'</span>}.long_name = <span class="string">'Bottom Orbital Velocity'</span>;
+0215     nc{<span class="string">'Ubot'</span>}.units     = <span class="string">'m/s'</span>;
+0216 <span class="keyword">end</span>;
+0217 
+0218 
+0219 vname = [<span class="string">'TmBot_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0220 <span class="keyword">if</span>(exist(vname) == 0)
+0221     warning(<span class="string">'Variable TmBot does not exist not being added to netCDF output'</span>)
+0222 <span class="keyword">else</span>
+0223     nc{<span class="string">'TmBot'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0224     nc{<span class="string">'TmBot'</span>}.long_name = <span class="string">'Bottom Wave Period'</span>;
+0225     nc{<span class="string">'TmBot'</span>}.units     = <span class="string">'s'</span>;
+0226 <span class="keyword">end</span>;
+0227 
+0228 vname1 = [<span class="string">'Hsig_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0229 vname2 = [<span class="string">'Depth_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0230 <span class="keyword">if</span>(exist(vname1) == 0 | exist(vname2)==0)
+0231     warning(<span class="string">'Bot Hsig and Depth do not exist so will not dump H/h'</span>)   
+0232 <span class="keyword">else</span>
+0233     nc{<span class="string">'H_over_h'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0234     nc{<span class="string">'H_over_h'</span>}.long_name = <span class="string">'Ratio of Hsig to depth'</span>;
+0235     nc{<span class="string">'H_over_h'</span>}.units     = <span class="string">'-'</span>;
+0236 <span class="keyword">end</span>;
+0237 
+0238 vname1 = [<span class="string">'TmBot_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0239 vname2 = [<span class="string">'Ubot_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0240 <span class="keyword">if</span>(exist(vname1) == 0 | exist(vname2)==0)
+0241     warning(<span class="string">'Bot TmBot and Ubot do not exist so will not dump bed stress'</span>)
+0242 <span class="keyword">else</span>
+0243     nc{<span class="string">'tau_w'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0244     nc{<span class="string">'tau_w'</span>}.long_name = <span class="string">'wave-induced bed stress'</span>; 
+0245     nc{<span class="string">'tau_w'</span>}.units     = <span class="string">'m^2/s^2'</span>;
+0246 <span class="keyword">end</span>;
+0247 
+0248 <span class="comment">% static vars</span>
+0249 nc{<span class="string">'x'</span>}(:) = Xp;
+0250 nc{<span class="string">'y'</span>}(:) = Yp;
+0251 nc{<span class="string">'h'</span>}(:) = h;
+0252 nc{<span class="string">'nv'</span>}(:,:) = tri';
+0253 
+0254 badpts = [];
+0255 <span class="comment">% dump dynamic vars</span>
+0256 <span class="keyword">for</span> i=1:ntimes;
+0257     
+0258     fprintf(<span class="string">'processing time %s\n'</span>,datestr(times(i)));
+0259     
+0260     <span class="keyword">if</span>(isforcing==1)
+0261         date = datestr(times(i),30);
+0262         vname = [<span class="string">'Hsig_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)]; var1 = eval(vname)';
+0263         vname = [<span class="string">'RTpeak_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];var2 = eval(vname)';
+0264         var3  = var1+var2;
+0265         badpts = find(isnan(var3));
+0266         clear var1;
+0267         clear var2;
+0268         clear var3;
+0269     <span class="keyword">end</span>; 
+0270     
+0271     <span class="comment">%time</span>
+0272     shift = 678942.;  <span class="comment">% datenum(2010,1,1,0,0,0)-greg2mjulian(2010,1,1,0,0,0);</span>
+0273     time  = times(i) - shift;
+0274     nc{<span class="string">'time'</span>}(i) = time;
+0275     nc{<span class="string">'Itime'</span>}(i) = floor(time);
+0276     nc{<span class="string">'Itime2'</span>}(i) = mod(time,1)*24*3600*1000.;
+0277     
+0278     
+0279     <span class="comment">%hs</span>
+0280     date = datestr(times(i),30);
+0281     vname = [<span class="string">'Hsig_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0282     <span class="keyword">if</span>(exist(vname) == 0)
+0283         <span class="comment">%fprintf('variable frame %s\n does not exist',vname)</span>
+0284     <span class="keyword">else</span>
+0285         var = eval(vname)';
+0286         <span class="keyword">if</span> (isforcing == 1); var(badpts) = 0.; <span class="keyword">end</span>;
+0287         nc{<span class="string">'hs'</span>}(i,:) = var;
+0288     <span class="keyword">end</span>;
+0289     
+0290     <span class="comment">%tp</span>
+0291     date = datestr(times(i),30);
+0292     vname = [<span class="string">'RTpeak_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0293     <span class="keyword">if</span>(exist(vname) == 0)
+0294         <span class="comment">%fprintf('variable frame %s\n does not exist',vname)</span>
+0295     <span class="keyword">else</span>
+0296         var = eval(vname)';
+0297         <span class="keyword">if</span> (isforcing == 1);  var(badpts) = 1.; <span class="keyword">end</span>;
+0298         nc{<span class="string">'tpeak'</span>}(i,:) = var;
+0299     <span class="keyword">end</span>;
+0300     
+0301     
+0302     <span class="comment">%depth</span>
+0303     date = datestr(times(i),30);
+0304     vname = [<span class="string">'Depth_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0305     <span class="keyword">if</span>(exist(vname) == 0)
+0306         <span class="comment">%fprintf('variable frame %s\n does not exist',vname)</span>
+0307     <span class="keyword">else</span>
+0308         nc{<span class="string">'d'</span>}(i,:) = eval(vname)';
+0309     <span class="keyword">end</span>;
+0310     
+0311     <span class="comment">% wave dir</span>
+0312     date = datestr(times(i),30);
+0313     vname = [<span class="string">'Dir_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0314     <span class="keyword">if</span>(exist(vname) == 0)
+0315         <span class="comment">%fprintf('variable frame %s\n does not exist',vname)</span>
+0316     <span class="keyword">else</span>
+0317         var = eval(vname)';
+0318         <span class="keyword">if</span> (isforcing == 1); var(badpts) = 0.; <span class="keyword">end</span>;
+0319         nc{<span class="string">'wdir'</span>}(i,:) = var;
+0320     <span class="keyword">end</span>;
+0321     
+0322     <span class="comment">% U10</span>
+0323     date = datestr(times(i),30);
+0324     vname = [<span class="string">'Windv_x_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0325     <span class="keyword">if</span>(exist(vname) == 0)
+0326         <span class="comment">%fprintf('variable frame %s\n does not exist',vname)</span>
+0327     <span class="keyword">else</span>
+0328         var = eval(vname)';
+0329         nc{<span class="string">'U10'</span>}(i,:) = var;
+0330     <span class="keyword">end</span>;
+0331     
+0332     <span class="comment">% V10</span>
+0333     date = datestr(times(i),30);
+0334     vname = [<span class="string">'Windv_y_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0335     <span class="keyword">if</span>(exist(vname) == 0)
+0336         <span class="comment">%fprintf('variable frame %s\n does not exist',vname)</span>
+0337     <span class="keyword">else</span>
+0338         var = eval(vname)';
+0339         <span class="keyword">if</span> (isforcing == 1)
+0340             var(isnan(var)) = 0.0;
+0341         <span class="keyword">end</span>
+0342         nc{<span class="string">'V10'</span>}(i,:) = var';
+0343     <span class="keyword">end</span>;
+0344     
+0345     <span class="comment">% orbital velocity</span>
+0346     date = datestr(times(i),30);
+0347     vname = [<span class="string">'Ubot_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0348     <span class="keyword">if</span>(exist(vname) == 0)
+0349         <span class="comment">%fprintf('variable frame %s\n does not exist',vname)</span>
+0350     <span class="keyword">else</span>
+0351         var = eval(vname)';
+0352         <span class="keyword">if</span> (isforcing == 1); var(badpts) = 0.; <span class="keyword">end</span>;
+0353         nc{<span class="string">'Ubot'</span>}(i,:) = var';
+0354     <span class="keyword">end</span>;
+0355     
+0356     <span class="comment">% wavelength</span>
+0357     date = datestr(times(i),30);
+0358     vname = [<span class="string">'Wlen_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0359     <span class="keyword">if</span>(exist(vname) == 0)
+0360         <span class="comment">%fprintf('variable frame %s\n does not exist',vname)</span>
+0361     <span class="keyword">else</span>
+0362         var = eval(vname)';
+0363         <span class="keyword">if</span> (isforcing == 1); var(badpts) = 1.; <span class="keyword">end</span>;
+0364         nc{<span class="string">'wlen'</span>}(i,:) = var';
+0365     <span class="keyword">end</span>;
+0366     
+0367     <span class="comment">% bottom wave period</span>
+0368     date = datestr(times(i),30);
+0369     vname = [<span class="string">'TmBot_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0370     <span class="keyword">if</span>(exist(vname) == 0)
+0371         <span class="comment">%fprintf('variable frame %s\n does not exist',vname)</span>
+0372     <span class="keyword">else</span>
+0373         var = eval(vname)';
+0374         <span class="keyword">if</span> (isforcing == 1); var(badpts) = 1.; <span class="keyword">end</span>;
+0375         nc{<span class="string">'TmBot'</span>}(i,:) = var';
+0376     <span class="keyword">end</span>;
+0377 
+0378     <span class="comment">% hsig/depth</span>
+0379     date = datestr(times(i),30);
+0380     vname1 = [<span class="string">'Hsig_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0381     vname2 = [<span class="string">'Depth_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0382     <span class="keyword">if</span>(exist(vname1) == 0 | exist(vname2)==0)
+0383         <span class="comment">%fprintf('variable frame %s\n does not exist',vname)</span>
+0384     <span class="keyword">else</span>
+0385         var1 = eval(vname1)';
+0386         var2 = eval(vname2)';
+0387         var  = var1./var2;
+0388         <span class="keyword">if</span> (isforcing == 1); var(badpts) = 0.; <span class="keyword">end</span>;
+0389         nc{<span class="string">'H_over_h'</span>}(i,:) = var';
+0390     <span class="keyword">end</span>;
+0391     
+0392     <span class="comment">% wave-induced bed stress</span>
+0393     date = datestr(times(i),30);
+0394     vname1 = [<span class="string">'TmBot_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0395     vname2 = [<span class="string">'Ubot_'</span>,date(1:8),<span class="string">'_'</span>,date(10:15)];
+0396     <span class="keyword">if</span>(exist(vname1) == 0 | exist(vname2)==0)
+0397         <span class="comment">%fprintf('variable frame %s\n does not exist',vname)</span>
+0398     <span class="keyword">else</span>
+0399         <span class="comment">%compute wave induced bed stress using Soulsby formulas</span>
+0400         <span class="comment">%friction factor (fw) is eq 62A</span>
+0401         <span class="comment">%tau_w = 0.5*fw*Ubot^2</span>
+0402         var1 = eval(vname1)';
+0403         var2 = eval(vname2)';
+0404         omega_wave = (2.0*pi./max(var1,.05))'; <span class="comment">%wave-orbital frequency</span>
+0405         var=0.5*1.39*((omega_wave*z0).^.52)'.*(var2.^(2.0-.52));
+0406         <span class="keyword">if</span> (isforcing == 1); var(badpts) = 0.; <span class="keyword">end</span>;
+0407         nc{<span class="string">'tau_w'</span>}(i,:) = var';
+0408     <span class="keyword">end</span>;
+0409     <span class="comment">%error('hog')</span>
+0410 
+0411 <span class="keyword">end</span>;
+0412 
+0413 
+0414 nc = close(nc);</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

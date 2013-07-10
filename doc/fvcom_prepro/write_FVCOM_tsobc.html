@@ -1,0 +1,335 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_FVCOM_tsobc</title>
+  <meta name="keywords" content="write_FVCOM_tsobc">
+  <meta name="description" content="example file for dumping a file to force temperature and salinity at the open b.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_FVCOM_tsobc.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_FVCOM_tsobc
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>example file for dumping a file to force temperature and salinity at the open b.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> example file for dumping a file to force temperature and salinity at the open b.
+
+ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
+
+ DESCRIPTION:
+    Setup an FVCOM hydrographic open boundary forcing file. Supply either
+    uniform values for temperature and salinity or 3D arrays (node,
+    sigma_layers, time).
+
+ INPUT
+    Model case name (to find the bathymetry and open boundary .dat files).
+    Time
+    Number of sigma layers
+    Boundary temperature (Celcius)
+    Boundary salinity (psu)
+    Mobj (optional)
+
+ OUTPUT:
+    FVCOM hydrographic open boundary file
+
+ Author(s):
+    Geoff Cowles (University of Massachusetts Dartmouth)
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+    2012-06-15 Added support for native MATLAB NetCDF routines. Requires
+    MATLAB 2010a or higher.
+    2012-07-16 Removed hard-coded nSiglay and nSiglev and instead moved to
+    arguments list.
+    2012-10-08 Updated help to reflect the fact nSiglev is calculated as
+    nSiglay+1.
+    2012-11-09 Add new arguments to use user defined temperature and
+    salinity.
+    2013-01-09 Add support for 3D input temperature and salinity (such as
+    might be generated with get_POLCOMS_tsobc.m.
+    KJT: Add better check for the size of the input arrays (works with 
+    scalars).
+
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj)</a>
+0002 <span class="comment">% example file for dumping a file to force temperature and salinity at the open b.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Setup an FVCOM hydrographic open boundary forcing file. Supply either</span>
+0008 <span class="comment">%    uniform values for temperature and salinity or 3D arrays (node,</span>
+0009 <span class="comment">%    sigma_layers, time).</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT</span>
+0012 <span class="comment">%    Model case name (to find the bathymetry and open boundary .dat files).</span>
+0013 <span class="comment">%    Time</span>
+0014 <span class="comment">%    Number of sigma layers</span>
+0015 <span class="comment">%    Boundary temperature (Celcius)</span>
+0016 <span class="comment">%    Boundary salinity (psu)</span>
+0017 <span class="comment">%    Mobj (optional)</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% OUTPUT:</span>
+0020 <span class="comment">%    FVCOM hydrographic open boundary file</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Author(s):</span>
+0023 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0024 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Revision history</span>
+0027 <span class="comment">%    2012-06-15 Added support for native MATLAB NetCDF routines. Requires</span>
+0028 <span class="comment">%    MATLAB 2010a or higher.</span>
+0029 <span class="comment">%    2012-07-16 Removed hard-coded nSiglay and nSiglev and instead moved to</span>
+0030 <span class="comment">%    arguments list.</span>
+0031 <span class="comment">%    2012-10-08 Updated help to reflect the fact nSiglev is calculated as</span>
+0032 <span class="comment">%    nSiglay+1.</span>
+0033 <span class="comment">%    2012-11-09 Add new arguments to use user defined temperature and</span>
+0034 <span class="comment">%    salinity.</span>
+0035 <span class="comment">%    2013-01-09 Add support for 3D input temperature and salinity (such as</span>
+0036 <span class="comment">%    might be generated with get_POLCOMS_tsobc.m.</span>
+0037 <span class="comment">%    KJT: Add better check for the size of the input arrays (works with</span>
+0038 <span class="comment">%    scalars).</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">%==============================================================================</span>
+0041 
+0042 <span class="keyword">if</span> nargin == 5
+0043     warning([<span class="string">'Assuming uniform terrain-following sigma coordinates. '</span>,<span class="keyword">...</span>
+0044         <span class="string">'To specify different sigma coordintes, supply a MATLAB mesh '</span>,<span class="keyword">...</span>
+0045         <span class="string">'structure with fields siglay and siglev.'</span>])
+0046 <span class="keyword">end</span>
+0047 
+0048 subname = <span class="string">'write_FVCOM_tsobc'</span>;
+0049 <span class="keyword">global</span> ftbverbose;
+0050 <span class="keyword">if</span>(ftbverbose);
+0051   fprintf(<span class="string">'\n'</span>)
+0052   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0053 <span class="keyword">end</span>;
+0054 
+0055 fvcom_bathy = [basename, <span class="string">'_dep.dat'</span>];
+0056 fvcom_obc   = [basename, <span class="string">'_obc.dat'</span>];
+0057 tsOBCFile = [basename, <span class="string">'_tsobc.nc'</span>];
+0058 
+0059 <span class="comment">%------------------------------------------------------------------------------</span>
+0060 <span class="comment">% read in the FVCOM open boundary node data (need node numbers and dimension)</span>
+0061 <span class="comment">%------------------------------------------------------------------------------</span>
+0062 fid = fopen(fvcom_obc,<span class="string">'r'</span>);
+0063 <span class="keyword">if</span>(fid  &lt; 0)
+0064   error([<span class="string">'file: '</span> fvcom_obc <span class="string">' does not exist'</span>]);
+0065 <span class="keyword">end</span>;
+0066 C = textscan(fid, <span class="string">'%s %s %s %s %d'</span>, 1);
+0067 nObc = C{5};
+0068 obc_nodes = zeros(nObc,1);
+0069 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'reading obc file\n'</span>); <span class="keyword">end</span>;
+0070 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'# nodes %d\n'</span>,nObc); <span class="keyword">end</span>;
+0071 <span class="keyword">for</span> i=1:nObc
+0072   C = textscan(fid, <span class="string">'%d %d %d'</span>, 1);
+0073   obc_nodes(i) = C{2};
+0074 <span class="keyword">end</span>;
+0075 
+0076 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'obc reading complete\n'</span>);<span class="keyword">end</span>;
+0077 
+0078 <span class="comment">%------------------------------------------------------------------------------</span>
+0079 <span class="comment">% read in the FVCOM bathymetry data (need bathymetry on open boundary nodes)</span>
+0080 <span class="comment">%------------------------------------------------------------------------------</span>
+0081 fid = fopen(fvcom_bathy,<span class="string">'r'</span>);
+0082 <span class="keyword">if</span>(fid  &lt; 0)
+0083   error([<span class="string">'file: '</span> fvcom_bathy <span class="string">' does not exist'</span>]);
+0084 <span class="keyword">end</span>;
+0085 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1);
+0086 Nverts = C{4};
+0087 h = zeros(Nverts,1);
+0088 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'reading bathymetry file\n'</span>);<span class="keyword">end</span>;
+0089 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'# nodes %d\n'</span>,Nverts);<span class="keyword">end</span>;
+0090 <span class="keyword">for</span> i=1:Nverts
+0091   C = textscan(fid, <span class="string">'%f %f %f'</span>, 1);
+0092   h(i) = C{3};
+0093 <span class="keyword">end</span>;
+0094 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'min depth %f max depth %f\n'</span>,min(h),max(h));<span class="keyword">end</span>;
+0095 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'bathymetry reading complete\n'</span>);<span class="keyword">end</span>;
+0096 fclose(fid);
+0097 
+0098 <span class="comment">%--------------------------------------------------------------</span>
+0099 <span class="comment">% Generate the requisite data</span>
+0100 <span class="comment">%--------------------------------------------------------------</span>
+0101 
+0102 <span class="comment">% extract bathymetry at open boundary nodes</span>
+0103 obc_h = h(obc_nodes);
+0104 
+0105 <span class="comment">% time</span>
+0106 <span class="comment">% time = 0:1:31.;</span>
+0107 nTimes = numel(time);
+0108 
+0109 nSiglev = nSiglay + 1;
+0110 
+0111 <span class="comment">% Create or process the temperature and salinity arrays.</span>
+0112 <span class="keyword">if</span> max(size(in_temp)) == 1
+0113     inc = 1/real(nSiglay);
+0114     siglev = 0:-inc:-1;
+0115     siglay = nan(1, nSiglay);
+0116     <span class="keyword">for</span> i=1:nSiglay
+0117         siglay(i) = mean(siglev(i:i+1));
+0118     <span class="keyword">end</span>
+0119     <span class="comment">% initialize temperature/salinity arrays</span>
+0120     temp = zeros(nObc,nSiglay,nTimes);
+0121     salt = zeros(nObc,nSiglay,nTimes);
+0122 
+0123     <span class="comment">% set a constant temperature and salinity</span>
+0124     obc_temp = repmat(in_temp, 1, nTimes);
+0125     obc_salt = repmat(in_salt, 1, nTimes);
+0126 
+0127     <span class="comment">% set variable temperature and salinity</span>
+0128     <span class="comment">% for i=1:nTimes</span>
+0129     <span class="comment">%     obc_temp(i) = 18. + 2.*real(i-1)/nTimes;</span>
+0130     <span class="comment">%     obc_salt(i) = 30. - 5.*real(i-1)/nTimes;</span>
+0131     <span class="comment">% end</span>
+0132 
+0133     <span class="comment">% Create 3D array from three 1D arrays</span>
+0134     <span class="comment">% temp = repmat(obc_temp, [nObc, nSiglay, 1]);</span>
+0135     <span class="comment">% salt = repmat(obc_salt, [nObc, nSiglay, 1]);</span>
+0136     <span class="keyword">for</span> i=1:nObc
+0137         <span class="keyword">for</span> j=1:nSiglay
+0138             temp(i,j,:) = obc_temp;
+0139             salt(i,j,:) = obc_salt;
+0140         <span class="keyword">end</span>
+0141     <span class="keyword">end</span>
+0142 <span class="keyword">else</span>
+0143     <span class="comment">% We have a 3D array already so we just need a couple of stats.</span>
+0144     temp = in_temp;
+0145     salt = in_salt;
+0146 
+0147     <span class="keyword">if</span> nargin == 6 &amp;&amp; isfield(Mobj, <span class="string">'siglay'</span>) &amp;&amp; isfield(Mobj, <span class="string">'siglev'</span>)
+0148         siglev = Mobj.siglev;
+0149         siglay = Mobj.siglay;
+0150     <span class="keyword">else</span>
+0151         warning(<span class="string">'Assuming uniform terrain-following sigma coordinates'</span>)
+0152         inc = 1/real(nSiglay);
+0153         siglev = 0:-inc:-1;
+0154         siglay = nan(1, nSiglay);
+0155     <span class="keyword">end</span>
+0156 
+0157     <span class="keyword">if</span> nSiglev ~= size(in_temp, 2) + 1 || length(siglev) ~= size(in_temp, 2) + 1 || length(siglev) ~= size(in_salt, 2) + 1
+0158         error(<span class="string">'Specified number sigma levels does not match supplied data'</span>)
+0159     <span class="keyword">end</span>
+0160     <span class="keyword">if</span> nSiglay ~= size(in_temp, 2) || length(siglay) ~= size(in_temp, 2) || length(siglay) ~= size(in_salt, 2)
+0161         error(<span class="string">'Specified number of sigma layers does not match supplied data'</span>)
+0162     <span class="keyword">end</span>
+0163 <span class="keyword">end</span>
+0164 
+0165 <span class="comment">%--------------------------------------------------------------</span>
+0166 <span class="comment">% set NetCDF variables and dump to file</span>
+0167 <span class="comment">%--------------------------------------------------------------</span>
+0168 
+0169 <span class="comment">% open boundary forcing</span>
+0170 nc = netcdf.create(tsOBCFile, <span class="string">'clobber'</span>);
+0171 
+0172 <span class="comment">% define global attributes</span>
+0173 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM RIVER FORCING FILE'</span>)
+0174 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,<span class="string">'simple open boundary hydrography test'</span>)
+0175 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM TIME SERIES OBC TS FILE'</span>)
+0176 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'generated using the fvcom-toolbox'</span>)
+0177 
+0178 
+0179 <span class="comment">% define dimensions</span>
+0180 nobc_dimid=netcdf.defDim(nc,<span class="string">'nobc'</span>,nObc);
+0181 datestrlen_dimid=netcdf.defDim(nc,<span class="string">'Datestrln'</span>,26);
+0182 time_dimid=netcdf.defDim(nc,<span class="string">'time'</span>,netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0183 siglay_dimid=netcdf.defDim(nc,<span class="string">'siglay'</span>,nSiglay);
+0184 siglev_dimid=netcdf.defDim(nc,<span class="string">'siglev'</span>,nSiglev);
+0185 
+0186 <span class="comment">% variables</span>
+0187 <span class="comment">% nc{'river_names'} = ncchar('rivers', 'namelen');</span>
+0188 
+0189 time_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,time_dimid);
+0190 netcdf.putAtt(nc,time_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
+0191 netcdf.putAtt(nc,time_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
+0192 netcdf.putAtt(nc,time_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0193 
+0194 itime_varid=netcdf.defVar(nc,<span class="string">'Itime'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0195 netcdf.putAtt(nc,itime_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
+0196 netcdf.putAtt(nc,itime_varid,<span class="string">'format'</span>,<span class="string">'modified julian day (MJD)'</span>);
+0197 netcdf.putAtt(nc,itime_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0198 
+0199 itime2_varid=netcdf.defVar(nc,<span class="string">'Itime2'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0200 netcdf.putAtt(nc,itime2_varid,<span class="string">'units'</span>,<span class="string">'msec since 00:00:00'</span>);
+0201 netcdf.putAtt(nc,itime2_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0202 
+0203 nobc_varid=netcdf.defVar(nc,<span class="string">'obc_nodes'</span>,<span class="string">'NC_INT'</span>,nobc_dimid);
+0204 netcdf.putAtt(nc,nobc_varid,<span class="string">'long_name'</span>,<span class="string">'Open Boundary Node Number'</span>);
+0205 netcdf.putAtt(nc,nobc_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
+0206 netcdf.putAtt(nc,nobc_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0207 
+0208 obc_h_varid=netcdf.defVar(nc,<span class="string">'obc_h'</span>,<span class="string">'NC_FLOAT'</span>,nobc_dimid);
+0209 netcdf.putAtt(nc,obc_h_varid,<span class="string">'long_name'</span>,<span class="string">'Open Boundary Depth'</span>);
+0210 netcdf.putAtt(nc,obc_h_varid,<span class="string">'units'</span>,<span class="string">'m'</span>);
+0211 netcdf.putAtt(nc,obc_h_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
+0212 netcdf.putAtt(nc,obc_h_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0213 
+0214 obc_siglev_varid=netcdf.defVar(nc,<span class="string">'siglev'</span>,<span class="string">'NC_FLOAT'</span>,siglev_dimid);
+0215 netcdf.putAtt(nc,obc_siglev_varid,<span class="string">'long_name'</span>,<span class="string">'ocean_sigma/general_coordinate'</span>);
+0216 netcdf.putAtt(nc,obc_siglev_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
+0217 
+0218 obc_siglay_varid=netcdf.defVar(nc,<span class="string">'siglay'</span>,<span class="string">'NC_FLOAT'</span>,siglay_dimid);
+0219 netcdf.putAtt(nc,obc_siglay_varid,<span class="string">'long_name'</span>,<span class="string">'ocean_sigma/general_coordinate'</span>);
+0220 netcdf.putAtt(nc,obc_siglay_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
+0221 
+0222 obc_temp_varid=netcdf.defVar(nc,<span class="string">'obc_temp'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid,siglay_dimid,time_dimid]);
+0223 netcdf.putAtt(nc,obc_temp_varid,<span class="string">'long_name'</span>,<span class="string">'sea_water_temperature'</span>);
+0224 netcdf.putAtt(nc,obc_temp_varid,<span class="string">'units'</span>,<span class="string">'Celcius'</span>);
+0225 netcdf.putAtt(nc,obc_temp_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
+0226 
+0227 obc_salinity_varid=netcdf.defVar(nc,<span class="string">'obc_salinity'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid,siglay_dimid,time_dimid]);
+0228 netcdf.putAtt(nc,obc_salinity_varid,<span class="string">'long_name'</span>,<span class="string">'sea_water_salinity'</span>);
+0229 netcdf.putAtt(nc,obc_salinity_varid,<span class="string">'units'</span>,<span class="string">'PSU'</span>);
+0230 netcdf.putAtt(nc,obc_salinity_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
+0231 
+0232 <span class="comment">% end definitions</span>
+0233 netcdf.endDef(nc);
+0234 
+0235 <span class="comment">% write data</span>
+0236 netcdf.putVar(nc,nobc_varid,obc_nodes);
+0237 netcdf.putVar(nc,obc_h_varid,obc_h);
+0238 netcdf.putVar(nc,obc_siglev_varid,siglev);
+0239 netcdf.putVar(nc,obc_siglay_varid,siglay);
+0240 netcdf.putVar(nc,time_varid,0,numel(time),time);
+0241 netcdf.putVar(nc,itime_varid,floor(time));
+0242 netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000);
+0243 
+0244 netcdf.putVar(nc,obc_temp_varid,temp);
+0245 netcdf.putVar(nc,obc_salinity_varid,salt);
+0246 
+0247 <span class="comment">% close file</span>
+0248 netcdf.close(nc);
+0249 
+0250 <span class="keyword">if</span>(ftbverbose); fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>]);<span class="keyword">end</span>;</pre></div>
+<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

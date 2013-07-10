@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of plot_swan_mesh</title>
+  <meta name="keywords" content="plot_swan_mesh">
+  <meta name="description" content="Plot an unstructured SWAN mesh">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">swan_scripts</a> &gt; plot_swan_mesh.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for swan_scripts&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>plot_swan_mesh
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Plot an unstructured SWAN mesh</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function plot_swan_mesh(bathfile,nodefile,gridfile) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Plot an unstructured SWAN mesh
+
+ function plot_swan_mesh(bathfile,nodefile,gridfile)
+
+ DESCRIPTION:
+    plot an unstructure SWAN mesh and bathymetry
+
+ INPUT 
+   bathfile = SWAN bathymetry file
+   nodefile = SWAN vertex file
+   gridfile = SWAN connectivity file    
+
+ OUTPUT:
+    plot of Mesh and bathymetry
+
+ EXAMPLE USAGE
+    plot_swan_mesh('tst.bot','tst.node','tst.ele') 
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="fvcom2swan.html" class="code" title="function fvcom2swan(fvcom_mesh,fvcom_bathy,fvcom_obc,prefix,PlotMesh)">fvcom2swan</a>	Convert fvcom grid and bathymetry file to unstructured SWAN format</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function plot_swan_mesh(bathfile,nodefile,gridfile)</a>
+0002 <span class="comment">% Plot an unstructured SWAN mesh</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function plot_swan_mesh(bathfile,nodefile,gridfile)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    plot an unstructure SWAN mesh and bathymetry</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT</span>
+0010 <span class="comment">%   bathfile = SWAN bathymetry file</span>
+0011 <span class="comment">%   nodefile = SWAN vertex file</span>
+0012 <span class="comment">%   gridfile = SWAN connectivity file</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% OUTPUT:</span>
+0015 <span class="comment">%    plot of Mesh and bathymetry</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% EXAMPLE USAGE</span>
+0018 <span class="comment">%    plot_swan_mesh('tst.bot','tst.node','tst.ele')</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Author(s):</span>
+0021 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Revision history</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%==============================================================================</span>
+0026 
+0027 subname = <span class="string">'plot_swan_mesh'</span>;
+0028 fprintf(<span class="string">'\n'</span>)
+0029 fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0030 
+0031 <span class="comment">%------------------------------------------------------------------------------</span>
+0032 <span class="comment">% read in the SWAN bathymetry, connectivity, node files</span>
+0033 <span class="comment">%------------------------------------------------------------------------------</span>
+0034 
+0035 
+0036 [i,i1,i2,i3] = textread(gridfile,<span class="string">'%d %d %d %d'</span>,<span class="string">'headerlines'</span>,1);
+0037 tri(:,1) = i1;
+0038 tri(:,2) = i2;
+0039 tri(:,3) = i3;
+0040 
+0041 [i,x,y,type] = textread(nodefile,<span class="string">'%d %f %f %d\n'</span>,<span class="string">'headerlines'</span>,1);
+0042 x(:,1) = x;
+0043 x(:,2) = y;
+0044 
+0045 [bath] = textread(bathfile,<span class="string">'%f\n'</span>);
+0046 
+0047 patch(<span class="string">'Vertices'</span>,x,<span class="string">'Faces'</span>,tri,<span class="keyword">...</span>
+0048        <span class="string">'Cdata'</span>,bath,<span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0049 colorbar
+0050 
+0051 hold on
+0052 bnodes = find(type==1);
+0053 plot(x(bnodes,1),y(bnodes,1),<span class="string">'k+'</span>)
+0054 obnodes = find(type==2);
+0055 plot(x(obnodes,1),y(obnodes,1),<span class="string">'ro'</span>)
+0056 
+0057 
+0058 fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0059 
+0060</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

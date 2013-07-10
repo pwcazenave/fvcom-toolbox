@@ -1,0 +1,216 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of gen_semistructured_mesh</title>
+  <meta name="keywords" content="gen_semistructured_mesh">
+  <meta name="description" content="Generate a semistructured mesh">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; gen_semistructured_mesh.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>gen_semistructured_mesh
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Generate a semistructured mesh</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Mobj] = gen_semistructured_mesh(lx,ly,nx,ny,cornermod) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Generate a semistructured mesh 
+
+ [Mobj] = gen_semistructured_mesh(varargin)
+
+ DESCRIPTION:
+    Read SMS 2dm file and bathymetry file 
+    Store in a matlab mesh object 
+
+ INPUT 
+   lx  = length of the domain in meters in the x-direction
+   ly  = length of the domain in meters in the y-direction
+   nx  = number of edges along the x-direction 
+   ny  = number of edges in the y-direction
+   cornermod = modify edges at the corners so that one cell does not have an 
+   edge on two sides (true,false)
+
+ OUTPUT:
+    Mobj = matlab structure containing mesh data
+
+ EXAMPLE USAGE
+    Mobj = gen_semistructured_mesh(10000.,1000.,500,50)
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="make_blank_mesh.html" class="code" title="function [Mobj] = make_blank_mesh">make_blank_mesh</a>	Make a blank mesh object with default params</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = gen_semistructured_mesh(lx,ly,nx,ny,cornermod) </a>
+0002 
+0003 <span class="comment">% Generate a semistructured mesh</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% [Mobj] = gen_semistructured_mesh(varargin)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Read SMS 2dm file and bathymetry file</span>
+0009 <span class="comment">%    Store in a matlab mesh object</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT</span>
+0012 <span class="comment">%   lx  = length of the domain in meters in the x-direction</span>
+0013 <span class="comment">%   ly  = length of the domain in meters in the y-direction</span>
+0014 <span class="comment">%   nx  = number of edges along the x-direction</span>
+0015 <span class="comment">%   ny  = number of edges in the y-direction</span>
+0016 <span class="comment">%   cornermod = modify edges at the corners so that one cell does not have an</span>
+0017 <span class="comment">%   edge on two sides (true,false)</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% OUTPUT:</span>
+0020 <span class="comment">%    Mobj = matlab structure containing mesh data</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% EXAMPLE USAGE</span>
+0023 <span class="comment">%    Mobj = gen_semistructured_mesh(10000.,1000.,500,50)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% Author(s):</span>
+0026 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Revision history</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">%==============================================================================</span>
+0031 
+0032 subname = <span class="string">'gen_semistructured_mesh'</span>;
+0033 fprintf(<span class="string">'\n'</span>)
+0034 fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0035 
+0036 userproject = false;
+0037 
+0038 <span class="comment">%------------------------------------------------------------------------------</span>
+0039 <span class="comment">% Create a blank mesh object</span>
+0040 <span class="comment">%------------------------------------------------------------------------------</span>
+0041 Mobj = <a href="make_blank_mesh.html" class="code" title="function [Mobj] = make_blank_mesh">make_blank_mesh</a>();
+0042 coordinate = <span class="string">'cartesian'</span>;
+0043 
+0044 <span class="comment">%------------------------------------------------------------------------------</span>
+0045 <span class="comment">% set grid resolution</span>
+0046 <span class="comment">%------------------------------------------------------------------------------</span>
+0047 dx = lx/real(nx);
+0048 dy = ly/real(ny);
+0049 fprintf(<span class="string">'making a semistructured mesh of dimensions: %f X %f\n'</span>,lx,ly)
+0050 fprintf(<span class="string">'resolution in x %f and y %f\n'</span>,dx,dy);
+0051 
+0052 
+0053 <span class="comment">%------------------------------------------------------------------------------</span>
+0054 <span class="comment">% build the grid</span>
+0055 <span class="comment">%------------------------------------------------------------------------------</span>
+0056 
+0057 il = nx+1;
+0058 jl = ny+1;
+0059 
+0060 <span class="comment">% set dimensions</span>
+0061 nElems = 2*nx*ny;
+0062 nVerts = il*jl;
+0063 
+0064 <span class="comment">% allocate memory to hold mesh and auxiliary structures</span>
+0065 tri = zeros(nElems,3);
+0066 x   = zeros(nVerts,1);
+0067 y   = zeros(nVerts,1);
+0068 h   = zeros(nVerts,1);
+0069 lon = zeros(nVerts,1);
+0070 lat = zeros(nVerts,1);
+0071 ts  = zeros(nVerts,1);
+0072 
+0073 
+0074 <span class="comment">% build the mesh points</span>
+0075 nn = 0;
+0076 <span class="keyword">for</span> i=1:il
+0077   <span class="keyword">for</span> j=1:jl
+0078     nn = nn + 1;
+0079     x(nn) = (i-1)*dx;
+0080     y(nn) = (j-1)*dy;
+0081   <span class="keyword">end</span>;
+0082 <span class="keyword">end</span>;
+0083 
+0084 <span class="comment">% set the connectivity</span>
+0085 nn = 1;
+0086 <span class="keyword">for</span> i=1:nx
+0087     <span class="keyword">for</span> j=1:ny
+0088         n2 = nn + 1;
+0089         tri(nn,1) = j + (i-1)*jl;
+0090         tri(nn,2) = j + i*jl;
+0091         tri(nn,3) = j+1 + (i-1)*jl;
+0092         tri(n2,1) = j + i*jl;
+0093         tri(n2,2) = j+1 + i*jl;
+0094         tri(n2,3) = j+1 + (i-1)*jl;
+0095         nn = nn + 2;
+0096     <span class="keyword">end</span>;
+0097 <span class="keyword">end</span>;
+0098 
+0099         
+0100 <span class="comment">% modify the connectivity on the corners to deal with the constraint that an element cannot</span>
+0101 <span class="comment">% have both an open and a solid boundary</span>
+0102 <span class="keyword">if</span>(cornermod)
+0103     tri(1,1) = 1;
+0104     tri(1,2) = jl+2;
+0105     tri(1,3) = 2;
+0106     tri(2,1) = 1;
+0107     tri(2,2) = jl+1;
+0108     tri(2,3) = jl+2;
+0109 
+0110     tri(2*nx*ny-1,1) = il*jl-jl-1;
+0111     tri(2*nx*ny-1,2) = il*jl-1;
+0112     tri(2*nx*ny-1,3) = il*jl;
+0113     tri(2*nx*ny  ,1) = il*jl-jl-1;
+0114     tri(2*nx*ny  ,2) = il*jl;
+0115     tri(2*nx*ny  ,3) = il*jl-jl;
+0116 <span class="keyword">end</span>;
+0117 
+0118 
+0119 <span class="comment">%------------------------------------------------------------------------------</span>
+0120 <span class="comment">% Transfer to Mesh structure</span>
+0121 <span class="comment">%------------------------------------------------------------------------------</span>
+0122 
+0123 Mobj.nVerts  = nVerts;
+0124 Mobj.nElems  = nElems;
+0125 Mobj.nativeCoords = coordinate;
+0126 
+0127 Mobj.have_lonlat  = false;
+0128 Mobj.have_xy      = true;
+0129 Mobj.have_bath    = false;
+0130 
+0131 Mobj.x            = x;
+0132 Mobj.y            = y;
+0133 Mobj.ts           = ts;
+0134 Mobj.lon          = lon;
+0135 Mobj.lat          = lat;
+0136 Mobj.h            = h;
+0137 Mobj.tri          = tri;
+0138 
+0139 
+0140 fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0141 
+0142</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

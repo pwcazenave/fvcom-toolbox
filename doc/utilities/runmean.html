@@ -1,0 +1,304 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of runmean</title>
+  <meta name="keywords" content="runmean">
+  <meta name="description" content="RUNMEAN - Very fast running mean (aka moving average) filter">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; runmean.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>runmean
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>RUNMEAN - Very fast running mean (aka moving average) filter</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Y = runmean(X, m, dim, modestr) ; </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> RUNMEAN - Very fast running mean (aka moving average) filter
+   For vectors, Y = RUNMEAN(X,M) computes a running mean (also known as
+   moving average) on the elements of the vector X. It uses a window of
+   2*M+1 datapoints. M an positive integer defining (half) the size of the
+   window. In pseudo code: 
+     Y(i) = sum(X(j)) / (2*M+1), for j = (i-M):(i+M), and i=1:length(X) 
+
+   For matrices, Y = RUNMEAN(X,M) or RUNMEAN(X,M,[]) operates on the first   
+   non-singleton dimension of X. RUNMEAN(X,M,DIM) computes the running
+   mean along the dimension DIM.
+
+   If the total window size (2*M+1) is larger than the size in dimension
+   DIM, the overall average along dimension DIM is computed.
+
+   As always with filtering, the values of Y can be inaccurate at the
+   edges. RUNMEAN(..., MODESTR) determines how the edges are treated. MODESTR can be
+   one of the following strings:
+     'edge'    : X is padded with first and last values along dimension
+                 DIM (default)
+     'zero'    : X is padded with zeros
+     'mean'    : X is padded with the mean along dimension DIM 
+
+   X should not contains NaNs, yielding an all NaN result. NaNs can be
+   replaced by using, e.g., &quot;inpaint_nans&quot; created by John D'Errico.
+
+   Examples
+     runmean([1:5],1) 
+       % -&gt;  1.33  2  3  4 4.67
+     runmean([1:5],1,'mean') 
+       % -&gt;  2 2 3 4 4
+     runmean([2:2:10],1,1) % dimension 1 is larger than 2*(M=1)+1 ...
+       % -&gt; 2 4 6 8 10
+     runmean(ones(10,7),3,2,'zero') ; % along columns, using mode 'zero'
+     runmean(repmat([1 2 4 8 NaN 5 6],5,1),2,2) ; 
+       % -&gt; all NaN result
+     A = rand(10,10) ; A(2,7) = NaN ;
+     runmean(A,3,2) ; 
+       % -&gt; column 7 is all NaN
+     runmean(1:2:10,100) % mean
+       % -&gt; 5 5 5 5 5
+
+   This is an incredibly fast implementation of a running mean, since
+   execution time does not depend on the size of the window.
+
+   See also MEAN, FILTER</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Y = runmean(X, m, dim, modestr) ;</a>
+0002 <span class="comment">% RUNMEAN - Very fast running mean (aka moving average) filter</span>
+0003 <span class="comment">%   For vectors, Y = RUNMEAN(X,M) computes a running mean (also known as</span>
+0004 <span class="comment">%   moving average) on the elements of the vector X. It uses a window of</span>
+0005 <span class="comment">%   2*M+1 datapoints. M an positive integer defining (half) the size of the</span>
+0006 <span class="comment">%   window. In pseudo code:</span>
+0007 <span class="comment">%     Y(i) = sum(X(j)) / (2*M+1), for j = (i-M):(i+M), and i=1:length(X)</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">%   For matrices, Y = RUNMEAN(X,M) or RUNMEAN(X,M,[]) operates on the first</span>
+0010 <span class="comment">%   non-singleton dimension of X. RUNMEAN(X,M,DIM) computes the running</span>
+0011 <span class="comment">%   mean along the dimension DIM.</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">%   If the total window size (2*M+1) is larger than the size in dimension</span>
+0014 <span class="comment">%   DIM, the overall average along dimension DIM is computed.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">%   As always with filtering, the values of Y can be inaccurate at the</span>
+0017 <span class="comment">%   edges. RUNMEAN(..., MODESTR) determines how the edges are treated. MODESTR can be</span>
+0018 <span class="comment">%   one of the following strings:</span>
+0019 <span class="comment">%     'edge'    : X is padded with first and last values along dimension</span>
+0020 <span class="comment">%                 DIM (default)</span>
+0021 <span class="comment">%     'zero'    : X is padded with zeros</span>
+0022 <span class="comment">%     'mean'    : X is padded with the mean along dimension DIM</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">%   X should not contains NaNs, yielding an all NaN result. NaNs can be</span>
+0025 <span class="comment">%   replaced by using, e.g., &quot;inpaint_nans&quot; created by John D'Errico.</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">%   Examples</span>
+0028 <span class="comment">%     runmean([1:5],1)</span>
+0029 <span class="comment">%       % -&gt;  1.33  2  3  4 4.67</span>
+0030 <span class="comment">%     runmean([1:5],1,'mean')</span>
+0031 <span class="comment">%       % -&gt;  2 2 3 4 4</span>
+0032 <span class="comment">%     runmean([2:2:10],1,1) % dimension 1 is larger than 2*(M=1)+1 ...</span>
+0033 <span class="comment">%       % -&gt; 2 4 6 8 10</span>
+0034 <span class="comment">%     runmean(ones(10,7),3,2,'zero') ; % along columns, using mode 'zero'</span>
+0035 <span class="comment">%     runmean(repmat([1 2 4 8 NaN 5 6],5,1),2,2) ;</span>
+0036 <span class="comment">%       % -&gt; all NaN result</span>
+0037 <span class="comment">%     A = rand(10,10) ; A(2,7) = NaN ;</span>
+0038 <span class="comment">%     runmean(A,3,2) ;</span>
+0039 <span class="comment">%       % -&gt; column 7 is all NaN</span>
+0040 <span class="comment">%     runmean(1:2:10,100) % mean</span>
+0041 <span class="comment">%       % -&gt; 5 5 5 5 5</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">%   This is an incredibly fast implementation of a running mean, since</span>
+0044 <span class="comment">%   execution time does not depend on the size of the window.</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">%   See also MEAN, FILTER</span>
+0047 
+0048 <span class="comment">% for Matlab R13</span>
+0049 <span class="comment">% version 3.0 (sep 2006)</span>
+0050 <span class="comment">% Jos van der Geest</span>
+0051 <span class="comment">% email: jos@jasen.nl</span>
+0052 
+0053 <span class="comment">% History:</span>
+0054 <span class="comment">%   1.0 (2003) created, after a snippet from Peter Acklam (?)</span>
+0055 <span class="comment">%   1.1 (feb 2006) made suitable for the File Exchange (extended help and</span>
+0056 <span class="comment">%       documentation)</span>
+0057 <span class="comment">%   1.2 (feb 2006) added a warning when the window size is too big</span>
+0058 <span class="comment">%   1.3 (feb 2006) improved help section</span>
+0059 <span class="comment">%   2.0 (sep 2006) working across a dimension of a matrix.</span>
+0060 <span class="comment">%   3.0 (sep 2006) several treatments of the edges.</span>
+0061 
+0062 <span class="comment">% Acknowledgements: (sep 2006) Thanks to Markus Hahn for the idea of</span>
+0063 <span class="comment">% working in multi-dimensions and the way to treat edges.</span>
+0064 
+0065 error(nargchk(2,4,nargin)) ;
+0066 
+0067 <span class="keyword">if</span> ~isnumeric(m) || (numel(m) ~= 1) || (m &lt; 0) || fix(m) ~= m,
+0068     error(<span class="string">'The window size (M) should be a positive integer'</span>) ;
+0069 <span class="keyword">end</span>
+0070 
+0071 <span class="keyword">if</span> nargin == 2,
+0072     dim = [] ;
+0073     modestr = <span class="string">'edge'</span> ;
+0074 <span class="keyword">elseif</span> nargin==3,
+0075     <span class="keyword">if</span> ischar(dim),
+0076         <span class="comment">% no dimension given</span>
+0077         modestr = dim ;
+0078         dim = [] ;
+0079     <span class="keyword">else</span> 
+0080         modestr = <span class="string">'edge'</span> ;
+0081     <span class="keyword">end</span>
+0082 <span class="keyword">end</span>
+0083 
+0084 modestr = lower(modestr) ;
+0085 
+0086 <span class="comment">% check mode specifier</span>
+0087 <span class="keyword">if</span> ~ismember(modestr,{<span class="string">'edge'</span>,<span class="string">'zero'</span>,<span class="string">'mean'</span>}),
+0088     error(<span class="string">'Unknown mode'</span>) ;
+0089 <span class="keyword">end</span>
+0090 
+0091 szX = size(X) ;
+0092 <span class="keyword">if</span> isempty(dim),
+0093     dim = min(find(szX&gt;1)) ;
+0094 <span class="keyword">end</span>
+0095 
+0096 <span class="keyword">if</span> m == 0 || dim &gt; ndims(X),
+0097     <span class="comment">% easy</span>
+0098     Y = X ;
+0099 <span class="keyword">else</span>
+0100     mm = 2*m+1 ;
+0101     <span class="keyword">if</span> mm &gt;= szX(dim),
+0102         <span class="comment">% if the window is larger than X, average all</span>
+0103         sz2 = ones(size(szX)) ; 
+0104         sz2(dim) = szX(dim) ;
+0105         Y = repmat(mean(X,dim),sz2) ;
+0106     <span class="keyword">else</span>
+0107         <span class="comment">% here starts the real stuff</span>
+0108         <span class="comment">% shift dimensions so that the desired dimensions comes first</span>
+0109         [X, nshifts] = shiftdim(X, dim-1); 
+0110         szX = size(X) ;
+0111         <span class="comment">% make the rest of the dimensions columns, so we have a 2D matrix</span>
+0112         <span class="comment">% (suggested of Markus Hahn)</span>
+0113         X = reshape(X,szX(1),[]) ; 
+0114         <span class="comment">% select how to pad the matrix</span>
+0115         <span class="keyword">switch</span> (modestr),
+0116             <span class="keyword">case</span> <span class="string">'edge'</span>
+0117                 <span class="comment">% pad with first and last elements</span>
+0118                 Xfirst = repmat(X(1,:),m,1) ;
+0119                 Xlast = repmat(X(<span class="keyword">end</span>,:),m,1) ;
+0120             <span class="keyword">case</span> <span class="string">'zero'</span>
+0121                 <span class="comment">% pad with zeros</span>
+0122                 Xfirst = zeros(m,1) ;
+0123                 Xlast= zeros(m,1) ;
+0124             <span class="keyword">case</span> <span class="string">'mean'</span>,
+0125                 <span class="comment">% pad with the average</span>
+0126                 Xfirst = repmat(mean(X,1),m,1) ;
+0127                 Xlast = Xfirst ;
+0128         <span class="keyword">end</span>        
+0129         <span class="comment">% pad the array</span>
+0130         Y = [zeros(1,size(X,2)) ; Xfirst ; X ; Xlast] ;       
+0131         <span class="comment">% the cumsum trick (by Peter Acklam ?)</span>
+0132         Y = cumsum(Y,1) ;
+0133         Y = (Y(mm+1:<span class="keyword">end</span>,:)-Y(1:end-mm,:)) ./ mm ;
+0134         
+0135         <span class="comment">% reshape into original size</span>
+0136         Y = reshape(Y,szX)   ;
+0137         <span class="comment">% and re-shift the dimensions</span>
+0138         Y = shiftdim(Y,ndims(Y)-nshifts) ;
+0139     <span class="keyword">end</span>
+0140 <span class="keyword">end</span>
+0141 
+0142 <span class="comment">% =====================</span>
+0143 <span class="comment">%  CODE OF VERSION 1.3</span>
+0144 <span class="comment">% =====================</span>
+0145 
+0146 <span class="comment">% function Y = runmean(X,m) ;</span>
+0147 <span class="comment">% % RUNMEAN - Very fast running mean filter for vectors</span>
+0148 <span class="comment">% %   Y = RUNMEAN(X,M) computes a running mean on vector X using a window of</span>
+0149 <span class="comment">% %   2*M+1 datapoints. X is a vector, and M an positive integer defining</span>
+0150 <span class="comment">% %   (half) the size of the window. In pseudo code:</span>
+0151 <span class="comment">% %     Y(i) = sum(X(j)) / (2*M+1), for j = (i-M):(i+M), and i=1:length(X)</span>
+0152 <span class="comment">% %</span>
+0153 <span class="comment">% %   If the total window size (2M+1) is larger than the length of the vector, the overall</span>
+0154 <span class="comment">% %   average is returned.</span>
+0155 <span class="comment">% %</span>
+0156 <span class="comment">% %   Example:</span>
+0157 <span class="comment">% %     runmean(1:10,1) % -&gt;</span>
+0158 <span class="comment">% %     [1.3333 2 3 4 5 6 7 8 9 9.6667]</span>
+0159 <span class="comment">% %</span>
+0160 <span class="comment">% %   This is an incredibly fast implementation of a running average, since</span>
+0161 <span class="comment">% %   execution time does not depend on the size of the window.</span>
+0162 <span class="comment">% %</span>
+0163 <span class="comment">% %   X should not contains NaNs (a NaN will result in a all NaN result)</span>
+0164 <span class="comment">% %   At both ends the values of Y can be inaccurate, as the first and last</span>
+0165 <span class="comment">% %   values of X are used multiple times.</span>
+0166 <span class="comment">% %</span>
+0167 <span class="comment">% %   See also MEAN</span>
+0168 <span class="comment">%</span>
+0169 <span class="comment">% % for Matlab R13</span>
+0170 <span class="comment">% % version 1.3 (feb 2006)</span>
+0171 <span class="comment">% % Jos van der Geest</span>
+0172 <span class="comment">% % email: jos@jasen.nl</span>
+0173 <span class="comment">%</span>
+0174 <span class="comment">% % History:</span>
+0175 <span class="comment">% % 1.0 (2003) created, after a snippet from Peter Acklam (?)</span>
+0176 <span class="comment">% % 1.1 (feb 2006) made suitable for the File Exchange (extended help and</span>
+0177 <span class="comment">% % documentation)</span>
+0178 <span class="comment">% % 1.2 (feb 2006) added a warning when the window size is too big</span>
+0179 <span class="comment">% % 1.3 (feb 2006) improved help section</span>
+0180 <span class="comment">%</span>
+0181 <span class="comment">% error(nargchk(2,2,nargin)) ;</span>
+0182 <span class="comment">%</span>
+0183 <span class="comment">% sz = size(X) ;</span>
+0184 <span class="comment">%</span>
+0185 <span class="comment">% if numel(sz) ~= 2 || (min(sz) ~= 1),</span>
+0186 <span class="comment">%     error('X should be a vector') ;</span>
+0187 <span class="comment">% end</span>
+0188 <span class="comment">%</span>
+0189 <span class="comment">% if any(isnan(X)),</span>
+0190 <span class="comment">%     error('NaNs cannot be dealt with') ;</span>
+0191 <span class="comment">% end</span>
+0192 <span class="comment">%</span>
+0193 <span class="comment">% if ~isnumeric(m) || (numel(m) ~= 1) || (m &lt; 0) || fix(m) ~= m,</span>
+0194 <span class="comment">%     error('The window size (M) should be a positive integer') ;</span>
+0195 <span class="comment">% elseif m == 0,</span>
+0196 <span class="comment">%     Y = X ;</span>
+0197 <span class="comment">%     return ;</span>
+0198 <span class="comment">% end</span>
+0199 <span class="comment">%</span>
+0200 <span class="comment">% mm = 2*m+1 ;</span>
+0201 <span class="comment">%</span>
+0202 <span class="comment">% if mm &gt;= prod(sz),</span>
+0203 <span class="comment">%     % if the window is larger than X, average all</span>
+0204 <span class="comment">%     warning('Window size is larger than the length of the vector.')</span>
+0205 <span class="comment">%     Y = repmat(mean(X),sz) ;</span>
+0206 <span class="comment">% else</span>
+0207 <span class="comment">%     % the cumsum trick ...</span>
+0208 <span class="comment">%     Y = [repmat(X(1),m,1) ; X(:) ; repmat(X(end),m,1)] ;</span>
+0209 <span class="comment">%     Y = [0 ; cumsum(Y)] ;</span>
+0210 <span class="comment">%     Y = (Y(mm+1:end)-Y(1:end-mm)) / mm ;</span>
+0211 <span class="comment">%     Y = reshape(Y,sz) ;</span>
+0212 <span class="comment">% end</span>
+0213</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

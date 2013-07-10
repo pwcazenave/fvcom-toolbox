@@ -1,0 +1,224 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of read_kml</title>
+  <meta name="keywords" content="read_kml">
+  <meta name="description" content="READ_KML reads a Google Earth kml file into Matlab">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; read_kml.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>read_kml
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>READ_KML reads a Google Earth kml file into Matlab</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [lat,lon,z] = read_kml(fileName) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">READ_KML reads a Google Earth kml file into Matlab
+ Reads in lat,lon,z from a simple path file.
+
+  All the data in the data file must EITHER be on one line, for example:
+   -73.6513,40.4551,0 -73.3905,40.5214,0 -73.0589,40.5956,0
+ OR each point must be on its own line, for example:
+   -73.237171, 40.627311, 0.0 
+   -73.242945, 40.626360, 0.0 
+
+  I have tried to make this code as robust as possible, but it may still
+  crash if there is a space in the wrong place in the data file.
+
+ Example:
+   [lat,lon,z] = read_kml('test.kml');
+
+ where test.kml looks like:
+ &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+ &lt;kml xmlns=&quot;http://earth.google.com/kml/2.1&quot;&gt;
+ &lt;Placemark&gt;
+     &lt;name&gt;test_length&lt;/name&gt;
+     &lt;description&gt;junk&lt;/description&gt;
+     &lt;LineString&gt;
+         &lt;tessellate&gt;1&lt;/tessellate&gt;
+         &lt;coordinates&gt;
+ -73.65138440596144,40.45517368645169,0 -73.39056199144957,40.52146569128411,0 -73.05890757388369,40.59561213913959,0 -72.80519929505505,40.66961872411046,0 -72.61180114704385,40.72997510603909,0 -72.43718187249095,40.77509309196679,0 &lt;/coordinates&gt;
+     &lt;/LineString&gt;
+ &lt;/Placemark&gt;
+ &lt;/kml&gt;
+ afarris@usgs.gov 2006 November</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="inkmlbb.html" class="code" title="function [pts] = inkmlbb(fname,x,y)">inkmlbb</a>	fname = 'Wet_Skagit_BB.kml';</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [lat,lon,z] = read_kml(fileName)</a>
+0002 <span class="comment">%READ_KML reads a Google Earth kml file into Matlab</span>
+0003 <span class="comment">% Reads in lat,lon,z from a simple path file.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%  All the data in the data file must EITHER be on one line, for example:</span>
+0006 <span class="comment">%   -73.6513,40.4551,0 -73.3905,40.5214,0 -73.0589,40.5956,0</span>
+0007 <span class="comment">% OR each point must be on its own line, for example:</span>
+0008 <span class="comment">%   -73.237171, 40.627311, 0.0</span>
+0009 <span class="comment">%   -73.242945, 40.626360, 0.0</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">%  I have tried to make this code as robust as possible, but it may still</span>
+0012 <span class="comment">%  crash if there is a space in the wrong place in the data file.</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% Example:</span>
+0015 <span class="comment">%   [lat,lon,z] = read_kml('test.kml');</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% where test.kml looks like:</span>
+0018 <span class="comment">% &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+0019 <span class="comment">% &lt;kml xmlns=&quot;http://earth.google.com/kml/2.1&quot;&gt;</span>
+0020 <span class="comment">% &lt;Placemark&gt;</span>
+0021 <span class="comment">%     &lt;name&gt;test_length&lt;/name&gt;</span>
+0022 <span class="comment">%     &lt;description&gt;junk&lt;/description&gt;</span>
+0023 <span class="comment">%     &lt;LineString&gt;</span>
+0024 <span class="comment">%         &lt;tessellate&gt;1&lt;/tessellate&gt;</span>
+0025 <span class="comment">%         &lt;coordinates&gt;</span>
+0026 <span class="comment">% -73.65138440596144,40.45517368645169,0 -73.39056199144957,40.52146569128411,0 -73.05890757388369,40.59561213913959,0 -72.80519929505505,40.66961872411046,0 -72.61180114704385,40.72997510603909,0 -72.43718187249095,40.77509309196679,0 &lt;/coordinates&gt;</span>
+0027 <span class="comment">%     &lt;/LineString&gt;</span>
+0028 <span class="comment">% &lt;/Placemark&gt;</span>
+0029 <span class="comment">% &lt;/kml&gt;</span>
+0030 <span class="comment">% afarris@usgs.gov 2006 November</span>
+0031 
+0032 <span class="comment">%% open the data file and find the beginning of the data</span>
+0033 fid=fopen(fileName);
+0034 <span class="keyword">if</span> fid &lt; 0
+0035     error(<span class="string">'could not find file'</span>)
+0036 <span class="keyword">end</span>
+0037 done=0;
+0038 <span class="keyword">while</span> done == 0
+0039     junk = fgetl(fid);
+0040     f=findstr(junk,<span class="string">'&lt;coordinates&gt;'</span>);
+0041     <span class="keyword">if</span> isempty(f) == 0
+0042         done = 1;
+0043     <span class="keyword">end</span>
+0044 <span class="keyword">end</span>
+0045 ar = 1;
+0046 <span class="comment">% junk either ends with the word '&lt;coordinates&gt;' OR</span>
+0047 <span class="comment">% some data follows the word '&lt;coordinates&gt;'</span>
+0048 <span class="keyword">if</span> (f + 13) &gt;= length(junk)  
+0049     <span class="comment">% no data on this line</span>
+0050     <span class="comment">% done2 is set to zero so the next loop will read the data</span>
+0051     done2 = 0;
+0052 <span class="keyword">else</span>
+0053     <span class="comment">% there is some data in this line following '&lt;coordinates&gt;'</span>
+0054     clear f2
+0055     f2=findstr(junk,<span class="string">'&lt;/coordinates&gt;'</span>);
+0056     <span class="keyword">if</span> isempty(f2) == 0
+0057         <span class="comment">%all data is on this line</span>
+0058         alldata{ar} = junk(f+13:f2-1);
+0059         <span class="comment">% done2 is set to one because the next loop does not need to run</span>
+0060         done2 = 1;
+0061     <span class="keyword">else</span>
+0062         <span class="comment">% only some data is on this line</span>
+0063         alldata{ar} = junk(f+13:end);
+0064         ar = ar + 1;
+0065         <span class="comment">% done2 is set to zero so the next loop will read the rest of the data</span>
+0066         done2 = 0;
+0067     <span class="keyword">end</span>
+0068 <span class="keyword">end</span>
+0069 
+0070 <span class="comment">%% Read in the data</span>
+0071 <span class="keyword">while</span> done2 == 0
+0072     <span class="comment">% read in line from data file</span>
+0073     junk = fgetl(fid);
+0074     f=findstr(junk,<span class="string">'&lt;/coordinates&gt;'</span>);
+0075     <span class="keyword">if</span> isempty(f) == 1 
+0076         <span class="comment">% no ending signal, just add this data to the rest</span>
+0077         alldata{ar} = junk;
+0078         ar = ar + 1;
+0079     <span class="keyword">else</span>
+0080         <span class="comment">% ending signal is present</span>
+0081         <span class="keyword">if</span> f &lt; 20
+0082             <span class="comment">% &lt;/coordinates&gt; is in the begining of the line, ergo no data</span>
+0083             <span class="comment">% on this line; just end the loop</span>
+0084             done2 = 1;
+0085         <span class="keyword">else</span> 
+0086             <span class="comment">% the ending signal (&lt;/coordinates&gt;) is present: remove it,</span>
+0087             <span class="comment">% add data to the rest and signal the end of the loop</span>
+0088             f2 = strfind(junk,<span class="string">'&lt;/coordinates&gt;'</span>);
+0089             alldata{ar} = junk(1:f2-1);
+0090             ar = ar + 1;
+0091             done2 = 1;
+0092         <span class="keyword">end</span>
+0093     <span class="keyword">end</span>
+0094 <span class="keyword">end</span>
+0095 
+0096 <span class="comment">%% get the data into neat vectors</span>
+0097 <span class="comment">% either all the data is on one line, or each point is on its own line</span>
+0098 f = strfind(alldata{1}(:)',<span class="string">','</span>);
+0099 <span class="keyword">if</span> length(f) &gt; 2
+0100     <span class="comment">% more than one coordinate on each line, this is hard b/c there is no</span>
+0101     <span class="comment">% comma between points (just commans between lon and lat, and between</span>
+0102     <span class="comment">% lat and z)  ie;  -70.0000,42.0000,0 -70.1000,40.10000,0 -70.2,....</span>
+0103     <span class="comment">%</span>
+0104     <span class="comment">%  I have to divide the string into Latitude, Longitude and Z values</span>
+0105     <span class="comment">% using the locations of both commas and spaces.</span>
+0106     <span class="comment">%</span>
+0107     <span class="comment">% turn alldata into regular vector so it is easier to work with</span>
+0108     data = cell2mat(alldata);
+0109     <span class="comment">% now find all commas</span>
+0110     fComma = strfind(data, <span class="string">','</span>);
+0111     <span class="comment">% find all spaces</span>
+0112     fSpace = strfind(data,<span class="string">' '</span>);
+0113     a=1;
+0114     fC = 1;
+0115     <span class="comment">% have to do first point seperately b/c line may not begin with a space</span>
+0116     lon(a) = str2num(data(1:fComma(fC)-1));
+0117     lat(a) = str2num(data(fComma(fC)+1:fComma(fC+1)-1));
+0118     z(a) = str2num(data(fComma(fC+1)+1:fSpace(1)-1));
+0119     a=a+1;
+0120     fS=1;
+0121     <span class="comment">% go thru all the points in the line</span>
+0122     <span class="keyword">for</span> fC = 3: 2: length(fComma)
+0123         lon(a) = str2num(data(fSpace(fS)+1:fComma(fC)-1));
+0124         lat(a) = str2num(data(fComma(fC)+1:fComma(fC+1)-1));
+0125         <span class="keyword">if</span> fS  &lt; length(fSpace)
+0126             z(a) = str2num(data(fComma(fC+1)+1:fSpace(fS+1)-1 ));
+0127         <span class="keyword">else</span>
+0128             <span class="comment">% have to handle last point seperatly b/c line may not end with</span>
+0129             <span class="comment">% a space</span>
+0130             z(a) = str2num(data(fComma(fC+1)+1:end ));
+0131         <span class="keyword">end</span>
+0132         a=a+1;
+0133         fS=fS+1;
+0134     <span class="keyword">end</span>
+0135  <span class="keyword">else</span>
+0136     <span class="comment">%each point is on its own line</span>
+0137     <span class="keyword">for</span> i = 1 : size(alldata,2)
+0138         fComma = strfind(alldata{i}(:)',<span class="string">','</span>);
+0139         lon(i) = str2num(alldata{i}(1:fComma(1)-1));
+0140         lat(i) = str2num(alldata{i}(fComma(1)+1:fComma(2)-1));
+0141         z(i) = str2num(alldata{i}(fComma(2)*1:end));
+0142     <span class="keyword">end</span>
+0143  <span class="keyword">end</span>
+0144 
+0145 fclose(fid);
+0146 [a,b]=size(lat);
+0147 lat=reshape(lat,max(a,b),min(a,b));
+0148 lon=reshape(lon,max(a,b),min(a,b));
+0149 z=reshape(z,max(a,b),min(a,b));</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of gen_unstructured_mesh</title>
+  <meta name="keywords" content="gen_unstructured_mesh">
+  <meta name="description" content="function gen_unstructured_mesh(lx,ly,res,cornermod)">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; gen_unstructured_mesh.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>gen_unstructured_mesh
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function gen_unstructured_mesh(lx,ly,res,cornermod)</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Mobj] = gen_unstructured_mesh(lx,ly,res,cornermod) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> function gen_unstructured_mesh(lx,ly,res,cornermod)
+
+ DESCRIPTION:
+    Generate an unstructured mesh in a rectangular domain of size dist_x*dist_y 
+    having a resolution of res.  
+
+ INPUT
+    lx        :  domain length in x-direction
+    ly        :  domain length in y-direction
+    res       :  target triangle edge length in same units as lx,ly 
+    cornermod :  ensure no cell shares a boundary on two of the rectangles edges 
+
+   
+ OUTPUT:
+    Preprocessing toolbox mesh object
+
+ EXAMPLE USAGE
+   gen_unstructured_mesh(1000,100,10,false); 
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ TODO
+   Implement the edgeswap to satisfy cornermod=true
+
+
+  Dependency - Matlab mesh2d - at least v24
+ http://www.mathworks.com/matlabcentral/fileexchange/25555-mesh2d-automatic-mesh-generation
+    
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="make_blank_mesh.html" class="code" title="function [Mobj] = make_blank_mesh">make_blank_mesh</a>	Make a blank mesh object with default params</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = gen_unstructured_mesh(lx,ly,res,cornermod) </a>
+0002 
+0003 <span class="comment">% function gen_unstructured_mesh(lx,ly,res,cornermod)</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% DESCRIPTION:</span>
+0006 <span class="comment">%    Generate an unstructured mesh in a rectangular domain of size dist_x*dist_y</span>
+0007 <span class="comment">%    having a resolution of res.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT</span>
+0010 <span class="comment">%    lx        :  domain length in x-direction</span>
+0011 <span class="comment">%    ly        :  domain length in y-direction</span>
+0012 <span class="comment">%    res       :  target triangle edge length in same units as lx,ly</span>
+0013 <span class="comment">%    cornermod :  ensure no cell shares a boundary on two of the rectangles edges</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%    Preprocessing toolbox mesh object</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% EXAMPLE USAGE</span>
+0020 <span class="comment">%   gen_unstructured_mesh(1000,100,10,false);</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Author(s):</span>
+0023 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% TODO</span>
+0026 <span class="comment">%   Implement the edgeswap to satisfy cornermod=true</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">%  Dependency - Matlab mesh2d - at least v24</span>
+0030 <span class="comment">% http://www.mathworks.com/matlabcentral/fileexchange/25555-mesh2d-automatic-mesh-generation</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%==============================================================================</span>
+0033 
+0034 subname = <span class="string">'gen_unstructured_mesh'</span>;
+0035 fprintf(<span class="string">'\n'</span>)
+0036 fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0037 
+0038 userproject = false;
+0039 
+0040 <span class="comment">% test vals</span>
+0041 <span class="comment">% lx = 1000;</span>
+0042 <span class="comment">% ly = 500;</span>
+0043 <span class="comment">% cornermod = true;</span>
+0044 <span class="comment">% res = 50;</span>
+0045 <span class="comment">% close all; warning off;</span>
+0046 
+0047 <span class="comment">% generate mesh</span>
+0048 node = [0 0; lx 0; lx ly ; 0 ly];
+0049 edge = [1 2 ; 2 3 ; 3 4; 4 1]; 
+0050 hdata.hmax = res; 
+0051 options.output = true;
+0052 [p,t] = mesh2d(node,edge,hdata,options);
+0053 
+0054 <span class="comment">% generate connectivity</span>
+0055 [e,te,et2,bnd] = connectivity(p,t);
+0056 
+0057 
+0058 <span class="comment">% option to eliminate corner elements TODO</span>
+0059 <span class="comment">% if(cornermod)</span>
+0060 <span class="comment">%</span>
+0061 <span class="comment">%   for pt=1:1</span>
+0062 <span class="comment">%     xpt = node(pt,1); ypt = node(pt,2);</span>
+0063 <span class="comment">%     dist = sqrt( (xpt-p(:,1)).^2 + (ypt-p(:,2)).^2);</span>
+0064 <span class="comment">%     [imin,ipt] = min(dist);</span>
+0065 <span class="comment">%   end;</span>
+0066 <span class="comment">%</span>
+0067 <span class="comment">%</span>
+0068 <span class="comment">% end;</span>
+0069 
+0070 <span class="comment">%------------------------------------------------------------------------------</span>
+0071 <span class="comment">% Create a blank mesh object</span>
+0072 <span class="comment">%------------------------------------------------------------------------------</span>
+0073 Mobj = <a href="make_blank_mesh.html" class="code" title="function [Mobj] = make_blank_mesh">make_blank_mesh</a>();
+0074 coordinate = <span class="string">'cartesian'</span>;
+0075 
+0076 
+0077 
+0078 
+0079 <span class="comment">% ensure all elements are CCW</span>
+0080 area = triarea(p,t);
+0081 fprintf(<span class="string">'min area %f max area %f\n'</span>,min(area),max(area));
+0082 
+0083 <span class="comment">%------------------------------------------------------------------------------</span>
+0084 <span class="comment">% Transfer to Mesh structure</span>
+0085 <span class="comment">%------------------------------------------------------------------------------</span>
+0086 
+0087 <span class="comment">% set dimensions</span>
+0088 nElems = numel(t(:,1));
+0089 nVerts = numel(p(:,1));
+0090 fprintf(<span class="string">'# of elements in the mesh %d\n'</span>,nElems);
+0091 fprintf(<span class="string">'# of verts    in the mesh %d\n'</span>,nVerts);
+0092 
+0093 <span class="comment">% allocate memory to hold mesh and auxiliary structures</span>
+0094 tri = zeros(nElems,3);
+0095 x   = zeros(nVerts,1);
+0096 y   = zeros(nVerts,1);
+0097 h   = zeros(nVerts,1);
+0098 lon = zeros(nVerts,1);
+0099 lat = zeros(nVerts,1);
+0100 ts  = zeros(nVerts,1);
+0101 
+0102 
+0103 Mobj.nVerts  = nVerts;
+0104 Mobj.nElems  = nElems;
+0105 Mobj.nativeCoords = coordinate;
+0106 
+0107 Mobj.have_lonlat  = false;
+0108 Mobj.have_xy      = true;
+0109 Mobj.have_bath    = false;
+0110 
+0111 Mobj.x            = p(:,1);
+0112 Mobj.y            = p(:,2);
+0113 Mobj.ts           = ts;
+0114 Mobj.lon          = lon;
+0115 Mobj.lat          = lat;
+0116 Mobj.h            = h;
+0117 Mobj.tri          = t;
+0118 
+0119 
+0120 fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0121 <span class="comment">%write_dtank('junk.dtascii',Mobj);</span>
+0122 
+0123</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

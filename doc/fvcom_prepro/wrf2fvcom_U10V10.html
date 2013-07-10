@@ -1,0 +1,216 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of wrf2fvcom_U10V10</title>
+  <meta name="keywords" content="wrf2fvcom_U10V10">
+  <meta name="description" content="function wrf2fvcom_U10V10(wrf_file,fvcom_grid_file,fvcom_forcing_file,infos)">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; wrf2fvcom_U10V10.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>wrf2fvcom_U10V10
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function wrf2fvcom_U10V10(wrf_file,fvcom_grid_file,fvcom_forcing_file,infos)</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">function wrf2fvcom_U10V10(wrf_file,fvcom_grid_file,fvcom_forcing_file,infos)
+------------------------------------------------------------------------
+ interpolate wind heat fields from WRF onto the FVCOM mesh 
+------------------------------------------------------------------------
+warning off</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="my_project.html" class="code" title="function [out_east,out_north] = my_project(in_east,in_north,direction)">my_project</a>	Sample user-defined projection and inverse projection of (lon,lat) to (x,y)</li><li><a href="read_fvcom_mesh.html" class="code" title="function [Mobj] = read_fvcom_mesh(gridfile)">read_fvcom_mesh</a>	Read fvcom mesh file into Matlab mesh object</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%function wrf2fvcom_U10V10(wrf_file,fvcom_grid_file,fvcom_forcing_file,infos)</span>
+0002 <span class="comment">%------------------------------------------------------------------------</span>
+0003 <span class="comment">% interpolate wind heat fields from WRF onto the FVCOM mesh</span>
+0004 <span class="comment">%------------------------------------------------------------------------</span>
+0005 <span class="comment">%warning off</span>
+0006 wrf_file = <span class="string">'Skagit_WRF_U10V10_2009.nc'</span>;
+0007 fvcom_grid_file =a <span class="string">'skg4.3_grd.dat'</span>;
+0008 fvcom_forcing_file = <span class="string">'skagit_2009_U10V10.nc'</span>;
+0009 infos = <span class="string">'wrf from D. Ralston'</span>;
+0010 <span class="comment">%------------------------------------------------------------------------</span>
+0011 <span class="comment">% open wrf file and read header</span>
+0012 <span class="comment">%------------------------------------------------------------------------</span>
+0013 <span class="keyword">if</span>(~exist(wrf_file))
+0014    error([<span class="string">'file: '</span> wrf_file <span class="string">' does not exist'</span>]);
+0015 <span class="keyword">end</span>;
+0016 
+0017 <span class="comment">% open wrf data and check for time range</span>
+0018 nc = netcdf(wrf_file);
+0019 tmp = nc{<span class="string">'Times'</span>}(:);
+0020 wrftime = greg2mjulian(str2num(tmp(:,1:4)),str2num(tmp(:,6:7)),<span class="keyword">...</span>
+0021            str2num(tmp(:,9:10)),str2num(tmp(:,12:13)),0,0);
+0022 fprintf(<span class="string">'beg time of WRF data %s\n'</span>,tmp(1,:));
+0023 fprintf(<span class="string">'end time of WRF data %s\n'</span>,tmp(<span class="keyword">end</span>,:));
+0024 ntimes = prod(size(wrftime));
+0025 wrflat = nc{<span class="string">'XLAT'</span>}(:,:);
+0026 wrflon = nc{<span class="string">'XLONG'</span>}(:,:);
+0027 [nlat,nlon] = size(wrflat);
+0028 
+0029 wrfx = zeros(nlat,nlon);
+0030 wrfy = zeros(nlat,nlon);
+0031 
+0032 <span class="comment">% project wrf grid to Euclidean for interpolation</span>
+0033 <span class="keyword">for</span> i=1:nlat
+0034   [wrflon(i,:),wrflat(i,:),wrfx(i,:),wrfy(i,:)] = <span class="keyword">...</span>
+0035       <a href="my_project.html" class="code" title="function [out_east,out_north] = my_project(in_east,in_north,direction)">my_project</a>(wrflon(i,:),wrflat(i,:),wrfx(i,:),wrfy(i,:),<span class="string">'forward'</span>);
+0036 <span class="keyword">end</span>;
+0037 
+0038 <span class="comment">% load FVCOM mesh</span>
+0039 Mobj = <a href="read_fvcom_mesh.html" class="code" title="function [Mobj] = read_fvcom_mesh(gridfile)">read_fvcom_mesh</a>(fvcom_grid_file);
+0040 tri = Mobj.tri;
+0041 x   = Mobj.x;
+0042 y   = Mobj.y;
+0043 nVerts = Mobj.nVerts;
+0044 nElems = Mobj.nElems;
+0045 nv   = tri;  
+0046 fprintf(<span class="string">'info for fvcom domain\n'</span>);
+0047 fprintf(<span class="string">'number of nodes: %d\n'</span>,nVerts);
+0048 fprintf(<span class="string">'number of elems: %d\n'</span>,nElems);
+0049 
+0050 xc = zeros(nElems,1);
+0051 yc = zeros(nElems,1);
+0052 <span class="keyword">for</span> i=1:nElems
+0053   xc(i) = sum(x(tri(i,1:3)))/3.;
+0054   yc(i) = sum(y(tri(i,1:3)))/3.;
+0055 <span class="keyword">end</span>;
+0056 
+0057 <span class="comment">%---------------------------------------------------------------</span>
+0058 <span class="comment">% dump header for netcdf FVCOM forcing file</span>
+0059 <span class="comment">%---------------------------------------------------------------</span>
+0060 nc = netcdf(fvcom_forcing_file, <span class="string">'clobber'</span>);            
+0061 nc.type = <span class="string">'FVCOM U10/V10 Forcing File'</span> ;
+0062 nc.source = <span class="string">'fvcom grid (unstructured) surface forcing'</span>;
+0063 nc.references = <span class="string">'http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu'</span>; 
+0064 nc.institution = <span class="string">'School for Marine Science and Technology'</span> ;
+0065 nc.history = <span class="string">'wrf_2_fvcom_U10V10.m'</span>;
+0066 nc.infos = infos;
+0067   
+0068 <span class="comment">% dimensions</span>
+0069 nc(<span class="string">'three'</span>) = 3;
+0070 nc(<span class="string">'nele'</span>) = int8(nElems);
+0071 nc(<span class="string">'node'</span>) = nVerts;
+0072 nc(<span class="string">'time'</span>) = 0;
+0073 
+0074 <span class="comment">% time vars</span>
+0075 nc{<span class="string">'time'</span>} = ncfloat(<span class="string">'time'</span>);
+0076 nc{<span class="string">'time'</span>}.long_name = <span class="string">'time'</span>;
+0077 nc{<span class="string">'time'</span>}.units = <span class="string">'days since 1858-11-17 00:00:00'</span>;
+0078 nc{<span class="string">'time'</span>}.format = <span class="string">'modified julian day (MJD)'</span>;
+0079 nc{<span class="string">'time'</span>}.time_zone = <span class="string">'UTC'</span>;
+0080   
+0081 nc{<span class="string">'Itime'</span>} = ncint(<span class="string">'time'</span>);
+0082 nc{<span class="string">'Itime'</span>}.units = <span class="string">'days since 1858-11-17 00:00:00'</span>;
+0083 nc{<span class="string">'Itime'</span>}.format = <span class="string">'modified julian day (MJD)'</span>;
+0084 nc{<span class="string">'Itime'</span>}.time_zone = <span class="string">'UTC'</span>;
+0085 
+0086 nc{<span class="string">'Itime2'</span>} = ncint(<span class="string">'time'</span>);
+0087 nc{<span class="string">'Itime2'</span>}.units = <span class="string">'msec since 00:00:00'</span>;
+0088 nc{<span class="string">'Itime2'</span>}.time_zone = <span class="string">'UTC'</span>;
+0089 
+0090 nc{<span class="string">'x'</span>} = ncint(<span class="string">'node'</span>);
+0091 nc{<span class="string">'x'</span>}.long_name = <span class="string">'nodal x-coordinate'</span>;
+0092 nc{<span class="string">'x'</span>}.units = <span class="string">'m'</span>;
+0093   
+0094 nc{<span class="string">'y'</span>} = ncint(<span class="string">'node'</span>);
+0095 nc{<span class="string">'y'</span>}.long_name = <span class="string">'nodal y-coordinate'</span>;
+0096 nc{<span class="string">'y'</span>}.units = <span class="string">'m'</span>;
+0097 
+0098 nc{<span class="string">'nv'</span>} = ncint(<span class="string">'three'</span>,<span class="string">'nele'</span>);
+0099 nc{<span class="string">'nv'</span>}.long_name = <span class="string">'nodes surrounding element'</span>;
+0100 nc{<span class="string">'nv'</span>}(1:3,1:nElems) = tri';
+0101 
+0102 nc{<span class="string">'U10'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'nele'</span>);
+0103 nc{<span class="string">'U10'</span>}.long_name = <span class="string">'Eastward 10-m Velocity'</span>;
+0104 nc{<span class="string">'U10'</span>}.standard_name = <span class="string">'Eastward Wind Speed'</span>;
+0105 nc{<span class="string">'U10'</span>}.units = <span class="string">'m/s'</span>;
+0106 nc{<span class="string">'U10'</span>}.grid = <span class="string">'fvcom_grid'</span>;
+0107 nc{<span class="string">'U10'</span>}.type = <span class="string">'data'</span>;
+0108 
+0109 nc{<span class="string">'V10'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'nele'</span>);
+0110 nc{<span class="string">'V10'</span>}.long_name = <span class="string">'Northward 10-m Velocity'</span>;
+0111 nc{<span class="string">'V10'</span>}.standard_name = <span class="string">'Northtward Wind Speed'</span>;
+0112 nc{<span class="string">'V10'</span>}.units = <span class="string">'m/s'</span>;
+0113 nc{<span class="string">'V10'</span>}.grid = <span class="string">'fvcom_grid'</span>;
+0114 nc{<span class="string">'V10'</span>}.type = <span class="string">'data'</span>;
+0115 
+0116 nc{<span class="string">'U10_node'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0117 nc{<span class="string">'U10_node'</span>}.long_name = <span class="string">'Eastward 10-m Velocity'</span>;
+0118 nc{<span class="string">'U10_node'</span>}.standard_name = <span class="string">'Eastward Wind Speed'</span>;
+0119 nc{<span class="string">'U10_node'</span>}.units = <span class="string">'m/s'</span>;
+0120 nc{<span class="string">'U10_node'</span>}.grid = <span class="string">'fvcom_grid'</span>;
+0121 nc{<span class="string">'U10_node'</span>}.type = <span class="string">'data'</span>;
+0122 
+0123 nc{<span class="string">'V10_node'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0124 nc{<span class="string">'V10_node'</span>}.long_name = <span class="string">'Northward 10-m Velocity'</span>;
+0125 nc{<span class="string">'V10_node'</span>}.standard_name = <span class="string">'Northtward Wind Speed'</span>;
+0126 nc{<span class="string">'V10_node'</span>}.units = <span class="string">'m/s'</span>;
+0127 nc{<span class="string">'V10_node'</span>}.grid = <span class="string">'fvcom_grid'</span>;
+0128 nc{<span class="string">'V10_node'</span>}.type = <span class="string">'data'</span>;
+0129 
+0130 
+0131 <span class="comment">% dump time</span>
+0132 nc{<span class="string">'time'</span>}(1:ntimes) = wrftime;
+0133 nc{<span class="string">'Itime'</span>}(1:ntimes) = floor(wrftime); 
+0134 nc{<span class="string">'Itime2'</span>}(1:ntimes) = mod(wrftime,1)*24*3600*1000.;
+0135 nc{<span class="string">'x'</span>}(1:nVerts) = x;
+0136 nc{<span class="string">'y'</span>}(1:nVerts) = y;
+0137 
+0138 <span class="comment">% read data from WRF grid, interpolate to FVCOM mesh</span>
+0139 fvcom_u10   = zeros(nElems,1);
+0140 fvcom_v10   = zeros(nElems,1);
+0141 fvcom_u10_node   = zeros(nVerts,1);
+0142 fvcom_v10_node   = zeros(nVerts,1);
+0143 
+0144 nc2 = netcdf(wrf_file);
+0145 icnt = 1;
+0146 <span class="keyword">for</span> i=1:ntimes
+0147   fprintf(<span class="string">'interpolating frame %d of %d\n'</span>,i,ntimes);
+0148   U10  = nc2{<span class="string">'U10'</span>}(i,:,:);
+0149   V10  = nc2{<span class="string">'V10'</span>}(i,:,:);
+0150   fvcom_u10_node  = griddata(wrfx,wrfy,U10,x,y);
+0151   fvcom_v10_node  = griddata(wrfx,wrfy,V10,x,y);
+0152   <span class="keyword">for</span> j=1:nElems
+0153      fvcom_u10(j) = sum(fvcom_u10_node(tri(j,1:3)))/3.; 
+0154      fvcom_v10(j) = sum(fvcom_v10_node(tri(j,1:3)))/3.; 
+0155   <span class="keyword">end</span>;
+0156   nc{<span class="string">'U10'</span>}(icnt,1:nElems) = fvcom_u10;
+0157   nc{<span class="string">'V10'</span>}(icnt,1:nElems) = fvcom_v10;
+0158   nc{<span class="string">'U10_node'</span>}(icnt,1:nVerts) = fvcom_u10_node;
+0159   nc{<span class="string">'V10_node'</span>}(icnt,1:nVerts) = fvcom_v10_node;
+0160   icnt = icnt + 1;
+0161 <span class="keyword">end</span>;
+0162 fprintf(<span class="string">'interpolation complete\n'</span>);
+0163 
+0164 ierr = close(nc);
+0165 ierr = close(nc2);</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

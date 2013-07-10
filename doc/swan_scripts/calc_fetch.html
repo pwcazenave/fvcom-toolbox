@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of calc_fetch</title>
+  <meta name="keywords" content="calc_fetch">
+  <meta name="description" content="estimate wave fetch">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">swan_scripts</a> &gt; calc_fetch.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for swan_scripts&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>calc_fetch
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>estimate wave fetch</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [dir,fetch] = calc_fetch(nodefile,botfile,xp,yp,zadd); </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> estimate wave fetch 
+
+ function [dir,fetch] = calc_fetch(nodefile,botfile,xp,yp,zadd);
+
+ DESCRIPTION:
+   given a SWAN mesh and bathymetry and observation point, estimate fetch for  
+   range of wind directions
+
+ INPUT 
+   nodefile = SWAN unstructured node file
+   botfile  = SWAN unstructure bathymetry file (positive down)
+   xp       = observation point x-coordinate
+   yp       = observation point y-coordinate
+   zadd     = [optional] add free surface height to account for tides (m)
+
+ OUTPUT:
+    dir = direction of wind in Cartesian coordinates
+    fetch = fetch for that direction in (m)
+
+    Note:  if dir=45, this will provide the fetch for a SW wind
+
+ EXAMPLE USAGE
+   [dir,fetch] = calc_fetch('skg4.3.node','skg4.3.bot',5.3870e5,5.3506e6,-2);
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+
+ Revision history
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [dir,fetch] = calc_fetch(nodefile,botfile,xp,yp,zadd);</a>
+0002 <span class="comment">% estimate wave fetch</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function [dir,fetch] = calc_fetch(nodefile,botfile,xp,yp,zadd);</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   given a SWAN mesh and bathymetry and observation point, estimate fetch for</span>
+0008 <span class="comment">%   range of wind directions</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT</span>
+0011 <span class="comment">%   nodefile = SWAN unstructured node file</span>
+0012 <span class="comment">%   botfile  = SWAN unstructure bathymetry file (positive down)</span>
+0013 <span class="comment">%   xp       = observation point x-coordinate</span>
+0014 <span class="comment">%   yp       = observation point y-coordinate</span>
+0015 <span class="comment">%   zadd     = [optional] add free surface height to account for tides (m)</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% OUTPUT:</span>
+0018 <span class="comment">%    dir = direction of wind in Cartesian coordinates</span>
+0019 <span class="comment">%    fetch = fetch for that direction in (m)</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">%    Note:  if dir=45, this will provide the fetch for a SW wind</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% EXAMPLE USAGE</span>
+0024 <span class="comment">%   [dir,fetch] = calc_fetch('skg4.3.node','skg4.3.bot',5.3870e5,5.3506e6,-2);</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Author(s):</span>
+0027 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Revision history</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">%==============================================================================</span>
+0032 
+0033 <span class="comment">%clear all; close all;</span>
+0034 <span class="comment">%nodefile = 'skg4.3.node';</span>
+0035 <span class="comment">%elefile = 'skg4.3.ele';</span>
+0036 <span class="comment">%botfile = 'skg4.3.bot';</span>
+0037 <span class="comment">%xp = 5.3870e+05;</span>
+0038 <span class="comment">%yp = 5.3506e+06;</span>
+0039 <span class="comment">%zeta_max = 2.5;</span>
+0040 <span class="comment">%zeta_min = 2.5;</span>
+0041 
+0042 <span class="comment">% set number of theta-bins</span>
+0043 nbins = 32; 
+0044 
+0045 delta_zeta = 0.0;
+0046 <span class="keyword">if</span>(exist(<span class="string">'zadd'</span>))
+0047   delta_zeta = zadd;
+0048 <span class="keyword">end</span>;
+0049 
+0050 <span class="comment">% warning - program is terribly unrobust</span>
+0051 <span class="comment">% to improve robustness, search along rays until the point is found</span>
+0052 <span class="comment">% inside a boundary or dry triangle</span>
+0053 
+0054 <span class="comment">% read the node file</span>
+0055 [cnt,x,y,nmark] = textread(nodefile,<span class="string">'%d %f %f %d\n'</span>,<span class="string">'headerlines'</span>,1);
+0056 
+0057 <span class="comment">% read the depth file</span>
+0058 [h] = textread(botfile,<span class="string">'%f\n'</span>,<span class="string">'headerlines'</span>,0);
+0059 
+0060 <span class="comment">% add/subtract free surface amplitude</span>
+0061 h = h + delta_zeta;
+0062 
+0063 <span class="comment">% mark all nodes that are solid wall, open boundary, or dry</span>
+0064 drynodes = find(h &lt; 0);
+0065 nmark(drynodes) = 3;
+0066 solidpts = find(nmark &gt; 0);
+0067 xdry = x(solidpts);
+0068 ydry = y(solidpts);
+0069 
+0070 <span class="comment">% distance vector from all solidpts to point of interest</span>
+0071 dist = sqrt(   (xdry-xp).^2 + (ydry-yp).^2);
+0072 ang  = atan2( (ydry-yp), (xdry-xp) );
+0073 
+0074 
+0075 <span class="comment">% find the wave direction corresponding to the angle between the boundary point and POI</span>
+0076 plot(dist.*cos(ang),dist.*sin(ang),<span class="string">'r+'</span>); hold on;
+0077 
+0078 <span class="comment">% sort the points in order of increasing angle</span>
+0079 ang = ang + pi; <span class="comment">%convert from obs-shore to shore-obs angle</span>
+0080 
+0081 <span class="comment">% for each bin find the minimum distance</span>
+0082 dtheta = 2*pi/nbins;
+0083 theta_bound = 0-dtheta/2:dtheta:2*pi+dtheta/2;
+0084 theta       = 0:dtheta:2*pi;
+0085 mind        = zeros(numel(theta),1);
+0086 <span class="keyword">for</span> i=1:numel(theta)
+0087   pts = find( (theta_bound(i) &lt; ang) &amp; (ang &lt;= theta_bound(i+1)));
+0088   <span class="keyword">if</span>(numel(pts) &gt; 0)
+0089     mind(i) = min(dist(pts)); 
+0090   <span class="keyword">end</span>;
+0091 <span class="keyword">end</span>;
+0092 
+0093 <span class="comment">% make sure there are no zeros</span>
+0094 <span class="keyword">for</span> i=2:numel(theta)-1
+0095   <span class="keyword">if</span>(mind(i) == 0.); mind(i) = max(mind(i-1),mind(i+1)); <span class="keyword">end</span>;
+0096 <span class="keyword">end</span>;
+0097 <span class="keyword">if</span>(mind(1) == 0.); mind(1) = mind(2); <span class="keyword">end</span>;
+0098 <span class="keyword">if</span>(mind(end) == 0.); mind(end) = mind(end-1); <span class="keyword">end</span>;
+0099 
+0100 <span class="comment">% smooth to account for diffraction</span>
+0101 <span class="keyword">for</span> i=2:numel(theta)-1
+0102   mind(i) = .5*(mind(i) + max(mind(i-1),mind(i+1))); 
+0103 <span class="keyword">end</span>;
+0104 mind(1) = .5*(mind(1) + mind(2));
+0105 mind(end) = .5*(mind(end) + mind(end-1));
+0106 
+0107 <span class="comment">% force periodicity</span>
+0108 mind(end) = mind(1);
+0109   
+0110 plot(0,0,<span class="string">'g+'</span>,<span class="string">'MarkerSize'</span>,5); hold on;
+0111 plot(mind.*cos(theta+pi)',mind.*sin(theta+pi)');
+0112 
+0113 <span class="comment">% plot a polar</span>
+0114 figure
+0115 plot(theta*180/pi,mind);
+0116 xlabel(<span class="string">'wind direction (Cartesian sense)'</span>);
+0117 ylabel(<span class="string">'fetch (m)'</span>);
+0118  
+0119 <span class="comment">% set return values</span>
+0120 dir = theta*180/pi;
+0121 fetch = mind;
+0122 
+0123</pre></div>
+<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
