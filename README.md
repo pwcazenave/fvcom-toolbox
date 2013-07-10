@@ -14,5 +14,5 @@ Notes:
 (2) The code was originally maintained at a google code repository (http://code.google.com/p/fvcom-toolbox/).  This repository was used between Sep, 2010 (initial commit) and July, 2013 when it was moved to github (https://github.com/GeoffCowles/fvcom-toolbox).  Commit history was not maintained during the move as substantial revisions had been made to the code by Plymouth Marine Laboratory members outside of version control.  The github trunk includes most of these changes noted in the file headers and noted in the file PML_ChangeLog.txt
 
 
-
+Note: to download an updated version or update through git go to https://github.com/GeoffCowles/fvcom-toolbox
 
