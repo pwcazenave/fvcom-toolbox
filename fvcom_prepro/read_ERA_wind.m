@@ -2,12 +2,12 @@ function era = read_ERA_wind(Mobj, startDate, endDate, datadir, varlist)
 % Reads in ERA Interim files and outputs a struct containing the requested
 % variables for a given spatial domain and time period. 
 % 
-% ERA = read_ERA_wind(year, datadir, varlist)
+% ERA = read_ERA_wind(Mobj, startDate, endDate, datadir, varlist)
 % 
 % DESCRIPTION:
 %   Find all the ERA Interim NetCDF files in datadir and aggregate them
 %   into a single MATLAB struct containing the variables specified in
-%   varlist. In addition to the specified variables, time and longitude and
+%   varlist. In addition to the specified variables, time, longitude and
 %   latitude will be extracted.
 % 
 %   The ERA data consist of two files types, gafs*.nc and ggas*.nc. The
@@ -80,6 +80,7 @@ subname = 'read_ERA_wind';
 global ftbverbose
 if ftbverbose
 	fprintf('\nbegin : %s \n', subname)
+    c = 0; % set a counter for the file load loop
 end
 
 if exist(datadir, 'dir') ~= 7
@@ -121,12 +122,24 @@ tgafs = [];
 gg = 0;
 ga = 0;
 for f = 1:nf
-    [~, ff] = fileparts(files{f});
+    
+    % Get the filename only for prefix comparison
+    [~, ff, ext] = fileparts(files{f});
+
+    if ftbverbose
+        c = c + 1;
+        fprintf('File %s (%i of %i)... ', [ff, '.', ext], c, nf)
+    end
+
+    % File name is ????YYYYMMDDOOFF or ????YYYYMMDDHHFF (with no apparent
+    % rhyme or reason...). OO is the time origin (midday/midnight) and FF
+    % is the number of hours since the time origin (3, 6, 9 or 12). Why the
+    % files couldn't consistently use 24 hour times...
     ymd = greg2mjulian(str2double(ff(5:8)), ...
         str2double(ff(9:10)), ...
         str2double(ff(11:12)), ...
-        str2double(ff(13:14)), ...
-        str2double(ff(15:16)), 0); % don't have seconds in the file name
+        str2double(ff(13:14)) + str2double(ff(15:16)), ...
+        0, 0); % don't have minutes and seconds in the file name
 
     if strcmpi(ff(1:4), 'ggas')
         gg = gg + 1;
@@ -137,21 +150,14 @@ for f = 1:nf
     else
         warning('Unrecognised ERA Interim file prefix (%s)', ff(1:4))
     end
-end
-
-% Now load in the variables in varlist for all the relevant files into two
-% structs, ggas and gafs. We're assuming that the files are listed
-% increasing with time (i.e. ????YYYYMMDDhhmm.nc).
-for f = 1:nf
-    % Get the filename only for prefix comparison
-    [~, ff, ext] = fileparts(files{f});
-
-    if ftbverbose
-        fprintf('File %s... ', [ff, '.', ext])
-    end
+    
+    % Now load in the variables in varlist for all the relevant files into two
+    % structs, ggas and gafs. We're assuming that the files are listed
+    % increasing with time (i.e. ????YYYYMMDDhhmm.nc).
     nc = netcdf.open(files{f}, 'NOWRITE');
 
-    if f == 1 % only do the first time (the data are global).
+    % Only do the spatial data on the first file (the data are global).
+    if f == 1
         lat_varid = netcdf.inqVarID(nc, 'latitude');
         lon_varid = netcdf.inqVarID(nc, 'longitude');
         eralatvector = netcdf.getVar(nc, lat_varid);
@@ -178,96 +184,55 @@ for f = 1:nf
         idx_lat = find(eralatvector > min(Mobj.lat) & eralatvector < max(Mobj.lat));
     end
 
+    if f == 1
+        era.time = tstart;
+    else
+        era.time = [era.time; tstart];
+    end
+
     for v = 1:length(varlist)
+        % Use a try catch to pass on the files which don't contain the
+        % variable we're currently looping over.
         try
             % Get the data
             varid_era = netcdf.inqVarID(nc, varlist{v});
             data = netcdf.getVar(nc, varid_era, 'single');
-
-            try
-                % Try to apply the scale factor and offset.
-                sf = netcdf.getAtt(nc, varid_era, 'scale_factor', 'double');
-                ao = netcdf.getAtt(nc, varid_era, 'add_offset', 'double');
-                if f == 1
-                    era.(varlist{v}).data = permute(double(ao + (data(idx_lon, idx_lat) .* sf)), [2, 1, 3]);
-                else
-                    era.(varlist{v}).data = cat(3, era.(varlist{v}).data, permute(double(ao + (data(idx_lon, idx_lat) .* sf)), [2, 1, 3]));
-                end
-            catch
-                % Otherwise just dump the data as is.
-                if f == 1
-                    era.(varlist{v}).data = permute(double(data(idx_lon, idx_lat)), [2, 1, 3]);
-                else
-                    era.(varlist{v}).data = cat(3, era.(varlist{v}).data, permute(double(data(idx_lon, idx_lat)), [2, 1, 3]));
-                end
-            end
-            
-            % Put the lon/lat into the field too.
-            era.(varlist{v}).lat = eralatvector(idx_lat);
-
-%         catch err
-%             fprintf('hmmm %s\n', err.message)
+        catch
+            % Skip this variable and try the next one
+            continue
         end
+
+        try
+            % Try to apply the scale factor and offset.
+            sf = netcdf.getAtt(nc, varid_era, 'scale_factor', 'double');
+            ao = netcdf.getAtt(nc, varid_era, 'add_offset', 'double');
+            if exist(sprintf('era.(''%s'').data', varlist{v}), 'var') == 1
+                era.(varlist{v}).data = permute(double(ao + (data(idx_lon, idx_lat) .* sf)), [2, 1, 3]);
+            else
+                era.(varlist{v}).data = cat(3, era.(varlist{v}).data, permute(double(ao + (data(idx_lon, idx_lat) .* sf)), [2, 1, 3]));
+            end
+        catch
+            % Otherwise just dump the data as is.
+            if exist(sprintf('era.(''%s'').data', varlist{v}), 'var') == 1
+                era.(varlist{v}).data = permute(double(data(idx_lon, idx_lat)), [2, 1, 3]);
+            else
+                era.(varlist{v}).data = cat(3, era.(varlist{v}).data, permute(double(data(idx_lon, idx_lat)), [2, 1, 3]));
+            end
+        end
+
+        % Put the lon/lat into the field too.
+        era.(varlist{v}).lat = eralatvector(idx_lat);
+        era.(varlist{v}).lon = eralonvector(idx_lon);
+
     end
+    
     if ftbverbose
         fprintf('done.\n')
     end
 end
 
-% ERA Interim times are stored as hours since 1900-01-01 00:00:0.0.
-% MATLAB's dates days since 0000/00/00 00:00:00. 
-eratimehours = datevec((double(eratimehours)/24) + datenum('1900-01-01 00:00:0.0'));
-% Convert the ERA times to Modified Julian Date.
-era.time = greg2mjulian(eratimehours(:,1), eratimehours(:,2),...
-    eratimehours(:,3), eratimehours(:,4), eratimehours(:,5),...
-    eratimehours(:,6));
+netcdf.close(nc)
 
 if ftbverbose
-    fprintf('beg time of ERA Interim data %04i/%02i/%02i %02i:%02i:%02i\n', eratimehours(1,:));
-    fprintf('end time of ERA Interim data %04i/%02i/%02i %02i:%02i:%02i\n', eratimehours(end,:));
-end
-
-% Get the geographical information from the ERA Interim data. Again, use
-% the U10 file only (we're assuming they're both global).
-lat_varid = netcdf.inqVarID(ncERA, 'latitude');
-lon_varid = netcdf.inqVarID(ncERA, 'longitude');
-eralatvector = netcdf.getVar(ncERA, lat_varid);
-eralonvector = netcdf.getVar(ncERA, lon_varid);
-[era.lon, era.lat] = meshgrid(eralonvector, eralatvector);
-
-% Find the necessary variables
-for var=1:numel(varlist)
-
-    getVar = varlist{var};
-    varid_ERA = netcdf.inqVarID(ncERA, getVar);
-
-    % Get the data
-    data = netcdf.getVar(ncERA, varid_ERA, 'single');
-    
-    if strcmpi(getVar, 'u10') || strcmpi(getVar, 'v10')
-        % The ERA Interim wind component data are packed as integers. The
-        % following equation describes how to unpack them:
-        %     unpacked value = add_offset + ((packed value)*scale_factor)
-        % (from
-        % http://www.ecmwf.int/products/data/archive/data_faq.html#netcdfintegers).
-        % ERA wind scale_factor and add_offset are doubles (the NCEP ones
-        % are singles).
-        scale_factor = netcdf.getAtt(ncERA,varid_ERA,'scale_factor','double');
-        add_offset = netcdf.getAtt(ncERA,varid_ERA,'add_offset','double');
-
-        % Unpack the values. In general, the data for U10 and V10 should be
-        % doubles for griddata to work. Fix the order of the dimensions to
-        % match the coordinates in eralon and eralat.
-        era.(getVar) = permute(double(add_offset + (data.*scale_factor)), [2,1,3]);
-    else
-        % We're assuming they're not packed and so we just return the data
-        % as is (but as doubles).
-        era.(getVar) = double(data);
-    end
-end
-
-netcdf.close(ncERA)
-
-if ftbverbose;
-    fprintf(['end   : ' subname '\n'])
+    fprintf('end   : %s \n', subname)
 end
