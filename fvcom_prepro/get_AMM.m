@@ -1,7 +1,7 @@
 function [Mobj] = get_AMM(Mobj,StartDate,EndDate,ModelFolder)
 
 % Extract boundary forcing information from NOC Operational Tide Surge
-% Model output output  
+% Model output.
 %
 % function get_AMM(Mobj,StartDate,EndDate,ModelFolder)
 %

@@ -49,14 +49,14 @@ if isunix       % Unix?
     metfname = ['/bank/jane/met/',datestr(inputConf.startDate,'YYYY'),...
         '/',lower(datestr(inputConf.startDate,'mmmYY')),'nae10R.dat'];
     comprfname = '/login/jane/NAE2/metintco.cs3x.nae2.compress.2';
-    setupfname = '/work/jane/cs3x/prep/setupcs3xSGIL.uda';
+    setupfname = '/work/jane/cs3x/prep/setupcs3xSGIl.uda';
 %     elevfname = ['/bank/jane/cs3x/sarray.uda.',...
 %         datestr(inputConf.startDate,'YYYY')];
 elseif ispc     % Or Windows?
     metfname = ['\\store\bank\jane\met\',datestr(inputConf.startDate,'YYYY'),...
         '\',lower(datestr(inputConf.startDate,'mmmYY')),'nae10R.dat'];
     comprfname = '\\store\kthurs\from_Jane\metintco.cs3x.nae2.compress.2';
-    setupfname = '\\store\work\jane\cs3x\prep\setupcs3xSGIL.uda';
+    setupfname = '\\store\work\jane\cs3x\prep\setupcs3xSGIl.uda';
 %     elevfname = ['\\store\bank\jane\cs3x\sarray.uda.',...
 %         datestr(inputConf.startDate,'YYYY')];
 end

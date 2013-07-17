@@ -52,7 +52,9 @@ spongeRadius = 100000+zeros(size(Nlist));
 for i =1:length(Nlist)
     % Find the neighbouring nodes
     [r,c]=find(Mobj.tri==Nlist(i));
-    neighbours = unique(Mobj.tri(r,:),'stable');
+    neighbours = Mobj.tri(r,:);
+    [~,neighidx] = unique(Mobj.tri(r,:));
+    neighbours = neighbours(sort(neighidx));
     
     % Remove the node of interest from the neighbours list
     n = find(neighbours~=Nlist(i));
