@@ -162,28 +162,35 @@ for f = 1:nf
     if f == 1
         lat_varid = netcdf.inqVarID(nc, 'latitude');
         lon_varid = netcdf.inqVarID(nc, 'longitude');
-        eralatvector = netcdf.getVar(nc, lat_varid);
-        eralonvector = netcdf.getVar(nc, lon_varid);
-        [era.lon, era.lat] = meshgrid(eralonvector, eralatvector);
+        eralatvector = netcdf.getVar(nc, lat_varid, 'double');
+        eralonvector = netcdf.getVar(nc, lon_varid, 'double');
+        dx = unique(diff(eralonvector));    % should be all the same value
+        dy = mean(abs(diff(eralatvector))); % varies, hence mean
 
         % To save on memory, cull the data which doesn't come from the
         % domain we've specified (with a 2 element buffer).
         if min(Mobj.lon) < 0 && max(Mobj.lon) < 0
             % Easy, just shift by 360.
-            idx_lon = find(eralonvector > min(Mobj.lon) + 360 & eralonvector < max(Mobj.lon) + 360);
+            idx_lon = find(eralonvector > (min(Mobj.lon) - (2 * dx)) + 360 ...
+                & eralonvector < (max(Mobj.lon) + (2 * dx)) + 360);
         elseif min(Mobj.lon) < 0 && max(Mobj.lon) > 0
             % This is the tricky one. We'll do two passes to extract
             % the western chunk first (min(Mobj.lon) + 360 to 360),
             % then the eastern chunk (0 - max(Mobj.lon))
-            idx_lon{1} = find(eralonvector >= min(Mobj.lon) + 360);
-            idx_lon{2} = find(eralonvector < max(Mobj.lon));
+            idx_lon{1} = find(eralonvector >= (min(Mobj.lon) - (2 * dx)) + 360);
+            idx_lon{2} = find(eralonvector < (max(Mobj.lon) + (2 * dx)));
         else
             % Dead easy, we're in the eastern hemisphere, so nothing
             % too strenuous here.
-            idx_lon = find(eralonvector > min(Mobj.lon) & eralonvector < max(Mobj.lon));
+            idx_lon = find(eralonvector > (min(Mobj.lon) - (2 * dx)) ...
+                & eralonvector < (max(Mobj.lon) + (2 * dx)));
         end
         % Latitudes are easy because there's only one system.
-        idx_lat = find(eralatvector > min(Mobj.lat) & eralatvector < max(Mobj.lat));
+        idx_lat = find(eralatvector > (min(Mobj.lat) - (2 * dy)) & eralatvector < (max(Mobj.lat) + (2 * dy)));
+        
+        % Make a grid of the domain
+        [era.lon, era.lat] = meshgrid(eralonvector(idx_lon), eralatvector(idx_lat));
+
     end
 
     for v = 1:length(varlist)
@@ -199,7 +206,8 @@ for f = 1:nf
         end
 
         try
-            % Try to apply the scale factor and offset.
+            % Try to apply the scale factor and offset (only if using the
+            % data from the website - the PML data are already converted).
             sf = netcdf.getAtt(nc, varid_era, 'scale_factor', 'double');
             ao = netcdf.getAtt(nc, varid_era, 'add_offset', 'double');
             if isfield(era, varlist{v}) == 0
@@ -226,6 +234,10 @@ for f = 1:nf
         fprintf('done.\n')
     end
 end
+
+% Dump the time variables to the struct
+era.time_gafs = tgafs;
+era.time_ggas = tggas;
 
 netcdf.close(nc)
 
