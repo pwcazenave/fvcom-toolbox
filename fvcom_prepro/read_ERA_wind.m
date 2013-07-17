@@ -65,9 +65,9 @@ function era = read_ERA_wind(Mobj, startDate, endDate, datadir, varlist)
 % 
 %==========================================================================
 
-datadir = '/data/modellers/to_archive/momm-ERA40-interim/';
+% datadir = '/data/modellers/to_archive/momm-ERA40-interim/';
 % datadir = '/users/modellers/pica/Data/ECMWF/2006';
-varlist = {'U10', 'V10', 'SKT', 'E', 'TP', 'SSRC', 'STRC'};
+% varlist = {'U10', 'V10', 'SKT', 'E', 'TP', 'SSRC', 'STRC'};
 
 %warning off
 
@@ -116,11 +116,13 @@ end
 
 nf = length(files);
 
-% Get the times
+% Start with a clean slate
 tggas = [];
 tgafs = [];
 gg = 0;
 ga = 0;
+clear era
+
 for f = 1:nf
     
     % Get the filename only for prefix comparison
@@ -128,7 +130,7 @@ for f = 1:nf
 
     if ftbverbose
         c = c + 1;
-        fprintf('File %s (%i of %i)... ', [ff, '.', ext], c, nf)
+        fprintf('File %s (%i of %i)... ', [ff, ext], c, nf)
     end
 
     % File name is ????YYYYMMDDOOFF or ????YYYYMMDDHHFF (with no apparent
@@ -184,12 +186,6 @@ for f = 1:nf
         idx_lat = find(eralatvector > min(Mobj.lat) & eralatvector < max(Mobj.lat));
     end
 
-    if f == 1
-        era.time = tstart;
-    else
-        era.time = [era.time; tstart];
-    end
-
     for v = 1:length(varlist)
         % Use a try catch to pass on the files which don't contain the
         % variable we're currently looping over.
@@ -206,14 +202,14 @@ for f = 1:nf
             % Try to apply the scale factor and offset.
             sf = netcdf.getAtt(nc, varid_era, 'scale_factor', 'double');
             ao = netcdf.getAtt(nc, varid_era, 'add_offset', 'double');
-            if exist(sprintf('era.(''%s'').data', varlist{v}), 'var') == 1
+            if isfield(era, varlist{v}) == 0
                 era.(varlist{v}).data = permute(double(ao + (data(idx_lon, idx_lat) .* sf)), [2, 1, 3]);
             else
                 era.(varlist{v}).data = cat(3, era.(varlist{v}).data, permute(double(ao + (data(idx_lon, idx_lat) .* sf)), [2, 1, 3]));
             end
         catch
             % Otherwise just dump the data as is.
-            if exist(sprintf('era.(''%s'').data', varlist{v}), 'var') == 1
+            if isfield(era, varlist{v}) == 0
                 era.(varlist{v}).data = permute(double(data(idx_lon, idx_lat)), [2, 1, 3]);
             else
                 era.(varlist{v}).data = cat(3, era.(varlist{v}).data, permute(double(data(idx_lon, idx_lat)), [2, 1, 3]));
