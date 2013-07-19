@@ -67,6 +67,8 @@ function fvcom = grid2fvcom(Mobj, vars, data)
 %   2013-05-16 Add parallel for loops if the Parallel Computing Toolbox is
 %   available (MATLAB parfor loops fail gracefully to for loops if it is
 %   not available, in which case no harm, no foul).
+%   2013-07-18 Add more elegant case statement rather than using string
+%   comparisons.
 %
 %==========================================================================
 
