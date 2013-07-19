@@ -1,86 +1,261 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
-fvcom-prepro:
+20130521
+--------
 
+fvcom_prepro:
+    get_FVCOM_rivers.m
+        * Function now finds river nodes more intellgently. Also separated out
+        the POLCOMS specific code to get_POLCOMS_river_positions.m and
+        get_POLCOMS_river_discharge.m) to make the code more reusable if you
+        have a different source of river data.
+    get_NCEP_forcing.m
+        * Expand the help a little.
+    get_MetUM_forcing.m
+        * New (incomplete) function. As yet unfinished function to download
+        forcing data from the Met Office FTP server.
+    get_POLCOMS_river_discharge.m
+        * New function formerly part of get_FVCOM_rivers.m, but now extracts
+        discharges from POLCOMS flow files only.
+    get_POLCOMS_river_positions.m
+        * New function formerly part of get_FVCOM_rivers.m, but now simply
+        finds the coordinates of the rivers in a POLCOMS model grid.
+    get_POLCOMS_tsobc.m
+        * Open the MATLAB Parallel workers pool to make full use of the
+        parallel capability in MATLAB (previously the parfor loop was running
+        suboptimally).
+    get_POLCOMS_tsobc_gcoms.m
+        * New function to be used if the POLCOMS depths are stored in a second
+        NetCDF file rather than with the temperature and salinity arrays.
+    interp_POLCOMS2FVCOM.m
+        * Parallelise the interpolation of the data onto the unstructured
+        grid. This requires the Parallel Computing Toolbox (although if it is
+        not available, the code still runs, albeit slower!).
+    read_sigma.m
+        * Updated to include better support for non-uniform sigma coordinates
+        (e.g. geometric distributions). See sigma_gen.m, sigma_geo.m and
+        sigma_tanh.m for more information.
+    read_sms_map.m
+        * New function to read an SMS .map file and import the coastline into
+        MATLAB.
+    mjul2str_noyear.m
+        * Deleted this empty function.
+    write_FVCOM_forcing.m
+        * Fix the evaporation and precipitation arrays being used (should be
+        in correct units now).
+
+utilities:
+    catstruct.m
+        * MATLAB Central function to concatenate two structs.
+    grid2fvcom.m
+        * Parallelise the code. This requires the Parallel Computing Toolbox,
+        but offers significant speed improvements if available.
+    grid_vert_interp.m
+        * Parallelise the vertical interpolation. As before, this requires the
+        Parallel Computing Toolbox.
+    sigma_gen.m
+    sigma_geo.m
+    sigma_tanh.m
+
+tests:
+    utilities:
+        test_grid2fvcom.m
+            * Unit test to ensure changes in grid2fvcom.m do not break its
+            functionality (i.e. the modifications don't change the output
+            values). This is obviously not valid if grid2fvcom.m is found to
+            have a bug!
+        test_get_POLCOMS_tsobc.m
+            * Unit test to check get_POLCOMS_tsobc.m results don't change
+            following changes to the script.
+    data:
+        * Directory in which data files are kept which are used by the unit
+        test scripts.
+
+
+20130403
+--------
+
+fvcom_prepro:
+    add_river_nodes_list.m
+        * Minor changes to code style.
+    add_sponge_nodes_list.m
+        * Fix bug which ignores constant sponge radius.
+    add_stations_list.m
+        * Add message about the outcome if no stations were within the domain.
+    add_var_FVCOM_river.m
+        * Turn warnings back on.
+    example_FVCOM_tsobc.m
+        * Add the global NetCDF history variable which includes a reference to
+        the FVCOM toolbox.
+    example_FVCOM_wind_ts.m
+        * Turn warnings back on.
+    example_FVCOM_wind_ts_speed.m
+        * Turn warnings back on.
+    example_init_lag.m
+        * Turn warnings back on.
+    get_FVCOM_rivers.m
+        * Extract positions from the FVCOM-adapted POLCOMS rivers files. The
+        POLCOMS positions are too coarse (12km) to be useful for FVCOM. As
+        such, this function reads an ASCII file of positions and extracts the
+        station's discharge data from the POLCOMS file.
+    get_NCEP_forcing.m
+        * Adds support for MATLAB's native OPeNDAP tools. Also fixes the
+        calculation of net surface heat flux.
+    get_POLCOMS_meanflow.m
+        * Interpolate mean flow from POLCOMS output at the FVCOM open
+        boundaries.
+    get_POLCOMS_netCDF.m
+        * More code outside the verbose section so it is executed even if
+        verbose output is disabled.
+    get_POLCOMS_rivers.m
+        * Parse the POLCOMS rivers data file.
+    get_POLCOMS_tsobc.m
+        * Change the vertical interpolation to be scaled within the
+        POLCOMS depth range for the current node. The net result is that the
+        vertical profiles are squashed or stretched to fit within the FVCOM
+        depths. This means the full profile structure is maintained in the
+        resulting FVCOM boundary input despite the differing depths at the
+        FVCOM boundary node.
+    nodes2elems.m
+        * Minor changes to coding style.
+    read_ERA_wind.m
+        * Turn warnings back on.
+    read_NCEP_wind.m
+        * Turn warnings back on.
+    write_FVCOM_bedflag.m
+        * Turn warnings back on.
+    write_FVCOM_elevtide.m
+        * Minor changes to coding style.
+    write_FVCOM_forcing.m
+        * Export of the surface forcing can now use a precomputed surface heat
+        flux rather than having to interpolate the four components only to
+        merge them (see write_FVCOM_forcing.m)
+    write_FVCOM_meanflow.m
+        * Preliminary support for mean flow at the open boundaries. At the
+        moment, the mean flow is interpolated from POLCOMS daily mean flow
+        values. The necessary tools to write out the FVCOM ASCII mean flow
+        files have been created, but I have not yet managed to successfully
+        run a model with mean flow. Consider it a work in progress.
+    write_FVCOM_meanflow_ascii.m
+        * Outputs the results of write_FVCOM_meanflow.m to ASCII for use in
+        FVCOM.
+    write_FVCOM_obs_TS.m
+        * Add the global NetCDF history variable which includes a reference to
+        the FVCOM toolbox.
+    write_FVCOM_restart.m
+        * The routine to replace variables within an FVCOM restart file now
+        includes the ability to adjust the times for which the restart file is
+        applicable. This is useful if you have a restart file for a model
+        domain, but wish to use it for a different time.
+    write_FVCOM_river.m
+        * The existing river functions have been updated to reflect the
+        changes needed in the latest versions of FVCOM (3.1.x). This has also
+        been updated to use MATLAB's native NetCDF routines.
+    write_FVCOM_river_nml.m
+        * New function to write out the name list for the rivers in the model
+        domain.
+    write_FVCOM_spectide.m
+        * Add the global NetCDF history variable which includes a reference to
+        the FVCOM toolbox.
+    write_FVCOM_sponge.m
+        * Fix bug which ignores constant sponge radius.
+    write_FVCOM_stations.m
+        * Minor change to the error message for the incorrect number of
+        arguments.
+    write_FVCOM_tsobc.m
+        * Add the global NetCDF history variable which includes a reference to
+        the FVCOM toolbox. Also enable warnings.
+    write_FVCOM_wind_ts_speed.m
+        * Add the global NetCDF history variable which includes a reference to
+        the FVCOM toolbox. Also enable warnings.
+    write_FVCOM_z0.m
+        * Add the global NetCDF history variable which includes a reference to
+        the FVCOM toolbox. Also enable warnings.
+
+utilities:
+    centroid.m
+        * Fix problem with checking the input arguments.
+    find_boundary_elements.m
+        * New utility to find the element numbers which run along the open
+        boundary (needed for the mean flow).
+    fix_inside_boundary.m
+        * A new function to reorganise open boundary elements to have an edge
+        approximately normal to the open boundary has been added
+        (fix_inside_boundary.m). The routine is somewhat brute force, and can
+        result in invalid unstructured grids. As such, any changes should be
+        reviewed in SMS prior to being used in a model run.
+    grid2fvcom.m
+        * Improve the documentation.
+    write_SMS_2dm.m
+        * Export unstructured grid data from MATLAB to SMS format.
+    write_SMS_cst.m
+        * Export open boundary from MATLAB to SMS format.
+
+
+20130204
+--------
+
+fvcom-prepro:
     add_obc_nodes_graphic.m:
         * Minor fix to make the defined function name match the file name.
-
     add_obc_nodes_list.m:
         * Add optional new argument to plot a figure of the open boundary
         nodes.
-
     add_sponge_nodes.m:
         * Minor code cleanup.
-
     add_sponge_nodes_list.m:
         * New function: For a given list of nodes, apply a given sponge
         coefficient over a specified sponge radius (both given as arguments
         to the function. Follows the same syntax as add_sponge_nodes.m.
-
     add_stations_list.m:
         * New function: Add a set of stations at which FVCOM will output time
         series. Requires station coordinates and names, and a threshold
         distance beyond which the station is skipped.
-
     calc_sponge_radius.m:
         * New function: Create sponge layer with variable width radius based on
         the proximity of the closest element or 100km (whichever is smaller).
-
     estimate_ts.m:
         * Add arguments to the function so that the estimated current velocity
         and tidal range aren't hard-coded in the function.
         * Also add a crude conversion from lat/long distances to UTM (metres)
         using a great circle appoximation.
-
     example_FVCOM_tsobc.m:
         * Convert the method of writing NetCDF files from third-party toolbox
         to the MATLAB native version.
         * Add arguments to set dynamic file names (rather than hard-coded).
-
     example_FVCOM_wind_ts_speed.m:
         * Minor code change to calculate the number of elements in an array.
-
     get_AMM.m:
         * New function: Extract boundary forcing information from NOC
         Operational Tide Surge Model output.
-
     get_HYCOM_forcing.m:
         * New function: INCOMPLETE! Function to extract boundary forcing
         information from HYCOM model output through OPeNDAP.
-
     get_NAE2_forcing.m:
         * New function: Get the required parameters from NAE2 MetOffice model
         data to force FVCOM at the surface.
-
     get_NCEP_forcing.m:
         * New function: Get the required parameters from NCEP through OPeNDAP.
         Requires the air_sea and OPeNDAP toolboxes.
-
     get_POLCOMS_tsobc.m:
         * New function: Extract temperature and salinity data from the PML
         POLCOMS NetCDF files and interpolate them to the FVCOM open boundary
         nodes.
-
     get_POLPRED_spectide.m:
         * New function: Extract POLPRED harmonic amplitude and phases for the
         nearest point in the POLPRED grid to the open boundary nodes in the
         FVCOM grid.
-
     grid2fvcom.m:
         * New function: Interpolate regularly gridded surface forcing data onto
         a given FVCOM grid.
-
     read_ERA_wind.m:
         * New function: Extract wind data from ERA Interim NetCDF files.
-
     read_NCEP_wind.m:
         * New function: Read in pairs of NCEP wind vector files and output
         arrays of the required velocity components.
-
     read_sigma.m:
         * New function: Extract sigma layer and level information from a given
         sigma.dat file.
-
     read_sms_mesh.m:
         * Add the ability to extract open boundaries from the defined
         nodestrings in the SMS grid file (.2dm).
@@ -88,57 +263,45 @@ fvcom-prepro:
         script fails to load your grid, chances are its name is "Default
         Coverage". If you change it to omit spaces in either the .2dm file or
         the SMS project, this script should work.
-
     replace_FVCOM_restart_vars.m:
         * New function: For a given FVCOM restart file, replace select variables
         with values from a PML POLCOMS model NetCDF output file. POLCOMS data
         are interpolated first on the FVCOM vertical grid, then the vertically
         interpolated data are interpolated onto the horizontal FVCOM grid.
-
     set_elevtide.m:
         * New function: Write out timeseries of surface elevations to a NetCDF
         file.
         * Requires the Tide Model Driver MATLAB Toolbox from Oregon State
         University at http://polaris.esr.org/ptm_index.html.
-
     set_spectide.m:
         * Replace hard-coded variables with arguments to function call.
         * Add support for adding equilibrium amplitudes and beta love numbers.
-
     write_FVCOM_elevtide.m:
         * New function to accompany set_elevtide.m to output a time series of
         surface elevations.
-
     write_FVCOM_forcing.m:
         * New function: Write forcing data (u and v winds, heat flux etc.) out
         to NetCDF file(s) depending on specified FVCOM version.
-
     write_FVCOM_obs_TS.m:
         * Converted to use MATLAB native NetCDF routines.
-
     write_FVCOM_spectide.m:
         * Replace use of third-party NetCDF library with MATLAB native tools.
         * Add support for writing out equilibrium amplitudes and beta love
         numbers.
-
     write_FVCOM_sponge.m:
         * Add support for variable width sponge layers (see
         calc_sponge_radius.m).
-
     write_FVCOM_stations.m:
         * New function: Output list of stations at which FVCOM will output 1D
         time series.
-
     write_FVCOM_tsobc.m:
         * Create a new function to output temperature and salinity at the open
         boundaries (either spatially uniform or varying (e.g. interpolated from
         POLCOMS using get_POLCOMS_tsobc.m). Based on the example_FVCOM_tsobc.m
         file.
-
     write_FVCOM_wind_ts_speed.m:
         * Create a new function to output spatially uniform but temporally
         varying wind field. Based on example_FVCOM_wind_ts_speed.m.
-
     write_FVCOM_z0.m:
         * Add support for MATLAB native NetCDF routines.
 
@@ -148,52 +311,39 @@ fvcom-postproc:
         (e.g. vectors at specific layers).
 
 utilities:
-
     centroid.m:
         * New function: Calculate the centroid of a given polygon.
-
     connectivity.m:
         * New function: From Mesh2D toolbox. Read unstructured grid
         connectivity (useful to find grid boundary, for example).
-
     deg2utm.m:
         * New function: Convert from lat/long to UTM (but automatically
         determine relevant UTM zone). See also wgs2utm (where UTM zone can be
         forced).
-
     do_residual.m:
         * New function: Calculate the residual vector for a given 2D time
         series.
-
     do_residual_plot.m:
         * New function: Use the output of do_residual.m to plot residual
         vectors.
-
     do_transect_plot.m:
         * New function: Pick and plot a transect through model output.
-
     greg2mjulian.m:
         * Format help to match better with other utilities.
-
     get_NCEP_year.m:
         * Extract the year from an NCEP Reanalysis file name.
-
     deg2utm.m:
         * Function to convert from lat/long to UTM.
         * From http://www.mathworks.com/matlabcentral/fileexchange/10915
-
     show_sigma.m:
         * Made the reading in of the sigma.dat file more resilient (notably to
         comments and blank lines).
-
     utm2deg.m:
         * Function to convert from UTM to lat/long.
         * From http://www.mathworks.com/matlabcentral/fileexchange/10914
-
     wgs2utm.m:
         * New function: Convert from lat/long to UTM whilst being able to force
         the UTM zone (allowing for coordinates which spread over several UTM
         zones). See also deg2utm.
-
 
 
