@@ -55,7 +55,8 @@
     2012-06-15 Added support for native MATLAB NetCDF routines. Requires
     MATLAB 2010a or higher.
 
-==============================================================================</pre></div>
+==============================================================================
+warning off</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -101,7 +102,7 @@ This function is called by:
 0029 <span class="comment">%    MATLAB 2010a or higher.</span>
 0030 <span class="comment">%</span>
 0031 <span class="comment">%==============================================================================</span>
-0032 warning off
+0032 <span class="comment">%warning off</span>
 0033 subname = <span class="string">'write_FVCOM_z0'</span>;
 0034 <span class="keyword">global</span> ftbverbose;
 0035 <span class="keyword">if</span>(ftbverbose);
@@ -112,13 +113,13 @@ This function is called by:
 0040 <span class="comment">% Parse input arguments</span>
 0041 <span class="comment">%------------------------------------------------------------------------------</span>
 0042 <span class="keyword">if</span>(~exist(<span class="string">'z0'</span>,<span class="string">'var'</span>))
-0043     error(<span class="string">'incorrect usage of gen_z0_file, must provide z0 field'</span>)
+0043     error(<span class="string">'incorrect usage of write_FVCOM_z0, must provide z0 field'</span>)
 0044 <span class="keyword">end</span>;
 0045 <span class="keyword">if</span>(~exist(<span class="string">'filename'</span>,<span class="string">'var'</span>))
-0046     error(<span class="string">'incorrect usage of gen_z0_file, must provide filename'</span>)
+0046     error(<span class="string">'incorrect usage of write_FVCOM_z0, must provide filename'</span>)
 0047 <span class="keyword">end</span>;
 0048 <span class="keyword">if</span>(~exist(<span class="string">'mytitle'</span>,<span class="string">'var'</span>))
-0049     error(<span class="string">'incorrect usage of gen_z0_file, must provide title field'</span>)
+0049     error(<span class="string">'incorrect usage of write_FVCOM_z0, must provide title field'</span>)
 0050 <span class="keyword">end</span>;
 0051 
 0052 <span class="comment">% check dimensions</span>
@@ -137,29 +138,30 @@ This function is called by:
 0065 nc = netcdf.create(filename,<span class="string">'clobber'</span>);
 0066 
 0067 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,mytitle)
-0068 
-0069 <span class="comment">% dimensions</span>
-0070 nele_dimid=netcdf.defDim(nc,<span class="string">'nele'</span>,nElems);
-0071 
-0072 <span class="comment">% variables and attributes</span>
-0073 z0b_varid=netcdf.defVar(nc,<span class="string">'z0b'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
-0074 netcdf.putAtt(nc,z0b_varid,<span class="string">'long_name'</span>,<span class="string">'bottom roughness'</span>);
-0075 netcdf.putAtt(nc,z0b_varid,<span class="string">'units'</span>,<span class="string">'m'</span>);
-0076 
-0077 <span class="comment">% end definitions</span>
-0078 netcdf.endDef(nc);
-0079 
-0080 <span class="comment">% write data</span>
-0081 netcdf.putVar(nc,z0b_varid,z0);
-0082 
-0083 <span class="comment">% close file</span>
-0084 netcdf.close(nc);
-0085 
-0086 <span class="keyword">if</span>(ftbverbose);
-0087   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0088 <span class="keyword">end</span>;
-0089 
-0090</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0068 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, <span class="string">'File created using write_FVCOM_z0.m from the MATLAB fvcom-toolbox'</span>)
+0069 
+0070 <span class="comment">% dimensions</span>
+0071 nele_dimid=netcdf.defDim(nc,<span class="string">'nele'</span>,nElems);
+0072 
+0073 <span class="comment">% variables and attributes</span>
+0074 z0b_varid=netcdf.defVar(nc,<span class="string">'z0b'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
+0075 netcdf.putAtt(nc,z0b_varid,<span class="string">'long_name'</span>,<span class="string">'bottom roughness'</span>);
+0076 netcdf.putAtt(nc,z0b_varid,<span class="string">'units'</span>,<span class="string">'m'</span>);
+0077 
+0078 <span class="comment">% end definitions</span>
+0079 netcdf.endDef(nc);
+0080 
+0081 <span class="comment">% write data</span>
+0082 netcdf.putVar(nc,z0b_varid,z0);
+0083 
+0084 <span class="comment">% close file</span>
+0085 netcdf.close(nc);
+0086 
+0087 <span class="keyword">if</span>(ftbverbose);
+0088   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0089 <span class="keyword">end</span>;
+0090 
+0091</pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

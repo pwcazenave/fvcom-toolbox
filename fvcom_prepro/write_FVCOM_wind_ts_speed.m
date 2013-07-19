@@ -39,7 +39,7 @@ function write_FVCOM_wind_ts_speed(Mobj, WindFile, time, u10, v10)
 %   vectors vary in time and space.
 %
 %==============================================================================
-warning off
+%warning off
 subname = 'example_FVCOM_wind_ts_speed';
 global ftbverbose;
 if(ftbverbose);
@@ -61,7 +61,7 @@ netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'references','http://fvcom.smas
 % netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','single-point time-dependent surface forcing')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','fvcom grid (unstructured) surface forcing')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'institution','Plymouth Marine Laboratory')
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','Generated using the fvcom-toolbox')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','File generated using the write_FVCOM_wind_ts_speed.m from the MATLAB fvcom-toolbox')
 
 % dimensions
 nele_dimid=netcdf.defDim(nc,'nele',nElems);

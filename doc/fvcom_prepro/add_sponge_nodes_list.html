@@ -159,7 +159,7 @@ This function is called by:
 0084 Mobj.sponge_name{Mobj.nSponge} = SpongeName;
 0085 Mobj.sponge_fac(Mobj.nSponge) = SpongeCoeff;
 0086 
-0087 <span class="keyword">if</span> max(size(SpongeRadius))==1   <span class="comment">% if you have a constant sponge radius</span>
+0087 <span class="keyword">if</span> numel(unique(SpongeRadius)) == 1   <span class="comment">% if you have a constant sponge radius</span>
 0088     Mobj.sponge_rad(Mobj.nSponge) = SpongeRadius;
 0089 <span class="keyword">else</span>    <span class="comment">% if you have a variable sponge radius</span>
 0090     Mobj.sponge_rad(Mobj.nSponge,1:npts) = SpongeRadius;
@@ -169,6 +169,6 @@ This function is called by:
 0094     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
 0095 <span class="keyword">end</span>
 0096</pre></div>
-<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

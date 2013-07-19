@@ -1,153 +1,152 @@
-function write_FVCOM_river(RiverFile,RiverName,nRivnodes,time,flux,temp,salt,RiverInfo1,RiverInfo2)
-% write FVCOM 3.x NetCDF river file
+function write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,RiverInfo1,RiverInfo2)
+% Write FVCOM 3.x NetCDF river file
 %
-% function write_FVCOM_river(RiverFile,RiverName,nRivnodes,time,flux,temp,salt,RiverInfo1,RiverInfo2)
+% function write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,RiverInfo1,RiverInfo2)
 %
 % DESCRIPTION:
-%    Write river flux, temperature, and salinity to an FVCOM river file
-%    Note that it is assumed that the NetCDF file contains data for only
-%    one river, even if it is split among multiple nodes.  The flux will be
-%    set at each node as flux/nRivnodes where nRivnodes is the number of River
-%    nodes.  Salinity and Temperature will be set the same at each node
+%    Write river flux, temperature, and salinity to an FVCOM river file.
+%    Flux, temperature and salinity must be calculated prior to being given
+%    here as the raw values in the arrays are simply written out as is to
+%    the NetCDF file.
 %
 % INPUT
-%    RiverFile:   FVCOM 3.x NetCDF river forcing file
-%    RiverName:   Name of the actual River
-%    nRivnodes:   # of River nodes
-%    time     :   timestamp in modified Julian day 
-%    flux     :   Total river flux of same dimensions as time in m^3/s
-%    temp     :   temperature in C of same dimensions as time
-%    salt     :   salinity in PSU of same dimensions as time
-%    RiverInfo1 : global attribute of file
-%    RiverInfo2 : additional global attribute of file
-%   
+%    RiverFile  : FVCOM 3.x NetCDF river forcing file
+%    RiverName  : Name of the actual River
+%    time       : Timestamp array in modified Julian day
+%    flux       : Total river flux in m^3/s (dimensions [time, nRivernodes])
+%    temp       : Temperature in C (dimensions [time, nRivernodes])
+%    salt       : Salinity in PSU (dimensions [time, nRivernodes])
+%    RiverInfo1 : Global attribute title of file
+%    RiverInfo2 : Global attribute info of file
+%
 % OUTPUT:
-%    FVCOM RiverFile with flux,temp,salt
+%    FVCOM NetCDF river file with flux, temperature and salinity.
 %
 % EXAMPLE USAGE
-%  write_FVCOM_river('tst_riv.nc','Penobscot',3,time,flux,salt,'Penobscot Flux','source: USGS')  
+%    write_FVCOM_river('tst_riv.nc', {'Penobscot'}, time, flux, temp, ...
+%         salt, 'Penobscot Flux', 'source: USGS')
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
-%   
-%==============================================================================
-warning off;
+%   2013-03-21 Modified to take a list of river nodes rather than a single
+%   river spread over multiple nodes. This means you have to scale your
+%   inputs prior to using this function. This also means I have broken
+%   backwards compatibility with the old way of doing it (i.e. this
+%   function previously wrote only a single river's data but spread over a
+%   number of nodes). I removed the sediment stuff as the manual makes no
+%   mention of this in the river input file. Also added support for writing
+%   to NetCDF using MATLAB's native tools.
+%   2013-03-21 Transpose the river data arrays to the correct shape for the
+%   NetCDF file.
+%
+%==========================================================================
 
-global ftbverbose;
-if(ftbverbose);
 subname = 'write_FVCOM_river';
-fprintf('\n')
-fprintf(['begin : ' subname '\n'])
-end;
 
+global ftbverbose
+if ftbverbose
+    fprintf('\n')
+    fprintf(['begin : ' subname '\n'])
+end
 
-if(ftbverbose); 
-  fprintf('creating river NetCDF file %s for River %s\n',RiverFile,RiverName); 
-end;
+[nTimes, nRivnodes] = size(flux);
+if ftbverbose
+    fprintf('# of river nodes: %d\n', nRivnodes);
+    fprintf('# of time frames: %d\n', nTimes);
+end
 
+[year, month, day, ~, ~, ~] = mjulian2greg(time(1));
+if ftbverbose; fprintf('time series begins at:\t%04d %02d %02d\n', year, month, day); end
+[year, month, day, ~, ~, ~] = mjulian2greg(time(end));
+if ftbverbose; fprintf('time series ends at:\t%04d %02d %02d\n', year, month, day); end
+clear year month day
 
-nTimes = prod(size(flux));
-if(ftbverbose);
-  fprintf('# of river nodes: %d\n',nRivnodes);
-  fprintf('# of time frames: %d\n',nTimes);
-end;
-
-[year,month,day,hour,mint,sec] = mjulian2greg(time(1));
-if(ftbverbose); fprintf('river begins at: %d %d %d\n',year,month,day); end;
-[year,month,day,hour,mint,sec] = mjulian2greg(time(end));
-if(ftbverbose); fprintf('river ends at:   %d %d %d\n',year,month,day); end;
-
-% set the flux
-if(ftbverbose); fprintf('dividing flux into %d points\n',nRivnodes); end;
-river_flux = zeros(nTimes,nRivnodes);
-for i=1:nTimes
-  river_flux(i,1:nRivnodes) = flux(i)/real(nRivnodes);
-end;
-
-% set temperature and salt
-for i=1:nTimes
-	river_salt(i,1:nRivnodes) = salt(i);
-	river_temp(i,1:nRivnodes) = temp(i);
-end;
-
-% set some kind of sediment
-coarse_sand = 15*ones(nTimes,nRivnodes);
-medium_sand = 45*ones(nTimes,nRivnodes);
-fine_sand   = 30*ones(nTimes,nRivnodes);
-
-
-%--------------------------------------------------------------
+%--------------------------------------------------------------------------
 % dump to netcdf file
-%--------------------------------------------------------------
+%--------------------------------------------------------------------------
 
-% open boundary forcing
-nc = netcdf(RiverFile, 'clobber');       
+% river node forcing
+nc = netcdf.create(RiverFile, 'clobber');
 
-nc.type = 'FVCOM RIVER FORCING FILE' ;
-nc.title = RiverInfo1;   
-nc.info =  RiverInfo2; 
-nc.history = 'FILE CREATED using write_river_file.m' ;
+% global variables
+netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'type', 'FVCOM RIVER FORCING FILE')
+netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'title', RiverInfo1)
+netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'info', RiverInfo2)
+netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'history', 'File created using write_FVCOM_river.m from the MATLAB fvcom-toolbox')
 
 % dimensions
-nc('rivers') = nRivnodes; 
-nc('namelen') = 26; 
-nc('time') = 0; 
+namelen_dimid = netcdf.defDim(nc, 'namelen', 80);
+rivers_dimid = netcdf.defDim(nc, 'rivers', nRivnodes);
+time_dimid = netcdf.defDim(nc, 'time', netcdf.getConstant('NC_UNLIMITED'));
+date_str_len_dimid = netcdf.defDim(nc, 'DateStrLen', 26);
 
 % variables
-nc{'river_names'} = ncchar('rivers', 'namelen');
+river_names_varid = netcdf.defVar(nc, 'river_names', 'NC_CHAR', [namelen_dimid, rivers_dimid]);
 
-nc{'time'} = ncfloat('time');
-nc{'time'}.long_name = 'time';  
-nc{'time'}.units     = 'days since 0.0';  
-nc{'time'}.time_zone = 'none';  
+time_varid = netcdf.defVar(nc, 'time', 'NC_FLOAT', time_dimid);
+netcdf.putAtt(nc, time_varid, 'long_name', 'time');
+netcdf.putAtt(nc, time_varid, 'units', 'days since 1858-11-17 00:00:00');
+netcdf.putAtt(nc, time_varid, 'format', 'modified julian day (MJD)');
+netcdf.putAtt(nc, time_varid, 'time_zone', 'UTC');
 
-nc{'Itime'} = ncint('time');
-nc{'Itime'}.units     = 'days since 0.0';  
-nc{'Itime'}.time_zone = 'none';  
+itime_varid = netcdf.defVar(nc, 'Itime', 'NC_INT', time_dimid);
+netcdf.putAtt(nc, itime_varid, 'units', 'days since 1858-11-17 00:00:00');
+netcdf.putAtt(nc, itime_varid, 'format', 'modified julian day (MJD)');
+netcdf.putAtt(nc, itime_varid, 'time_zone', 'UTC');
 
-nc{'Itime2'} = ncint('time');
-nc{'Itime2'}.units     = 'msec since 00:00:00';
-nc{'Itime2'}.time_zone = 'none';  
+itime2_varid = netcdf.defVar(nc, 'Itime2', 'NC_INT', time_dimid);
+netcdf.putAtt(nc, itime2_varid, 'units', 'msec since 00:00:00');
+netcdf.putAtt(nc, itime2_varid, 'time_zone', 'UTC');
 
-nc{'river_flux'} = ncfloat('time','rivers');
-nc{'river_flux'}.long_name = 'river runoff volume flux'; 
-nc{'river_flux'}.units     = 'm^3s^-1';  
+times_varid = netcdf.defVar(nc,'Times','NC_CHAR',[date_str_len_dimid, time_dimid]);
+netcdf.putAtt(nc, times_varid, 'time_zone','UTC');
 
-nc{'river_temp'} = ncfloat('time','rivers');
-nc{'river_temp'}.long_name = 'river runoff temperature'; 
-nc{'river_temp'}.units     = 'Celsius';  
+river_flux_varid = netcdf.defVar(nc, 'river_flux', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_flux_varid, 'long_name', 'river runoff volume flux');
+netcdf.putAtt(nc, river_flux_varid, 'units', 'm^3s^-1');
 
-nc{'river_salt'} = ncfloat('time','rivers');
-nc{'river_salt'}.long_name = 'river runoff salinity'; 
-nc{'river_salt'}.units     = 'PSU';  
+river_temp_varid = netcdf.defVar(nc, 'river_temp', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_temp_varid, 'long_name', 'river runoff temperature');
+netcdf.putAtt(nc, river_temp_varid, 'units', 'Celsius');
 
-% river names (must be 26 character strings)
-for i=1:nRivnodes
-  fname = [RiverName int2str(i)];
-  temp  = '                          ';
-  temp(1:length(fname)) = fname;
-  nc{'river_names'}(i,:)   = temp;
-end;
+river_salt_varid = netcdf.defVar(nc, 'river_salt', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_salt_varid, 'long_name', 'river runoff salinity');
+netcdf.putAtt(nc, river_salt_varid, 'units', 'PSU');
+
+% end definitions
+netcdf.endDef(nc);
+
+% river names (must be 80 character strings)
+rString = char();
+for i = 1:nRivnodes
+    % Left-aligned 80 character string.
+    rString = [rString, sprintf('%-80s', RiverName{i})];
+end
+netcdf.putVar(nc, river_names_varid, rString);
 
 % dump dynamic data
-for i=1:nTimes
-  nc{'time'}(i) = time(i);
-  nc{'Itime'}(i) = floor(time(i));
-  nc{'Itime2'}(i) = mod(time(i),1)*24*3600*1000.;
-  nc{'river_flux'}(i,1:nRivnodes) = river_flux(i,1:nRivnodes); 
-  nc{'river_temp'}(i,1:nRivnodes) = river_temp(i,1:nRivnodes); 
-  nc{'river_salt'}(i,1:nRivnodes) = river_salt(i,1:nRivnodes); 
-  nc{'coarse_sand'}(i,1:nRivnodes) = coarse_sand(i,1:nRivnodes); 
-  nc{'medium_sand'}(i,1:nRivnodes) = medium_sand(i,1:nRivnodes); 
-  nc{'fine_sand'}(i,1:nRivnodes) = fine_sand(i,1:nRivnodes); 
-end;
+netcdf.putVar(nc, time_varid, 0, nTimes, time);
+netcdf.putVar(nc, itime_varid, 0, nTimes, floor(time));
+netcdf.putVar(nc, itime2_varid, 0, nTimes, mod(time, 1)*24*3600*1000);
+netcdf.putVar(nc, river_flux_varid, flux');
+netcdf.putVar(nc, river_temp_varid, temp');
+netcdf.putVar(nc, river_salt_varid, salt');
 
-nc = close(nc);    
+% build the time string and output to NetCDF.
+nStringOut = char();
+for tt = 1:nTimes
+    [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(time(tt));
+    nDate = [nYr, nMon, nDay, nHour, nMin, nSec];
+    nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ', nDate)];
+end
+netcdf.putVar(nc, times_varid, nStringOut);
 
+netcdf.close(nc);
 
-if(ftbverbose);
-  fprintf(['end   : ' subname '\n'])
-end;
+if ftbverbose
+    fprintf(['end   : ' subname '\n'])
+end
 

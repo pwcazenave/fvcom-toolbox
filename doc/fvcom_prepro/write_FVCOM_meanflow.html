@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_FVCOM_meanflow</title>
+  <meta name="keywords" content="write_FVCOM_meanflow">
+  <meta name="description" content="Export mean flow forcing at the open boundary to NetCDF.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_FVCOM_meanflow.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_FVCOM_meanflow
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Export mean flow forcing at the open boundary to NetCDF.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_FVCOM_meanflow(Mobj, ncfile, data) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Export mean flow forcing at the open boundary to NetCDF.
+
+ function write_FVCOM_meanflow(Mobj, ncfile, data)
+
+ DESCRIPTION:
+    Setup an FVCOM hydrographic open boundary mean flow forcing file.
+
+ INPUT:
+   Mobj    - MATLAB mesh object (with fields mf_time, siglay, siglev,
+               nObcElements and read_obc_elements).
+   ncfile  - Output NetCDF file name.
+   data    - 2D array of mean flow along the open boundary sized
+               (nobcelems, time).
+
+ OUTPUT:
+    FVCOM mean flow values along the FVCOM open boundary in a NETCDF file
+    named ncfile.
+
+ Author(s):
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ TODO: 
+    Add support for multiple open boundaries (currently hard limit of
+    one).
+
+ Revision history
+    2013-02-20 - First version.
+    2013-02-28 - Change output of velocities to be at the boundary element
+    centres rather than the boundary nodes.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_meanflow(Mobj, ncfile, data)</a>
+0002 <span class="comment">% Export mean flow forcing at the open boundary to NetCDF.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function write_FVCOM_meanflow(Mobj, ncfile, data)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Setup an FVCOM hydrographic open boundary mean flow forcing file.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT:</span>
+0010 <span class="comment">%   Mobj    - MATLAB mesh object (with fields mf_time, siglay, siglev,</span>
+0011 <span class="comment">%               nObcElements and read_obc_elements).</span>
+0012 <span class="comment">%   ncfile  - Output NetCDF file name.</span>
+0013 <span class="comment">%   data    - 2D array of mean flow along the open boundary sized</span>
+0014 <span class="comment">%               (nobcelems, time).</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%    FVCOM mean flow values along the FVCOM open boundary in a NETCDF file</span>
+0018 <span class="comment">%    named ncfile.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Author(s):</span>
+0021 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% TODO:</span>
+0024 <span class="comment">%    Add support for multiple open boundaries (currently hard limit of</span>
+0025 <span class="comment">%    one).</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Revision history</span>
+0028 <span class="comment">%    2013-02-20 - First version.</span>
+0029 <span class="comment">%    2013-02-28 - Change output of velocities to be at the boundary element</span>
+0030 <span class="comment">%    centres rather than the boundary nodes.</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%==========================================================================</span>
+0033 
+0034 subname = <span class="string">'write_FVCOM_meanflow'</span>;
+0035 
+0036 <span class="keyword">global</span> ftbverbose
+0037 <span class="keyword">if</span> ftbverbose
+0038     fprintf(<span class="string">'\n'</span>); fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>]);
+0039 <span class="keyword">end</span>
+0040 
+0041 <span class="comment">% open new NetCDF file</span>
+0042 nc = netcdf.create(ncfile, <span class="string">'clobber'</span>);
+0043 
+0044 <span class="comment">% define global attributes</span>
+0045 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'type'</span>, <span class="string">'FVCOM MEANFLOW TIME SERIES FILE'</span>)
+0046 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'title'</span>, <span class="string">'FVCOM MEANFLOW TIME SERIES data for open boundary'</span>)
+0047 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, <span class="string">'File created using write_FVCOM_meanflow.m from the MATLAB fvcom-toolbox'</span>)
+0048 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'filename'</span>, ncfile)
+0049 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'Conventions'</span>, <span class="string">'CF-1.0'</span>)
+0050 
+0051 <span class="comment">% define dimensions</span>
+0052 nmfcell_dimid = netcdf.defDim(nc, <span class="string">'nmfcell'</span>, Mobj.nObcElements);
+0053 time_dimid = netcdf.defDim(nc, <span class="string">'time'</span>, netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0054 siglay_dimid = netcdf.defDim(nc, <span class="string">'siglay'</span>, size(Mobj.siglay, 2));
+0055 siglev_dimid = netcdf.defDim(nc, <span class="string">'siglev'</span>, size(Mobj.siglev, 2));
+0056 
+0057 <span class="comment">% define variables</span>
+0058 time_varid = netcdf.defVar(nc, <span class="string">'time'</span>, <span class="string">'NC_FLOAT'</span>, time_dimid);
+0059 netcdf.putAtt(nc, time_varid, <span class="string">'long_name'</span>, <span class="string">'time'</span>);
+0060 netcdf.putAtt(nc, time_varid, <span class="string">'units'</span>, <span class="string">'days since 1858-11-17 00:00:00'</span>);
+0061 netcdf.putAtt(nc, time_varid, <span class="string">'format'</span>, <span class="string">'modified julian day (MJD)'</span>);
+0062 netcdf.putAtt(nc, time_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
+0063 
+0064 itime_varid = netcdf.defVar(nc, <span class="string">'Itime'</span>, <span class="string">'NC_INT'</span>, time_dimid);
+0065 netcdf.putAtt(nc, itime_varid, <span class="string">'units'</span>, <span class="string">'days since 1858-11-17 00:00:00'</span>);
+0066 netcdf.putAtt(nc, itime_varid, <span class="string">'format'</span>, <span class="string">'modified julian day (MJD)'</span>);
+0067 netcdf.putAtt(nc, itime_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
+0068 
+0069 itime2_varid = netcdf.defVar(nc, <span class="string">'Itime2'</span>, <span class="string">'NC_INT'</span>, time_dimid);
+0070 netcdf.putAtt(nc, itime2_varid, <span class="string">'units'</span>, <span class="string">'msec since 00:00:00'</span>);
+0071 netcdf.putAtt(nc, itime2_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
+0072 
+0073 nmfcell_varid = netcdf.defVar(nc, <span class="string">'I_MFCELL_GL'</span>, <span class="string">'NC_INT'</span>, nmfcell_dimid);
+0074 netcdf.putAtt(nc, nmfcell_varid, <span class="string">'long_name'</span>, <span class="string">'Open Boundary Cell Number'</span>);
+0075 netcdf.putAtt(nc, nmfcell_varid, <span class="string">'grid'</span>, <span class="string">'obc_grid'</span>);
+0076 netcdf.putAtt(nc, nmfcell_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0077 
+0078 mfdist_varid = netcdf.defVar(nc, <span class="string">'MFDIST'</span>, <span class="string">'NC_FLOAT'</span>, [siglay_dimid, nmfcell_dimid]);
+0079 netcdf.putAtt(nc, mfdist_varid, <span class="string">'long_name'</span>, <span class="string">'Mean Flow Flux Vertical Distribution'</span>);
+0080 netcdf.putAtt(nc, mfdist_varid, <span class="string">'units'</span>, <span class="string">'no units'</span>);
+0081 netcdf.putAtt(nc, mfdist_varid, <span class="string">'grid'</span>, <span class="string">'obc_grid'</span>);
+0082 netcdf.putAtt(nc, mfdist_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0083 
+0084 dmfqdis_varid = netcdf.defVar(nc, <span class="string">'DMFQDIS'</span>, <span class="string">'NC_FLOAT'</span>, [nmfcell_dimid, time_dimid]);
+0085 netcdf.putAtt(nc, dmfqdis_varid, <span class="string">'long_name'</span>, <span class="string">'open boundary mean flow flux'</span>);
+0086 netcdf.putAtt(nc, dmfqdis_varid, <span class="string">'units'</span>, <span class="string">'m^3/s'</span>);
+0087 netcdf.putAtt(nc, dmfqdis_varid, <span class="string">'grid'</span>, <span class="string">'obc_grid'</span>);
+0088 netcdf.putAtt(nc, dmfqdis_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0089 
+0090 <span class="comment">% end definitions</span>
+0091 netcdf.endDef(nc);
+0092 
+0093 <span class="comment">% write data</span>
+0094 netcdf.putVar(nc, time_varid, 0, numel(Mobj.mf_times), Mobj.mf_times);
+0095 netcdf.putVar(nc, itime_varid, floor(Mobj.mf_times));
+0096 netcdf.putVar(nc, itime2_varid, 0, numel(Mobj.mf_times), mod(Mobj.mf_times, 1) * 24 * 3600 * 1000);
+0097 netcdf.putVar(nc, nmfcell_varid, Mobj.read_obc_elements{1});
+0098 <span class="comment">% MFDIST is calculated here as the diff of the sigma levels. This should</span>
+0099 <span class="comment">% work for uniform and gaussian etc. distributions so long as Mobj.siglev</span>
+0100 <span class="comment">% has the right values in it.</span>
+0101 netcdf.putVar(nc, mfdist_varid, repmat(abs(diff(Mobj.siglev)), [numel([Mobj.read_obc_elements{:}]), 1])');
+0102 netcdf.putVar(nc, dmfqdis_varid, [0, 0], [numel(Mobj.read_obc_elements{1}), numel(Mobj.mf_times)], data);
+0103 
+0104 netcdf.close(nc);
+0105 
+0106 <span class="keyword">if</span> ftbverbose
+0107     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0108 <span class="keyword">end</span>
+0109</pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

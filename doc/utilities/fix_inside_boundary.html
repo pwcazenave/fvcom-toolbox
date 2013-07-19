@@ -1,0 +1,302 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of fix_inside_boundary</title>
+  <meta name="keywords" content="fix_inside_boundary">
+  <meta name="description" content="Fix unstructured grid points inside the given boundary.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; fix_inside_boundary.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>fix_inside_boundary
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Fix unstructured grid points inside the given boundary.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [adjx, adjy] = fix_inside_boundary(x, y, node_ids, ang_thresh) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Fix unstructured grid points inside the given boundary.
+
+ [adjx, adjy] = fix_inside_boundary(x, y, node_ids, ang_thresh)
+ 
+ DESCRIPTION:
+   Find the coordinates of points which are normal to the open boundary
+   described by the coordinates (x(node_ids), y(node_ids)). The distance
+   from the boundary is determined from the mean of the length of the two
+   adjacent boundary element lengths. Once the 'ideal' position has been
+   identified, find the closest existing nodal position and change it to
+   the 'ideal' position.
+
+   The resulting x2 and y2 coordinates can be exported to 2dm to be
+   checked in SMS for mesh quality with the fvcom-toolbox function
+   write_SMS_2dm.
+
+ INPUT:
+   x, y - Unstructured grid coordinates.
+   node_ids - List of IDs of the nodes within the grid which are on the
+              open boundary of interest.
+   ang_thresh - [optional] Specify a minimum angle in degrees between the
+                two adjacent nodal positions to deal with corners better.
+
+ OUTPUT:
+   adjx, adjy - New unstructured grid coordinate pairs in which the points
+                just inside the open boundary have been adjusted so as to
+                bisect the angle formed by the two adjacent boundary
+                faces.
+
+ EXAMPLE USAGE:
+   [adjx, adjy] = fix_inside_boundary(Mobj.x, Mobj.y, Mobj.read_obc_nodes{1}, 90)
+
+ NOTES:
+   This works best with cartesian coordinates but will work with spherical
+   too, although the angles for large elements will be incorrect.
+   Secondly, this will sometimes place put points outside the model domain
+   (though I'm not yet sure why). The net result is that you have to
+   re-edit the grid SMS by deleting that particular node and recreating
+   the triangulation manually.
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history:
+   2013-03-11 First version.
+   2013-03-19 Add optional minimum angle support.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [adjx, adjy] = fix_inside_boundary(x, y, node_ids, ang_thresh)</a>
+0002 <span class="comment">% Fix unstructured grid points inside the given boundary.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% [adjx, adjy] = fix_inside_boundary(x, y, node_ids, ang_thresh)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Find the coordinates of points which are normal to the open boundary</span>
+0008 <span class="comment">%   described by the coordinates (x(node_ids), y(node_ids)). The distance</span>
+0009 <span class="comment">%   from the boundary is determined from the mean of the length of the two</span>
+0010 <span class="comment">%   adjacent boundary element lengths. Once the 'ideal' position has been</span>
+0011 <span class="comment">%   identified, find the closest existing nodal position and change it to</span>
+0012 <span class="comment">%   the 'ideal' position.</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">%   The resulting x2 and y2 coordinates can be exported to 2dm to be</span>
+0015 <span class="comment">%   checked in SMS for mesh quality with the fvcom-toolbox function</span>
+0016 <span class="comment">%   write_SMS_2dm.</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% INPUT:</span>
+0019 <span class="comment">%   x, y - Unstructured grid coordinates.</span>
+0020 <span class="comment">%   node_ids - List of IDs of the nodes within the grid which are on the</span>
+0021 <span class="comment">%              open boundary of interest.</span>
+0022 <span class="comment">%   ang_thresh - [optional] Specify a minimum angle in degrees between the</span>
+0023 <span class="comment">%                two adjacent nodal positions to deal with corners better.</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% OUTPUT:</span>
+0026 <span class="comment">%   adjx, adjy - New unstructured grid coordinate pairs in which the points</span>
+0027 <span class="comment">%                just inside the open boundary have been adjusted so as to</span>
+0028 <span class="comment">%                bisect the angle formed by the two adjacent boundary</span>
+0029 <span class="comment">%                faces.</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% EXAMPLE USAGE:</span>
+0032 <span class="comment">%   [adjx, adjy] = fix_inside_boundary(Mobj.x, Mobj.y, Mobj.read_obc_nodes{1}, 90)</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% NOTES:</span>
+0035 <span class="comment">%   This works best with cartesian coordinates but will work with spherical</span>
+0036 <span class="comment">%   too, although the angles for large elements will be incorrect.</span>
+0037 <span class="comment">%   Secondly, this will sometimes place put points outside the model domain</span>
+0038 <span class="comment">%   (though I'm not yet sure why). The net result is that you have to</span>
+0039 <span class="comment">%   re-edit the grid SMS by deleting that particular node and recreating</span>
+0040 <span class="comment">%   the triangulation manually.</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">% Author(s):</span>
+0043 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">% Revision history:</span>
+0046 <span class="comment">%   2013-03-11 First version.</span>
+0047 <span class="comment">%   2013-03-19 Add optional minimum angle support.</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">%==========================================================================</span>
+0050 
+0051 subname = <span class="string">'fix_inside_boundary'</span>;
+0052 
+0053 <span class="keyword">global</span> ftbverbose
+0054 <span class="keyword">if</span> ftbverbose
+0055     fprintf(<span class="string">'\n'</span>); fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>]);
+0056 <span class="keyword">end</span>
+0057 
+0058 <span class="comment">% Check the inputs</span>
+0059 <span class="keyword">if</span> length(x) ~= length(y)
+0060     error(<span class="string">'Size of inputs (x, y) do not match.'</span>)
+0061 <span class="keyword">else</span>
+0062     <span class="comment">% Set the number of points in the boundary</span>
+0063     np = length(x(node_ids));
+0064 <span class="keyword">end</span>
+0065 
+0066 <span class="keyword">if</span> nargin == 4
+0067     minAng = true;
+0068 <span class="keyword">else</span>
+0069     minAng = false;
+0070 <span class="keyword">end</span>
+0071 
+0072 normx = nan(np, 1);
+0073 normy = nan(np, 1);
+0074 
+0075 <span class="comment">% Order the boundary points in clockwise order.</span>
+0076 [boundx, boundy] = poly2cw(x(node_ids), y(node_ids));
+0077 
+0078 <span class="comment">% Create an array for the list of indices which have been moved which are</span>
+0079 <span class="comment">% adjacent to the open boundary.</span>
+0080 seen = nan(np, 1);
+0081 
+0082 <span class="comment">% Create the output arrays from the input data. These values will be</span>
+0083 <span class="comment">% adjusted for the nodes adjacent to the open boundary defined by node_ids.</span>
+0084 adjx = x;
+0085 adjy = y;
+0086 
+0087 <span class="keyword">for</span> pp = 1:np
+0088     <span class="comment">% For each node, find the two closest nodes to it and use those as the</span>
+0089     <span class="comment">% adjacent vectors. Doing this is slower than just assuming the nodes</span>
+0090     <span class="comment">% are provided in a sorted order, but means we don't have to worry too</span>
+0091     <span class="comment">% much about any irregularities from the sorting above (poly2cw).</span>
+0092     [~, idx] = sort(sqrt((boundx(pp) - boundx).^2 + (boundy(pp) - boundy).^2));
+0093     
+0094     <span class="comment">% Get the coordinates of the two nearest points (skip the first closest</span>
+0095     <span class="comment">% because that's the current point).</span>
+0096     [px1, py1] = deal(boundx(idx(2)), boundy(idx(2)));
+0097     [px2, py2] = deal(boundx(idx(3)), boundy(idx(3)));
+0098     
+0099     <span class="comment">% Find the length of the edges of the triangle formed from the three</span>
+0100     <span class="comment">% points we're currently considering. 1 and 2 are those adjacent and 3</span>
+0101     <span class="comment">% is the remaining side.</span>
+0102     ln1 = sqrt((boundx(pp) - px1)^2 + (boundy(pp) - py1)^2);
+0103     ln2 = sqrt((boundx(pp) - px2)^2 + (boundy(pp) - py2)^2);
+0104     ln3 = sqrt((px1 - px2)^2 + (py1 - py2)^2);
+0105     
+0106     <span class="comment">% Find the angle between the two element edges and the current node</span>
+0107     <span class="comment">% (cosine rule). Use the real component only for cases where the three</span>
+0108     <span class="comment">% points lie on a straight line (in which case the angle should be</span>
+0109     <span class="comment">% 180 degrees).</span>
+0110     ang1 = real(acosd((ln1^2 + ln2^2 - ln3^2) / (2 * ln1 * ln2)));
+0111     ang1b = ang1 / 2; <span class="comment">% bisect the angle</span>
+0112 
+0113     <span class="comment">% Check if we've been given a threshold minimum angle and skip this</span>
+0114     <span class="comment">% open boundary point if we have.</span>
+0115     <span class="keyword">if</span> minAng
+0116         <span class="keyword">if</span> ang1 &lt; ang_thresh
+0117             <span class="keyword">continue</span>
+0118         <span class="keyword">end</span>
+0119     <span class="keyword">end</span>
+0120 
+0121     <span class="comment">% Find the angle to the horizontal for the current node and one of the</span>
+0122     <span class="comment">% other points.</span>
+0123     ang2 = atan2((py1 - boundy(pp)), (px1 - boundx(pp))) * (180 / pi);
+0124     
+0125     <span class="comment">% Find the difference between the two.</span>
+0126     ang3 = ang2 - ang1b;
+0127     
+0128     <span class="comment">% Now get the mean length of the two closest element edges and use that</span>
+0129     <span class="comment">% to create the new point inside the boundary. Scale it to 90% of the</span>
+0130     <span class="comment">% value to make a cleaner transition when we're shifting points below.</span>
+0131     ml = 0.9 * mean([ln1, ln2]);
+0132     dy = ml * sind(ang3);
+0133     dx = ml * cosd(ang3);
+0134 
+0135     <span class="comment">% Add the offsets to the current node to get the new node's position.</span>
+0136     [xx(1), yy(1)] = deal(boundx(pp) + dx, boundy(pp) + dy);
+0137     [xx(2), yy(2)] = deal(boundx(pp) - dx, boundy(pp) - dy);
+0138 
+0139     <span class="comment">% Check which of the two sets above is inside the polygon defined by</span>
+0140     <span class="comment">% the open boundary.</span>
+0141     <span class="keyword">if</span> inpolygon(xx(1), yy(1), boundx, boundy) == 1
+0142         [normx(pp, 1), normy(pp, 1)] = deal(xx(1), yy(1));
+0143     <span class="keyword">elseif</span> inpolygon(xx(2), yy(2), boundx, boundy) == 1
+0144         [normx(pp, 1), normy(pp, 1)] = deal(xx(2), yy(2));
+0145     <span class="keyword">else</span>
+0146         warning(<span class="string">'Both versions of the calculated point are outside the model domain. Skipping.'</span>)
+0147         <span class="keyword">continue</span>
+0148     <span class="keyword">end</span>
+0149         
+0150     <span class="comment">% OK, so now we have a new point approximately orthogonal to the</span>
+0151     <span class="comment">% current node, we can use its position to find the nearest existing</span>
+0152     <span class="comment">% node inside the domain and replace its coordinates with the new</span>
+0153     <span class="comment">% node's.</span>
+0154     [~, idx2] = sort(sqrt((normx(pp, 1) - x).^2 + (normy(pp, 1) - y).^2));
+0155     
+0156     <span class="comment">% We need to check we haven't seen this node before (in 'seen') and</span>
+0157     <span class="comment">% also that it's not an open boundary point.</span>
+0158     c = 1;
+0159     <span class="keyword">while</span> true
+0160         <span class="keyword">if</span> ismember(idx2(c), node_ids) || ismember(idx2(c), seen)
+0161             <span class="comment">% Keep going until we find one that's not been used before.</span>
+0162             c = c + 1;
+0163         <span class="keyword">else</span>
+0164             <span class="keyword">break</span>
+0165         <span class="keyword">end</span>
+0166     <span class="keyword">end</span>
+0167     <span class="comment">% Append to the list of coordinates we've seen so we don't move the</span>
+0168     <span class="comment">% same node twice.</span>
+0169     seen(pp) = idx2(c);
+0170 
+0171     <span class="comment">% Replace the coordinates.</span>
+0172     adjx(idx2(c)) = normx(pp, 1);
+0173     adjy(idx2(c)) = normy(pp, 1);
+0174 
+0175 <span class="keyword">end</span>
+0176 
+0177 <span class="keyword">if</span> ftbverbose
+0178     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0179 <span class="keyword">end</span>
+0180 
+0181 <span class="comment">% Do a figure to see the effect</span>
+0182 <span class="comment">% close all</span>
+0183 <span class="comment">% h = figure(1);</span>
+0184 <span class="comment">%</span>
+0185 <span class="comment">% % Original node positions</span>
+0186 <span class="comment">% plot(x, y, 'o', 'MarkerEdgeColor', [0.9, 0.1, 0.1], ...</span>
+0187 <span class="comment">%     'MarkerFaceColor', [1, 0.1, 0.1])</span>
+0188 <span class="comment">% hold on</span>
+0189 <span class="comment">% axis('equal', 'tight')</span>
+0190 <span class="comment">% % Adjusted node positions</span>
+0191 <span class="comment">% plot(adjx, adjy, 'o', 'MarkerEdgeColor', [0.1, 0.1, 0.8], ...</span>
+0192 <span class="comment">%     'MarkerFaceColor', [0.1, 0.1, 0.9])</span>
+0193 <span class="comment">%</span>
+0194 <span class="comment">% % Original triangulation</span>
+0195 <span class="comment">% patch('Vertices', [x, y], 'Faces', Mobj.tri, 'CData', [], ...</span>
+0196 <span class="comment">% 'edgecolor', [0.9, 0.1, 0.1], 'FaceColor', 'w', 'LineWidth', 1);</span>
+0197 <span class="comment">% % New triangulation</span>
+0198 <span class="comment">% patch('Vertices', [adjx, adjy], 'Faces', Mobj.tri, 'CData', [], ...</span>
+0199 <span class="comment">% 'edgecolor', [0.1, 0.1, 0.8], 'FaceColor', 'w', 'LineWidth', 1);</span>
+0200 <span class="comment">%</span>
+0201 <span class="comment">% % Open boundary nodes</span>
+0202 <span class="comment">% % plot(x(node_ids), y(node_ids), 'ko', 'MarkerFaceColor', 'k')</span>
+0203 <span class="comment">%</span>
+0204 <span class="comment">% legend('Original nodes', 'Adjusted nodes')</span>
+0205 <span class="comment">% legend('BoxOff')</span>
+0206 <span class="comment">%</span>
+0207 <span class="comment">% xlabel('Eastings')</span>
+0208 <span class="comment">% ylabel('Northings')</span></pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

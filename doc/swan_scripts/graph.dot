@@ -1,0 +1,23 @@
+/* Created by mdot for Matlab */
+digraph m2html {
+  example_fetchcalc -> fetch_calc;
+  example_fetchcalc -> get_fetch;
+  example_fetchcalc -> show_fetch;
+  fvcom2swan -> plot_swan_mesh;
+  ideal_swan_obc_driver_example -> ideal_swan_obc;
+
+  calc_fetch [URL="calc_fetch.html"];
+  calc_tauw [URL="calc_tauw.html"];
+  example_fetchcalc [URL="example_fetchcalc.html"];
+  fetch_calc [URL="fetch_calc.html"];
+  fvcom2swan [URL="fvcom2swan.html"];
+  get_fetch [URL="get_fetch.html"];
+  ideal_swan_obc [URL="ideal_swan_obc.html"];
+  ideal_swan_obc_driver_example [URL="ideal_swan_obc_driver_example.html"];
+  plot_swan_mesh [URL="plot_swan_mesh.html"];
+  plotunswan [URL="plotunswan.html"];
+  read_specfile [URL="read_specfile.html"];
+  show_fetch [URL="show_fetch.html"];
+  swan2netcdf [URL="swan2netcdf.html"];
+  ww3_to_swan_bndry [URL="ww3_to_swan_bndry.html"];
+}

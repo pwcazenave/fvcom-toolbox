@@ -9,7 +9,7 @@ clear all; close all;
 % Revision history
 %   
 %==============================================================================
-warning off
+%warning off
 type = 2;
 
 % set mesh/bathymetry files

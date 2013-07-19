@@ -1,5 +1,5 @@
 function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj)
-% example file for dumping a file to force temperature and salinity at the open b.
+% Export temperature and salinity forcing at the open boundary.
 %
 % function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
 %
@@ -173,7 +173,7 @@ nc = netcdf.create(tsOBCFile, 'clobber');
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM RIVER FORCING FILE')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','simple open boundary hydrography test')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM TIME SERIES OBC TS FILE')
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','generated using the fvcom-toolbox')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','File generated using write_FVCOM_tsobc.m from the MATLAB fvcom-toolbox')
 
 
 % define dimensions

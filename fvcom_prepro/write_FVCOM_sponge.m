@@ -50,7 +50,7 @@ else
 	Total_Sponge = sum(Mobj.nSpongeNodes(1:Mobj.nSponge));
 	fprintf(fid,'Sponge Node Number = %d\n',Total_Sponge);
 	for i=1:Mobj.nSponge
-        if max(size(Mobj.sponge_rad))==1   % if you have a constant sponge radius
+        if numel(unique(Mobj.sponge_rad)) == 1   % if you have a constant sponge radius
             for j=1:Mobj.nSpongeNodes(i)
                 fprintf(fid,'%d %f %f \n',Mobj.sponge_nodes(i,j),Mobj.sponge_rad(i),Mobj.sponge_fac(i));
             end;

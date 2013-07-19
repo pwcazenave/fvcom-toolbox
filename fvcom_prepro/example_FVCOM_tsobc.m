@@ -27,7 +27,7 @@ function example_FVCOM_tsobc(basename,time,nSiglay)
 % 
 %==============================================================================
 
-warning off;
+%warning off;
 
 
 subname = 'example_FVCOM_tsobc';
@@ -127,7 +127,7 @@ nc = netcdf.create(tsOBCFile, 'clobber');
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM RIVER FORCING FILE')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','simple open boundary hydrography test')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM TIME SERIES OBC TS FILE')
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','generated using the fvcom-toolbox')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','File generated using example_FVCOM_tsobc.m from the MATLAB fvcom-toolbox')
 
 
 % define dimensions

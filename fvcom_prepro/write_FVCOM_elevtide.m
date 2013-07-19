@@ -1,23 +1,23 @@
 function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
 % Write an FVCOM surface elevation time series forcing file 
 %
-% write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
+% write_FVCOM_elevtide(Mobj, MJD, ElevationFile, MyTitle)
 %
 % DESCRIPTION:
 %    Write an FVCOM NetCDF surface elevation forcing file
 %
 % INPUT:
-%   Mobj         = Matlab mesh object.
-%   MJD          = list of modified Modified Julian Dates of size [times]
-%                   (defined as unlimited in the NetCDF file).
-%   ElevationFile    = name of NetCDF file.
-%   MyTitle      = casename title, written as global attribute of NetCDF file.
+%   Mobj = Matlab mesh object.
+%   MJD = list of modified Modified Julian Dates of size [times] (defined 
+%         as unlimited in the NetCDF file).
+%   ElevationFile = name of NetCDF file.
+%   MyTitle = casename title, written as global attribute of NetCDF file.
 %
 % OUTPUT:
 %    ElevationFile, A NetCDF FVCOM surface elevations tide forcing file
 %
 % EXAMPLE USAGE
-%    write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
+%    write_FVCOM_elevtide(Mobj, MJD, '/tmp/elevtide.nc, 'Shelf tides')
 %
 % Author(s):  
 %    Pierre Cazenave (Plymouth Marine Laboratory)
@@ -25,15 +25,15 @@ function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
 % 
 % Revision history
 %    2012-08-08 (PWC) First version.
-%    2012-11-14 (PWC) Updated to expect Modified Julian Day rather than doing 
-%    the conversion in here. Also put the pieces in set_elevtide in here to
-%    simplify the process of writing out an elevation input file.
+%    2012-11-14 (PWC) Updated to expect Modified Julian Day rather than
+%    doing the conversion in here. Also put the pieces in set_elevtide in
+%    here to simplify the process of writing out an elevation input file.
 %    2012-12-04 (KJT) Updated to use surface elevation and open boundary 
 %    nodes from Mobj.
 %   
-%==============================================================================
+%==========================================================================
 
-global ftbverbose 
+global ftbverbose
 report = false;
 if(ftbverbose); report = true; end
 subname = 'write_FVCOM_elevtide';
@@ -47,9 +47,9 @@ tmpObcNodes = Mobj.obc_nodes';
 % code.
 ObcNodes = tmpObcNodes(tmpObcNodes~=0)';
 
-%------------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Sanity check on input and dimensions
-%------------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 nTimes = numel(MJD);
 if(report); fprintf('Number of time steps %d\n',nTimes); end
 
@@ -66,16 +66,16 @@ if nObcs ~= chk1 || nTimes ~= chk2
 end
 
 %%
-%------------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Dump the file
-%------------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 nc=netcdf.create(ElevationFile,'clobber');
 
 % define global attributes
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM TIME SERIES ELEVATION FORCING FILE')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title',MyTitle)
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','FILE CREATED using write_FVCOM_elevtide')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','File created using write_FVCOM_elevtide from the MATLAB fvcom-toolbox')
 
 % define dimensions
 nobc_dimid=netcdf.defDim(nc,'nobc',nObcs);

@@ -25,7 +25,7 @@ function write_FVCOM_bedflag(bedflag,filename,mytitle)
 % Revision history
 %   
 %==============================================================================
-warning off
+%warning off
 global ftbverbose;
 if(ftbverbose);
   subname = 'write_FVCOM_bedflag';

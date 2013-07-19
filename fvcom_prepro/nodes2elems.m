@@ -1,11 +1,10 @@
-function [fieldout]  = nodes2elems(fieldin,Mobj)
-
+function [fieldout] = nodes2elems(fieldin,Mobj)
 % Transfer a field from vertices to elements
 %
-% function [fieldout] = nodes2elems(fieldin,Mobj)  
+% function [fieldout] = nodes2elems(fieldin, Mobj)  
 %
 % DESCRIPTION:
-%    Smooth a vertex based field 
+%    Transfer a field from vertices (nodes) to elements
 %
 % INPUT
 %    Mobj         = Matlab mesh object
@@ -15,36 +14,36 @@ function [fieldout]  = nodes2elems(fieldin,Mobj)
 %    fieldout = element-based field
 %
 % EXAMPLE USAGE
-%    f = smoothfield(fv,Mobj)
+%    f = smoothfield(fv, Mobj)
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %
 % Revision history
 %   
-%==============================================================================
+%==========================================================================
 subname = 'nodes2elems';
 global ftbverbose;
-if(ftbverbose);
-  fprintf('\n')
-  fprintf(['begin : ' subname '\n'])
-end;
+if ftbverbose;
+    fprintf('\n')
+    fprintf(['begin : ' subname '\n'])
+end
 
-%------------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Parse input
-%------------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
-if(exist('fieldin')*exist('Mobj') == 0)
+if exist('fieldin', 'var') ~= 1 || exist('Mobj', 'var') ~= 1
 	error('arguments to nodes2elems are missing')
-end;
+end
 
-if(length(fieldin) ~= Mobj.nVerts)
+if length(fieldin) ~= Mobj.nVerts
 	error('field size in nodes2elems is not the same as number of nodes in Mesh')
-end;
+end
 
-%------------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Tranfser
-%------------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 fieldout = zeros(Mobj.nElems,1);
 
 for i=1:Mobj.nElems
@@ -52,7 +51,7 @@ for i=1:Mobj.nElems
 end;
 
 
-if(ftbverbose);
-  fprintf(['end   : ' subname '\n'])
-end;
+if ftbverbose
+    fprintf(['end   : ' subname '\n'])
+end
 

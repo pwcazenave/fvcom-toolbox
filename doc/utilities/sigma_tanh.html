@@ -4,7 +4,7 @@
 <head>
   <title>Description of sigma_tanh</title>
   <meta name="keywords" content="sigma_tanh">
-  <meta name="description" content="">
+  <meta name="description" content="Generate a tanh sigma coordinate distribution.">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
   <meta name="robots" content="index, follow">
@@ -21,13 +21,38 @@
 </h1>
 
 <h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong></strong></div>
+<div class="box"><strong>Generate a tanh sigma coordinate distribution.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="box"><strong>function dist = sigma_tanh(nlev,dl,du) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"></pre></div>
+<div class="fragment"><pre class="comment"> Generate a tanh sigma coordinate distribution.
+
+ Mobj = sigma_tanh(nlev, dl, du)
+
+ DESCRIPTION:
+   Generate a tanh vertical sigma coordinate distribution.
+
+ INPUT:
+   nlev:       Number of sigma levels (layers + 1)
+   dl:         The lower depth boundary from the bottom, down to which the
+               coordinates are parallel with uniform thickness.
+   du:         The upper depth boundary from the surface, up to which the
+               coordinates are parallel with uniform thickness.
+
+ OUTPUT:
+   dist:       Tanh vertical sigma coordinate distribution.
+
+ EXAMPLE USAGE:
+   Mobj = read_sigma(nlev, dl, du)
+
+ Author(s):
+   Geoff Cowles (University of Massachusetts Dartmouth)
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+   2013-04-23 Added help on the function and reformatted the code.</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -43,18 +68,44 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function dist = sigma_tanh(nlev,dl,du)</a>
-0002 
-0003   z=0.0;
-0004   <span class="keyword">for</span> k=1:nlev
-0005     x1=dl+du;
-0006     x1=x1*(nlev-1-k)/(nlev-1);
-0007     x1=x1-dl;
-0008     x1=tanh(x1);
-0009     x2=tanh(dl);
-0010     x3=x2+tanh(du);
-0011     z(k+1)=(x1+x2)/x3-1.0;
-0012   <span class="keyword">end</span>;
-0013</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0002 <span class="comment">% Generate a tanh sigma coordinate distribution.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Mobj = sigma_tanh(nlev, dl, du)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Generate a tanh vertical sigma coordinate distribution.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT:</span>
+0010 <span class="comment">%   nlev:       Number of sigma levels (layers + 1)</span>
+0011 <span class="comment">%   dl:         The lower depth boundary from the bottom, down to which the</span>
+0012 <span class="comment">%               coordinates are parallel with uniform thickness.</span>
+0013 <span class="comment">%   du:         The upper depth boundary from the surface, up to which the</span>
+0014 <span class="comment">%               coordinates are parallel with uniform thickness.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%   dist:       Tanh vertical sigma coordinate distribution.</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% EXAMPLE USAGE:</span>
+0020 <span class="comment">%   Mobj = read_sigma(nlev, dl, du)</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Author(s):</span>
+0023 <span class="comment">%   Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0024 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Revision history</span>
+0027 <span class="comment">%   2013-04-23 Added help on the function and reformatted the code.</span>
+0028 
+0029 dist = nan(1, nlev);
+0030 
+0031 <span class="keyword">for</span> k = 1:nlev
+0032     x1 = dl+du;
+0033     x1 = x1*(nlev-1-k)/(nlev-1);
+0034     x1 = x1-dl;
+0035     x1 = tanh(x1);
+0036     x2 = tanh(dl);
+0037     x3 = x2+tanh(du);
+0038     dist(k+1) = (x1+x2)/x3-1.0;
+0039 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

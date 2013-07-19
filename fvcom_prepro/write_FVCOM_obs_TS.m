@@ -55,6 +55,7 @@ fprintf('Size of T/S array: \n',ksl);
 nc = netcdf.create(filename,'clobber');
 
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title',mytitle)
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','File created with the write_FVCOM_obs_TS.m from the MATLAB fvcom-toolbox')
 
 % define dimensions
 ksl_dimid=netcdf.defDim(nc,'ksl',ksl);

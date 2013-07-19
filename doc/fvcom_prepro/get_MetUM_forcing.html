@@ -1,0 +1,381 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_MetUM_forcing</title>
+  <meta name="keywords" content="get_MetUM_forcing">
+  <meta name="description" content="Get the required parameters from the Met Office Unified Model (TM)">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_MetUM_forcing.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_MetUM_forcing
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Get the required parameters from the Met Office Unified Model (TM)</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function data = get_MetUM_forcing(Mobj, modelTime, credentials) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Get the required parameters from the Met Office Unified Model (TM)
+ (hereafter MetUM) to use in FVCOM surface forcing.
+
+ data = get_MetUM_forcing(Mobj, modelTime, credentials)
+
+ DESCRIPTION:
+   Using FTP access, extract the necessary parameters to create an FVCOM
+   forcing file. Requires the air_sea toolbox (see below for where to get
+   it). Data are sampled four times daily.
+
+ INPUT:
+   Mobj - MATLAB mesh object
+   modelTime - Modified Julian Date start and end times
+   credentials - struct with fields username and password to access the
+   FTP server.
+
+ OUTPUT:
+   data - struct of the data necessary to force FVCOM. These can be
+   interpolated onto an unstructured grid in Mobj using grid2fvcom.m.
+
+ The required parameters which can be obtained are:
+     - surface_net_downward_shortwave_flux (W m-2)
+     - surface_downwelling_shortwave_flux_in_air (W m-2)
+     - surface_net_downward_longwave_flux (W m-2)
+     - surface_downwelling_longwave_flux_in_air (W m-2)
+     - surface_upward_sensible_heat_flux (W m-2)
+     - eastward_wind / x_wind (m s-1)
+     - northward_wind / y_wind (m s-1)
+     - surface_upward_latent_heat_flux  (W m-2)
+     - air_temperature (K)
+     - relative_humidity (%)
+     - precipitation_flux (kg m-2 s-1)
+     - air_pressure_at_sea_level (Pa)
+
+ In addition to these, the momentum flux is calculated from wind data.
+ Precipitation is converted from kg/m^2/s to m/s. Evaporation is
+ calculated from the mean daily latent heat net flux (lhtfl) at the
+ surface.
+
+ REQUIRES:
+   The air_sea toolbox:
+       http://woodshole.er.usgs.gov/operations/sea-mat/air_sea-html/index.html
+
+ Author(s)
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history:
+   2013-05-07 First version.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function ftpdata = get_badc_data(remote, URL, files)</a></li><li><a href="#_sub2" class="code">function pp2nc(file, convsh)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function data = get_MetUM_forcing(Mobj, modelTime, credentials)</a>
+0002 <span class="comment">% Get the required parameters from the Met Office Unified Model (TM)</span>
+0003 <span class="comment">% (hereafter MetUM) to use in FVCOM surface forcing.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% data = get_MetUM_forcing(Mobj, modelTime, credentials)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%   Using FTP access, extract the necessary parameters to create an FVCOM</span>
+0009 <span class="comment">%   forcing file. Requires the air_sea toolbox (see below for where to get</span>
+0010 <span class="comment">%   it). Data are sampled four times daily.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% INPUT:</span>
+0013 <span class="comment">%   Mobj - MATLAB mesh object</span>
+0014 <span class="comment">%   modelTime - Modified Julian Date start and end times</span>
+0015 <span class="comment">%   credentials - struct with fields username and password to access the</span>
+0016 <span class="comment">%   FTP server.</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% OUTPUT:</span>
+0019 <span class="comment">%   data - struct of the data necessary to force FVCOM. These can be</span>
+0020 <span class="comment">%   interpolated onto an unstructured grid in Mobj using grid2fvcom.m.</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% The required parameters which can be obtained are:</span>
+0023 <span class="comment">%     - surface_net_downward_shortwave_flux (W m-2)</span>
+0024 <span class="comment">%     - surface_downwelling_shortwave_flux_in_air (W m-2)</span>
+0025 <span class="comment">%     - surface_net_downward_longwave_flux (W m-2)</span>
+0026 <span class="comment">%     - surface_downwelling_longwave_flux_in_air (W m-2)</span>
+0027 <span class="comment">%     - surface_upward_sensible_heat_flux (W m-2)</span>
+0028 <span class="comment">%     - eastward_wind / x_wind (m s-1)</span>
+0029 <span class="comment">%     - northward_wind / y_wind (m s-1)</span>
+0030 <span class="comment">%     - surface_upward_latent_heat_flux  (W m-2)</span>
+0031 <span class="comment">%     - air_temperature (K)</span>
+0032 <span class="comment">%     - relative_humidity (%)</span>
+0033 <span class="comment">%     - precipitation_flux (kg m-2 s-1)</span>
+0034 <span class="comment">%     - air_pressure_at_sea_level (Pa)</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% In addition to these, the momentum flux is calculated from wind data.</span>
+0037 <span class="comment">% Precipitation is converted from kg/m^2/s to m/s. Evaporation is</span>
+0038 <span class="comment">% calculated from the mean daily latent heat net flux (lhtfl) at the</span>
+0039 <span class="comment">% surface.</span>
+0040 <span class="comment">%</span>
+0041 <span class="comment">% REQUIRES:</span>
+0042 <span class="comment">%   The air_sea toolbox:</span>
+0043 <span class="comment">%       http://woodshole.er.usgs.gov/operations/sea-mat/air_sea-html/index.html</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">% Author(s)</span>
+0046 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0047 <span class="comment">%</span>
+0048 <span class="comment">% Revision history:</span>
+0049 <span class="comment">%   2013-05-07 First version.</span>
+0050 <span class="comment">%</span>
+0051 <span class="comment">%==========================================================================</span>
+0052 subname = <span class="string">'get_MetUM_forcing'</span>;
+0053 
+0054 <span class="keyword">global</span> ftbverbose;
+0055 <span class="keyword">if</span> ftbverbose;
+0056     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0057 <span class="keyword">end</span>
+0058 
+0059 <span class="comment">% Get the extent of the model domain (in spherical)</span>
+0060 <span class="keyword">if</span> ~Mobj.have_lonlat
+0061     error(<span class="string">'Need spherical coordinates to extract the forcing data'</span>)
+0062 <span class="keyword">else</span>
+0063     <span class="comment">% Add a 1 degree buffer to make sure the model domain is fully covered</span>
+0064     <span class="comment">% by the extracted data.</span>
+0065     [dx, dy] = deal(1, 1);
+0066     extents = [min(Mobj.lon(:))-(2*dx), max(Mobj.lon(:))+(2*dx), min(Mobj.lat(:))-dy, max(Mobj.lat(:))+dy];
+0067 <span class="keyword">end</span>
+0068 
+0069 nt = modelTime(end) - modelTime(1);
+0070 <span class="keyword">if</span> nt &gt; 365
+0071     error(<span class="string">'Can''t (yet) process more than a year at a time.'</span>)
+0072 <span class="keyword">end</span>
+0073 
+0074 [yearStart, monthStart, dayStart] = mjulian2greg(modelTime(1));
+0075 [yearEnd, monthEnd, dayEnd] = mjulian2greg(modelTime(end));
+0076 t = modelTime(1):1/4:modelTime(end);
+0077 
+0078 <span class="keyword">if</span> yearEnd ~= yearStart
+0079     error(<span class="string">'Can''t (yet) process across a year boundary.'</span>)
+0080 <span class="keyword">end</span>
+0081 
+0082 <span class="keyword">if</span> yearStart &lt; 2006 || yearEnd &gt; 2012
+0083     error(<span class="string">'The MetUM repository does not contain data earlier than 2006 and later than 2012'</span>)
+0084 <span class="keyword">end</span>
+0085 
+0086 <span class="comment">% For the pre-2006 data, we need to download several files with unique</span>
+0087 <span class="comment">% names. The names are based on the STASH numbers and the date:</span>
+0088 <span class="comment">%   naamYYYYMMDDHH_STASH#_00.pp</span>
+0089 <span class="comment">% The numbers we're interested in are stored in stash.</span>
+0090 stash = [2, 3, 407, 408, 409, 4222, 9229, 16004];
+0091 vars = {<span class="string">'uwnd'</span>, <span class="string">'uwnd'</span>, <span class="string">'vwnd'</span>, <span class="string">'vwnd'</span>, <span class="string">'slp_rho'</span>, <span class="string">'slp_theta'</span>, <span class="keyword">...</span>
+0092     <span class="string">'surface_air_pressure'</span>, <span class="string">'air_sw'</span>, <span class="string">'air_lw'</span>, <span class="keyword">...</span>
+0093     <span class="string">'rhum'</span>, <span class="string">'prate'</span>, <span class="string">'temp_model'</span>, <span class="string">'temp_press'</span>};
+0094 
+0095 ns = length(stash);
+0096 
+0097 <span class="comment">% From where will we be downloading the data?</span>
+0098 site = <span class="string">'ftp.ceda.ac.uk'</span>;
+0099 basePath = <span class="string">'badc/ukmo-um/data/nae/'</span>;
+0100 
+0101 <span class="comment">% Open a remote connection to the FTP site</span>
+0102 remote = ftp(site, credentials(1), credentials(2));
+0103 
+0104 <span class="comment">% Depending on the year we're extracting, we need to append different</span>
+0105 <span class="comment">% directories to get the data.</span>
+0106 <span class="keyword">for</span> i = 1:nt * 4 <span class="comment">% four files per day (at 0000, 0600, 1200 and 1800).</span>
+0107 
+0108     [year, month, day, hour] = mjulian2greg(t(i));
+0109 
+0110     <span class="comment">% Cell array for the files to download.</span>
+0111     files = cell(0);
+0112 
+0113     <span class="comment">% Do 2010 first because it straddles the two directories.</span>
+0114     <span class="keyword">if</span> year == 2010
+0115         <span class="keyword">if</span> month &lt; 11 &amp;&amp; day &lt; 4
+0116             <span class="comment">% Use the am data</span>
+0117             prefix = <span class="string">'am'</span>;
+0118             URL = sprintf(<span class="string">'%sna/%s/%04d/%02d/%02d'</span>, basePath, <span class="keyword">...</span>
+0119                 prefix, <span class="keyword">...</span>
+0120                 year, <span class="keyword">...</span>
+0121                 month, <span class="keyword">...</span>
+0122                 day);
+0123             <span class="keyword">for</span> f = 1:ns
+0124                 files{f} = sprintf(<span class="string">'na%s%04d%02d%02d%02d_%05d_00.pp'</span>, <span class="keyword">...</span>
+0125                     prefix, <span class="keyword">...</span>
+0126                     year, <span class="keyword">...</span>
+0127                     month, <span class="keyword">...</span>
+0128                     day, <span class="keyword">...</span>
+0129                     hour, <span class="keyword">...</span>
+0130                     stash(f));
+0131             <span class="keyword">end</span>
+0132         <span class="keyword">elseif</span> month &gt; 11 &amp;&amp; day &gt; 3
+0133             <span class="comment">% Use the mn data</span>
+0134             prefix = <span class="string">'mn'</span>;
+0135             URL = sprintf(<span class="string">'%sna/%s/%04d/%02d/%02d'</span>, basePath, <span class="keyword">...</span>
+0136                 prefix, <span class="keyword">...</span>
+0137                 year, <span class="keyword">...</span>
+0138                 month, <span class="keyword">...</span>
+0139                 day);
+0140             files = sprintf(<span class="string">'%s_%04d%02d%02d%02d_s00.pp'</span>, <span class="keyword">...</span>
+0141                 prefix, <span class="keyword">...</span>
+0142                 year, <span class="keyword">...</span>
+0143                 month, <span class="keyword">...</span>
+0144                 day, <span class="keyword">...</span>
+0145                 hour);
+0146         <span class="keyword">end</span>
+0147 
+0148     <span class="comment">% Check the 2006 data are from the 7th November onwards.</span>
+0149     <span class="keyword">elseif</span> year == 2006
+0150         <span class="keyword">if</span> month &lt; 11 
+0151             <span class="keyword">if</span> day &lt; 7
+0152                 error(<span class="string">'The MetUM repository does not contain data earlier than 7th November, 2006'</span>)
+0153             <span class="keyword">else</span>
+0154                 prefix = <span class="string">'am'</span>;
+0155                 URL = sprintf(<span class="string">'%sna/%s/%04d/%02d/%02d'</span>, basePath, <span class="keyword">...</span>
+0156                     prefix, <span class="keyword">...</span>
+0157                     year, <span class="keyword">...</span>
+0158                     month, <span class="keyword">...</span>
+0159                     day);
+0160                 <span class="keyword">for</span> f = 1:ns
+0161                     files{f} = sprintf(<span class="string">'na%s%04d%02d%02d%02d_%05d_00.pp'</span>, <span class="keyword">...</span>
+0162                         prefix, <span class="keyword">...</span>
+0163                         year, <span class="keyword">...</span>
+0164                         month, <span class="keyword">...</span>
+0165                         day, <span class="keyword">...</span>
+0166                         hour, <span class="keyword">...</span>
+0167                         stash(f));
+0168                 <span class="keyword">end</span>
+0169             <span class="keyword">end</span>
+0170         <span class="keyword">end</span>
+0171 
+0172     <span class="comment">% Check the 2012 data are from before the 17th January, 2012.</span>
+0173     <span class="keyword">elseif</span> year == 2012
+0174         <span class="keyword">if</span> month &gt; 1
+0175             error(<span class="string">'The MetUM repository does not contain data later than 17th January, 2012'</span>)
+0176         <span class="keyword">elseif</span> month == 1
+0177             <span class="keyword">if</span> day &gt; 17
+0178                 error(<span class="string">'The MetUM repository does not contain data later than 17th January, 2012'</span>)
+0179             <span class="keyword">else</span>
+0180                 prefix = <span class="string">'mn'</span>;
+0181             URL = sprintf(<span class="string">'%sna/%s/%04d/%02d/%02d'</span>, basePath, <span class="keyword">...</span>
+0182                     prefix, <span class="keyword">...</span>
+0183                     year, <span class="keyword">...</span>
+0184                     month, <span class="keyword">...</span>
+0185                     day);
+0186                 files = sprintf(<span class="string">'%s_%04d%02d%02d%02d_s00.pp'</span>, <span class="keyword">...</span>
+0187                     prefix, <span class="keyword">...</span>
+0188                     year, <span class="keyword">...</span>
+0189                     month, <span class="keyword">...</span>
+0190                     day, <span class="keyword">...</span>
+0191                     hour);
+0192             <span class="keyword">end</span>
+0193         <span class="keyword">end</span>
+0194 
+0195     <span class="comment">% Pre-2010 files.</span>
+0196     <span class="keyword">elseif</span> year &lt; 2010
+0197         <span class="comment">% Use the am data.</span>
+0198         prefix = <span class="string">'am'</span>;
+0199             URL = sprintf(<span class="string">'%sna/%s/%04d/%02d/%02d'</span>, basePath, <span class="keyword">...</span>
+0200             prefix, <span class="keyword">...</span>
+0201             year, <span class="keyword">...</span>
+0202             month, <span class="keyword">...</span>
+0203             day);
+0204             <span class="keyword">for</span> f = 1:ns
+0205                 files{f} = sprintf(<span class="string">'na%s%04d%02d%02d%02d_%05d_00.pp'</span>, <span class="keyword">...</span>
+0206                     prefix, <span class="keyword">...</span>
+0207                     year, <span class="keyword">...</span>
+0208                     month, <span class="keyword">...</span>
+0209                     day, <span class="keyword">...</span>
+0210                     hour, <span class="keyword">...</span>
+0211                     stash(f));
+0212             <span class="keyword">end</span>
+0213 
+0214     <span class="comment">% Post-2010 files.</span>
+0215     <span class="keyword">elseif</span> year &gt; 2010
+0216         <span class="comment">% Use the mn data.</span>
+0217         prefix = <span class="string">'mn'</span>;
+0218             URL = sprintf(<span class="string">'%sna/%s/%04d/%02d/%02d'</span>, basePath, <span class="keyword">...</span>
+0219             prefix, <span class="keyword">...</span>
+0220             year, <span class="keyword">...</span>
+0221             month, <span class="keyword">...</span>
+0222             day);
+0223         files = sprintf(<span class="string">'%s_%04d%02d%02d%02d_s00.pp'</span>, <span class="keyword">...</span>
+0224             prefix, <span class="keyword">...</span>
+0225             year, <span class="keyword">...</span>
+0226             month, <span class="keyword">...</span>
+0227             day, <span class="keyword">...</span>
+0228             hour);
+0229     <span class="keyword">end</span>
+0230 
+0231     fprintf(<span class="string">'%s: %s\n'</span>, URL, files{1})
+0232 <span class="keyword">end</span>
+0233 
+0234 <span class="comment">% Close the connection to the FTP server.</span>
+0235 close(remote)
+0236 
+0237 <span class="keyword">if</span> ftbverbose
+0238     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0239 <span class="keyword">end</span>
+0240 
+0241 
+0242 <a name="_sub1" href="#_subfunctions" class="code">function ftpdata = get_badc_data(remote, URL, files)</a>
+0243 <span class="comment">% Child function to do the actual downloading from the BADC site via FTP.</span>
+0244 <span class="comment">%</span>
+0245 <span class="comment">% Inputs:</span>
+0246 <span class="comment">%</span>
+0247 <span class="comment">%   remote - FTP object</span>
+0248 <span class="comment">%   URL - path to the files to download</span>
+0249 <span class="comment">%   files - cell array of a file or files to download</span>
+0250 <span class="comment">%</span>
+0251 <span class="comment">% Outputs:</span>
+0252 <span class="comment">%</span>
+0253 <span class="comment">%   noidea...</span>
+0254 
+0255 <span class="keyword">if</span> ~iscell(files)
+0256     error(<span class="string">'Provide a cell array of files to download'</span>)
+0257 <span class="keyword">end</span>
+0258 
+0259 cd(remote, URL);
+0260 nf = length(files);
+0261 <span class="keyword">for</span> i = 1:nf
+0262     tmpdata = mget(remote, files{i});
+0263     ftpdata.(vars{i}).data = 
+0264 <span class="keyword">end</span>
+0265 
+0266 
+0267 <a name="_sub2" href="#_subfunctions" class="code">function pp2nc(file, convsh)</a>
+0268 <span class="comment">% Child function to call the convsh program to convert the obscure pp</span>
+0269 <span class="comment">% format to a sensible NetCDF which we can more easily read.</span>
+0270 
+0271 <span class="comment">% Assume convsh is in /usr/local unless otherwise told.</span>
+0272 <span class="keyword">if</span> nargin == 1
+0273     convsh = <span class="string">'/usr/local/bin/convsh'</span>;
+0274 <span class="keyword">end</span>
+0275 
+0276 <span class="keyword">if</span> exist(file, <span class="string">'file'</span>) ~= 2
+0277     error(<span class="string">'File %s not found'</span>, file)
+0278 <span class="keyword">end</span>
+0279 
+0280 [path, name, ext] = fileparts(file);
+0281 out = fullfile(path, [name, <span class="string">'.nc'</span>]);
+0282 
+0283 system([convsh, <span class="string">'-i '</span>,</pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

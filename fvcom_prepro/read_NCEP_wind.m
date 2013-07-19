@@ -25,7 +25,7 @@ function ncep = read_NCEP_wind(ncep_u10_file, ncep_v10_file)
 % 
 %==========================================================================
 
-warning off
+%warning off
 
 if nargin ~= 2
     error('Incorrect number of arguments')

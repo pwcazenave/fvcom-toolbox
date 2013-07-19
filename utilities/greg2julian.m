@@ -42,7 +42,7 @@ function [JD,julianday] =greg2julian(year,month,day,hour,min,sec)
 % May-2006
 %
 % Modifications:
-% 04/06/06: To find the days, it was only changed the loop to a cell array. Thanks to Jérôme.
+% 04/06/06: To find the days, it was only changed the loop to a cell array. Thanks to JÃ©rÃ´me.
 % ------------------------------------------------------------------------------------------------------------
    
    error(nargchk(6,6,nargin))

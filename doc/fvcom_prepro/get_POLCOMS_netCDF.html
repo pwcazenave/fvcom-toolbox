@@ -1,0 +1,233 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_POLCOMS_netCDF</title>
+  <meta name="keywords" content="get_POLCOMS_netCDF">
+  <meta name="description" content="Read temperature and salinity from NetCDF model output files and">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_POLCOMS_netCDF.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_POLCOMS_netCDF
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Read temperature and salinity from NetCDF model output files and</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function ncdata = get_POLCOMS_netCDF(files, varlist) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Read temperature and salinity from NetCDF model output files and
+ interpolate onto the open boundaries in Mobj.
+
+ function struct = get_POLCOMS_netCDF(Mobj, files, varlist)
+
+ DESCRIPTION:
+    Extract variables in varlist to a struct from the files given in
+    files.
+
+ INPUT:
+   files   = Cell array of NetCDF file(s).
+   varlist = Cell array of variables names.
+
+ OUTPUT:
+    Struct in which the field names are the variable names supplied in var
+    list. Each field has a data and units array which contain the data and
+    units variables from the NetCDF. If no units are found, it is left
+    blank for that variable.
+
+ EXAMPLE USAGE
+    S = get_POLCOMS_netCDF({'/tmp/2000.nc', '/tmp/2001.nc', {'temp', 'salt'})
+
+ NOTES:
+
+   - If you supply multiple files, there are a few assumptions:
+
+       - Variables are only appended if there are 3 or 4 dimensions; fewer
+       than that, and the values are assumed to be static across all the
+       given files (e.g. longitude, latitude etc.). The last dimension
+       is assumed to be time.
+       - The order of the files given should be chronological.
+ 
+   - This has been tested on NetCDF files generated from the PML
+   POLCOMS-ERSEM daily mean model output
+
+ Author(s):
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+    2013-02-08 First version based on restart_FVCOM_AMM.m and
+    get_AMM_tsobc.m.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_POLCOMS_meanflow.html" class="code" title="function Mobj = get_POLCOMS_meanflow(Mobj, files)">get_POLCOMS_meanflow</a>	Read mean flow from the PML POLCOMS-ERSEM NetCDF AMM model output files</li><li><a href="get_POLCOMS_tsobc.html" class="code" title="function Mobj = get_POLCOMS_tsobc(Mobj, ts)">get_POLCOMS_tsobc</a>	Read temperature and salinity from the PML POLCOMS-ERSEM NetCDF model</li><li><a href="get_POLCOMS_tsobc_gcoms.html" class="code" title="function Mobj = get_POLCOMS_tsobc_gcoms(Mobj, ts)">get_POLCOMS_tsobc_gcoms</a>	Read temperature and salinity from the PML POLCOMS-ERSEM NetCDF model</li><li><a href="interp_POLCOMS2FVCOM.html" class="code" title="function Mobj = interp_POLCOMS2FVCOM(Mobj, ts, start_date, varlist)">interp_POLCOMS2FVCOM</a>	Use an FVCOM restart file to seed a model run with spatially varying</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function ncdata = get_POLCOMS_netCDF(files, varlist)</a>
+0002 <span class="comment">% Read temperature and salinity from NetCDF model output files and</span>
+0003 <span class="comment">% interpolate onto the open boundaries in Mobj.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function struct = get_POLCOMS_netCDF(Mobj, files, varlist)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Extract variables in varlist to a struct from the files given in</span>
+0009 <span class="comment">%    files.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT:</span>
+0012 <span class="comment">%   files   = Cell array of NetCDF file(s).</span>
+0013 <span class="comment">%   varlist = Cell array of variables names.</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% OUTPUT:</span>
+0016 <span class="comment">%    Struct in which the field names are the variable names supplied in var</span>
+0017 <span class="comment">%    list. Each field has a data and units array which contain the data and</span>
+0018 <span class="comment">%    units variables from the NetCDF. If no units are found, it is left</span>
+0019 <span class="comment">%    blank for that variable.</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% EXAMPLE USAGE</span>
+0022 <span class="comment">%    S = get_POLCOMS_netCDF({'/tmp/2000.nc', '/tmp/2001.nc', {'temp', 'salt'})</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% NOTES:</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">%   - If you supply multiple files, there are a few assumptions:</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">%       - Variables are only appended if there are 3 or 4 dimensions; fewer</span>
+0029 <span class="comment">%       than that, and the values are assumed to be static across all the</span>
+0030 <span class="comment">%       given files (e.g. longitude, latitude etc.). The last dimension</span>
+0031 <span class="comment">%       is assumed to be time.</span>
+0032 <span class="comment">%       - The order of the files given should be chronological.</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">%   - This has been tested on NetCDF files generated from the PML</span>
+0035 <span class="comment">%   POLCOMS-ERSEM daily mean model output</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">% Author(s):</span>
+0038 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% Revision history</span>
+0041 <span class="comment">%    2013-02-08 First version based on restart_FVCOM_AMM.m and</span>
+0042 <span class="comment">%    get_AMM_tsobc.m.</span>
+0043 <span class="comment">%</span>
+0044 <span class="comment">%==========================================================================</span>
+0045 
+0046 subname = <span class="string">'get_POLCOMS_netCDF'</span>;
+0047 
+0048 <span class="keyword">global</span> ftbverbose;
+0049 <span class="keyword">if</span> ftbverbose
+0050     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0051 <span class="keyword">end</span>
+0052 
+0053 <span class="comment">% Get the results. Check we have a cell array, and if we don't, assume it's</span>
+0054 <span class="comment">% a file name.</span>
+0055 <span class="keyword">if</span> iscell(files)
+0056     todo = length(files);
+0057 <span class="keyword">else</span>
+0058     todo = 1;
+0059 <span class="keyword">end</span>
+0060 
+0061 <span class="keyword">for</span> ii = 1:todo
+0062 
+0063     <span class="keyword">if</span> iscell(files)
+0064         ftn = files{ii};
+0065     <span class="keyword">else</span>
+0066         ftn = files;
+0067     <span class="keyword">end</span>
+0068 
+0069     <span class="keyword">if</span> ftbverbose
+0070         <span class="comment">% Strip path from filename for the verbose output.</span>
+0071         [~, basename, ext] = fileparts(ftn);
+0072         tmp_fn = [basename, ext];
+0073 
+0074         <span class="keyword">if</span> todo == 1
+0075             fprintf(<span class="string">'%s: extracting file %s... '</span>, subname, tmp_fn)
+0076         <span class="keyword">else</span>
+0077             fprintf(<span class="string">'%s: extracting file %s (%i of %i)... '</span>, subname, tmp_fn, ii, todo)
+0078         <span class="keyword">end</span>
+0079     <span class="keyword">end</span>
+0080 
+0081     nc = netcdf.open(ftn, <span class="string">'NOWRITE'</span>);
+0082 
+0083     <span class="keyword">for</span> var = 1:numel(varlist)
+0084 
+0085         getVar = varlist{var};
+0086         varid = netcdf.inqVarID(nc, getVar);
+0087 
+0088         data = double(netcdf.getVar(nc, varid, <span class="string">'single'</span>));
+0089         <span class="keyword">if</span> ii == 1
+0090             ncdata.(getVar).data = data;
+0091         <span class="keyword">else</span>
+0092             <span class="keyword">if</span> ndims(data) &lt; 3
+0093                 <span class="keyword">if</span> strcmpi(varlist{var}, <span class="string">'time'</span>)
+0094                     <span class="comment">% If the dimension is time, we need to be a bit more</span>
+0095                     <span class="comment">% clever since we'll need a concatenated time series</span>
+0096                     <span class="comment">% (in which values are continuous and from which we</span>
+0097                     <span class="comment">% can extract a sensible time). As such, we need to add</span>
+0098                     <span class="comment">% the maximum of the existing time. On the first</span>
+0099                     <span class="comment">% iteration, we should save ourselves the base time</span>
+0100                     <span class="comment">% (from the units of the time variable).</span>
+0101                     ncdata.(getVar).data = [ncdata.(getVar).data; data + max(ncdata.(getVar).data)];
+0102                 <span class="keyword">else</span>
+0103                     <span class="comment">% This should be a fixed set of values (probably lon or</span>
+0104                     <span class="comment">% lat) in which case we don't need to append them, so</span>
+0105                     <span class="comment">% just replace the existing values with those in the</span>
+0106                     <span class="comment">% current NetCDF file.</span>
+0107                     ncdata.(getVar).data = data;
+0108                 <span class="keyword">end</span>
+0109             <span class="keyword">elseif</span> ndims(data) == 3 || ndims(data) == 4
+0110                 <span class="comment">% Concatenate along the last dimension and hope/assume it's</span>
+0111                 <span class="comment">% a time dimension.</span>
+0112                 ncdata.(getVar).data = cat(ndims(data), ncdata.(getVar).data, data);
+0113             <span class="keyword">else</span>
+0114                 error(<span class="string">'Unsupported number of dimensions in PML POLCOMS-ERSEM data'</span>)
+0115             <span class="keyword">end</span>
+0116         <span class="keyword">end</span>
+0117         <span class="comment">% Try to get some units (important for the calculation of MJD).</span>
+0118         <span class="keyword">try</span>
+0119             <span class="keyword">if</span> ii == 1
+0120                 units = netcdf.getAtt(nc, varid, <span class="string">'units'</span>);
+0121             <span class="keyword">else</span>
+0122                 <span class="comment">% Leave the units values alone so we always use the values</span>
+0123                 <span class="comment">% from the first file. This is particularly important for</span>
+0124                 <span class="comment">% the time calculation later on which is dependent on</span>
+0125                 <span class="comment">% knowing the time origin of the first file.</span>
+0126                 <span class="keyword">continue</span>
+0127             <span class="keyword">end</span>
+0128         <span class="keyword">catch</span>
+0129             units = [];
+0130         <span class="keyword">end</span>
+0131         ncdata.(getVar).units = units;
+0132     <span class="keyword">end</span>
+0133 
+0134     netcdf.close(nc)
+0135 
+0136     <span class="keyword">if</span> ftbverbose
+0137         fprintf(<span class="string">'done.\n'</span>)
+0138     <span class="keyword">end</span>
+0139 
+0140 <span class="keyword">end</span>
+0141 
+0142 <span class="keyword">if</span> ftbverbose
+0143     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0144 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
