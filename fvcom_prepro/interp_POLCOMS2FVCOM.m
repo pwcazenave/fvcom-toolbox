@@ -117,12 +117,10 @@ if ftbverbose
     fprintf('%s : interpolate POLCOMS onto FVCOM''s vertical grid... ', subname)
 end
 
-% Permute the arrays to be x by y rather than y by x. Also flip the
-% vertical layer dimension to make the POLCOMS data go from surface to
-% seabed to match its depth data and to match how FVCOM works.
-temperature = flipdim(permute(squeeze(pc.ETWD.data(:, :, :, tidx)), [2, 1, 3]), 3);
-salinity = flipdim(permute(squeeze(pc.x1XD.data(:, :, :, tidx)), [2, 1, 3]), 3);
-density = flipdim(permute(squeeze(pc.rholocalD.data(:, :, :, tidx)), [2, 1, 3]), 3);
+% Permute the arrays to be x by y rather than y by x.
+temperature = permute(squeeze(pc.ETWD.data(:, :, :, tidx)), [2, 1, 3]);
+salinity = permute(squeeze(pc.x1XD.data(:, :, :, tidx)), [2, 1, 3]);
+density = permute(squeeze(pc.rholocalD.data(:, :, :, tidx)), [2, 1, 3]);
 depth = permute(squeeze(pc.depth.data(:, :, :, tidx)), [2, 1, 3]);
 mask = depth(:, :, end) >= 0; % land is positive.
 
@@ -221,33 +219,32 @@ if ftbverbose
 end
 
 %% Debugging figure
-%
+
 % close all
 %
-% tidx = 1; % time step to plot
 % ri = 85; % column index
 % ci = 95; % row index
+%
+% [~, idx] = min(sqrt((Mobj.lon - lon(ri, ci)).^2 + (Mobj.lat - lat(ri, ci)).^2));
 %
 % % Vertical profiles
 % figure
 % clf
 %
 % % The top row shows the temperature/salinity values as plotted against
-% % index (i.e. position in the array). Since POLCOMS stores the seabed
-% % first, its values appear at the bottom i.e. the profile is the right way
-% % up. Just to make things interesting, the depths returned from the NetCDF
-% % files are stored the opposite way (surface is the first value in the
-% % array). So, if you plot temperature/salinity against depth, the profile
-% % is upside down.
+% % index (i.e. position in the array). I had thought POLCOMS stored its data
+% % from seabed to sea surface, but looking at the NetCDF files in ncview,
+% % it's clear that the data are in fact stored surface to seabed (like
+% % FVCOM). As such, the two plots in the top row should be upside down (i.e.
+% % surface values at the bottom of the plot). The two lower rows should have
+% % three lines which all match: the raw POLCOMS data, the POLCOMS data for
+% % the current time step (i.e. that in 'temperature' and 'salinity') and the
+% % interpolated FVCOM data against depth.
 % %
-% % Thus, the vertical distribution of temperature/salinity profiles should
-% % match in the top and bottom rows. The temperature/salinity data are
-% % flipped in those figures (either directly in the plot command, or via the
-% % flipped arrays (temperature, salinity)).
-% %
-% % Furthermore, the pc.*.data have the rows and columns flipped, so (ci, ri)
-% % in pc.*.data and (ri, ci) in 'temperature', 'salinity' and 'depth'.
-% % Needless to say, the two lines in the lower plots should overlap.
+% % Also worth noting, the pc.*.data have the rows and columns flipped, so
+% % (ci, ri) in pc.*.data and (ri, ci) in 'temperature', 'salinity' and
+% % 'depth'. Needless to say, the two lines in the lower plots should
+% % overlap.
 %
 % subplot(2,2,1)
 % plot(squeeze(pc.ETWD.data(ci, ri, :, tidx)), 1:size(depth, 3), 'rx:')
@@ -264,30 +261,36 @@ end
 % subplot(2,2,3)
 % % Although POLCOMS stores its temperature values from seabed to surface,
 % % the depths are stored surface to seabed. Nice. Flip the
-% % temperature/salinity data accordingly.
-% plot(flipud(squeeze(pc.ETWD.data(ci, ri, :, tidx))), squeeze(pc.depth.data(ci, ri, :, tidx)), 'rx-')
+% % temperature/salinity data accordingly. The lines here should match one
+% % another.
+% plot(squeeze(pc.ETWD.data(ci, ri, :, tidx)), squeeze(pc.depth.data(ci, ri, :, tidx)), 'rx-')
 % hold on
 % plot(squeeze(temperature(ri, ci, :)), squeeze(depth(ri, ci, :)), '.:')
+% % Add the equivalent interpolated FVCOM data point
+% plot(fvtemp(idx, :), Mobj.siglayz(idx, :), 'g.-')
 % xlabel('Temperature (^{\circ}C)')
 % ylabel('Depth (m)')
 % title('Depth Temperature')
-% legend('pc', 'temp', 'location', 'north')
+% legend('pc', 'temp', 'fvcom', 'location', 'north')
 % legend('boxoff')
 %
 % subplot(2,2,4)
 % % Although POLCOMS stores its temperature values from seabed to surface,
 % % the depths are stored surface to seabed. Nice. Flip the
-% % temperature/salinity data accordingly.
-% plot(flipud(squeeze(pc.x1XD.data(ci, ri, :, tidx))), squeeze(pc.depth.data(ci, ri, :, tidx)), 'rx-')
+% % temperature/salinity data accordingly. The lines here should match one
+% % another.
+% plot(squeeze(pc.x1XD.data(ci, ri, :, tidx)), squeeze(pc.depth.data(ci, ri, :, tidx)), 'rx-')
 % hold on
 % plot(squeeze(salinity(ri, ci, :)), squeeze(depth(ri, ci, :)), '.:')
+% % Add the equivalent interpolated FVCOM data point
+% plot(fvsalt(idx, :), Mobj.siglayz(idx, :), 'g.-')
 % xlabel('Salinity')
 % ylabel('Depth (m)')
 % title('Depth Salinity')
-% legend('pc', 'salt', 'location', 'north')
+% legend('pc', 'salt', 'fvcom', 'location', 'north')
 % legend('boxoff')
 %
-% % Plot the sample location
+% %% Plot the sample location
 % figure
 % dx = mean(diff(pc.lon.data));
 % dy = mean(diff(pc.lat.data));

@@ -44,6 +44,7 @@ function Mobj = get_FVCOM_rivers(Mobj, dist_thresh)
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
+%    Karen Amoudry (National Oceanography Centre, Liverpool)
 %
 % Revision history:
 %   2013-03-27 - First version.

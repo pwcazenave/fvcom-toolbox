@@ -189,7 +189,6 @@ for ii = 1:numvars
             if ftbverbose
                 fprintf('new data... ')
             end
-%             warning('Replacing times in the restart file')
             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
             netcdf.putVar(ncout, varid, tmp_time)
@@ -200,7 +199,6 @@ for ii = 1:numvars
             if ftbverbose
                 fprintf('new data... ')
             end
-%             warning('Replacing times in the restart file')
             tmp_time = [];
             for i = 1:nt;
                 tmp_time = [tmp_time, sprintf('%-026s', datestr(datenum(start_date) - 7 + (i - 1), 'yyyy-mm-dd HH:MM:SS.FFF'))];
@@ -213,7 +211,6 @@ for ii = 1:numvars
             if ftbverbose
                 fprintf('new data... ')
             end
-%             warning('Replacing times in the restart file')
             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
             netcdf.putVar(ncout, varid, floor(tmp_time))
