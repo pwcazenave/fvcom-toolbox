@@ -354,10 +354,12 @@ for aa = 1:length(fields)
     % if something fails later on (e.g. the interpolation) because there's
     % NaNs, that should be a wakeup call to check what's going on with the
     % data.
-    actual_min = data_attributes.(fields{aa}).(fields{aa}).actual_range(1);
-    actual_max = data_attributes.(fields{aa}).(fields{aa}).actual_range(2);
-    mask = data.(fields{aa}).data < actual_min | data.(fields{aa}).data > actual_max;
-    data.(fields{aa}).data(mask) = NaN;
+    if isfield(data_attributes.(fields{aa}).(fields{aa}), 'actual_range')
+        actual_min = data_attributes.(fields{aa}).(fields{aa}).actual_range(1);
+        actual_max = data_attributes.(fields{aa}).(fields{aa}).actual_range(2);
+        mask = data.(fields{aa}).data < actual_min | data.(fields{aa}).data > actual_max;
+        data.(fields{aa}).data(mask) = NaN;
+    end
 end
 
 % Now we have some data, we need to create some additional parameters
