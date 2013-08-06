@@ -79,6 +79,9 @@ function data = get_NCEP_forcing(Mobj, modelTime, varlist)
 %   verion 7.7 but 7.13 is not greater than 7.7.
 %   2013-07-18 Add support for selecting only a subset of the available
 %   variables from NCEP.
+%   2013-08-06 Check the returned data from NCEP match the dimensions of
+%   the longitude and latitude data (particularly important for
+%   interpolation onto the unstructured grid with grid2fvcom).
 %
 %==========================================================================
 
@@ -143,9 +146,16 @@ fields = fieldnames(ncep);
 
 for aa = 1:length(fields)
 
+    if ftbverbose
+        fprintf('%s : getting ''%s'' data... ', subname, fields{aa})
+    end
+
     % Skip the downward/upward arrays (most of the time we'll be using the
     % NCEP-provided net values).
     if strcmpi(fields{aa}, 'dswrf') || strcmpi(fields{aa}, 'dlwrf') || strcmpi(fields{aa}, 'uswrf') || strcmpi(fields{aa}, 'ulwrf')
+        if ftbverbose
+            fprintf('skipping.\n')
+        end
         % But only if we haven't been given a list of variables to fetch.
         if nargin ~= 3
             continue
@@ -361,6 +371,14 @@ for aa = 1:length(fields)
         mask = data.(fields{aa}).data < actual_min | data.(fields{aa}).data > actual_max;
         data.(fields{aa}).data(mask) = NaN;
     end
+
+    if ftbverbose
+        if isfield(data, fields{aa})
+            fprintf('done.\n')
+        else
+            fprintf('error!\n')
+        end
+    end
 end
 
 % Now we have some data, we need to create some additional parameters
@@ -424,6 +442,45 @@ end
 % Convert temperature to degrees Celsius (from Kelvin)
 if isfield(data, 'air')
     data.air.data = data.air.data - 273.15;
+end
+
+% Make sure all the data we have downloaded is the same shape as the
+% longitude and latitude arrays. This is complicated by the fact the NCEP
+% surface products (e.g. rhum, slp) are on a different grid from the rest
+% (e.g. uwnd).
+for aa = 1:length(fields)
+    if strcmpi(fields{aa}, 'dswrf') || strcmpi(fields{aa}, 'dlwrf') || strcmpi(fields{aa}, 'uswrf') || strcmpi(fields{aa}, 'ulwrf')
+        % But only if we haven't been given a list of variables to fetch.
+        if nargin ~= 3
+            continue
+        end
+    end
+
+    if nargin == 3 && max(strcmp(fields{aa}, varlist)) ~= 1
+        % We've been given a list of variables to extract, so skip those
+        % that aren't in that list
+        continue
+    else
+        if isfield(data, fields{aa})
+            [px, py] = deal(length(data.(fields{aa}).lon), length(data.(fields{aa}).lat));
+            [ncx, ncy, ~] = size(data.(fields{aa}).data);
+            if ncx ~= px || ncy ~= py
+                data.(fields{aa}).data = permute(data.(fields{aa}).data, [2, 1, 3]);
+
+                % Check everything's OK now.
+                [ncx, ncy, ~] = size(data.(fields{aa}).data);
+                if ncx ~= px || ncy ~= py
+                    error('Unable to resize data arrays to match position data orientation. Are these data NCEP surface data (i.e. on a different horizontal grid?)')
+                else
+                    if ftbverbose
+                        fprintf('Matching %s data dimensions to position arrays\n', fields{aa})
+                    end
+                end
+            end
+        else
+            warning('Variable %s requested but not downloaded?', fields{aa})
+        end
+    end
 end
 
 % Have a look at some data.
