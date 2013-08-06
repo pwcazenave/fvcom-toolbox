@@ -69,6 +69,14 @@ function fvcom = grid2fvcom(Mobj, vars, data)
 %   not available, in which case no harm, no foul).
 %   2013-07-18 Add more elegant case statement rather than using string
 %   comparisons.
+%   2013-08-06 Fix fairly significant bug in which the position arrays were
+%   transposed relative to the data arrays. The code now checks for the
+%   dimensions and warns if they have been flipped to match. There is no
+%   checking that the flip has worked because the xalt and yalt arrays
+%   complicate things too much for me to figure out today. If you want to
+%   implement that functionality, please do so! I also added commented-out
+%   figure at the end to check the interpolation has worked properly,
+%   should you wish to check manually.
 %
 %==========================================================================
 
@@ -147,6 +155,18 @@ for vv = 1:length(vars)
             tmp_fvcom_node = zeros(nVerts, ntimes);
             tmp_data_data = data.(vars{vv}).data; % input to the interpolation
 
+            % Check the size of the input data matches the size of the
+            % position arrays.
+            [fvx, fvy] = size(data.x);
+            [fvxalt, fvyalt] = size(data.xalt);
+            [ncx, ncy] = size(tmp_data_data);
+            if (ncx ~= fvx || ncy ~= fvy) || (ncx ~= fvxalt || ncy ~= fvyalt)
+                % Flipping the input array so it hopefully matches the
+                % position arrays.
+                tmp_data_data = permute(tmp_data_data, [2, 1, 3]);
+                warning('Transposed ''%s'' input data to match position array dimensions', vars{vv})
+            end
+
             % Use a parallel loop for the number of time steps we're
             % interpolating (should be quicker, but will use more
             % memory...).
@@ -184,8 +204,8 @@ for vv = 1:length(vars)
                 % nnans(1) = sum(isnan(fvcom.(vars{vv}).node(:,i)));
                 % nnans(2) = sum(isnan(fvcom.(vars{vv}).data(:,i)));
                 % Parallel version:
-                tmp_fvcom_node(:, i) = ftsin(x,y);
-                tmp_fvcom_data(:, i) = ftsin(xc,yc);
+                tmp_fvcom_node(:, i) = ftsin(x, y);
+                tmp_fvcom_data(:, i) = ftsin(xc, yc);
                 nnans1 = sum(isnan(tmp_fvcom_node(:, i)));
                 nnans2 = sum(isnan(tmp_fvcom_data(:, i)));
                 if  nnans1 > 0
@@ -212,3 +232,29 @@ end
 if ftbverbose
     fprintf('end   : %s \n', subname)
 end
+
+%% Debugging figure to check the interpolation makes sense.
+
+% close all
+%
+% figure
+%
+% vartoplot='nshf';
+%
+% subplot(2, 1, 1)
+% pcolor(data.lon, data.lat, data.(vartoplot).data(:, :, 1)')
+% shading flat
+% axis('equal', 'tight')
+% title([vartoplot, ' (NCEP)'])
+% colorbar
+% caxis([min(min(data.(vartoplot).data(:, :, 1))), max(max(data.(vartoplot).data(:, :, 1)))])
+%
+% subplot(2, 1, 2)
+% patch('Vertices', [Mobj.lon, Mobj.lat], 'Faces', Mobj.tri, 'cData', fvcom.(vartoplot).data(:, 1));
+% shading flat
+% axis('equal')
+% axis([min(data.lon(:)), max(data.lon(:)), min(data.lat(:)), max(data.lat(:))])
+% title([vartoplot, ' (interpolated)'])
+% colorbar
+% caxis([min(min(data.(vartoplot).data(:, :, 1))), max(max(data.(vartoplot).data(:, :, 1)))])
+
