@@ -244,6 +244,7 @@ for aa = 1:length(fields)
     if iscell(index_lon)
         data.(fields{aa}).lon = data_lon.lon(cat(1,index_lon{:}));
 
+        % We need to do each half and merge them
         if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
             % varidlon = netcdf.inqVarID(ncid,'lon');
             % varidtime = netcdf.inqVarID(ncid,'time');
@@ -263,7 +264,6 @@ for aa = 1:length(fields)
             data1.(fields{aa}).(fields{aa}).(fields{aa})=cat(1,data1_west.(fields{aa}).(fields{aa}), data1_east.(fields{aa}).(fields{aa}));
 
         else
-            % We need to do each half and merge them
             eval(['data1_west.(fields{aa}) = loaddap(''', ncep.(fields{aa}),'?',...
                 fields{aa},'[', num2str(min(data_time_idx)-1),':',...
                 num2str(max(data_time_idx)-1), '][',...
@@ -275,6 +275,7 @@ for aa = 1:length(fields)
                 num2str(max(data_time_idx)-1), '][',...
                 num2str(min(index_lat)-1), ':', num2str(max(index_lat)-1),...
                 '][', '0', ':', num2str(max(index_lon{2})-1), ']'');']);
+
             % Merge the two sets of data together
             structfields = fieldnames(data1_west.(fields{aa}).(fields{aa}));
             for ii=1:length(structfields)
