@@ -258,7 +258,7 @@ for i=1:length(suffixes)
                 % just pass silently.
                 true;
 
-            case 'slp'
+            case {'slp', 'pres'}
                 if strcmpi(suffixes{i}, '_air_press') || ~multi_out
                     % Sea level pressure
                     slp_varid=netcdf.defVar(nc,'air_pressure','NC_FLOAT',[node_dimid, time_dimid]);
