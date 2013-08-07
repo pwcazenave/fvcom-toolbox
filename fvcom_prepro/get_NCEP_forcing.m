@@ -131,6 +131,13 @@ end
 
 % Set up a struct of the NCEP remote locations in which we're interested.
 url = 'http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis2/';
+% Grab the topo to mask off the land values (makes the interpolation to an
+% FVCOM domain more sensible). This is geopotential height, so not really
+% that useful in the end. I'll leave it in in case its of some use to
+% someone.
+ncep.topo  = [url, 'surface/topo.sfc.nc'];
+
+% Get the forcing data.
 ncep.uwnd   = [url, 'gaussian_grid/uwnd.10m.gauss.', num2str(year), '.nc'];
 ncep.vwnd   = [url, 'gaussian_grid/vwnd.10m.gauss.', num2str(year), '.nc'];
 ncep.air    = [url, 'gaussian_grid/air.2m.gauss.', num2str(year), '.nc'];
@@ -157,12 +164,6 @@ ncep.dswrf  = [url, 'gaussian_grid/dswrf.sfc.gauss.', num2str(year), '.nc'];
 ncep.uswrf  = [url, 'gaussian_grid/uswrf.sfc.gauss.', num2str(year), '.nc'];
 ncep.dlwrf  = [url, 'gaussian_grid/dlwrf.sfc.gauss.', num2str(year), '.nc'];
 ncep.ulwrf  = [url, 'gaussian_grid/ulwrf.sfc.gauss.', num2str(year), '.nc'];
-
-% Grab the topo to mask off the land values (makes the interpolation to an
-% FVCOM domain more sensible). This is geopotential height, so not really
-% that useful in the end. I'll leave it in in case its of some use to
-% someone.
-ncep.topo  = [url, 'surface/topo.sfc.nc'];
 
 fields = fieldnames(ncep);
 
@@ -545,13 +546,18 @@ end
 
 % Get the fields we need for the subsequent interpolation
 if nargin == 3
-    data.lon = data.(varlist{1}).lon;
+    if strcmpi(varlist{1}, 'topo')
+        ii = 2;
+    else
+        ii = 1;
+    end
+    data.lon = data.(varlist{ii}).lon;
     data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
-    data.lat = data.(varlist{1}).lat;
+    data.lat = data.(varlist{ii}).lat;
 else
-    data.lon = data.(fields{1}).lon;
+    data.lon = data.(fields{2}).lon;
     data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
-    data.lat = data.(fields{1}).lat;
+    data.lat = data.(fields{2}).lat;
 end
 
 % Convert temperature to degrees Celsius (from Kelvin)
