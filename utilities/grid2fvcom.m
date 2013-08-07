@@ -189,7 +189,10 @@ for vv = 1:length(vars)
                 try
                     ftsin = TriScatteredInterp(data.x(:), data.y(:), currvar(:), 'natural');
                 catch err
-                    if i == 1
+                    % In my experience, the matlabpool size - 1 is the
+                    % first iteration that actually gets printed to the
+                    % display.
+                    if i == matlabpool('size') - 1
                         % Only print the warning on the "first" iteration.
                         warning([err.identifier, ': Some NCEP data are projected' ...
                             ' onto a different grid. Check you have specified' ...
