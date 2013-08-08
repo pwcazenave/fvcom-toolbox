@@ -158,15 +158,25 @@ for vv = 1:length(vars)
             % Check the size of the input data matches the size of the
             % position arrays.
             [fvx, fvy] = size(data.x);
-            [fvxalt, fvyalt] = size(data.xalt);
-            [ncx, ncy] = size(tmp_data_data);
-            if (ncx ~= fvx || ncy ~= fvy) || (ncx ~= fvxalt || ncy ~= fvyalt)
-                % Flipping the input array so it hopefully matches the
-                % position arrays.
-                tmp_data_data = permute(tmp_data_data, [2, 1, 3]);
-                warning('Transposed ''%s'' input data to match position array dimensions', vars{vv})
+            if isfield(data, 'xalt')
+                [fvxalt, fvyalt] = size(data.xalt);
             end
-
+            [ncx, ncy] = size(tmp_data_data);
+            if isfield(data, 'xalt')
+                if (ncx ~= fvx || ncy ~= fvy) || (ncx ~= fvxalt || ncy ~= fvyalt)
+                    % Flipping the input array so it hopefully matches the
+                    % position arrays.
+                    tmp_data_data = permute(tmp_data_data, [2, 1, 3]);
+                    warning('Transposed ''%s'' input data to match position array dimensions', vars{vv})
+                end
+            else
+                if (ncx ~= fvx || ncy ~= fvy)
+                    % Flipping the input array so it hopefully matches the
+                    % position arrays.
+                    tmp_data_data = permute(tmp_data_data, [2, 1, 3]);
+                    warning('Transposed ''%s'' input data to match position array dimensions', vars{vv})
+                end
+            end
             % Use a parallel loop for the number of time steps we're
             % interpolating (should be quicker, but will use more
             % memory...).
