@@ -235,9 +235,10 @@ for aa = 1:length(fields)
             data_level.level = netcdf.getVar(ncid, varid, 'double');
             if length(data_level.level) > 1
                 % Assume we've got rhum and we want humidity at the sea
-                % surface (~1000hPa). As such, ZQQ must be 0.0 in the FVCOM
-                % model namelist.
-                [~, data_level_idx] = min(abs(data_level.level - 1000));
+                % surface (1013 millibars (or hPa)). As such, ZQQ must be
+                % 0.0 in the FVCOM model namelist. Find the closest level
+                % to pressure at 1 standard atmosphere.
+                [~, data_level_idx] = min(abs(data_level.level - 1013));
             end
         end
         if isempty(data_level_idx) % default to the first
@@ -546,10 +547,25 @@ end
 
 % Get the fields we need for the subsequent interpolation
 if nargin == 3
-    if strcmpi(varlist{1}, 'topo')
-        ii = 2;
-    else
-        ii = 1;
+    % Find the position of a sensibly sized array (i.e. not 'topo', 'rhum'
+    % or 'pres'.
+    for vv = 1:length(fields)
+        if nargin == 3 && max(strcmp(fields{vv}, varlist)) ~= 1
+            continue
+        end
+
+        switch fields{vv}
+            case 'topo'
+                continue
+            case 'rhum'
+                continue
+            case 'pres'
+                continue
+            otherwise
+                % We've got one, so stop looking.
+                ii = vv;
+                break
+        end
     end
     data.lon = data.(varlist{ii}).lon;
     data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
