@@ -212,7 +212,11 @@ netcdf.putVar(nc, airt_varid, data.air.node);
 netcdf.putVar(nc, rhum_varid, data.rhum.node);
 netcdf.putVar(nc, dlwrf_varid, data.dlwrf.node);
 netcdf.putVar(nc, dswrf_varid, data.dswrf.node);
-netcdf.putVar(nc, slp_varid, data.slp.node);
+try % work with both slp and pres data.
+    netcdf.putVar(nc, slp_varid, data.slp.node);
+catch
+    netcdf.putVar(nc, slp_varid, data.pres.node);
+end
 
 % Build the Times string and output to NetCDF.
 nStringOut = char();
