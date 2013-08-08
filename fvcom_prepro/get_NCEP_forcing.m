@@ -555,11 +555,16 @@ if nargin == 3
         end
 
         switch fields{vv}
+            % Set ii in each instance in case we've been told to only use
+            % one of the three alternatively gridded data.
             case 'topo'
+                ii = vv;
                 continue
             case 'rhum'
+                ii = vv;
                 continue
             case 'pres'
+                ii = vv;
                 continue
             otherwise
                 % We've got one, so stop looking.
