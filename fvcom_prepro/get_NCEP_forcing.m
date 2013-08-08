@@ -545,41 +545,34 @@ if isfield(data, 'uwnd') && isfield(data, 'vwnd')
     data.ty.data=reshape(data.ty.data*0.1, size(data.uwnd.data)); % dyn/cm^2 to N/m^2
 end
 
-% Get the fields we need for the subsequent interpolation
-if nargin == 3
-    % Find the position of a sensibly sized array (i.e. not 'topo', 'rhum'
-    % or 'pres'.
-    for vv = 1:length(fields)
-        if nargin == 3 && max(strcmp(fields{vv}, varlist)) ~= 1
-            continue
-        end
-
-        switch fields{vv}
-            % Set ii in each instance in case we've been told to only use
-            % one of the three alternatively gridded data.
-            case 'topo'
-                ii = vv;
-                continue
-            case 'rhum'
-                ii = vv;
-                continue
-            case 'pres'
-                ii = vv;
-                continue
-            otherwise
-                % We've got one, so stop looking.
-                ii = vv;
-                break
-        end
+% Get the fields we need for the subsequent interpolation Find the position
+% of a sensibly sized array (i.e. not 'topo', 'rhum' or 'pres'.
+for vv = 1:length(fields)
+    if nargin == 3 && max(strcmp(fields{vv}, varlist)) ~= 1
+        continue
     end
-    data.lon = data.(varlist{ii}).lon;
-    data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
-    data.lat = data.(varlist{ii}).lat;
-else
-    data.lon = data.(fields{2}).lon;
-    data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
-    data.lat = data.(fields{2}).lat;
+
+    switch fields{vv}
+        % Set ii in each instance in case we've been told to only use
+        % one of the three alternatively gridded data.
+        case 'topo'
+            ii = vv;
+            continue
+        case 'rhum'
+            ii = vv;
+            continue
+        case 'pres'
+            ii = vv;
+            continue
+        otherwise
+            % We've got one, so stop looking.
+            ii = vv;
+            break
+    end
 end
+data.lon = data.(fields{ii}).lon;
+data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
+data.lat = data.(fields{ii}).lat;
 
 % Convert temperature to degrees Celsius (from Kelvin)
 if isfield(data, 'air')
