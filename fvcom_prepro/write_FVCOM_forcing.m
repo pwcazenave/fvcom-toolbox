@@ -462,9 +462,10 @@ for i=1:length(suffixes)
             fprintf('done.\n')
         end
     end
-    if hf_done < 4
+    if hf_done < 4 && nshf == 1
         % hf_done might be higher than four, but unless it is at least
-        % four, we haven't got everything we need.
+        % four, we haven't got everything we need. Only trigger this
+        % warning if we've been given any of the net heat flux components.
         warning('Did not have all the required heat flux parameters. Need ''shtfl'', ''lhtfl'', ''nlwrs'' and ''nwsrs''.')
     end
 
