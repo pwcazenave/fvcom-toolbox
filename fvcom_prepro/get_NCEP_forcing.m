@@ -663,7 +663,7 @@ end
 % Get the fields we need for the subsequent interpolation Find the position
 % of a sensibly sized array (i.e. not 'topo', 'rhum' or 'pres'.
 for vv = 1:length(fields)
-    if nargin == 3 && max(strcmp(fields{vv}, varlist)) ~= 1
+    if ~isempty(varlist) && max(strcmp(fields{vv}, varlist)) ~= 1
         continue
     end
 
