@@ -36,7 +36,7 @@ function data = get_NCEP_forcing(Mobj, modelTime, varargin)
 %     - Air temperature (air)
 %     - Relative humidity (rhum)
 %     - Precipitation rate (prate)
-%     - Sea level pressure (pres)
+%     - Sea level pressure (pres or press)
 %     - Latent heat flux (lhtfl)
 %     - Surface heat flux (shtfl)
 %     - Potential evaporation rate (pevpr)
@@ -102,6 +102,9 @@ function data = get_NCEP_forcing(Mobj, modelTime, varargin)
 %   unstructured grid with grid2fvcom). I haven't fully tested these
 %   changes with the third-party OPeNDAP toolbox, but I have in principle
 %   added the necessary support.
+%   2013-08-08 Make the script a generic script to download either the
+%   original reanalysis ('reanalysis1'), the reanalysis-2 ('reanalysis2')
+%   or the 20th Century Reanalysis-2 ('20thC') data.
 %
 %==========================================================================
 
