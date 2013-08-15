@@ -57,11 +57,19 @@ if {[info exists outfile]} {
    exit
 }
 
+#  Need to interpolate output onto reduced, rotated pole grid (J Wolf)
+
+setgrid 1 218 -13. 0.11
+setgrid 2 136 48.39 0.11
+setrotpole 0. 90.
+
 #  Read in each of the input files
 
 foreach file $infile {
    readfile $filetype $file
 }
+
+interp_grid $fieldlist
 
 #  Write out all input fields to a single Netcdf file
 
