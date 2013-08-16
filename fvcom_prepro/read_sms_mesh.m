@@ -143,6 +143,8 @@ while StillReading
                 nStrings = nStrings + 1;
             case 'ME'
                 nHeader = nHeader + 1;
+            case 'E4'
+                error('Quadrilateral elements are unsupported in FVCOM')
             otherwise
                 StillReading = false;
         end
