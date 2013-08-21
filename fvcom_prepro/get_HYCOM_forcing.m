@@ -1,49 +1,56 @@
 function data = get_HYCOM_forcing(Mobj, modelTime)
 % Get mean flow, temperature and salinity data from HYCOM model outputs
 % through their OPeNDAP server. 
-% 
+%
 % data = get_HYCOM_forcing(Mobj, modelTime)
-% 
+%
 % DESCRIPTION:
 %   Using OPeNDAP, extract the necessary parameters to create an FVCOM
 %   forcing file. Requires the OPeNDAP toolbox (see below for where to get
-%   it).
-% 
+%   it) for versions of MATLAB older than 2012a (v7.14).
+%
 % INPUT: 
 %   Mobj - MATLAB mesh object
 %   modelTime - Modified Julian Date start and end times
-% 
+%
 % OUTPUT:
 %   data - struct of the data necessary to force FVCOM. These can be
 %   interpolated onto an unstructured grid in Mobj using
 %   grid2fvcom.m.
-% 
+%
 % The parameters which are obtained from the HYCOM data are:
 %     - temperature
 %     - salinity
 %     - u flow component
 %     - v flow component
-%     - sea surface height (ssh)
-% 
+%
 % REQUIRES:
 %   The OPeNDAP toolbox:
 %       http://www.opendap.org/pub/contributed/source/ml-toolbox/
-% 
+%
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
-% 
+%
 % Revision history:
 %   2013-01-31 First version.
-% 
+%   2013-08-19 Make some more progress in getting this working. Mainly
+%   change the way the dates are handled to form the relevant URL for
+%   downloading the data.
+%
 %==========================================================================
 
 subname = 'get_HYCOM_forcing';
 
 global ftbverbose;
-if(ftbverbose);
-    fprintf('\n')
-    fprintf(['begin : ' subname '\n'])
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
 end
+
+% For checking whether to use the third-party OPeNDAP toolbox or native
+% MATLAB tools. OPeNDAP support is included in MATLAB version 7.14 onwards.
+v714date = datenum(2012, 3, 1);
+currdate = ver('MATLAB');
+currdate = datenum(currdate.Date);
 
 % Get the extent of the model domain (in spherical)
 if ~Mobj.have_lonlat
@@ -68,16 +75,20 @@ else
     year = yearEnd;
 end
 
-if year < 2008 && monStart < 9
+% Use Modified Julian Days for the time checks
+[t1, t2, t3, ~, ~, ~] = datevec(date);
+if modelTime(1) < greg2mjulian(2008, 09, 16, 0, 0, 0)
     error('Not using the legacy HYCOM model output. Select a start date from September 2008 onwards.')
-elseif (year >= 2008 && monStart >= 9) && (year < 2009 && monEnd <= 5)
+elseif modelTime(1) >= greg2mjulian(2008, 9, 16, 0, 0, 0) && modelTime(1) < greg2mjulian(2009, 5, 6, 0, 0, 0)
     url = ['http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.6/', num2str(year)];
-elseif (year >= 2009 && monStart >= 5) && (year < 2011 && monEnd <= 1)
+elseif modelTime(1) >= greg2mjulian(2009, 5, 6, 0, 0, 0) && modelTime(1) < greg2mjulian(2011, 1, 2, 0, 0, 0)
     url = ['http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.8/', num2str(year)];
-elseif (year >= 2011 && monStart >= 1)
-    url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';
+elseif modelTime(1) >= greg2mjulian(2011, 1, 2, 0, 0, 0) && modelTime(1) <= greg2mjulian(t1, t2, t3, 0, 0, 0)
+    url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9/';
+elseif modelTime(1) > greg2mjulian(t1, t2, t3, 0, 0, 0)
+    error('Date is in the future?')
 else
-    error('Date is bef?')
+    error('Date is outside of known spacetime?')
 end
 
 % Get the days of year for the start and end dates
@@ -87,11 +98,11 @@ indEnd = ceil(datenum([yearEnd, monEnd, dayEnd, hEnd, mEnd, sEnd])) - datenum([y
 tInd = sprintf('[%i:1:%i]', indStart, indEnd);
 
 % Set up a struct of the HYCOM data sets in which we're interested.
-hycom.temp  = [url, '?temperature'];
-hycom.salt  = [url, '?salinity'];
-hycom.u     = [url, '?u'];
-hycom.v     = [url, '?v'];
-hycom.ssh   = [url, '?ssh'];
+hycom.temp  = [url, 'temp?temperature'];
+hycom.salt  = [url, 'salt?salinity'];
+hycom.dens  = [url, 'dens?density'];
+hycom.u     = [url, 'uvel?u'];
+hycom.v     = [url, 'vvel?v'];
 hycom.time  = [url, '?MT'];
 hycom.X     = [url, '?X'];
 hycom.Y     = [url, '?Y'];
@@ -127,22 +138,37 @@ hycom.lat   = [url, '?Latitude'];
 % data_lat = loaddap([ncep.(fields{aa}),'?lat']);
 % index_lat = find(data_lat.lat > extents(3) & data_lat.lat < extents(4));
 
-
-
-
 % Now get the latitude and longitude to calculate the indices representing
 % the model domain.
-data.X.idx = loaddap(hycom.X);
-data.Y.idx = loaddap(hycom.Y);
-xIdx = length(data.X.idx.X) - 1;
-yIdx = length(data.Y.idx.Y) - 1;
-data.lon.all = loaddap([hycom.lon, sprintf('[%i:1:%i]', 0, 0), sprintf('[%i:1:%i]', 0, xIdx)]);
-data.lat.all = loaddap([hycom.lat, sprintf('[%i:1:%i]', 0, yIdx), sprintf('[%i:1:%i]', 0, 0)]);
+
+% Depending on the MATLAB version, use either the third-party OPeNDAP
+% toolbox or the native MATLAB tools.
+
+data.X.data = [];
+data.Y.data = [];
+data.time.data = [];
+
+if datenum(currdate) > v714date
+    % Use the built in tools to open the remote file.
+    ncid = netcdf.open(hycom.X, 'NOWRITE');
+    % To identify what variables are in this file, use:
+    % ncid_info = ncinfo(hycom.X);
+    varid = netcdf.inqVarID(ncid, 'X');
+    % MATLAB 2012b crashes running this command. I suspect the size of the
+    % returned data is too large...
+    data.X.data = netcdf.getVar(ncid, varid, 'double');
+else
+    data.X.idx = loaddap(hycom.X);
+    data.Y.idx = loaddap(hycom.Y);
+    xIdx = length(data.X.idx.X) - 1;
+    yIdx = length(data.Y.idx.Y) - 1;
+    data.lon.all = loaddap([hycom.lon, sprintf('[%i:1:%i]', 0, 0), sprintf('[%i:1:%i]', 0, xIdx)]);
+    data.lat.all = loaddap([hycom.lat, sprintf('[%i:1:%i]', 0, yIdx), sprintf('[%i:1:%i]', 0, 0)]);
+end
 
 fields = fieldnames(hycom);
 
-for aa = 1:length(fields)
-    
+for aa = 1:length(fields)   
     % Store the downloaded data in a struct with associated spatial and
     % temporal data.
     data.(fields{aa}).data = [];
@@ -152,9 +178,15 @@ for aa = 1:length(fields)
     data_attributes.(fields{aa}) = [];
 
     % Get attributes from which to calculate length of various fields.
-    data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
-    % Get the data time and convert to Modified Julian Day.
-    data_time = loaddap(hycom.time);
+    if datenum(currdate) > v714date
+        data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
+        % Get the data time and convert to Modified Julian Day.
+        data_time = loaddap(hycom.time);
+    else
+        data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
+        % Get the data time and convert to Modified Julian Day.
+        data_time = loaddap(hycom.time);
+    end
 
     timevec = datevec((data_time.time)/24+365);
     data.time = greg2mjulian(timevec(:,1), timevec(:,2), timevec(:,3), ...
@@ -164,4 +196,4 @@ for aa = 1:length(fields)
     data_time_idx = 1:size(data.time,1);
     data_time_idx = data_time_idx(data_time_mask);
     data.time = data.time(data_time_mask);
-
+end
