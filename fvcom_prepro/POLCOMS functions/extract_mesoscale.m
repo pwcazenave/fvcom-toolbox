@@ -1,9 +1,11 @@
-function [metvar,X_send,Y_send] = extract_mesoscale(fname,ndays)
+function [metvar,X_send,Y_send] = extract_mesoscale(floc,ndays)
 
 %load in the mesoscale data from mesoscale operational POLCOMS met input data and convert to cs3 operational surge model met data grid
 % Script from JMB
+% 20130807 KJA edit: adapted to have file directory as an input, to make
+% the function more flexible.
 
-A= load (fullfile('/work/kthurs/Met_data_processing_scripts/MESOSCALE/OUTPUT/',fname));
+A= load (fullfile(floc));
 tint=24/3;%Time interval 3hrs
 days=ndays+2-1/tint; % number of days in month +2-1 to include extra day of output up to 21:00, the output before midnight of the next day
                % day 1 = 00:00 of the start day, day 1.5 = 12:00 of the start day
@@ -37,21 +39,12 @@ for kk = 1:ny:length(C)
 end
 
 %%
-% % Load coastline
-%  load '~/POLCOMS/POLCOMS_matlab/N_Atlantic_coast_m.dat';
-%  x=N_Atlantic_coast_m(:,1);
-%  y=N_Atlantic_coast_m(:,2);
-% 
-% % 
 % for kk=1:ny:length(C)
 %     figure(3)
 %     pcolor(X,Y,C(kk:kk+ny-1,:))
 %     shading interp
 %     hold on
 %     colorbar
-% %     %Plot coastline
-% %     plot(x,y,'k')
-% %     drawnow
 % end
 
 
