@@ -1,5 +1,91 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20130719
+--------
+
+This merges Geoff Cowles' GitHub repository with mine (at least that was the
+theory). Hopefully nothing catastrophic has happened.
+
+examples:
+    create_files_tutorial.m
+        * New directory into which scripts on how to use the tools in the
+        toolbox can be placed.
+
+fvcom_prepro:
+    add_obc_nodes_list.m
+        * Fix open boundary node ordering issues when using unique.
+    add_river_nodes_list.m
+        * Fix open boundary node ordering issues when using unique.
+    calc_sponge_radius.m
+        * Fix open boundary node ordering issues when using unique.
+    extract_mesoscale.m
+        * New script to extract POLCOMS meteorological forcing data.
+    get_AMM.m
+        * Fix typo.
+    get_FVCOM_rivers.m
+        * Add Karen to list of authors.
+    get_MetUM_pp.m
+        * Script to fetch Met Office (UK) operational model (Unified Model)
+        forcing files.
+    get_NAE2_forcing.m
+        * Fix typos.
+    get_NCEP_forcing.m
+        * Add (optional) support for extracting only particular variables from
+        the NCEP Reanalysis 2 OPeNDAP server. Also fix the version check.
+    get_POLCOMS_netCDF.m
+        * Use a variable rather than getting the name dynamically (makes it
+        marginally easier to read).
+    get_POLCOMS_tsobc.m
+        * Fix some bugs in the way the open boundary node values were stored
+        (the order in which they were stored did not match the order of the
+        nodes in Casename_obc.dat). Also fix the order of the vertically
+        interpolated values so that FVCOM starts at the surface instead of
+        mirroring POLCOMS' approach (where the first value is the seabed).
+    get_POLCOMS_tsobc_NOCL.m
+        * Add NOC Liverpool specific temperature and salinity interpolation
+        script.
+    interp_POLCOMS2FVCOM.m
+        * Fix the vertical ordering of the POLCOMS data. POLCOMS' scalar
+        values (temperature, salinity etc.) are stored seabed to surface;
+        its depths are stored surface to seabed; FVCOM stores everything
+        surface to seabed.
+    read_ERA_wind.m
+        * Major changes to this function. It is now able to automatically load
+        forcing data from a directory hierarchy for a given period.
+    read_grid_mesh.m
+        * New function to convert .grid format mesh files to mesh objects
+        (Mobj).
+    write_FVCOM_forcing.m
+        * Remove support for pevpr (pevpr is in W/m^{2} from the NCEP
+        Reanalysis 2 data; FVCOM wants evaporation in m/s). Update the help
+        accordingly.
+    write_FVCOM_heating.m
+        * New function to write an FVCOM NetCDF heating file (for
+        HEATING_CALCULATED).
+    write_FVCOM_meanflow_ascii.m
+        * Fix the way the open boundary nodes are obtained so their order
+        matches the casename_obc.dat file.
+    write_FVCOM_restart.m
+        * Remove commented out warnings.
+
+tests:
+    test_get_POLCOMS_tsobc.m
+        * Make minor process on getting this working (still not working).
+
+utilities:
+    get_BADC_data
+        * Child function for get_MetUM_pp.m to do the actual downloading of
+        the pp files.
+    grid2fvcom.m
+        * Add more elegant case statement rather than using string
+        comparisons.
+    pp2nc.m
+        * Convert Met Office (UK) pp files to a more sensible NetCDF file.
+    pp2nc.tcl
+        * convsh script to convert from pp to NetCDF format (using with
+        pp2nc.m).
+
+
 20130521
 --------
 

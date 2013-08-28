@@ -1,4 +1,4 @@
-function data = get_NCEP_forcing(Mobj, modelTime)
+function data = get_NCEP_forcing(Mobj, modelTime, varlist)
 % Get the required parameters from NCEP OPeNDAP data to force FVCOM
 % (through any of Casename_wnd.nc, Casename_sst.nc, Casename_hfx.nc
 % or Casename_pre_evap.nc).
@@ -16,6 +16,8 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 %       have_lonlat - boolean to signify whether coordinates are spherical
 %                   or cartesian.
 %   modelTime - Modified Julian Date start and end times
+%   varlist [optional] - cell array of data to download from NCEP. Use the
+%   NetCDF file prefix (e.g. uwnd, slp etc.).
 %
 % OUTPUT:
 %   data - struct of the data necessary to force FVCOM. These can be
@@ -40,7 +42,13 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 % surface.
 %
 % EXAMPLE USAGE:
-%   forcing = get_NCEP_forcing(Mobj, [51345, 51376]);
+%   To download the default set of data (see list above):
+%
+%       forcing = get_NCEP_forcing(Mobj, [51345, 51376]);
+%
+%   To only downloading wind data:
+%
+%       forcing = get_NCEP_forcing(Mobj, [51345, 51376], {'uwnd', 'vwnd'});
 %
 % REQUIRES:
 %   The air_sea toolbox:
@@ -67,8 +75,10 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 %   calculation of evaporation since we're estimating that from the latent
 %   heat net flux ('lhtfl'), so it's superfluous anyway.
 %   2013-06-28 Changed the way the Matlab version is determiend. Now using
-%   release data rather then version number. For example version 7.13 >
+%   release date rather then version number. For example version 7.13 >
 %   verion 7.7 but 7.13 is not greater than 7.7.
+%   2013-07-18 Add support for selecting only a subset of the available
+%   variables from NCEP.
 %
 %==========================================================================
 
@@ -92,7 +102,7 @@ if ~Mobj.have_lonlat
 else
     % Add a buffer of one grid cell in latitude and two in longitude to
     % make sure the model domain is fully covered by the extracted data.
-    [dx, dy] = deal(2.5, 2.5); % NCEP resolution in degrees
+    [dx, dy] = deal(2.5, 2.5); % approximate NCEP resolution in degrees
     extents = [min(Mobj.lon(:))-(2*dx), max(Mobj.lon(:))+(2*dx), min(Mobj.lat(:))-dy, max(Mobj.lat(:))+dy];
 end
 
@@ -121,21 +131,33 @@ ncep.lhtfl  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanaly
 ncep.shtfl  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/shtfl.sfc.gauss.',num2str(year),'.nc'];
 % ncep.pevpr  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/pevpr.sfc.gauss.',num2str(year),'.nc'];
 
-% Possible future data to use?
-% Skin temperature
-% ncep.skt    = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/skt.sfc.gauss.',num2str(year),'.nc'];
-
 % The fields below can be used to create the net shortwave and longwave
 % fluxes if the data you're using don't include net fluxes. Subtract the
 % downward from upward fluxes to get net fluxes.
-% ncep.dswrf  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/dswrf.sfc.gauss.',num2str(year),'.nc'];
-% ncep.uswrf  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/uswrf.sfc.gauss.',num2str(year),'.nc'];
-% ncep.dlwrf  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/dlwrf.sfc.gauss.',num2str(year),'.nc'];
-% ncep.ulwrf  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/ulwrf.sfc.gauss.',num2str(year),'.nc'];
+ncep.dswrf  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/dswrf.sfc.gauss.',num2str(year),'.nc'];
+ncep.uswrf  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/uswrf.sfc.gauss.',num2str(year),'.nc'];
+ncep.dlwrf  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/dlwrf.sfc.gauss.',num2str(year),'.nc'];
+ncep.ulwrf  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/ulwrf.sfc.gauss.',num2str(year),'.nc'];
 
 fields = fieldnames(ncep);
 
 for aa = 1:length(fields)
+
+    % Skip the downward/upward arrays (most of the time we'll be using the
+    % NCEP-provided net values).
+    if strcmpi(fields{aa}, 'dswrf') || strcmpi(fields{aa}, 'dlwrf') || strcmpi(fields{aa}, 'uswrf') || strcmpi(fields{aa}, 'ulwrf')
+        % But only if we haven't been given a list of variables to fetch.
+        if nargin ~= 3
+            continue
+        end
+    end
+
+    % We've been given a list of variables to do, so skip those that aren't
+    % in the list.
+    if nargin == 3 && max(strcmp(fields{aa}, varlist)) ~= 1
+        continue
+    end
+    
     data.(fields{aa}).data = [];
     data.(fields{aa}).time = [];
     data.(fields{aa}).lat = [];
@@ -351,7 +373,9 @@ end
 
 % Convert precipitation from kg/m^2/s to m/s (required by FVCOM) by
 % dividing by freshwater density (kg/m^3).
-data.prate.data = data.prate.data/1000;
+if isfield(data, 'prate')
+    data.prate.data = data.prate.data/1000;
+end
 
 % Evaporation can be approximated by:
 %
@@ -363,26 +387,41 @@ data.prate.data = data.prate.data/1000;
 %   Llv     = Latent heat of vaporization (approx to 2.5*10^6 J kg^-1)
 %   rho     = 1025 kg/m^3
 %
-Llv = 2.5*10^6;
-rho = 1025; % using a typical value for seawater.
-Et = data.lhtfl.data/Llv/rho;
-data.P_E.data = data.prate.data - Et;
-% Evaporation and precipitation need to have the same sign for FVCOM (ocean
-% losing water is negative in both instances). So, flip the evaporation
-% here.
-data.Et.data = -Et;
+if isfield(data, 'prate')
+    Llv = 2.5*10^6;
+    rho = 1025; % using a typical value for seawater.
+    Et = data.lhtfl.data/Llv/rho;
+    data.P_E.data = data.prate.data - Et;
+    % Evaporation and precipitation need to have the same sign for FVCOM (ocean
+    % losing water is negative in both instances). So, flip the evaporation
+    % here.
+    data.Et.data = -Et;
+end
 
 % Calculate the momentum flux
-WW = data.uwnd.data + data.vwnd.data * 1i;
-data.tau.data = stresslp(abs(WW),10);
-[data.tx.data,data.ty.data] = wstress(data.uwnd.data,data.vwnd.data,10);
-data.tx.data=reshape(data.tx.data*0.1, size(data.uwnd.data)); % dyn/cm^2 to N/m^2
-data.ty.data=reshape(data.ty.data*0.1, size(data.uwnd.data)); % dyn/cm^2 to N/m^2
+if isfield(data, 'uwnd') && isfield(data, 'vwnd')
+    WW = data.uwnd.data + data.vwnd.data * 1i;
+    data.tau.data = stresslp(abs(WW),10);
+    [data.tx.data,data.ty.data] = wstress(data.uwnd.data,data.vwnd.data,10);
+    data.tx.data=reshape(data.tx.data*0.1, size(data.uwnd.data)); % dyn/cm^2 to N/m^2
+    data.ty.data=reshape(data.ty.data*0.1, size(data.uwnd.data)); % dyn/cm^2 to N/m^2
+end
 
 % Get the fields we need for the subsequent interpolation
-data.lon = data.(fields{1}).lon;
-data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
-data.lat = data.(fields{1}).lat;
+if nargin == 3
+    data.lon = data.(varlist{1}).lon;
+    data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
+    data.lat = data.(varlist{1}).lat;
+else
+    data.lon = data.(fields{1}).lon;
+    data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
+    data.lat = data.(fields{1}).lat;
+end
+
+% Convert temperature to degrees Celsius (from Kelvin)
+if isfield(data, 'air')
+    data.air.data = data.air.data - 273.15;
+end
 
 % Have a look at some data.
 % [X, Y] = meshgrid(data.lon, data.lat);

@@ -60,8 +60,6 @@ function Mobj = get_FVCOM_rivers(Mobj, dist_thresh)
 %   searches for another node in the element which is part of at least two
 %   elements, thereby avoiding the "element filling" issue. Also updated
 %   the help to list all the required fields in the Mobj.
-%   2013-01-02 KJA bug fix: amended usage of 'unique' to prevent it from
-%   sorting the values it returns.
 %
 %==========================================================================
 
@@ -90,7 +88,7 @@ polcoms_flow = Mobj.rivers.discharge;
 % For duplicates, we need, therefore, to work out a way to handle them
 % elegantly. We will assume that rivers with the same name are close to one
 % another. As such, we'll sum their discharges. 
-[~, di] = unique(fvcom_name, 'first','stable');
+[~, di] = unique(fvcom_name, 'first');
 fv_dupes = 1:length(fvcom_name);
 fv_dupes(di) = []; % index of duplicates (does this work with more than two?)
 
@@ -232,7 +230,7 @@ end
 
 % Now we've got a list and some of the nodes will be duplicates. Sum the
 % discharge values assigned to those nodes.
-fv_uniq_obc = unique(fv_obc,'stable');
+fv_uniq_obc = unique(fv_obc);
 
 fv_uniq_flow = nan(pc_nt, length(fv_uniq_obc));
 fv_uniq_names = cell(length(fv_uniq_obc), 1);
