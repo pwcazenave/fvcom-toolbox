@@ -1,9 +1,30 @@
 function [metvar,X_send,Y_send] = extract_mesoscale(floc,ndays)
-
-%load in the mesoscale data from mesoscale operational POLCOMS met input data and convert to cs3 operational surge model met data grid
-% Script from JMB
-% 20130807 KJA edit: adapted to have file directory as an input, to make
-% the function more flexible.
+% Load mesoscale operational POLCOMS meteorlogical input data and convert
+% to the cs3 operational surge model grid.
+%
+% [metvar,X_send,Y_send] = extract_mesoscale(floc,ndays)
+%
+% DESCRIPTION:
+%     Extracts meteorological data from the met input files for the POLCOMS 
+%     operational model, and reformats it to fit the cs3 operational surge 
+%     model grid.
+%     
+% INPUT:
+%     floc - location of the met data file to be converted
+%     ndays - the number of days in the month of interest
+%     
+% OUTPUT:
+%     metvar - array of met data ready to be interpolated onto the FVCOM 
+%     grid.
+%     X_send, Y_send - x and y coordinates of the met data
+%     
+% Author(s):
+%     Jenny Brown (National Oceanography Centre, Liverpool)
+%     Karen Amoudry (National Oceanography Centre, Liverpool)
+%     
+% KJA revision history:
+%     2013-08-07 Adapted original version from JMB to take the file location 
+%     as an input to the script.
 
 A= load (fullfile(floc));
 tint=24/3;%Time interval 3hrs
