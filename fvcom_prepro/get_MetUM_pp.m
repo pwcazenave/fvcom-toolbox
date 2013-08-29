@@ -1,8 +1,8 @@
-function met_files = get_MetUM_pp(Mobj, modelTime, credentials)
+function met_files = get_MetUM_pp(modelTime, credentials)
 % Get the required parameters from the Met Office Unified Model (TM)
 % (hereafter MetUM) to use in FVCOM surface forcing.
 %
-% data = get_MetUM_pp(Mobj, modelTime, credentials)
+% met_files = get_MetUM_pp(modelTime, credentials)
 %
 % DESCRIPTION:
 %   Using FTP access, extract the necessary parameters to create an FVCOM
@@ -10,8 +10,7 @@ function met_files = get_MetUM_pp(Mobj, modelTime, credentials)
 %   it). Data are sampled four times daily.
 %
 % INPUT:
-%   Mobj - MATLAB mesh object
-%   modelTime - Modified Julian Date start and end times
+%   modelTime - Modified Julian Date start and end times array
 %   credentials - struct with fields username and password to access the
 %   FTP server.
 %
@@ -23,6 +22,7 @@ function met_files = get_MetUM_pp(Mobj, modelTime, credentials)
 %     - surface_downwelling_shortwave_flux_in_air (W m-2)
 %     - surface_net_downward_longwave_flux (W m-2)
 %     - surface_downwelling_longwave_flux_in_air (W m-2)
+%     - surface_upward_latent_heat_flux (W m-2)
 %     - surface_upward_sensible_heat_flux (W m-2)
 %     - eastward_wind / x_wind (m s-1)
 %     - northward_wind / y_wind (m s-1)
@@ -36,10 +36,9 @@ function met_files = get_MetUM_pp(Mobj, modelTime, credentials)
 % Precipitation is converted from kg/m^2/s to m/s. Evaporation is
 % calculated from the mean daily latent heat net flux (lhtfl) at the
 % surface.
-% 
+%
 % EXAMPLE USAGE:
-%   metum_forcing = get_MetUM_pp(Mobj, [51725, 51757], ...
-%       {'username', 'password'});
+%   met_files = get_MetUM_pp([51725, 51757], {'username', 'password'});
 %
 % TODO:
 %   Add support for the AP directories on the FTP server.
@@ -56,6 +55,7 @@ function met_files = get_MetUM_pp(Mobj, modelTime, credentials)
 %   get_MetUM_forcing to get_MetUM_pp to better reflect what it does.
 %
 %==========================================================================
+
 subname = 'get_MetUM_forcing';
 
 global ftbverbose
@@ -84,7 +84,10 @@ assert(yearStart >= 2006 && yearEnd <= 2012, 'The MetUM repository does not cont
 stash = [2, 3, 407, 408, 409, 4222, 9229, 16004, ...
     1201, 1235, 2207, 2201, 3217, 3225, 3226, 3234, 3236, 3237, 3245, ...
     5216, 16222, 20004];
-% The stash numbers, and their corresponding forcing type:
+% The stash numbers and their corresponding forcing type.
+%
+% AP = analysis, pressure levels
+% AM = analysis, model levels
 %
 % |---------|-------------------------------------------|
 % | stash # | forcing type                              |
@@ -109,7 +112,7 @@ stash = [2, 3, 407, 408, 409, 4222, 9229, 16004, ...
 % | 3217    | surface_upward_sensible_heat_flux         |
 % | 3225    | eastward_wind / x_wind                    |
 % | 3226    | northward_wind / y_wind                   |
-% | 3234    | surface_upward_latenet_heat_flux          |
+% | 3234    | surface_upward_latent_heat_flux           |
 % | 3236    | air_temperature                           |
 % | 3237    | specific_humidity                         |
 % | 3245    | relative_humidity                         |
@@ -164,12 +167,12 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
                 year, ...
                 month, ...
                 day);
-            files = sprintf('%s_%04d%02d%02d%02d_s00.pp', ...
+            files = {sprintf('%s_%04d%02d%02d%02d_s00.pp', ...
                 prefix, ...
                 year, ...
                 month, ...
                 day, ...
-                hour);
+                hour)};
         end
         sprintf('%s', filepath);
 
@@ -206,17 +209,17 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
                 error('The MetUM repository does not contain data later than 17th January, 2012')
             else
                 prefix = 'mn';
-            filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
+                filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
                     prefix, ...
                     year, ...
                     month, ...
                     day);
-                files = sprintf('%s_%04d%02d%02d%02d_s00.pp', ...
+                files = {sprintf('%s_%04d%02d%02d%02d_s00.pp', ...
                     prefix, ...
                     year, ...
                     month, ...
                     day, ...
-                    hour);
+                    hour)};
             end
         end
 
@@ -241,19 +244,20 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
 
     % Post-2010 files.
     elseif year > 2010
-        % Use the mn data.
-        prefix = 'mn';
-            filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
+        % Use the sn data (has everything we need but doesn't have 70
+        % vertical levels!).
+        prefix = 'sn';
+        filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
             prefix, ...
             year, ...
             month, ...
             day);
-        files = sprintf('%s_%04d%02d%02d%02d_s00.pp', ...
+        files = {sprintf('%s_%04d%02d%02d%02d_s00.pp', ...
             prefix, ...
             year, ...
             month, ...
             day, ...
-            hour);
+            hour)};
     end
 
     met_files{i} = get_BADC_data(site, filepath, files, credentials);
