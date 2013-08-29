@@ -24,6 +24,12 @@ function pp2nc(file, convsh, pp2nc_tcl)
 %   NetCDF files in the same directory as the input PP files but with a .nc
 %   file extension.
 %
+% USAGE (PWC): Convert the PP files to NetCDF.
+%   files = {'/path/to/file1.pp', '/path/to/file2.pp', '/path/to/file3.pp'};
+%   convsh = '/users/modellers/pica/bin/convsh';
+%   tcl = '/users/modellers/pica/MATLAB/fvcom-toolbox/utilities/pp2nc.tcl';
+%   pp2nc(files, convsh, tcl);
+%
 % Author(s):
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %    Karen Amoudry (National Oceanography Centre, Liverpool)
@@ -44,13 +50,6 @@ function pp2nc(file, convsh, pp2nc_tcl)
 %   Make sure convsh is pointing to right path (cannot use paths with
 %   spaces in command, use relative paths from starting directory,
 %   put output file in same working directory
-%
-% Useage (PWC): Convert the PP files to NetCDF.
-% files = {'/path/to/file1.pp', '/path/to/file2.pp', '/path/to/file3.pp'};
-% convsh = '/users/modellers/pica/bin/convsh';
-% tcl = '/users/modellers/pica/MATLAB/fvcom-toolbox/utilities/pp2nc.tcl';
-% pp2nc(files, convsh, tcl);
-%
 
 nf = length(file);
 
