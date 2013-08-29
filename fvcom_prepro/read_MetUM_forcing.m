@@ -23,6 +23,16 @@ function MetUM = read_MetUM_forcing(files, varlist)
 %       '/tmp/metum/sn_201101016_s00.nc'};
 %   MetUM = read_MetUM_forcing(files, varlist);
 %
+% TODO:
+%   - Fix the generation of MetUM.t (currently some values are missing for
+%   some reason.
+%   - Find out why some of the variables have inconsistent number of 3rd
+%   dimension (vertical) levels. This shouldn't happen beceause the number
+%   of vertical levels in a given variable shouldn't change across multiple
+%   output files.
+%   - Extract only the relevant vertical levels (this may fix the issue
+%   above as we'll only have a single vertical level at that point).
+%
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %
@@ -39,6 +49,8 @@ end
 
 assert(iscell(files), 'List of files provided must be a cell array.')
 
+MetUM = struct();
+
 for f = 1:length(files)
     
     if ftbverbose
@@ -54,20 +66,86 @@ for f = 1:length(files)
 
     for ii = 1:numvars
         % Find the name of the current variable
-        [varname, ~, ~, ~] = netcdf.inqVar(nc, ii - 1);
-        
+        [varname, ~, ~, varAtts] = netcdf.inqVar(nc, ii - 1);
+
         if ismember(varname, varlist) || nargin == 1
             varid = netcdf.inqVarID(nc, varname);
-            MetUM.(varname) = netcdf.getVar(nc, varid);
+            if ftbverbose
+                fprintf('%s ', varname)
+            end
+
+            % Some variables contain illegal (in MATLAB) characters. Remove
+            % them here.
+            safename = regexprep(varname, '-', '');
+
+            if isfield(MetUM, safename)
+                switch varname
+                    case {'x', 'y', 'x_1', 'y_1'}
+                        continue
+                    case 't'
+                        % Get the time attribute so we can store proper
+                        % times.
+                        tt = fix_time(nc, varid, varAtts);
+                        MetUM.(safename) = cat(1, MetUM.(safename), tt);
+                    otherwise
+                        try
+                            MetUM.(safename) = cat(4, MetUM.(safename), squeeze(netcdf.getVar(nc, varid, 'double')));
+                        catch
+                            warning('Couldn''t append %s to the existing field from file %s.', safename, files{f})
+                        end
+
+                end
+            else % first time around
+                MetUM.(safename) = squeeze(netcdf.getVar(nc, varid, 'double'));
+                if strcmpi(varname, 't')
+                    % Get the time attribute so we can store proper times.
+                    MetUM.(safename) = fix_time(nc, varid, varAtts);
+                end
+            end
         end
     end
-    
+
     if ftbverbose
         fprintf('done.\n')
     end
 
 end
 
+% Squeeze out singleton dimensions (e.g. in time).
+fields = fieldnames(MetUM);
+for i = 1:length(MetUM)
+    MetUM.(fields{i}) = squeeze(MetUM.(fields{i}));
+end
+
 if ftbverbose
     fprintf('end   : %s \n', subname)
 end
+
+function tt = fix_time(nc, varid, varAtts)
+% Little helper function to get the time attribute so we can store proper
+% times.
+%
+% INPUT:
+%   nc : netCDF file handle
+%   varid : current variable ID
+%   varAtts : number of variable attributes
+%
+% OUTPUT:
+%   tt : time string for the current file
+%
+for j = 1:varAtts
+    timeatt = netcdf.inqAttName(nc, varid, j - 1);
+    if strcmpi(timeatt, 'time_origin')
+        timeval = netcdf.getAtt(nc, varid, timeatt);
+    end
+end
+mt = datenum(timeval, 'dd-mmm-yyyy:HH:MM:SS');
+% t is the offset in days relative to mt.
+t = netcdf.getVar(nc, varid, 'double');
+if isempty(t)
+    % This isn't right. Might be easier to get the time from the file
+    % name...
+    t = 0;
+end
+% Add the offset and convert back to a date string.
+tt = datestr(mt + t, 'yyyy-mm-dd HH:MM:SS');
