@@ -1,7 +1,7 @@
-function write_WRF_heating(WRF, filename, data)
+function write_WRF_forcing(WRF, filename)
 % Write data out to WRF format netCDF forcing file.
 %
-% write_WRF_heating(WRF, fileprefix)
+% write_WRF_forcing(WRF, fileprefix)
 %
 % DESCRIPTION:
 %   Takes the given regularly gridded forcing data and writes out to a WRF
@@ -9,18 +9,17 @@ function write_WRF_heating(WRF, filename, data)
 %
 % INPUT:
 %   WRF - struct with the following fields:
-%       lon, lat - longitude, latitude rectangular arrays.
-%       time - Modified Julian Day times.
-%       data - Struct of the data to be written out. The fields in data
-%       must include:
-%         - 'pres'  : sea level pressure [Pa]
-%         - 'nlwrf' : net longwave radiation (upward = negative) [W/m^{2}]
-%         - 'nswrf' : net shortwave radiation (upward = negative) [W/m^{2}]
-%         - 'nshf'  : net surface heat flux (ocean losing = negative) [W/m^{2}]
-%         - 'u10'   : eastward wind velocity [m/s]
-%         - 'v10'   : northward wind velocity [m/s]
-%         - 'prate' : precipitation (ocean losing = negative) [m/s]
-%         - 'evap'  : evaporation (ocean losing = negative) [m/s]
+%       lon   : longitude, rectangular array (see MESHGRID).
+%       lat   : latitude, rectangular array (see MESHGRID).
+%       time  : Modified Julian Day times.
+%       pres  : sea level pressure [Pa]
+%       nlwrf : net longwave radiation (upward = negative) [W/m^{2}]
+%       nswrf : net shortwave radiation (upward = negative) [W/m^{2}]
+%       nshf  : net surface heat flux (ocean losing = negative) [W/m^{2}]
+%       u10   : eastward wind velocity [m/s]
+%       v10   : northward wind velocity [m/s]
+%       prate : precipitation (ocean losing = negative) [m/s]
+%       evap  : evaporation (ocean losing = negative) [m/s]
 %       Net surface heat flux is defined as the sum of shortwave, longwave,
 %       sensible and latent heat fluxes (ocean losing heat = negative).
 %   filename - Output netCDF file name.
@@ -30,7 +29,7 @@ function write_WRF_heating(WRF, filename, data)
 %
 % EXAMPLE USAGE:
 %   wrf_file = '/path/to/output/casename_wnd.nc';
-%   write_WRF_heating(WRF, wrf_file);
+%   write_WRF_forcing(WRF, wrf_file);
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
