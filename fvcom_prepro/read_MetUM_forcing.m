@@ -18,25 +18,24 @@ function MetUM = read_MetUM_forcing(files, varlist)
 %   varlist.
 %
 % EXAMPLE USAGE:
-%   varlist = {'x', 'y', 'sh', 'x-wind', 'y-wind', 'field202'};
-%   files = {'/tmp/metum/sn_2011010100_s00.nc', ...
-%       '/tmp/metum/sn_201101016_s00.nc'};
+%   varlist = {'x', 'y', 't_1', 'sh', 'x-wind', 'y-wind', 'rh', 'sh', ...
+%       'lh', 'solar', 'longwave'};
+%   files = {'/tmp/sn_2011010100_s00.nc', '/tmp/sn_201101016_s00.nc'};
 %   MetUM = read_MetUM_forcing(files, varlist);
 %
 % TODO:
-%   - Fix the generation of MetUM.t (currently some values are missing for
-%   some reason.
 %   - Find out why some of the variables have an inconsistent number of 3rd
-%   dimension (vertical) levels. This shouldn't happen beceause the number
-%   of vertical levels in a given variable shouldn't change across multiple
-%   output files.
-%   - Extract only the relevant vertical levels (this may fix the issue
-%   above as we'll only have a single vertical level at that point).
+%   dimension (vertical) levels (e.g. field202). This shouldn't happen
+%   beceause the number of vertical levels in a given variable shouldn't
+%   change across multiple output files.
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % 2013-08-29 First version.
+% 2013-09-02 Amend the way the 3 and 4D variables are appended to one
+% another. The assumption now is time is the last dimension and arrays are
+% appended with time.
 %
 %==========================================================================
 
