@@ -26,7 +26,7 @@ function MetUM = read_MetUM_forcing(files, varlist)
 % TODO:
 %   - Fix the generation of MetUM.t (currently some values are missing for
 %   some reason.
-%   - Find out why some of the variables have inconsistent number of 3rd
+%   - Find out why some of the variables have an inconsistent number of 3rd
 %   dimension (vertical) levels. This shouldn't happen beceause the number
 %   of vertical levels in a given variable shouldn't change across multiple
 %   output files.
@@ -70,34 +70,40 @@ for f = 1:length(files)
 
         if ismember(varname, varlist) || nargin == 1
             varid = netcdf.inqVarID(nc, varname);
-            if ftbverbose
-                fprintf('%s ', varname)
-            end
 
             % Some variables contain illegal (in MATLAB) characters. Remove
             % them here.
             safename = regexprep(varname, '-', '');
 
+            % Append the data on the assumption the last dimension is time.
+            % Don't append data with only 2 dimensions as it's probably
+            % longitude or latitude data. The time variable ('t') is
+            % turned into a list of time stamps.
+            tmpdata = squeeze(netcdf.getVar(nc, varid, 'double'));
+            nn = ndims(tmpdata);
+
             if isfield(MetUM, safename)
                 switch varname
                     case {'x', 'y', 'x_1', 'y_1'}
                         continue
-                    case 't'
+                    case {'t', 't_1'}
                         % Get the time attribute so we can store proper
                         % times.
                         tt = fix_time(nc, varid, varAtts);
                         MetUM.(safename) = cat(1, MetUM.(safename), tt);
                     otherwise
                         try
-                            MetUM.(safename) = cat(4, MetUM.(safename), squeeze(netcdf.getVar(nc, varid, 'double')));
+                            % Append along last dimension
+                            MetUM.(safename) = cat(nn, MetUM.(safename), tmpdata);
                         catch
+                            fprintf('\n')
                             warning('Couldn''t append %s to the existing field from file %s.', safename, files{f})
                         end
 
                 end
             else % first time around
-                MetUM.(safename) = squeeze(netcdf.getVar(nc, varid, 'double'));
-                if strcmpi(varname, 't')
+                MetUM.(safename) = tmpdata;
+                if strcmpi(varname, 't') || strcmpi(varname, 't_1')
                     % Get the time attribute so we can store proper times.
                     MetUM.(safename) = fix_time(nc, varid, varAtts);
                 end
@@ -111,7 +117,7 @@ for f = 1:length(files)
 
 end
 
-% Squeeze out singleton dimensions (e.g. in time).
+% Squeeze out singleton dimensions.
 fields = fieldnames(MetUM);
 for i = 1:length(MetUM)
     MetUM.(fields{i}) = squeeze(MetUM.(fields{i}));
