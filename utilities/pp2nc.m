@@ -14,8 +14,8 @@ function pp2nc(file, convsh, pp2nc_tcl)
 %
 % INPUT:
 %   file - cell array of PP file(s) to convert to NetCDF. Include
-%   sub-directory in path, can include full path name or path relative to
-%   working directory.
+%       sub-directory in path, can include full path name or path relative
+%       to working directory.
 %   convsh - the path to the convsh binary (NB this can't contain spaces).
 %   pp2nc_tcl - the path to the TCL script (in the utilities fvcom-toolbox
 %       file).
