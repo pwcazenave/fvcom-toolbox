@@ -102,6 +102,7 @@ for f = 1:length(files)
                 end
             else % first time around
                 MetUM.(safename) = tmpdata;
+
                 if strcmpi(varname, 't') || strcmpi(varname, 't_1')
                     % Get the time attribute so we can store proper times.
                     MetUM.(safename) = fix_time(nc, varid, varAtts);
