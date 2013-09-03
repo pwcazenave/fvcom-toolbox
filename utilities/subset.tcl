@@ -187,12 +187,12 @@ foreach d {x y} {
       exitandreport "${d}-dimension arguments (${d}s, ${d}e, and ${d}i)"
     }
     if {$d == "x"} {
-      if {$xinc < 0.1} {
-        exitandreport "xi argument (which must be greater than 0.1)"
+      if {$xinc < 0.01} {
+        exitandreport "xi argument (which must be greater than 0.01)"
       }
     } elseif {$d == "y"} {
-      if {$yinc < 0.1} {
-        exitandreport "yi argument (which must be greater than 0.1)"
+      if {$yinc < 0.01} {
+        exitandreport "yi argument (which must be greater than 0.01)"
       }
     }
   }
