@@ -32,6 +32,8 @@ function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
 %    nodes from Mobj.
 %    2013-08-16 (KJA) Updated output of Itime2 to avoid rounding errors
 %    when converting from double to single format.
+%    2013-09-03 - Removed PWC's fix for timestrings. Issue was due to
+%    rounding errors caused by mjulian2greg.m, which have now been fixed.
 %   
 %==========================================================================
 
@@ -129,18 +131,6 @@ netcdf.putVar(nc,itime2_varid,0,nTimes,round((mod(MJD,1)*24*3600*1000)/(3600*100
 nStringOut = char();
 for i=1:nTimes
     [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(MJD(i));
-    if strcmp(sprintf('%02i', nSec), '60')
-        % Fix some weirdness with mjulian2greg. I think this is caused by
-        % rounding errors. My testing suggests this is not a problem around
-        % midnight, so the number of days (and thus possibly months and
-        % years) is unaffected.
-        if mod(nMin + 1, 60) == 0
-            % Up the hour by one too
-            nHour = mod(nHour + 1, 24);
-        end
-        nMin = mod(nMin + 1, 60);
-        nSec = 0;
-    end
     nDate = [nYr, nMon, nDay, nHour, nMin, nSec];
     nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ',nDate)];
 end
