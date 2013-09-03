@@ -58,7 +58,7 @@ if ~Mobj.have_lonlat
 else
     % Add a buffer of one grid cell in latitude and two in longitude to
     % make sure the model domain is fully covered by the extracted data.
-    [dx, dy] = deal(2.5, 2.5); % NCEP resolution in degrees
+    [dx, dy] = deal(1/12, 1/12); % HYCOM resolution in degrees
     extents = [min(Mobj.lon(:))-(2*dx), max(Mobj.lon(:))+(2*dx), min(Mobj.lat(:))-dy, max(Mobj.lat(:))+dy];
 end
 
@@ -76,16 +76,16 @@ else
 end
 
 % Use Modified Julian Days for the time checks
-[t1, t2, t3, ~, ~, ~] = datevec(date);
+[t1, t2, t3, t4, t5, t6] = datevec(date);
 if modelTime(1) < greg2mjulian(2008, 09, 16, 0, 0, 0)
     error('Not using the legacy HYCOM model output. Select a start date from September 2008 onwards.')
 elseif modelTime(1) >= greg2mjulian(2008, 9, 16, 0, 0, 0) && modelTime(1) < greg2mjulian(2009, 5, 6, 0, 0, 0)
-    url = ['http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.6/', num2str(year)];
+    url = ['http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.6', num2str(year)];
 elseif modelTime(1) >= greg2mjulian(2009, 5, 6, 0, 0, 0) && modelTime(1) < greg2mjulian(2011, 1, 2, 0, 0, 0)
-    url = ['http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.8/', num2str(year)];
+    url = ['http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.8', num2str(year)];
 elseif modelTime(1) >= greg2mjulian(2011, 1, 2, 0, 0, 0) && modelTime(1) <= greg2mjulian(t1, t2, t3, 0, 0, 0)
-    url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9/';
-elseif modelTime(1) > greg2mjulian(t1, t2, t3, 0, 0, 0)
+    url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';
+elseif modelTime(1) > greg2mjulian(t1, t2, t3,  t4, t5, t6)
     error('Date is in the future?')
 else
     error('Date is outside of known spacetime?')
@@ -98,16 +98,16 @@ indEnd = ceil(datenum([yearEnd, monEnd, dayEnd, hEnd, mEnd, sEnd])) - datenum([y
 tInd = sprintf('[%i:1:%i]', indStart, indEnd);
 
 % Set up a struct of the HYCOM data sets in which we're interested.
-hycom.temp  = [url, 'temp?temperature'];
-hycom.salt  = [url, 'salt?salinity'];
-hycom.dens  = [url, 'dens?density'];
-hycom.u     = [url, 'uvel?u'];
-hycom.v     = [url, 'vvel?v'];
-hycom.time  = [url, '?MT'];
-hycom.X     = [url, '?X'];
-hycom.Y     = [url, '?Y'];
-hycom.lon   = [url, '?Longitude'];
-hycom.lat   = [url, '?Latitude'];
+hycom.Longitude     = [url, '?Longitude'];
+hycom.Latitude      = [url, '?Latitude'];
+hycom.temperature   = [url, '?temperature'];
+hycom.salinity      = [url, '?salinity'];
+% hycom.density       = [url, '?density'];
+hycom.u             = [url, '?u']; % mean flow
+hycom.v             = [url, '?v']; % mean flow
+hycom.MT            = [url, '?MT']; % time
+% hycom.X             = [url, '?X']; % causes MATLAB to crash...
+% hycom.Y             = [url, '?Y']; % causes MATLAB to crash...
 
 % % The HYCOM OPeNDAP server is spectacularly slow (at the moment?). As such,
 % % extracting even the entire lat/long arrays is painfully slow. Instead of
@@ -150,13 +150,33 @@ data.time.data = [];
 
 if datenum(currdate) > v714date
     % Use the built in tools to open the remote file.
-    ncid = netcdf.open(hycom.X, 'NOWRITE');
-    % To identify what variables are in this file, use:
-    % ncid_info = ncinfo(hycom.X);
-    varid = netcdf.inqVarID(ncid, 'X');
-    % MATLAB 2012b crashes running this command. I suspect the size of the
-    % returned data is too large...
+
+    % We have to use Longitude here because otherwise MATLAB crashes (for
+    % me - version 2012b). Ideally this would be depend on the value of
+    % Mobj.nativeCoords.
+    ncid = netcdf.open(hycom.Longitude, 'NOWRITE');
+    varid = netcdf.inqVarID(ncid, 'Longitude');
+
     data.X.data = netcdf.getVar(ncid, varid, 'double');
+    
+    % Make the longitude values in the range 0-360.
+    data.X.data = mod(data.X.data, 360);
+
+    ncid = netcdf.open(hycom.Latitude, 'NOWRITE');
+    varid = netcdf.inqVarID(ncid, 'Latitude');
+
+    data.Y.data = netcdf.getVar(ncid, varid, 'double');
+
+    % Due to the dual polar nature of the HYCOM model domain, and since I'm
+    % lazy, I'm going to throw away the data above the rectilinear part of
+    % the model (4500x2172 rather than 4500x3298).
+    data.X.data = data.X.data(:, 
+    data.X.idx = 1:size(data.X.data, 1) - 1;
+    data.Y.idx = 1:size(data.X.data, 1) - 1;
+    
+    % Find the indices which fit within the model domain.
+    data.X.idx = data.X.idx
+    
 else
     data.X.idx = loaddap(hycom.X);
     data.Y.idx = loaddap(hycom.Y);
@@ -179,6 +199,19 @@ for aa = 1:length(fields)
 
     % Get attributes from which to calculate length of various fields.
     if datenum(currdate) > v714date
+        
+        ncid = netcdf.open(hycom.(fields{aa}));
+
+        % If you don't know what it contains, start by using the
+        % 'netcdf.inq' operation:
+        %[numdims,numvars,numglobalatts,unlimdimid] = netcdf.inq(ncid);
+
+        varid = netcdf.inqVarID(ncid, fields{aa});
+        
+        data.(fields{aa}).data = netcdf.getVar(ncid, varid, 'double');
+        
+        
+       
         data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
         % Get the data time and convert to Modified Julian Day.
         data_time = loaddap(hycom.time);
@@ -188,7 +221,7 @@ for aa = 1:length(fields)
         data_time = loaddap(hycom.time);
     end
 
-    timevec = datevec((data_time.time)/24+365);
+    timevec = datevec((data_time.MT)/24+365);
     data.time = greg2mjulian(timevec(:,1), timevec(:,2), timevec(:,3), ...
         timevec(:,4), timevec(:,5), timevec(:,6));
     % Clip the time to the given range
