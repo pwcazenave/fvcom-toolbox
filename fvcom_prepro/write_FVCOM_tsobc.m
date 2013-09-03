@@ -247,7 +247,7 @@ netcdf.putVar(nc,itime_varid,floor(time));
 %netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000); % PWC original
 % KJA edit: avoids rounding errors when converting from double to single
 % Rounds to nearest multiple of the number of msecs in an hour
-netcdf.putVar(nc,itime2_varid,0,ntimes,round((mod(time,1)*24*3600*1000)/(3600*1000))*(3600*1000));
+netcdf.putVar(nc,itime2_varid,0,numel(time),round((mod(time,1)*24*3600*1000)/(3600*1000))*(3600*1000));
 netcdf.putVar(nc,obc_temp_varid,temp);
 netcdf.putVar(nc,obc_salinity_varid,salt);
 

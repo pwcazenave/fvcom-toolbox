@@ -86,6 +86,8 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   2013-01-16 - Added support for output of sea level pressure.
 %   2013-08-16 - Updated output of Itime2 to avoid rounding errors
 %   when converting from double to single format.
+%   2013-09-03 - Removed PWC's fix for timestrings. Issue was due to
+%   rounding errors caused by mjulian2greg.m, which have now been fixed.
 %
 %==========================================================================
 
