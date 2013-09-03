@@ -395,7 +395,7 @@ for aa = 1:length(fields)
         % Reset the index to its original size. This is for data with only
         % a single time stamp which falls outside the model time (as is the
         % case with the topography data). Only reset it when the length of
-        % the input time is greater than 1.
+        % the input time is equal to 1.
         if length(data.time) == 1
             data_time_idx = 1:size(data.time, 1);
         end
