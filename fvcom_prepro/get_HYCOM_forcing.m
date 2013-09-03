@@ -159,25 +159,47 @@ if datenum(currdate) > v714date
 
     data.X.data = netcdf.getVar(ncid, varid, 'double');
     
-    % Make the longitude values in the range 0-360.
+    % Make the longitude values in the range -180 to 180 (to match the
+    % model inputs).
     data.X.data = mod(data.X.data, 360);
+    data.X.data(data.X.data > 180) = data.X.data(data.X.data > 180) - 360;
 
     ncid = netcdf.open(hycom.Latitude, 'NOWRITE');
     varid = netcdf.inqVarID(ncid, 'Latitude');
 
     data.Y.data = netcdf.getVar(ncid, varid, 'double');
 
-    % Due to the dual polar nature of the HYCOM model domain, and since I'm
-    % lazy, I'm going to throw away the data above the rectilinear part of
-    % the model (4500x2172 rather than 4500x3298).
-    data.X.data = data.X.data(:, 
-    data.X.idx = 1:size(data.X.data, 1) - 1;
-    data.Y.idx = 1:size(data.X.data, 1) - 1;
+    % Create indices of the size of the arrays.
+    data.X.idx = repmat(1:size(data.X.data, 1), [size(data.X.data, 2), 1])' - 1;
+    data.Y.idx = repmat(1:size(data.Y.data, 2), [size(data.Y.data, 1), 1]) - 1;
+    %data.Y.idx = 1:size(data.Y.data, 2) - 1;
     
-    % Find the indices which fit within the model domain.
-    data.X.idx = data.X.idx
+    % Find the indices which cover the model domain then find the extremes
+    % (for requesting only a subset from the OPeNDAP server.
+    idx = data.X.data > extents(1) & data.X.data < extents(2) & data.Y.data > extents(3) & data.Y.data < extents(4);
+    xrange = [min(data.X.idx(idx)), max(data.X.idx(idx))];
+    yrange = [min(data.Y.idx(idx)), max(data.Y.idx(idx))];
     
+    data.lon = data.X.data(xrange(1):xrange(2), yrange(1):yrange(2));
+    data.lat = data.Y.data(xrange(1):xrange(2), yrange(1):yrange(2));
+    
+    % Now find the time indices. HYCOM stores its times as days since
+    % 1900-12-31 00:00:00. Naturally this is completely different from
+    % everything else ever.
+    ncid = netcdf.open(hycom.MT, 'NOWRITE');
+    varid = netcdf.inqVarID(ncid, 'MT');
+    data.MT.data = netcdf.getVar(ncid, varid, 'double');
+    % Convert to MATLAB days and then to Modified Julian Days.
+    t = datevec(data.MT.data + datenum(1900, 12, 31, 0, 0, 0));
+    tj = greg2mjulian(t(:,1), t(:,2), t(:,3), t(:,4), t(:,5), t(:,6));
+    % Find the time indices which cover the model period.
+    trange = [min(find(tj > modelTime(1))), max(find(tj < modelTime(2)))];
+    
+    data.time = data.MT.
+
 else
+    % I haven't tested this at all.
+
     data.X.idx = loaddap(hycom.X);
     data.Y.idx = loaddap(hycom.Y);
     xIdx = length(data.X.idx.X) - 1;
@@ -186,47 +208,66 @@ else
     data.lat.all = loaddap([hycom.lat, sprintf('[%i:1:%i]', 0, yIdx), sprintf('[%i:1:%i]', 0, 0)]);
 end
 
+netcdf.close(ncid);
+
 fields = fieldnames(hycom);
 
-for aa = 1:length(fields)   
-    % Store the downloaded data in a struct with associated spatial and
-    % temporal data.
-    data.(fields{aa}).data = [];
-    data.(fields{aa}).time = [];
-    data.(fields{aa}).lat = [];
-    data.(fields{aa}).lon = [];
-    data_attributes.(fields{aa}) = [];
-
-    % Get attributes from which to calculate length of various fields.
-    if datenum(currdate) > v714date
-        
-        ncid = netcdf.open(hycom.(fields{aa}));
-
-        % If you don't know what it contains, start by using the
-        % 'netcdf.inq' operation:
-        %[numdims,numvars,numglobalatts,unlimdimid] = netcdf.inq(ncid);
-
-        varid = netcdf.inqVarID(ncid, fields{aa});
-        
-        data.(fields{aa}).data = netcdf.getVar(ncid, varid, 'double');
-        
-        
-       
-        data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
-        % Get the data time and convert to Modified Julian Day.
-        data_time = loaddap(hycom.time);
+for aa = 1:length(fields)
+    
+    if strcmpi(fields{aa}, 'Longitude') || strcmpi(fields{aa}, 'Latitude')
+        % Skip these as we've already got the spatial information as
+        % data.lon and data.lat.
+        continue
     else
-        data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
-        % Get the data time and convert to Modified Julian Day.
-        data_time = loaddap(hycom.time);
-    end
+        
+        % Store the downloaded data in a struct. Assume the spatial data is
+        % identical to that in data.lon and data.lat.
+        data.(fields{aa}).data = [];
+        data.(fields{aa}).time = [];
+        data_attributes.(fields{aa}) = [];
 
-    timevec = datevec((data_time.MT)/24+365);
-    data.time = greg2mjulian(timevec(:,1), timevec(:,2), timevec(:,3), ...
-        timevec(:,4), timevec(:,5), timevec(:,6));
-    % Clip the time to the given range
-    data_time_mask = data.time >= modelTime(1) & data.time <= modelTime(end);
-    data_time_idx = 1:size(data.time,1);
-    data_time_idx = data_time_idx(data_time_mask);
-    data.time = data.time(data_time_mask);
+        % Get attributes from which to calculate length of various fields.
+        if datenum(currdate) > v714date
+
+            ncid = netcdf.open(hycom.(fields{aa}));
+
+            % If you don't know what it contains, start by using the
+            % 'netcdf.inq' and ncinfo operations:
+            %[numdims, numvars, numglobalatts, unlimdimid] = netcdf.inq(ncid);
+            %ncid_info = ncinfo(hycom.(fields{aa}));
+            
+            % Typically these data are 4D, with dimensions of:
+            %   - time (MT)
+            %   - depth (Depth)
+            %   - y (Y)
+            %   - x (X)
+            % We probably want all depths but only a subset in time and
+            % space. 
+
+            varid = netcdf.inqVarID(ncid, fields{aa});
+
+            data.(fields{aa}).data = netcdf.getVar(ncid, varid, 'double');
+
+
+
+            data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
+            % Get the data time and convert to Modified Julian Day.
+            data_time = loaddap(hycom.time);
+        else
+            data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
+            % Get the data time and convert to Modified Julian Day.
+            data_time = loaddap(hycom.time);
+        end
+
+        timevec = datevec((data_time.MT)/24+365);
+        data.time = greg2mjulian(timevec(:,1), timevec(:,2), timevec(:,3), ...
+            timevec(:,4), timevec(:,5), timevec(:,6));
+        % Clip the time to the given range
+        data_time_mask = data.time >= modelTime(1) & data.time <= modelTime(end);
+        data_time_idx = 1:size(data.time,1);
+        data_time_idx = data_time_idx(data_time_mask);
+        data.time = data.time(data_time_mask);
+    end
 end
+
+netcdf.close(ncid);
