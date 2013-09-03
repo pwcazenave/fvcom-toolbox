@@ -105,7 +105,8 @@ hycom.salinity      = [url, '?salinity'];
 % hycom.density       = [url, '?density']; % don't need for now
 hycom.u             = [url, '?u']; % mean flow
 hycom.v             = [url, '?v']; % mean flow
-hycom.MT            = [url, '?MT']; % time
+hycom.Depth         = [url, '?Depth']; % water depth
+% hycom.MT            = [url, '?MT']; % time - don't need to get automatically
 % hycom.X             = [url, '?X']; % causes MATLAB to crash...
 % hycom.Y             = [url, '?Y']; % causes MATLAB to crash...
 
@@ -123,7 +124,7 @@ if datenum(currdate) > v714date
     varid = netcdf.inqVarID(ncid, 'Longitude');
 
     data.X.data = netcdf.getVar(ncid, varid, 'double');
-    
+
     % Make the longitude values in the range -180 to 180 (to match the
     % model inputs).
     data.X.data = mod(data.X.data, 360);
@@ -138,16 +139,16 @@ if datenum(currdate) > v714date
     data.X.idx = repmat(1:size(data.X.data, 1), [size(data.X.data, 2), 1])';
     data.Y.idx = repmat(1:size(data.Y.data, 2), [size(data.Y.data, 1), 1]);
     %data.Y.idx = 1:size(data.Y.data, 2) - 1;
-    
+
     % Find the indices which cover the model domain then find the extremes
     % (for requesting only a subset from the OPeNDAP server.
     idx = data.X.data > extents(1) & data.X.data < extents(2) & data.Y.data > extents(3) & data.Y.data < extents(4);
     xrange = [min(data.X.idx(idx)), max(data.X.idx(idx))];
     yrange = [min(data.Y.idx(idx)), max(data.Y.idx(idx))];
-    
+
     data.lon = data.X.data(xrange(1):xrange(2), yrange(1):yrange(2));
     data.lat = data.Y.data(xrange(1):xrange(2), yrange(1):yrange(2));
-    
+
     % Now find the time indices. HYCOM stores its times as days since
     % 1900-12-31 00:00:00. Naturally this is completely different from
     % everything else ever.
@@ -159,7 +160,7 @@ if datenum(currdate) > v714date
     tj = greg2mjulian(t(:,1), t(:,2), t(:,3), t(:,4), t(:,5), t(:,6));
     % Find the time indices which cover the model period.
     trange = [find(tj >= modelTime(1), 1, 'first'), find(tj <= modelTime(2), 1, 'last')];
-    
+
     data.time = tj; % Export the Modified Julian Day time series.
 
     % Clear out the full lon/lat arrays.
@@ -181,13 +182,13 @@ netcdf.close(ncid);
 fields = fieldnames(hycom);
 
 for aa = 1:length(fields)
-    
+
     if strcmpi(fields{aa}, 'Longitude') || strcmpi(fields{aa}, 'Latitude')
         % Skip these as we've already got the spatial information as
         % data.lon and data.lat.
         continue
     else
-        
+
         % Store the downloaded data in a struct. Assume the spatial data is
         % identical to that in data.lon and data.lat.
         data.(fields{aa}).data = [];
@@ -211,32 +212,40 @@ for aa = 1:length(fields)
             %   - depth (Depth)
             %   - time (MT)
             % We probably want all depths but only a subset in time and
-            % space. Offset everything by 1 since netCDF starts counting at
-            % zero.
-            start = [xrange(1), yrange(1), 1, trange(1)] - 1;
-            count = [xrange(2) - xrange(1), yrange(2) - yrange(1), 32, trange(2) - trange(1)] - 1;
+            % space.
 
-            data.(fields{aa}).data = netcdf.getVar(ncid, varid, start, count, 'double');
+            % Since the HYCOM OPeNDAP server is so spectacularly slow,
+            % extract a day's data at a time and stick them together here.
+            % If nothing else, this at least means I can give some
+            % indication of progress rather than just wait for something to
+            % magically happen.
+            ts = trange(1):trange(2);
+            nt = length(ts);
+            nx = (xrange(2) - xrange(1)) + 1;
+            ny = (yrange(2) - yrange(1)) + 1;
+            nz = 33; % hard code vertical levels
 
+            data.(fields{aa}).data = nan(nx, ny, nz, nt);
+            for tt = 1:nt
+                if ftbverbose
+                    fprintf('%s: time %i of %i... ', fields{aa}, tt, nt)
+                end
+                start = [xrange(1), yrange(1), 1, ts(tt)] - 1;
+                count = [(xrange(2) - xrange(1)) + 1, (yrange(2) - yrange(1)) + 1, nz, 1];
 
+                data.(fields{aa}).data(:, :, :, tt) = netcdf.getVar(ncid, varid, start, count, 'double');
+                if ftbverbose
+                    fprintf('done.\n')
+                end
+            end
 
-            data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
-            % Get the data time and convert to Modified Julian Day.
-            data_time = loaddap(hycom.time);
         else
+            % Third-party toolbox version (unimplemented).
+
             data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
             % Get the data time and convert to Modified Julian Day.
             data_time = loaddap(hycom.time);
         end
-
-        timevec = datevec((data_time.MT)/24+365);
-        data.time = greg2mjulian(timevec(:,1), timevec(:,2), timevec(:,3), ...
-            timevec(:,4), timevec(:,5), timevec(:,6));
-        % Clip the time to the given range
-        data_time_mask = data.time >= modelTime(1) & data.time <= modelTime(end);
-        data_time_idx = 1:size(data.time,1);
-        data_time_idx = data_time_idx(data_time_mask);
-        data.time = data.time(data_time_mask);
     end
 end
 
