@@ -188,8 +188,6 @@ if max(FIEJ)+1 > nelf
     nelf = max(FIEJ)+1;
 end
 
-% I may need to find a different method for storing the data. I'm not sure
-% if I can do a whole month of data on my laptop.
 PASTIT = false;
 kline = 0;
 
@@ -354,119 +352,6 @@ for m=0:3:size(met_temp,2)-1
     % Interpolate the wind data onto the FVCOM grid
     uwnd(:,(m/3)+1) = interp2(cs3x_lon,cs3x_lat,U10E',xelement,yelement);
     vwnd(:,(m/3)+1) = interp2(cs3x_lon,cs3x_lat,U10N',xelement,yelement);
-    
-    
-%      if FirstInt==1
-%         % Interpolate the pressure onto the model grid nodes
-%         for i = 1:Mobj.nVerts
-%             xmet = cs3x_lonstart;
-%             ymet = cs3x_latstart;
-%             i1 = 1;
-%             i2 = 2;
-%             j1 = 1;
-%             j2 = 2;
-%             
-%             while Mobj.lon(i) > xmet+cs3x_loninc
-%                 i1 = i1+1;
-%                 i2 = i2+1;
-%                 xmet = xmet+cs3x_loninc;
-%             end
-%             
-%             while Mobj.lat(i) > ymet+cs3x_latinc
-%                 j1 = j1+1;
-%                 j2 = j2+1;
-%                 ymet = ymet+cs3x_latinc;
-%             end
-%             
-%             a1 = (xmet + cs3x_loninc - Mobj.lon(i)).*...
-%                 (ymet + cs3x_latinc - Mobj.lat(i));
-%             a2 = (xmet + cs3x_loninc - Mobj.lon(i)) .* (Mobj.lat(i)-ymet);
-%             a3 = (Mobj.lon(i) - xmet).*(ymet + cs3x_latinc - Mobj.lat(i));
-%             a4 = (Mobj.lon(i) - xmet).*(Mobj.lat(i) - ymet);
-%             
-%             P(i,(m/3)+1) = (PRESS(i1,j1).*a1 + PRESS(i1,j2).*a2 + PRESS(i2,j1).*a3 ...
-%                 + PRESS(i2,j2).*a4) ./cs3x_area;
-%             
-%             i1j1(1,i) = i1;
-%             i1j1(2,i) = j1;
-%             A1(1,i) = a1;
-%             A2(1,i) = a2;
-%             A3(1,i) = a3;
-%             A4(1,i) = a4;
-%             
-%             % tidy up
-%             clear xmet ymet i1 i2 j1 j2 a1 a2 a3 a4
-%         end
-%         
-%         % Interpolate the winds onto the model grid nodes
-%         for i = 1:Mobj.nElems
-%             xmet = cs3x_lonstart;
-%             ymet = cs3x_latstart;
-%             i1 = 0;
-%             i2 = 1;
-%             j1 = 0;
-%             j2 = 1;
-%             
-%             % Calculate the coordinates of the centre of the element
-%             xelement = mean(Mobj.lon(Mobj.tri(i,:)));
-%             yelement = mean(Mobj.lat(Mobj.tri(i,:)));
-%             
-%             while xelement > xmet+cs3x_loninc
-%                 i1 = i1+1;
-%                 i2 = i2+1;
-%                 xmet = xmet+cs3x_loninc;
-%             end
-%             
-%             while yelement > ymet+cs3x_latinc
-%                 j1 = j1+1;
-%                 j2 = j2+1;
-%                 ymet = ymet+cs3x_latinc;
-%             end
-%             
-%             a1 = (xmet + cs3x_loninc - xelement).*...
-%                 (ymet + cs3x_latinc - yelement);
-%             a2 = (xmet + cs3x_loninc - xelement) .* (yelement-ymet);
-%             a3 = (xelement - xmet).*(ymet + cs3x_latinc - yelement);
-%             a4 = (xelement - xmet).*(yelement - ymet);
-%             
-%             Uwind(i,(m/3)+1) = (U10E(i1,j1).*a1 + U10E(i1,j2).*a2 + U10E(i2,j1).*a3 ...
-%                 + U10E(i2,j2).*a4) ./cs3x_area;
-%             Vwind(i,(m/3)+1) = (U10N(i1,j1).*a1 + U10N(i1,j2).*a2 + U10N(i2,j1).*a3 ...
-%                 + U10N(i2,j2).*a4) ./cs3x_area;
-%             
-%             i1j1(3,i) = i1;
-%             i1j1(4,i) = j1;
-%             A1(2,i) = a1;
-%             A2(2,i) = a2;
-%             A3(2,i) = a3;
-%             A4(2,i) = a4;
-%             
-%             % tidy up
-%             clear xmet ymet i1 i2 j1 j2 a1 a2 a3 a4 xelement y element
-%         end
-%     else
-%         % If it's not the first pass, there's no need to re-calculate i1j1
-%         % or A1, A2, A3, A4.
-%         for i = 1:Mobj.nVerts
-%             P(i,(m/3)+1) = (PRESS(i1j1(1,i),i1j1(2,i)).*A1(1,i) + ...
-%                 PRESS(i1j1(1,i),i1j1(2,i)+1).*A2(1,i) + ...
-%                 PRESS(i1j1(1,i)+1,i1j1(2,i)).*A3(1,i) + ...
-%                 PRESS(i1j1(1,i)+1,i1j1(2,i)+1).*A4(1,i))./cs3x_area;
-%         end
-%         
-%         for i = 1:Mobj.nElems
-%             Uwind(i,(m/3)+1) = (U10E(i1j1(3,i),i1j1(4,i)).*A1(2,i) + ...
-%                 U10E(i1j1(3,i),i1j1(4,i)+1).*A2(2,i) + ...
-%                 U10E(i1j1(3,i)+1,i1j1(4,i)).*A3(2,i) + ...
-%                 U10E(i1j1(3,i)+1,i1j1(4,i)+1).*A4(2,i))./cs3x_area;
-%             Vwind(i,(m/3)+1) = (U10N(i1j1(3,i),i1j1(4,i)).*A1(2,i) + ...
-%                 U10N(i1j1(3,i),i1j1(4,i)+1).*A2(2,i) + ...
-%                 U10N(i1j1(3,i)+1,i1j1(4,i)).*A3(2,i) + ...
-%                 U10N(i1j1(3,i)+1,i1j1(4,i)+1).*A4(2,i))./cs3x_area;
-%         end
-%     end
-    
-%     FirstInt = false;
 end
 
 % Convert data time to Modified Julian Day time for FVCOM
