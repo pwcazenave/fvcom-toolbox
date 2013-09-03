@@ -6,8 +6,7 @@ function data = get_HYCOM_forcing(Mobj, modelTime)
 %
 % DESCRIPTION:
 %   Using OPeNDAP, extract the necessary parameters to create an FVCOM
-%   forcing file. Requires the OPeNDAP toolbox (see below for where to get
-%   it) for versions of MATLAB older than 2012a (v7.14).
+%   forcing file.
 %
 % INPUT: 
 %   Mobj - MATLAB mesh object
@@ -21,12 +20,8 @@ function data = get_HYCOM_forcing(Mobj, modelTime)
 % The parameters which are obtained from the HYCOM data are:
 %     - temperature
 %     - salinity
-%     - u flow component
-%     - v flow component
-%
-% REQUIRES:
-%   The OPeNDAP toolbox:
-%       http://www.opendap.org/pub/contributed/source/ml-toolbox/
+%     - u mean flow component
+%     - v mean flow component
 %
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -36,6 +31,9 @@ function data = get_HYCOM_forcing(Mobj, modelTime)
 %   2013-08-19 Make some more progress in getting this working. Mainly
 %   change the way the dates are handled to form the relevant URL for
 %   downloading the data.
+%   2013-09-03 More incremetal changes to get the function working. At the
+%   moment, I'm ignoring the old toolbox for reading the data from the
+%   HYCOM OPeNDAP server.
 %
 %==========================================================================
 
@@ -48,6 +46,9 @@ end
 
 % For checking whether to use the third-party OPeNDAP toolbox or native
 % MATLAB tools. OPeNDAP support is included in MATLAB version 7.14 onwards.
+% Although this check is made, I haven't actually written the code for the
+% third-party toolbox. If you need it, I be pleased if you wrote an
+% equivalent to the native version.
 v714date = datenum(2012, 3, 1);
 currdate = ver('MATLAB');
 currdate = datenum(currdate.Date);
@@ -56,18 +57,20 @@ currdate = datenum(currdate.Date);
 if ~Mobj.have_lonlat
     error('Need spherical coordinates to extract the forcing data')
 else
-    % Add a buffer of one grid cell in latitude and two in longitude to
+    % Add a buffer of two grid cells in latitude and two in longitude to
     % make sure the model domain is fully covered by the extracted data.
     [dx, dy] = deal(1/12, 1/12); % HYCOM resolution in degrees
-    extents = [min(Mobj.lon(:))-(2*dx), max(Mobj.lon(:))+(2*dx), min(Mobj.lat(:))-dy, max(Mobj.lat(:))+dy];
+    % West, east, south, north
+    extents = [min(Mobj.lon(:))-(2*dx), max(Mobj.lon(:))+(2*dx), ...
+        min(Mobj.lat(:))-(2*dy), max(Mobj.lat(:))+(2*dy)];
 end
 
 if modelTime(end) - modelTime(1) > 365
     error('Can''t (yet) process more than a year at a time.')
 end
 
-[yearStart, monStart, dayStart, hStart, mStart, sStart] = mjulian2greg(modelTime(1));
-[yearEnd, monEnd, dayEnd, hEnd, mEnd, sEnd] = mjulian2greg(modelTime(end));
+[yearStart, ~, ~, ~, ~, ~] = mjulian2greg(modelTime(1));
+[yearEnd, ~, ~, ~, ~, ~] = mjulian2greg(modelTime(end));
 
 if yearEnd ~= yearStart
     error('Can''t (yet) process across a year boundary.')
@@ -90,59 +93,21 @@ elseif modelTime(1) > greg2mjulian(t1, t2, t3,  t4, t5, t6)
 else
     error('Date is outside of known spacetime?')
 end
-
-% Get the days of year for the start and end dates
-indStart = floor(datenum([yearStart, monStart, dayStart, hStart, mStart, sStart])) - datenum([yearStart, 1, 1]);
-indEnd = ceil(datenum([yearEnd, monEnd, dayEnd, hEnd, mEnd, sEnd])) - datenum([yearEnd, 1, 1]);
-% Create the necessary string for the time indices.
-tInd = sprintf('[%i:1:%i]', indStart, indEnd);
+% REMOVE ME!!!
+url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';
+% REMOVE ME!!!
 
 % Set up a struct of the HYCOM data sets in which we're interested.
 hycom.Longitude     = [url, '?Longitude'];
 hycom.Latitude      = [url, '?Latitude'];
 hycom.temperature   = [url, '?temperature'];
 hycom.salinity      = [url, '?salinity'];
-% hycom.density       = [url, '?density'];
+% hycom.density       = [url, '?density']; % don't need for now
 hycom.u             = [url, '?u']; % mean flow
 hycom.v             = [url, '?v']; % mean flow
 hycom.MT            = [url, '?MT']; % time
 % hycom.X             = [url, '?X']; % causes MATLAB to crash...
 % hycom.Y             = [url, '?Y']; % causes MATLAB to crash...
-
-% % The HYCOM OPeNDAP server is spectacularly slow (at the moment?). As such,
-% % extracting even the entire lat/long arrays is painfully slow. Instead of
-% % directly interrogating the server, we'll assume a uniformly spaced 1/12th
-% % degree grid and use that to find the indices. We'll give ourself a bit of
-% % wiggle-room to accommodate the inevitable inaccuracy in this method.
-% [grid.X, grid.Y] = meshgrid(0:1/12:360, -90:1/12:90);
-% grid.ids = inbox(extents, grid.X, grid.Y);
-% 
-% if extents(1) < 0 && extents(2) < 0
-%     % This is OK, we can just shunt the values by 360.
-%     extents(1) = extents(1) + 360;
-%     extents(2) = extents(2) + 360;
-%     index_lon = find(data_lon.lon > extents(1) & data_lon.lon < extents(2));
-% elseif extents(1) < 0 && extents(2) > 0
-%     % This is the tricky one. We'll do two passes to extract the
-%     % western chunk first (extents(1)+360 to 360), then the eastern
-%     % chunk (0-extents(2))
-%     index_lon{1} = find(data_lon.lon >= extents(1) + 360);
-%     index_lon{2} = find(data_lon.lon <= extents(2));
-% else
-%     % Dead easy, we're in the eastern hemisphere, so nothing too
-%     % strenuous here
-%     index_lon = find(data_lon.lon > extents(1) & data_lon.lon < extents(2));
-% end
-% 
-% % Latitude is much more straightforward
-% data_lat = loaddap([ncep.(fields{aa}),'?lat']);
-% index_lat = find(data_lat.lat > extents(3) & data_lat.lat < extents(4));
-
-% Now get the latitude and longitude to calculate the indices representing
-% the model domain.
-
-% Depending on the MATLAB version, use either the third-party OPeNDAP
-% toolbox or the native MATLAB tools.
 
 data.X.data = [];
 data.Y.data = [];
@@ -170,8 +135,8 @@ if datenum(currdate) > v714date
     data.Y.data = netcdf.getVar(ncid, varid, 'double');
 
     % Create indices of the size of the arrays.
-    data.X.idx = repmat(1:size(data.X.data, 1), [size(data.X.data, 2), 1])' - 1;
-    data.Y.idx = repmat(1:size(data.Y.data, 2), [size(data.Y.data, 1), 1]) - 1;
+    data.X.idx = repmat(1:size(data.X.data, 1), [size(data.X.data, 2), 1])';
+    data.Y.idx = repmat(1:size(data.Y.data, 2), [size(data.Y.data, 1), 1]);
     %data.Y.idx = 1:size(data.Y.data, 2) - 1;
     
     % Find the indices which cover the model domain then find the extremes
@@ -193,9 +158,12 @@ if datenum(currdate) > v714date
     t = datevec(data.MT.data + datenum(1900, 12, 31, 0, 0, 0));
     tj = greg2mjulian(t(:,1), t(:,2), t(:,3), t(:,4), t(:,5), t(:,6));
     % Find the time indices which cover the model period.
-    trange = [min(find(tj > modelTime(1))), max(find(tj < modelTime(2)))];
+    trange = [find(tj >= modelTime(1), 1, 'first'), find(tj <= modelTime(2), 1, 'last')];
     
-    data.time = data.MT.
+    data.time = tj; % Export the Modified Julian Day time series.
+
+    % Clear out the full lon/lat arrays.
+    data = rmfield(data, {'X', 'Y'});
 
 else
     % I haven't tested this at all.
@@ -230,6 +198,7 @@ for aa = 1:length(fields)
         if datenum(currdate) > v714date
 
             ncid = netcdf.open(hycom.(fields{aa}));
+            varid = netcdf.inqVarID(ncid, fields{aa});
 
             % If you don't know what it contains, start by using the
             % 'netcdf.inq' and ncinfo operations:
@@ -237,16 +206,17 @@ for aa = 1:length(fields)
             %ncid_info = ncinfo(hycom.(fields{aa}));
             
             % Typically these data are 4D, with dimensions of:
-            %   - time (MT)
-            %   - depth (Depth)
-            %   - y (Y)
             %   - x (X)
+            %   - y (Y)
+            %   - depth (Depth)
+            %   - time (MT)
             % We probably want all depths but only a subset in time and
-            % space. 
+            % space. Offset everything by 1 since netCDF starts counting at
+            % zero.
+            start = [xrange(1), yrange(1), 1, trange(1)] - 1;
+            count = [xrange(2) - xrange(1), yrange(2) - yrange(1), 32, trange(2) - trange(1)] - 1;
 
-            varid = netcdf.inqVarID(ncid, fields{aa});
-
-            data.(fields{aa}).data = netcdf.getVar(ncid, varid, 'double');
+            data.(fields{aa}).data = netcdf.getVar(ncid, varid, start, count, 'double');
 
 
 
