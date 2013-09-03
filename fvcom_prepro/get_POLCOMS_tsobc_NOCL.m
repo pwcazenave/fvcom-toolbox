@@ -50,6 +50,15 @@ function Mobj = get_POLCOMS_tsobc_NOCL(Mobj, inputConf)
 %
 % KJT Revision history:
 %    2013-02-05 Adapted from PWC's script to fit NOCL file formats.
+%    2013-08-01 Fixed bug which transposed arrays and resulted in incorrect 
+%	outputs. Incorporated PWC's bugfixes from his 'get_POLCOMS_tsobc.m'
+%    function. His notes: "2013-06-03 Fix some bugs in the way the open 
+%    boundary node values were stored (the order in which they were stored
+%    did not match the order of the nodes in Casename_obc.dat). Also fix
+%    the order of the vertically interpolated values so that FVCOM starts
+%    at the surface instead of mirroring POLCOMS' approach (where the first
+%    value is the seabed). The effect of these two fixes (nodes and
+%    vertical) should match what FVCOM expects."
 %
 %==========================================================================
 
@@ -113,9 +122,14 @@ pc = get_POLCOMS_sigma(pc,inputConf);
 % Make rectangular arrays for the nearest point lookup.
 [lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
 
+% Change the way the nodes are listed to match the order in the
+% Casename_obc.dat file.
+tmpObcNodes = Mobj.obc_nodes';
+oNodes = tmpObcNodes(tmpObcNodes ~= 0)';
+
 % Find the nearest POLCOMS point to each point in the FVCOM open boundaries
-fvlon = Mobj.lon(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
-fvlat = Mobj.lat(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
+fvlon = Mobj.lon(oNodes);
+fvlat = Mobj.lat(oNodes);
 
 % Number of boundary nodes
 nf = sum(Mobj.nObcNodes);
@@ -132,22 +146,31 @@ fvsal = nan(nf, fz, nt); % FVCOM interpolated salinities
 if ftbverbose
     tic
 end
-
+%%
 for t = 1:nt
     % Get the current 3D array of POLCOMS results.
-    pctemp2 = pc.tem.data(:, :, :, t);
-    pcsal2 = pc.sal.data(:, :, :, t);
+    pctemp3 = pc.tem.data(:, :, :, t);
+    pcsalt3 = pc.sal.data(:, :, :, t);
+    
+    % Flip the vertical layer dimension to make the POLCOMS data go from
+    % surface to seabed to match its depth data and to match how FVCOM
+    % works.
+    pctemp3 = flipdim(pctemp3, 3);
+    pcsalt3 = flipdim(pcsalt3, 3);
     
     % Preallocate the intermediate results arrays.
     itempz = nan(nf, nz);
     isalz = nan(nf, nz);
     idepthz = nan(nf,nz);
-    
     for j = 1:nz
-        pcdepth2 = squeeze(pc.depth.data(:, :, j));
+        % Now extract the relevant layer from the 3D subsets. Transpose the
+        % data to be (x, y) rather than (y, x).
+        pctemp2 = pctemp3(:, :, j)';
+        pcsalt2 = pcsalt3(:, :, j)';
+        pcdepth2 = squeeze(pc.depth.data(:, :, j))';
         % Create new arrays which will be flattened when masking (below).
         tpctemp2 = pctemp2;
-        tpcsal2 = pcsal2;
+        tpcsalt2 = pcsalt2;
         tpcdepth2 = pcdepth2;
         tlon = lon;
         tlat = lat;
@@ -159,7 +182,7 @@ for t = 1:nt
         % the POLCOMS data is irregularly spaced).
         mask = tpcdepth2 < -20000;
         tpctemp2(mask) = [];
-        tpcsal2(mask) = [];
+        tpcsalt2(mask) = [];
         tpcdepth2(mask) = [];
         % Also apply the masks to the position arrays so we can't even find
         % positions outside the domain, effectively meaning if a value is
@@ -192,7 +215,7 @@ for t = 1:nt
             plon = tlon(ixy);
             plat = tlat(ixy);
             ptemp = tpctemp2(ixy);
-            psal = tpcsal2(ixy);
+            psal = tpcsalt2(ixy);
             pdepth = tpcdepth2(ixy);
             
             % Use a triangulation to do the horizontal interpolation.
@@ -214,10 +237,10 @@ for t = 1:nt
                 end
                 itempobc(i) = tpctemp2(ii(p));
                 p = 1;
-                while isnan(tpcsal2(ii(p)))
+                while isnan(tpcsalt2(ii(p)))
                     p = p+1;
                 end
-                isalobc(i) = tpcsal2(ii(p));
+                isalobc(i) = tpcsalt2(ii(p));
                 p = 1;
                 while isnan(tpcdepth2(ii(p)))
                     p = p+1;
@@ -245,17 +268,28 @@ for t = 1:nt
             % Get the FVCOM depths at this node
             tfz = Mobj.siglayz(oNodes(pp), :);
             % Now get the interpolated POLCOMS depth at this node
-            
-            
             tpz = idepthz(pp, :);
+            
+            % To ensure we get the full vertical expression of the vertical
+            % profiles, we need to normalise the POLCOMS and FVCOM
+            % depths to the same range. This is because in instances where
+            % FVCOM depths are shallower (e.g. in coastal regions), if we
+            % don't normalise the depths, we end up truncating the vertical
+            % profile. This approach ensures we always use the full
+            % vertical profile, but we're potentially squeezing it into a
+            % smaller depth.
+            A = max(tpz);
+            B = min(tpz);
+            C = max(tfz);
+            D = min(tfz);
+            norm_tpz = (((D - C) * (tpz - A)) / (B - A)) + C;
 
             % Get the temperature and salinity values for this node and
             % interpolate down the water column (from POLCOMS to FVCOM).
-            % TODO: Use csaps for the vertical interplation/subsampling at
-            % each location.
+            % Change to 'pchip' to match PWC parent code.
             if ~isnan(tpz)
-                fvtempz(pp, :) = interp1(tpz, itempz(pp, :), tfz, 'linear', 'extrap');
-                fvsalz(pp, :) = interp1(tpz, isalz(pp, :), tfz, 'linear', 'extrap');
+                fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, :), tfz, 'pchip', 'extrap');
+                fvsalz(pp, :) = interp1(norm_tpz, isalz(pp, :), tfz, 'pchip', 'extrap');
             else
                 warning('Should never see this... ') % because we test for NaNs when fetching the values.
                 warning('FVCOM boundary node at %f, %f is outside the POLCOMS domain. Skipping.', fvlon(pp), fvlat(pp))
