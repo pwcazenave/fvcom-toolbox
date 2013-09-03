@@ -22,8 +22,9 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj)
 % Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
+%    Karen Amoudry (National Oceanography Centre, Liverpool)
 %
-% Revision history
+% PWC Revision history
 %    2012-06-15 Added support for native MATLAB NetCDF routines. Requires
 %    MATLAB 2010a or higher.
 %    2012-07-16 Removed hard-coded nSiglay and nSiglev and instead moved to
@@ -34,8 +35,12 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj)
 %    salinity.
 %    2013-01-09 Add support for 3D input temperature and salinity (such as
 %    might be generated with get_POLCOMS_tsobc.m.
-%    KJT: Add better check for the size of the input arrays (works with 
+%
+% KJA Revision history
+%    Undated - Add better check for the size of the input arrays (works with 
 %    scalars).
+%    2013-08-16 - Updated output of Itime2 to avoid rounding errors
+%    when converting from double to single format.
 %
 %==============================================================================
 
@@ -239,8 +244,10 @@ netcdf.putVar(nc,obc_siglev_varid,siglev);
 netcdf.putVar(nc,obc_siglay_varid,siglay);
 netcdf.putVar(nc,time_varid,0,numel(time),time);
 netcdf.putVar(nc,itime_varid,floor(time));
-netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000);
-
+%netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000); % PWC original
+% KJA edit: avoids rounding errors when converting from double to single
+% Rounds to nearest multiple of the number of msecs in an hour
+netcdf.putVar(nc,itime2_varid,0,numel(time),round((mod(time,1)*24*3600*1000)/(3600*1000))*(3600*1000));
 netcdf.putVar(nc,obc_temp_varid,temp);
 netcdf.putVar(nc,obc_salinity_varid,salt);
 

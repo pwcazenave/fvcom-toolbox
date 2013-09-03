@@ -21,15 +21,19 @@ function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
 %
 % Author(s):  
 %    Pierre Cazenave (Plymouth Marine Laboratory)
-%    Karen Thurston (National Oceanography Centre Liverpool)
+%    Karen Amoudry (National Oceanography Centre Liverpool)
 % 
 % Revision history
 %    2012-08-08 (PWC) First version.
 %    2012-11-14 (PWC) Updated to expect Modified Julian Day rather than
 %    doing the conversion in here. Also put the pieces in set_elevtide in
 %    here to simplify the process of writing out an elevation input file.
-%    2012-12-04 (KJT) Updated to use surface elevation and open boundary 
+%    2012-12-04 (KJA) Updated to use surface elevation and open boundary 
 %    nodes from Mobj.
+%    2013-08-16 (KJA) Updated output of Itime2 to avoid rounding errors
+%    when converting from double to single format.
+%    2013-09-03 - Removed PWC's fix for timestrings. Issue was due to
+%    rounding errors caused by mjulian2greg.m, which have now been fixed.
 %   
 %==========================================================================
 
@@ -120,22 +124,13 @@ netcdf.putVar(nc,nobc_varid,ObcNodes);
 netcdf.putVar(nc,iint_varid,0,nTimes,1:nTimes);
 netcdf.putVar(nc,time_varid,0,nTimes,MJD);
 netcdf.putVar(nc,itime_varid,floor(MJD));
-netcdf.putVar(nc,itime2_varid,0,nTimes,mod(MJD,1)*24*3600*1000);
+%netcdf.putVar(nc,itime2_varid,0,nTimes,mod(MJD,1)*24*3600*1000); PWC's original
+% KJA edit: avoids rounding errors when converting from double to single
+% Rounds to nearest multiple of the number of msecs in an hour
+netcdf.putVar(nc,itime2_varid,0,nTimes,round((mod(MJD,1)*24*3600*1000)/(3600*1000))*(3600*1000));
 nStringOut = char();
 for i=1:nTimes
     [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(MJD(i));
-    if strcmp(sprintf('%02i', nSec), '60')
-        % Fix some weirdness with mjulian2greg. I think this is caused by
-        % rounding errors. My testing suggests this is not a problem around
-        % midnight, so the number of days (and thus possibly months and
-        % years) is unaffected.
-        if mod(nMin + 1, 60) == 0
-            % Up the hour by one too
-            nHour = mod(nHour + 1, 24);
-        end
-        nMin = mod(nMin + 1, 60);
-        nSec = 0;
-    end
     nDate = [nYr, nMon, nDay, nHour, nMin, nSec];
     nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ',nDate)];
 end

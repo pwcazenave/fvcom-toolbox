@@ -60,7 +60,7 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
-%   Karen Thurston (National Oceanography Centre, Liverpool)
+%   Karen Amoudry (National Oceanography Centre, Liverpool)
 %
 % PWC Revision history:
 %   2012-11-01 - First version based on the parts of grid2fvcom_U10V10.m
@@ -82,8 +82,12 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   NCEP Reanalysis 2 data (FVCOM wants evaporation in m/s). Update the
 %   help accordingly.
 %
-% KJT Revision history:
+% KJA Revision history:
 %   2013-01-16 - Added support for output of sea level pressure.
+%   2013-08-16 - Updated output of Itime2 to avoid rounding errors
+%   when converting from double to single format.
+%   2013-09-03 - Removed PWC's fix for timestrings. Issue was due to
+%   rounding errors caused by mjulian2greg.m, which have now been fixed.
 %
 %==========================================================================
 
@@ -389,7 +393,10 @@ for i=1:length(suffixes)
     netcdf.putVar(nc,nv_varid, tri');
     netcdf.putVar(nc,time_varid,0,ntimes,data.time);
     netcdf.putVar(nc,itime_varid,0,ntimes,floor(data.time));
-    netcdf.putVar(nc,itime2_varid,0,ntimes,mod(data.time,1)*24*3600*1000);
+%     netcdf.putVar(nc,itime2_varid,0,ntimes,mod(data.time,1)*24*3600*1000); % PWC original
+    % KJA edit: avoids rounding errors when converting from double to single
+    % Rounds to nearest multiple of the number of msecs in an hour
+    netcdf.putVar(nc,itime2_varid,0,ntimes,round((mod(data.time,1)*24*3600*1000)/(3600*1000))*(3600*1000));
     netcdf.putVar(nc,x_varid,x);
     netcdf.putVar(nc,y_varid,y);
     netcdf.putVar(nc,xc_varid,xc);
