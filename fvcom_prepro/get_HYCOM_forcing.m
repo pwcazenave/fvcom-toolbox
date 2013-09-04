@@ -53,7 +53,14 @@ v714date = datenum(2012, 3, 1);
 currdate = ver('MATLAB');
 currdate = datenum(currdate.Date);
 
-% Get the extent of the model domain (in spherical)
+if datenum(currdate) < v714date
+    error(['This version of MATLAB does not have native OPeNDAP ', ...
+        'support and this function relies on that support. If you ', ...
+        'require this function, you will have to add the ', ...
+        'functionality with the third-party OPeNDAP toolbox.'])
+end
+
+% Get the extent of the model domain (in spherical).
 if ~Mobj.have_lonlat
     error('Need spherical coordinates to extract the forcing data')
 else
@@ -61,58 +68,39 @@ else
     % make sure the model domain is fully covered by the extracted data.
     [dx, dy] = deal(1/12, 1/12); % HYCOM resolution in degrees
     % West, east, south, north
-    extents = [min(Mobj.lon(:))-(2*dx), max(Mobj.lon(:))+(2*dx), ...
-        min(Mobj.lat(:))-(2*dy), max(Mobj.lat(:))+(2*dy)];
+    extents = [min(Mobj.lon(:)) - (2*dx), max(Mobj.lon(:)) + (2*dx), ...
+        min(Mobj.lat(:)) - (2*dy), max(Mobj.lat(:)) + (2*dy)];
 end
 
-if modelTime(end) - modelTime(1) > 365
-    error('Can''t (yet) process more than a year at a time.')
-end
+% Get the URL to use for the first time step.
+url = get_url(modelTime(1));
 
-[yearStart, ~, ~, ~, ~, ~] = mjulian2greg(modelTime(1));
-[yearEnd, ~, ~, ~, ~, ~] = mjulian2greg(modelTime(end));
-
-if yearEnd ~= yearStart
-    error('Can''t (yet) process across a year boundary.')
-else
-    year = yearEnd;
-end
-
-% Use Modified Julian Days for the time checks
-[t1, t2, t3, t4, t5, t6] = datevec(date);
-if modelTime(1) < greg2mjulian(2008, 09, 16, 0, 0, 0)
-    error('Not using the legacy HYCOM model output. Select a start date from September 2008 onwards.')
-elseif modelTime(1) >= greg2mjulian(2008, 9, 16, 0, 0, 0) && modelTime(1) < greg2mjulian(2009, 5, 6, 0, 0, 0)
-    url = ['http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.6', num2str(year)];
-elseif modelTime(1) >= greg2mjulian(2009, 5, 6, 0, 0, 0) && modelTime(1) < greg2mjulian(2011, 1, 2, 0, 0, 0)
-    url = ['http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.8', num2str(year)];
-elseif modelTime(1) >= greg2mjulian(2011, 1, 2, 0, 0, 0) && modelTime(1) <= greg2mjulian(t1, t2, t3, 0, 0, 0)
-    url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';
-elseif modelTime(1) > greg2mjulian(t1, t2, t3,  t4, t5, t6)
-    error('Date is in the future?')
-else
-    error('Date is outside of known spacetime?')
-end
-% REMOVE ME!!!
-url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';
-% REMOVE ME!!!
+% List of URL suffixes so we can dynamically build the URL for each time
+% step.
+suffix.MT           = '?MT';
+suffix.Longitude    = '?Longitude';
+suffix.Latitude     = '?Latitude';
+suffix.Depth        = '?Depth';
+suffix.temperature  = '?temperature';
+suffix.salinity     = '?salinity';
+suffix.u            = '?u';
+suffix.v            = '?v';
+suffix.density      = '?density';
+suffix.X            = '?X';
+suffix.Y            = '?Y';
 
 % Set up a struct of the HYCOM data sets in which we're interested.
-hycom.Longitude     = [url, '?Longitude'];
-hycom.Latitude      = [url, '?Latitude'];
-hycom.temperature   = [url, '?temperature'];
-hycom.salinity      = [url, '?salinity'];
-% hycom.density       = [url, '?density']; % don't need for now
-hycom.u             = [url, '?u']; % mean flow
-hycom.v             = [url, '?v']; % mean flow
-hycom.Depth         = [url, '?Depth']; % water depth
-% hycom.MT            = [url, '?MT']; % time - don't need to get automatically
-% hycom.X             = [url, '?X']; % causes MATLAB to crash...
-% hycom.Y             = [url, '?Y']; % causes MATLAB to crash...
-
-data.X.data = [];
-data.Y.data = [];
-data.time.data = [];
+hycom.MT            = [url, suffix.MT];             % time [1D]
+hycom.Longitude     = [url, suffix.Longitude];      % [2D]
+hycom.Latitude      = [url, suffix.Latitude];       % [2D]
+hycom.Depth         = [url, suffix.Depth];          % water depth [2D]
+hycom.temperature   = [url, suffix.temperature];    % [4D]
+hycom.salinity      = [url, suffix.salinity];       % [4D]
+hycom.u             = [url, suffix.u];              % mean flow % [4D]
+hycom.v             = [url, suffix.v];              % mean flow % [4D]
+% hycom.density       = [url, suffix.density];        % don't need for now
+% hycom.X             = [url, suffix.X];              % crashes MATLAB...
+% hycom.Y             = [url, suffix.Y];              % crashes MATLAB...
 
 if datenum(currdate) > v714date
     % Use the built in tools to open the remote file.
@@ -149,23 +137,63 @@ if datenum(currdate) > v714date
     data.lon = data.X.data(xrange(1):xrange(2), yrange(1):yrange(2));
     data.lat = data.Y.data(xrange(1):xrange(2), yrange(1):yrange(2));
 
+
+    % Load the depth data (1D vector).
+    if datenum(currdate) > v714date
+        ncid = netcdf.open(hycom.Depth);
+        varid = netcdf.inqVarID(ncid, 'Depth');
+
+        % HYCOM has fixed depths, so the array which returned here is just
+        % a list of those depths. We need them to interpolate the vertical
+        % structure onto the FVCOM sigma levels.
+        data.Depth.data = netcdf.getVar(ncid, varid, 'double');
+
+    else
+        % Third-party toolbox version (unimplemented).
+        data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
+        % Get the data time and convert to Modified Julian Day.
+        data.time = loaddap(hycom.time);
+    end
+
+    % Get the number of vertical levels.
+    nz = length(data.Depth.data);
+
+
     % Now find the time indices. HYCOM stores its times as days since
     % 1900-12-31 00:00:00. Naturally this is completely different from
-    % everything else ever.
-    ncid = netcdf.open(hycom.MT, 'NOWRITE');
-    varid = netcdf.inqVarID(ncid, 'MT');
-    data.MT.data = netcdf.getVar(ncid, varid, 'double');
-    % Convert to MATLAB days and then to Modified Julian Days.
-    t = datevec(data.MT.data + datenum(1900, 12, 31, 0, 0, 0));
-    tj = greg2mjulian(t(:,1), t(:,2), t(:,3), t(:,4), t(:,5), t(:,6));
-    % Find the time indices which cover the model period.
-    trange = [find(tj >= modelTime(1), 1, 'first'), find(tj <= modelTime(2), 1, 'last')];
+    % everything else ever. We need to iterate through the days we've been
+    % given and find the relevant url (with get_url) and then create a cell
+    % array of all the times. This assumes the HYCOM data is daily values
+    % (which it is).
+    times = modelTime(1):modelTime(2);
+    nt = length(times);
 
-    data.time = tj; % Export the Modified Julian Day time series.
+    % Open the initial connection.
+    ncid = netcdf.open(hycom.MT, 'NOWRITE');
+
+    for tt = 1:nt
+        oldurl = url;
+        url = get_url(times(tt));
+        if ~strcmpi(oldurl, url) || tt == 1
+
+            % Only reopen the connection if they differ.
+            hycom.MT = [url, suffix.MT];
+            ncid = netcdf.open(hycom.MT, 'NOWRITE');
+            varid = netcdf.inqVarID(ncid, 'MT');
+
+            % Add the new data to the cell array. This should build up an
+            % array of unique time series. We can then use these to query
+            % for the time indices for each time step later.
+            data.MT.data{tt} = netcdf.getVar(ncid, varid, 'double');
+
+            % Convert to MATLAB days and then to Modified Julian Days.
+            t{tt} = datevec(data.MT.data{tt} + datenum(1900, 12, 31, 0, 0, 0));
+            tmjd{tt} = greg2mjulian(t{tt}(:,1), t{tt}(:,2), t{tt}(:,3), t{tt}(:,4), t{tt}(:,5), t{tt}(:,6));
+        end
+    end
 
     % Clear out the full lon/lat arrays.
     data = rmfield(data, {'X', 'Y'});
-
 else
     % I haven't tested this at all.
 
@@ -173,8 +201,8 @@ else
     data.Y.idx = loaddap(hycom.Y);
     xIdx = length(data.X.idx.X) - 1;
     yIdx = length(data.Y.idx.Y) - 1;
-    data.lon.all = loaddap([hycom.lon, sprintf('[%i:1:%i]', 0, 0), sprintf('[%i:1:%i]', 0, xIdx)]);
-    data.lat.all = loaddap([hycom.lat, sprintf('[%i:1:%i]', 0, yIdx), sprintf('[%i:1:%i]', 0, 0)]);
+    data.lon = loaddap([hycom.lon, sprintf('[%i:1:%i]', 0, 0), sprintf('[%i:1:%i]', 0, xIdx)]);
+    data.lat = loaddap([hycom.lat, sprintf('[%i:1:%i]', 0, yIdx), sprintf('[%i:1:%i]', 0, 0)]);
 end
 
 netcdf.close(ncid);
@@ -183,70 +211,123 @@ fields = fieldnames(hycom);
 
 for aa = 1:length(fields)
 
-    if strcmpi(fields{aa}, 'Longitude') || strcmpi(fields{aa}, 'Latitude')
-        % Skip these as we've already got the spatial information as
-        % data.lon and data.lat.
-        continue
-    else
+    switch fields{aa}
 
-        % Store the downloaded data in a struct. Assume the spatial data is
-        % identical to that in data.lon and data.lat.
-        data.(fields{aa}).data = [];
-        data.(fields{aa}).time = [];
-        data_attributes.(fields{aa}) = [];
+        case {'Longitude', 'Latitude', 'MT', 'Depth'}
+            % Skip these as we've already got the information at the
+            % beginning of this function. These are largely time
+            % independent data, so no need to get them here as they don't
+            % have 4 dimensions, whereas the code after the otherwise
+            % assumed 4D data.
+            continue
 
-        % Get attributes from which to calculate length of various fields.
-        if datenum(currdate) > v714date
+        otherwise
+            % Store the downloaded data in a struct. Assume the spatial
+            % data is identical to that in data.lon and data.lat.
+            data.(fields{aa}).data = [];
 
-            ncid = netcdf.open(hycom.(fields{aa}));
-            varid = netcdf.inqVarID(ncid, fields{aa});
+            if datenum(currdate) > v714date
 
-            % If you don't know what it contains, start by using the
-            % 'netcdf.inq' and ncinfo operations:
-            %[numdims, numvars, numglobalatts, unlimdimid] = netcdf.inq(ncid);
-            %ncid_info = ncinfo(hycom.(fields{aa}));
-            
-            % Typically these data are 4D, with dimensions of:
-            %   - x (X)
-            %   - y (Y)
-            %   - depth (Depth)
-            %   - time (MT)
-            % We probably want all depths but only a subset in time and
-            % space.
+                ncid = netcdf.open(hycom.(fields{aa}));
+                varid = netcdf.inqVarID(ncid, fields{aa});
 
-            % Since the HYCOM OPeNDAP server is so spectacularly slow,
-            % extract a day's data at a time and stick them together here.
-            % If nothing else, this at least means I can give some
-            % indication of progress rather than just wait for something to
-            % magically happen.
-            ts = trange(1):trange(2);
-            nt = length(ts);
-            nx = (xrange(2) - xrange(1)) + 1;
-            ny = (yrange(2) - yrange(1)) + 1;
-            nz = 33; % hard code vertical levels
+                % If you don't know what it contains, start by using the
+                % 'netcdf.inq' and ncinfo operations:
+                %[numdims, numvars, numglobalatts, unlimdimid] = netcdf.inq(ncid);
+                %ncid_info = ncinfo(hycom.(fields{aa}));
 
-            data.(fields{aa}).data = nan(nx, ny, nz, nt);
-            for tt = 1:nt
-                if ftbverbose
-                    fprintf('%s: time %i of %i... ', fields{aa}, tt, nt)
+                % Typically these data are 4D, with dimensions of:
+                %   - x (X)
+                %   - y (Y)
+                %   - depth (Depth)
+                %   - time (MT)
+                % We probably want all depths but only a subset in time and
+                % space.
+
+                % Since the HYCOM OPeNDAP server is so spectacularly slow,
+                % extract a day's data at a time and stick them together
+                % here. If nothing else, this at least means I can give
+                % some indication of progress rather than just wait for
+                % something to magically happen.
+                nx = (xrange(2) - xrange(1)) + 1;
+                ny = (yrange(2) - yrange(1)) + 1;
+
+                % Preallocate the output so we don't append to an array
+                % (which is slow).
+                data.(fields{aa}).data = nan(nx, ny, nz, nt);
+
+                c = 1; % counter for iterating through tmjd.
+
+                for tt = 1:nt
+                    if ftbverbose
+                        fprintf('%s: time %i of %i... ', fields{aa}, tt, nt)
+                    end
+
+                    % Get the current url value for this time step. This
+                    % approach means we can grab data which straddles a
+                    % boundary between HYCOM outputs. Only reopen the
+                    % connection if the url value has changed. At this
+                    % point we also need to get ourselves a new time index
+                    % using modelTime and the cell array tmjd.
+                    oldurl = url;
+                    url = get_url(times(tt));
+                    if ~strcmpi(oldurl, url) || tt == 1
+                        hycom.(fields{aa}) = [url, suffix.(fields{aa})];
+
+                        ncid = netcdf.open(hycom.(fields{aa}));
+                        varid = netcdf.inqVarID(ncid, fields{aa});
+
+                        % Find the time index closest to the current model
+                        % time.
+                        [~, ts] = min(abs(tmjd{tt} - times(tt)));
+                        c = c + 1;
+                    end
+
+                    % netCDF starts at zero, hence -1.
+                    start = [xrange(1), yrange(1), 1, ts] - 1;
+                    count = [nx, ny, nz, 1];
+
+                    data.(fields{aa}).data(:, :, :, tt) = netcdf.getVar(ncid, varid, start, count, 'double');
+
+                    if ftbverbose; fprintf('done.\n'); end
                 end
-                start = [xrange(1), yrange(1), 1, ts(tt)] - 1;
-                count = [(xrange(2) - xrange(1)) + 1, (yrange(2) - yrange(1)) + 1, nz, 1];
+            else
+                % Third-party toolbox version (unimplemented).
 
-                data.(fields{aa}).data(:, :, :, tt) = netcdf.getVar(ncid, varid, start, count, 'double');
-                if ftbverbose
-                    fprintf('done.\n')
-                end
+                data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
+                % Get the data time and convert to Modified Julian Day.
+                data.time = loaddap(hycom.time);
             end
-
-        else
-            % Third-party toolbox version (unimplemented).
-
-            data_attributes.(fields{aa}) = loaddap('-A', [hycom.(fields{aa})]);
-            % Get the data time and convert to Modified Julian Day.
-            data_time = loaddap(hycom.time);
-        end
     end
 end
 
 netcdf.close(ncid);
+
+
+function url = get_url(time)
+% Child function to find the relevant URL to use for a given time step.
+%
+% url = get_url(time);
+%
+% INPUT:
+%   time - Modified Julian Day
+%
+% OUTPUT:
+%   url - string of the approprate URL for the date supplied in time.
+%
+
+[t1, t2, t3, t4, t5, t6] = datevec(datestr(now));
+
+if time < greg2mjulian(2008, 09, 16, 0, 0, 0)
+    error('Not using the legacy HYCOM model output. Select a start date from September 2008 onwards.')
+elseif time >= greg2mjulian(2008, 9, 16, 0, 0, 0) && time < greg2mjulian(2009, 5, 6, 0, 0, 0)
+    url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.6';
+elseif time >= greg2mjulian(2009, 5, 6, 0, 0, 0) && time < greg2mjulian(2011, 1, 2, 0, 0, 0)
+    url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.8';
+elseif time >= greg2mjulian(2011, 1, 2, 0, 0, 0) && time <= greg2mjulian(t1, t2, t3, 0, 0, 0)
+    url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';
+elseif time > greg2mjulian(t1, t2, t3,  t4, t5, t6)
+    error('Given date is in the future.')
+else
+    error('Date is outside of the known spacetime continuum? See help TARDIS.')
+end
