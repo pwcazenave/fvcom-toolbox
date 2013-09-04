@@ -171,12 +171,14 @@ if datenum(currdate) > v714date
     % Open the initial connection.
     ncid = netcdf.open(hycom.MT, 'NOWRITE');
 
+    c = 1; % counter for the tmjd cell array.
     for tt = 1:nt
         oldurl = url;
         url = get_url(times(tt));
+
+        % Only reopen the connection if the two URLs differ.
         if ~strcmpi(oldurl, url) || tt == 1
 
-            % Only reopen the connection if they differ.
             hycom.MT = [url, suffix.MT];
             ncid = netcdf.open(hycom.MT, 'NOWRITE');
             varid = netcdf.inqVarID(ncid, 'MT');
@@ -184,11 +186,13 @@ if datenum(currdate) > v714date
             % Add the new data to the cell array. This should build up an
             % array of unique time series. We can then use these to query
             % for the time indices for each time step later.
-            data.MT.data{tt} = netcdf.getVar(ncid, varid, 'double');
+            data.MT.data{c} = netcdf.getVar(ncid, varid, 'double');
 
             % Convert to MATLAB days and then to Modified Julian Days.
-            t{tt} = datevec(data.MT.data{tt} + datenum(1900, 12, 31, 0, 0, 0));
-            tmjd{tt} = greg2mjulian(t{tt}(:,1), t{tt}(:,2), t{tt}(:,3), t{tt}(:,4), t{tt}(:,5), t{tt}(:,6));
+            t{c} = datevec(data.MT.data{c} + datenum(1900, 12, 31, 0, 0, 0));
+            tmjd{c} = greg2mjulian(t{c}(:,1), t{c}(:,2), t{c}(:,3), t{c}(:,4), t{c}(:,5), t{c}(:,6));
+
+            c = c + 1;
         end
     end
 
@@ -256,7 +260,7 @@ for aa = 1:length(fields)
                 % (which is slow).
                 data.(fields{aa}).data = nan(nx, ny, nz, nt);
 
-                c = 1; % counter for iterating through tmjd.
+                c = 0; % counter for iterating through tmjd.
 
                 for tt = 1:nt
                     if ftbverbose
@@ -277,11 +281,12 @@ for aa = 1:length(fields)
                         ncid = netcdf.open(hycom.(fields{aa}));
                         varid = netcdf.inqVarID(ncid, fields{aa});
 
-                        % Find the time index closest to the current model
-                        % time.
-                        [~, ts] = min(abs(tmjd{tt} - times(tt)));
                         c = c + 1;
                     end
+
+                    % Find the time index closest to the current model
+                    % time.
+                    [~, ts] = min(abs(tmjd{c} - times(tt)));
 
                     % netCDF starts at zero, hence -1.
                     start = [xrange(1), yrange(1), 1, ts] - 1;
@@ -319,14 +324,16 @@ function url = get_url(time)
 [t1, t2, t3, t4, t5, t6] = datevec(datestr(now));
 
 if time < greg2mjulian(2008, 09, 16, 0, 0, 0)
-    error('Not using the legacy HYCOM model output. Select a start date from September 2008 onwards.')
-elseif time >= greg2mjulian(2008, 9, 16, 0, 0, 0) && time < greg2mjulian(2009, 5, 6, 0, 0, 0)
+    error('Not using the legacy HYCOM model output. Select a start date from September 16th 2008 onwards.')
+elseif time >= greg2mjulian(2008, 9, 19, 0, 0, 0) && time < greg2mjulian(2009, 5, 7, 0, 0, 0)
     url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.6';
-elseif time >= greg2mjulian(2009, 5, 6, 0, 0, 0) && time < greg2mjulian(2011, 1, 2, 0, 0, 0)
+elseif time >= greg2mjulian(2009, 5, 7, 0, 0, 0) && time < greg2mjulian(2011, 1, 3, 0, 0, 0)
     url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.8';
-elseif time >= greg2mjulian(2011, 1, 2, 0, 0, 0) && time <= greg2mjulian(t1, t2, t3, 0, 0, 0)
+elseif time >= greg2mjulian(2011, 1, 3, 0, 0, 0) && time < greg2mjulian(2013, 8, 21, 0, 0, 0)
     url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';
-elseif time > greg2mjulian(t1, t2, t3,  t4, t5, t6)
+elseif time >= greg2mjulian(2013, 8, 21, 0, 0, 0) && time <= greg2mjulian(t1, t2, t3, t4, t5, t6)
+    url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_91.0';
+elseif time > greg2mjulian(t1, t2, t3, t4, t5, t6)
     error('Given date is in the future.')
 else
     error('Date is outside of the known spacetime continuum? See help TARDIS.')
