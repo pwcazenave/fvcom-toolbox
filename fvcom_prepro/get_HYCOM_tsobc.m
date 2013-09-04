@@ -170,10 +170,10 @@ for v = 1:length(fields)
                 % Get the n nearest nodes from HYCOM data (more? fewer?).
                 ixy = ii(1:16);
 
-                % If the minimum distance away is greater than twice the
-                % HYCOM grid resolution, skip this point at this vertical
-                % level.
-                if min(dist) > 2 * hdx
+                % If the minimum distance away is greater than three times
+                % the HYCOM grid resolution, skip this point at this
+                % vertical level.
+                if min(dist) > 3 * hdx
                     continue
                 end
 
