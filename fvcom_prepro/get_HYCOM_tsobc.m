@@ -80,9 +80,6 @@ end
 % Use the existing rectangular arrays for the nearest point lookup.
 [lon, lat] = deal(hycom.lon, hycom.lat);
 
-% Specify the approximate HYCOM resolution.
-hdx = median(diff(hycom.lon(:)));
-
 %oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);
 % Change the way the nodes are listed to match the order in the
 % Casename_obc.dat file.
@@ -97,6 +94,15 @@ nf = sum(Mobj.nObcNodes);
 % Number of sigma layers.
 fz = size(Mobj.siglayz, 2);
 
+
+% Make a 3D array of the HYCOM depths and mask where we don't have data.
+% This can then be used in the interpolation instead of trying to deal with
+% this on the fly.
+hdepth = permute(repmat(hycom.Depth.data, [1, nx, ny]), [2, 3, 1]);
+mask = hycom.(fields{ff}).data(:, :, :, 1) > 1.26e29;
+hdepth(mask) = nan;
+landmask = hycom.(fields{ff}).data(:, :, 1, 1) > 1.26e29;
+
 if ftbverbose
     tic
 end
@@ -110,15 +116,8 @@ for v = 1:length(fields)
 
     for t = 1:nt
 
-        % Make a 3D array of the HYCOM depths and mask where we don't have
-        % data. This can then be used in the interpolation instead of trying to
-        % deal with this on the fly.
-        hdepth = permute(repmat(hycom.Depth.data, [1, nx, ny]), [2, 3, 1]);
-        hmask = hycom.(fields{v}).data(:, :, :, t) > 1.26e29;
-        hdepth(hmask) = nan;
-
         if ftbverbose
-            fprintf('%s : %i of %i timesteps... ', subname, t, nt)
+            fprintf('%s : %i of %i %s timesteps... ', subname, t, nt, fields{v})
         end
         % Get the current 3D array of HYCOM results.
         pctemp3 = hycom.(fields{v}).data(:, :, :, t);
@@ -166,16 +165,16 @@ for v = 1:length(fields)
                 fx = fvlon(i);
                 fy = fvlat(i);
 
-                [dist, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
+                [~, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
                 % Get the n nearest nodes from HYCOM data (more? fewer?).
                 ixy = ii(1:16);
 
                 % If the minimum distance away is greater than three times
                 % the HYCOM grid resolution, skip this point at this
                 % vertical level.
-                if min(dist) > 3 * hdx
-                    continue
-                end
+                %if min(dist) > 3 * hdx
+                %    continue
+                %end
 
                 % Get the variables into static variables for the
                 % parallelisation.
@@ -187,22 +186,34 @@ for v = 1:length(fields)
                 tritemp = TriScatteredInterp(plon, plat, ptemp, 'natural');
                 itempobc(i) = tritemp(fx, fy);
 
-%                 if isnan(itempobc(i))
-%                     warning('FVCOM boundary node at %f, %f is outside the HYCOM domain. Setting to the closest HYCOM value.', fx, fy)
-%                     itempobc(i) = tpctemp2(ii(1));
-%
-%                     % This might happen if the open boundary falls on
-%                     % HYCOM's land. Uncomment the code below to get a plot
-%                     % as it's going (you'll need to fall back to a normal
-%                     % for loop as opposed to a parfor loop).
-%                     %figure
-%                     %clf
-%                     %plot(tlon(ii(1:500)), tlat(ii(1:500)), '.')
-%                     %hold on
-%                     %plot(fx, fy, 'rx')
-%                     %axis('equal', 'tight')
-%                     %pause
-%                 end
+                if isnan(itempobc(i))
+                    % Use the surface layer as the canonical land mask and
+                    % check that the issue here is not just that the open
+                    % boundary node is shallower than this layer's depth.
+                    % In the case where we're at the surface, we always
+                    % want a value, so use the closest value, otherwise we
+                    % can skip this data and leave it as NaN. The vertical
+                    % interpolation will strip out the NaN depths so we
+                    % shouldn't have any problems from that perspective.
+
+                    % Find the closest value in the original grid.
+                    [~, jj] = min(sqrt((lon(:) - fx).^2 + (lat(:) - fy).^2));
+                    [ir, ic] = ind2sub(size(lon), jj);
+                    if landmask(ir, ic) == 1 && j == 1
+                        %fprintf('Sea surface or on land (j = %i, lon: %.5f, lat: %.5f)\n', j, lon(ir, ic), lat(ir, ic))
+                        itempobc(i) = tpctemp2(ii(1));
+
+                        %clf
+                        %pcolor(hycom.lon, hycom.lat, landmask * 1); shading flat; colorbar; hold on
+                        %plot(lon(ir, ic), lat(ir, ic), 'wo')
+                        %plot(fx, fy, 'rx')
+                        %plot(tlon(ii(1)), tlat(ii(1)), 'gs')
+                        %axis('square')
+                        %axis([fx - 1.5, fx + 1.5, fy - 1.5, fy + 1.5])
+                        %legend('Land mask', 'Mask test', 'FVCOM node', 'Nearest valid', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')
+                        %legend('BoxOff')
+                    end
+                end
             end
 
             % Put the results in the intermediate array.
@@ -250,44 +261,41 @@ for v = 1:length(fields)
             mm = isnan(itempz(pp, :));
             tpz(mm) = [];
 
-            % To ensure we get the full vertical expression of the vertical
-            % profiles, we need to normalise the POLCOMS-ERSEM and FVCOM
-            % depths to the same range. This is because in instances where
-            % FVCOM depths are shallower (e.g. in coastal regions), if we
-            % don't normalise the depths, we end up truncating the vertical
-            % profile. This approach ensures we always use the full
-            % vertical profile, but we're potentially squeezing it into a
-            % smaller depth.
-            A = max(tpz);
-            B = min(tpz);
-            C = max(tfz);
-            D = min(tfz);
-            norm_tpz = (((D - C) * (tpz - A)) / (B - A)) + C;
-
-            % Get the temperature and salinity values for this node and
-            % interpolate down the water column (from PML POLCOMS-ERSEM to
-            % FVCOM). I had originally planned to use csaps for the
-            % vertical interplation/subsampling at each location. However,
-            % the demo of csaps in the MATLAB documentation makes the
-            % interpolation look horrible (shaving off extremes). interp1
-            % provides a range of interpolation schemes, of which pchip
-            % seems to do a decent job of the interpolation (at least
-            % qualitatively).
-            if ~isnan(tpz)
-                %fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, ~mm), tfz, 'pchip', 'extrap');
-                fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, ~mm), tfz, 'csaps', 'extrap');
-
-                %figure(800);
-                %clf
-                %plot(itempz(pp, ~mm), tpz, 'r-x')
-                %hold on
-                %plot(fvtempz(pp, :), tfz, 'k-x')
-                %legend('HYCOM', 'FVCOM')
-                %pause
+            % If HYCOM has a single value, just repeat it across all depth
+            % values.
+            if length(tpz) == 1;
+                fvtempz(pp, :) = repmat(itempz(pp, ~mm), [1, length(tfz)]);
             else
-                warning('Should never see this... ') % because we test for NaNs when fetching the values.
-                warning('FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Skipping.', fvlon(pp), fvlat(pp))
-                continue
+                % To ensure we get the full vertical expression of the
+                % vertical profiles, we need to normalise the HYCOM and
+                % FVCOM depths to the same range. This is because in
+                % instances where FVCOM depths are shallower (e.g. in
+                % coastal regions), if we don't normalise the depths, we
+                % end up truncating the vertical profile. This approach
+                % ensures we always use the full vertical profile, but
+                % we're potentially squeezing it into a smaller depth.
+                A = max(tpz);
+                B = min(tpz);
+                C = max(tfz);
+                D = min(tfz);
+                norm_tpz = (((D - C) * (tpz - A)) / (B - A)) + C;
+
+                % Get the temperature and salinity values for this node and
+                % interpolate down the water column (from HYCOM to FVCOM).
+                if ~isnan(norm_tpz)
+                    fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, ~mm), tfz, 'csaps', 'extrap');
+
+                    %figure(800);
+                    %clf
+                    %plot(itempz(pp, ~mm), tpz, 'r-o')
+                    %hold on
+                    %plot(fvtempz(pp, :), tfz, 'k-x')
+                    %legend('HYCOM', 'FVCOM')
+                else
+                    warning('Should never see this... ') % because we test for NaNs when fetching the values.
+                    warning('FVCOM boundary node at %f, %f is outside the HYCOM domain. Skipping.', fvlon(pp), fvlat(pp))
+                    continue
+                end
             end
         end
 
@@ -307,7 +315,7 @@ if ftbverbose
 end
 
 fvfields = fieldnames(fvcom);
-for s = 1:length(fvcom)
+for s = 1:length(fvfields)
     switch fvfields{s}
         case 'temperature'
             Mobj.temperature = fvcom.temperature;
@@ -386,12 +394,12 @@ end
 % title('HYCOM')
 %
 % % Figure to check everything's as we'd expect. Plot first time step with
-% % the POLCOMS surface temperature as a background with the interpolated
+% % the HYCOM surface temperature as a background with the interpolated
 % % boundary node surface values on top.
 %
 % figure(200)
 % clf
-% % Plot POLCOMS surface data (last sigma layer)
+% % Plot HYCOM surface data (last sigma layer)
 % dx = mean(diff(hycom.lon(:)));
 % dy = mean(diff(hycom.lat(:)));
 % temp = hycom.temperature.data(:, :, :, tt);
