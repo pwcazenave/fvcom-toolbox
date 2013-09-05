@@ -131,9 +131,9 @@ for v = 1:length(fields)
             pctemp2 = pctemp3(:, :, j);
 
             % Create new arrays which will be flattened when masking (below).
-            tpctemp2 = pctemp2;
-            tlon = lon;
-            tlat = lat;
+            tpctemp2 = pctemp2(:);
+            tlon = lon(:);
+            tlat = lat(:);
 
             % Create and apply a mask to remove values outside the domain. This
             % inevitably flattens the arrays, but it shouldn't be a problem
@@ -184,25 +184,25 @@ for v = 1:length(fields)
                 ptemp = tpctemp2(ixy);
 
                 % Use a triangulation to do the horizontal interpolation.
-                tritemp = TriScatteredInterp(plon', plat', ptemp', 'natural');
+                tritemp = TriScatteredInterp(plon, plat, ptemp, 'natural');
                 itempobc(i) = tritemp(fx, fy);
 
-                if isnan(itempobc(i))
-                    warning('FVCOM boundary node at %f, %f is outside the HYCOM domain. Setting to the closest HYCOM value.', fx, fy)
-                    itempobc(i) = tpctemp2(ii(1));
-
-                    % This might happen if the open boundary falls on
-                    % HYCOM's land. Uncomment the code below to get a plot
-                    % as it's going (you'll need to fall back to a normal
-                    % for loop as opposed to a parfor loop).
-                    %figure
-                    %clf
-                    %plot(tlon(ii(1:500)), tlat(ii(1:500)), '.')
-                    %hold on
-                    %plot(fx, fy, 'rx')
-                    %axis('equal', 'tight')
-                    %pause
-                end
+%                 if isnan(itempobc(i))
+%                     warning('FVCOM boundary node at %f, %f is outside the HYCOM domain. Setting to the closest HYCOM value.', fx, fy)
+%                     itempobc(i) = tpctemp2(ii(1));
+%
+%                     % This might happen if the open boundary falls on
+%                     % HYCOM's land. Uncomment the code below to get a plot
+%                     % as it's going (you'll need to fall back to a normal
+%                     % for loop as opposed to a parfor loop).
+%                     %figure
+%                     %clf
+%                     %plot(tlon(ii(1:500)), tlat(ii(1:500)), '.')
+%                     %hold on
+%                     %plot(fx, fy, 'rx')
+%                     %axis('equal', 'tight')
+%                     %pause
+%                 end
             end
 
             % Put the results in the intermediate array.
@@ -245,7 +245,10 @@ for v = 1:length(fields)
             % and we need to filter those out here.
 
             % Find the HYCOM depths which cover the modelled depth range.
-            tpz = -hycom.Depth.data(-hycom.Depth.data > min(tfz));
+            tpz = -hycom.Depth.data;
+            % Mask the HYCOM depths with the data array at this node.
+            mm = isnan(itempz(pp, :));
+            tpz(mm) = [];
 
             % To ensure we get the full vertical expression of the vertical
             % profiles, we need to normalise the POLCOMS-ERSEM and FVCOM
@@ -255,8 +258,8 @@ for v = 1:length(fields)
             % profile. This approach ensures we always use the full
             % vertical profile, but we're potentially squeezing it into a
             % smaller depth.
-            A = max(-hycom.Depth.data);
-            B = min(-hycom.Depth.data);
+            A = max(tpz);
+            B = min(tpz);
             C = max(tfz);
             D = min(tfz);
             norm_tpz = (((D - C) * (tpz - A)) / (B - A)) + C;
@@ -271,7 +274,16 @@ for v = 1:length(fields)
             % seems to do a decent job of the interpolation (at least
             % qualitatively).
             if ~isnan(tpz)
-                fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, :), tfz, 'pchip', 'extrap');
+                %fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, ~mm), tfz, 'pchip', 'extrap');
+                fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, ~mm), tfz, 'csaps', 'extrap');
+
+                %figure(800);
+                %clf
+                %plot(itempz(pp, ~mm), tpz, 'r-x')
+                %hold on
+                %plot(fvtempz(pp, :), tfz, 'k-x')
+                %legend('HYCOM', 'FVCOM')
+                %pause
             else
                 warning('Should never see this... ') % because we test for NaNs when fetching the values.
                 warning('FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Skipping.', fvlon(pp), fvlat(pp))
@@ -327,32 +339,39 @@ end
 %%
 % Plot a vertical profile for a boundary node (for my Irish Sea case, this
 % is one of the ones along the Celtic Sea boundary). Also plot the
-% distribution of interpolated values over the POLCOMS data. Add the
-% location of the vertical profile (both FVCOM and POLCOMS) to the plot.
-% nn = 55;   % open boundary index
+% distribution of interpolated values over the HYCOM data. Add the location
+% of the vertical profile (both FVCOM and HYCOM) to the plot.
+
+% nn = 110;   % open boundary index
 % tt = 1;    % time index
+% fvz = 1;   % fvcom depth index (currently 1-21)
+% hyz = 1;   % hycom depth index (1-33)
 %
-% % Get the corresponding indices for the POLCOMS data
-% [~, xidx] = min(abs(lon(1, :) - fvlon(nn)));
-% [~, yidx] = min(abs(lat(:, 1) - fvlat(nn)));
+% % Find the HYCOM seabed indices
+% % [~, hyz] = nanmax(hdepth, [], 3);
+%
+% % Get the corresponding indices for the HYCOM data
+% [~, idx] = min(sqrt((lon(:) - fvlon(nn)).^2 + (lat(:) - fvlat(nn)).^2));
+% [xidx, yidx] = ind2sub(size(lon), idx);
+%
+% zidx = isfinite(hdepth(xidx, yidx, :));
+% hz = 1:nz;
 %
 % % close all
 %
-% figure
+% figure(100)
 % clf
 % subplot(2,2,1)
-% plot(Mobj.temperature(nn, :, 1), Mobj.siglayz(oNodes(nn), :), 'x-')
+% plot(Mobj.temperature(nn, :, tt), Mobj.siglayz(oNodes(nn), :), 'x-')
 % xlabel('Temperature (^{\circ}C)')
 % ylabel('Depth (m)')
 % title('FVCOM')
 %
 % subplot(2,2,2)
-% % Although POLCOMS stores its temperature values from seabed to surface,
-% % the depths are stored surface to seabed. Nice.
-% plot(squeeze(hycom.temperature.data(xidx, yidx, :, 1)), squeeze(hycom.Depth.data(xidx, yidx, :, 1)), 'rx-')
+% plot(squeeze(hycom.temperature.data(xidx, yidx, zidx, tt)), squeeze(-hdepth(xidx, yidx, zidx)), 'rx-')
 % xlabel('Temperature (^{\circ}C)')
 % ylabel('Depth (m)')
-% title('POLCOMS')
+% title('HYCOM')
 %
 % subplot(2,2,3)
 % plot(Mobj.temperature(nn, :, tt), 1:fz, 'x-')
@@ -361,30 +380,31 @@ end
 % title('FVCOM')
 %
 % subplot(2,2,4)
-% plot(squeeze(hycom.temperature.data(xidx, yidx, :, tt)), 1:nz, 'rx-')
+% plot(squeeze(hycom.temperature.data(xidx, yidx, zidx, tt)), hz(zidx), 'rx-')
 % xlabel('Temperature (^{\circ}C)')
 % ylabel('Array index')
-% title('POLCOMS')
+% title('HYCOM')
 %
 % % Figure to check everything's as we'd expect. Plot first time step with
 % % the POLCOMS surface temperature as a background with the interpolated
 % % boundary node surface values on top.
 %
-% figure
+% figure(200)
 % clf
 % % Plot POLCOMS surface data (last sigma layer)
-% dx = mean(diff(hycom.lon.data));
-% dy = mean(diff(hycom.lat.data));
-% pcolor(hycom.lon.data - (dx / 2), hycom.lat.data - (dy / 2), ...
-%     squeeze(hycom.temperature.data(:, :, 1, tt))')
+% dx = mean(diff(hycom.lon(:)));
+% dy = mean(diff(hycom.lat(:)));
+% temp = hycom.temperature.data(:, :, :, tt);
+% pcolor(hycom.lon - (dx / 2), hycom.lat - (dy / 2), ...
+%     squeeze(temp(:, :, hyz)))
 % shading flat
 % axis('equal', 'tight')
 % daspect([1.5, 1, 1])
 % hold on
 % % Add the interpolated surface data (first sigma layer)
-% scatter(Mobj.lon(oNodes), Mobj.lat(oNodes), 40, Mobj.temperature(:, 1, tt), 'filled', 'MarkerEdgeColor', 'k')
+% scatter(Mobj.lon(oNodes), Mobj.lat(oNodes), 40, Mobj.temperature(:, fvz, tt), 'filled', 'MarkerEdgeColor', 'k')
 % axis([min(Mobj.lon(oNodes)), max(Mobj.lon(oNodes)), min(Mobj.lat(oNodes)), max(Mobj.lat(oNodes))])
 % caxis([6, 20])
-% plot(lon(yidx, xidx), lat(yidx, xidx), 'rs') % polcoms is all backwards
+% plot(lon(xidx, yidx), lat(xidx, yidx), 'rs') % polcoms is all backwards
 % plot(Mobj.lon(oNodes(nn)), Mobj.lat(oNodes(nn)), 'wo')
 % colorbar
