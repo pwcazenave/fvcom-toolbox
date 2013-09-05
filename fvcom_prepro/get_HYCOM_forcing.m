@@ -18,6 +18,7 @@ function data = get_HYCOM_forcing(Mobj, modelTime)
 %   grid2fvcom.m.
 %
 % The parameters which are obtained from the HYCOM data are:
+%     - time
 %     - temperature
 %     - salinity
 %     - u mean flow component
@@ -32,8 +33,10 @@ function data = get_HYCOM_forcing(Mobj, modelTime)
 %   change the way the dates are handled to form the relevant URL for
 %   downloading the data.
 %   2013-09-03 More incremetal changes to get the function working. At the
-%   moment, I'm ignoring the old toolbox for reading the data from the
-%   HYCOM OPeNDAP server.
+%   moment, I'm ignoring the old OPeNDAP toolbox for reading the data from
+%   the HYCOM OPeNDAP server.
+%   2013-09-05 It's working! Also add a data.time variable with the time
+%   stamps from the HYCOM data.
 %
 %==========================================================================
 
@@ -101,6 +104,8 @@ hycom.v             = [url, suffix.v];              % mean flow % [4D]
 % hycom.density       = [url, suffix.density];        % don't need for now
 % hycom.X             = [url, suffix.X];              % crashes MATLAB...
 % hycom.Y             = [url, suffix.Y];              % crashes MATLAB...
+
+data.time = [];
 
 if datenum(currdate) > v714date
     % Use the built in tools to open the remote file.
@@ -294,6 +299,9 @@ for aa = 1:length(fields)
 
                     data.(fields{aa}).data(:, :, :, tt) = netcdf.getVar(ncid, varid, start, count, 'double');
 
+                    % Build an array of the HYCOM times.
+                    data.time = [data.time; tmjd{c}(ts)];
+
                     if ftbverbose; fprintf('done.\n'); end
                 end
             else
@@ -303,11 +311,10 @@ for aa = 1:length(fields)
                 % Get the data time and convert to Modified Julian Day.
                 data.time = loaddap(hycom.time);
             end
+
+            netcdf.close(ncid);
     end
 end
-
-netcdf.close(ncid);
-
 
 function url = get_url(time)
 % Child function to find the relevant URL to use for a given time step.
