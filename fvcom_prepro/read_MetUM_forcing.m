@@ -23,19 +23,26 @@ function MetUM = read_MetUM_forcing(files, varlist)
 %   files = {'/tmp/sn_2011010100_s00.nc', '/tmp/sn_201101016_s00.nc'};
 %   MetUM = read_MetUM_forcing(files, varlist);
 %
-% TODO:
-%   - Find out why some of the variables have an inconsistent number of 3rd
-%   dimension (vertical) levels (e.g. field202). This shouldn't happen
-%   beceause the number of vertical levels in a given variable shouldn't
-%   change across multiple output files.
+% NOTE:
+%   The last 4 times are dropped from each file because the Met Office
+%   Unified Model is a forecast model with four hours of forecast in these
+%   PP files.
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %
-% 2013-08-29 First version.
-% 2013-09-02 Amend the way the 3 and 4D variables are appended to one
-% another. The assumption now is time is the last dimension and arrays are
-% appended with time.
+% Revision history:
+%   2013-08-29 First version.
+%   2013-09-02 Amend the way the 3 and 4D variables are appended to one
+%   another. The assumption now is time is the last dimension and arrays
+%   are appended with time.
+%   2013-09-06 Trim the last 4 time samples from all variables (these are
+%   the forecast results which we don't want/need for forcing the model. I
+%   suppose at some point, given the patchy temporal coverage of the data
+%   (i.e. the Met Office FTP server doesn't have all files in a usable
+%   state), it might be better to use the forecast data to partially fill
+%   in gaps from missing files. However, given this forcing is hourly and I
+%   was previously using four times daily forcing, I'm not that fussed.
 %
 %==========================================================================
 
@@ -83,7 +90,7 @@ for f = 1:length(files)
 
             if isfield(MetUM, safename)
                 switch varname
-                    case {'x', 'y', 'x_1', 'y_1'}
+                    case {'x', 'y', 'x_1', 'y_1', 'longitude', 'latitude'}
                         continue
                     case {'t', 't_1'}
                         % Get the time attribute so we can store proper
@@ -92,8 +99,8 @@ for f = 1:length(files)
                         MetUM.(safename) = cat(1, MetUM.(safename), tt);
                     otherwise
                         try
-                            % Append along last dimension
-                            MetUM.(safename) = cat(nn, MetUM.(safename), tmpdata);
+                            % Append along last dimension.
+                            MetUM.(safename) = cat(nn, MetUM.(safename), tmpdata(:, :, 1:end - 4));
                         catch
                             fprintf('\n')
                             warning('Couldn''t append %s to the existing field from file %s.', safename, files{f})
@@ -101,11 +108,15 @@ for f = 1:length(files)
 
                 end
             else % first time around
-                MetUM.(safename) = tmpdata;
-
-                if strcmpi(varname, 't') || strcmpi(varname, 't_1')
-                    % Get the time attribute so we can store proper times.
-                    MetUM.(safename) = fix_time(nc, varid, varAtts);
+                switch varname
+                    case {'x', 'y', 'x_1', 'y_1', 'longitude', 'latitude'}
+                        MetUM.(safename) = tmpdata;
+                    case {'t', 't_1'}
+                        % Get the time attribute so we can store proper
+                        % times.
+                        MetUM.(safename) = fix_time(nc, varid, varAtts);
+                    otherwise
+                        MetUM.(safename) = tmpdata(:, :, 1:end - 4);
                 end
             end
         end
@@ -137,7 +148,7 @@ function tt = fix_time(nc, varid, varAtts)
 %   varAtts : number of variable attributes
 %
 % OUTPUT:
-%   tt : time string for the current file
+%   tt : date string for the current file (Gregorian date)
 %
 for j = 1:varAtts
     timeatt = netcdf.inqAttName(nc, varid, j - 1);
@@ -154,4 +165,4 @@ if isempty(t)
     t = 0;
 end
 % Add the offset and convert back to a date string.
-tt = datestr(mt + t, 'yyyy-mm-dd HH:MM:SS');
+tt = datestr(mt + t(1:end - 4), 'yyyy-mm-dd HH:MM:SS');
