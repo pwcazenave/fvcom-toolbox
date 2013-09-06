@@ -1,4 +1,4 @@
-function pp2nc_subset(file, convsh, pp2nc_tcl, xextents, yextents)
+function met_files = pp2nc_subset(file, convsh, pp2nc_tcl, xextents, yextents)
 % Child function to call the convsh program to convert the PP format to a
 % sensible NetCDF which we can more easily read.
 %
@@ -42,6 +42,8 @@ function pp2nc_subset(file, convsh, pp2nc_tcl, xextents, yextents)
 % PWC Revision history:
 %   2013-06-24 Extracted version from the get_MetUM_forcing.m script and
 %   set as standalone version.
+%   2013-09-06 Modified pp2nc.m to use the subset.tcl script (which has
+%   more options). Also returns a list of the converted netCDF files.
 %
 % KJA Revision history:
 %   2013-06-25 Added support for paths with spaces in. Also added support
@@ -64,15 +66,11 @@ for ff = 1:nf
         end
 
         [pathname, filename, ~] = fileparts(file{ff});
-        out = [filename, '.nc'];
-%        infile =  [filename, '.pp'];    % JW added clear definition of input file
-%        goback = pwd;
-%        goback = strcat(pwd,'\')       % JW - add backslash (for Windows),
-%        to define directory
-       cd(pathname)
+        met_files{ff} = [filename, '.nc'];
+        cd(pathname)
         % Warn if it failed for some reason
         [res, msg] = system([...
-            convsh, ' "', pp2nc_tcl, '" -i "', file{ff}, '" -o "', out, ...
+            convsh, ' "', pp2nc_tcl, '" -i "', file{ff}, '" -o "', met_files{ff}, ...
             '" -xs ', num2str(xextents(1)), ...
             ' -xe ', num2str(xextents(2)), ...
             ' -xi ', num2str(xextents(3)), ...
@@ -80,8 +78,8 @@ for ff = 1:nf
             ' -ye ', num2str(yextents(2)), ...
             ' -yi ',num2str( yextents(3))...
             ]);
-%        [res, msg] = system([convsh, ' "', pp2nc_tcl, '" -i "', infile, '" -o "', out, '"']);
-       cd(goback)
+        %        [res, msg] = system([convsh, ' "', pp2nc_tcl, '" -i "', infile, '" -o "', out, '"']);
+        cd(goback)
         if res ~= 0
             warning('Conversion of %s to NetCDF failed. Conversion output:\n%s', file{ff}, msg)
         end
