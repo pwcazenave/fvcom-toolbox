@@ -99,8 +99,10 @@ hycom.Latitude      = [url, suffix.Latitude];       % [2D]
 hycom.Depth         = [url, suffix.Depth];          % water depth [2D]
 hycom.temperature   = [url, suffix.temperature];    % [4D]
 hycom.salinity      = [url, suffix.salinity];       % [4D]
-hycom.u             = [url, suffix.u];              % mean flow % [4D]
-hycom.v             = [url, suffix.v];              % mean flow % [4D]
+% % Leave out U and V velocities for the time being (the HYCOM OPeNDAP
+% server is slow enough as it is).
+% % hycom.u             = [url, suffix.u];              % mean flow % [4D]
+% % hycom.v             = [url, suffix.v];              % mean flow % [4D]
 % hycom.density       = [url, suffix.density];        % don't need for now
 % hycom.X             = [url, suffix.X];              % crashes MATLAB...
 % hycom.Y             = [url, suffix.Y];              % crashes MATLAB...
@@ -299,8 +301,11 @@ for aa = 1:length(fields)
 
                     data.(fields{aa}).data(:, :, :, tt) = netcdf.getVar(ncid, varid, start, count, 'double');
 
-                    % Build an array of the HYCOM times.
-                    data.time = [data.time; tmjd{c}(ts)];
+                    % Build an array of the HYCOM times. Only do so once so
+                    % we don't end up appending it multiple times.
+                    if length(data.time) < nt
+                        data.time = [data.time; tmjd{c}(ts)];
+                    end
 
                     if ftbverbose; fprintf('done.\n'); end
                 end
