@@ -129,11 +129,14 @@ netcdf.putVar(nc,itime_varid,floor(MJD));
 % Rounds to nearest multiple of the number of msecs in an hour
 netcdf.putVar(nc,itime2_varid,0,nTimes,round((mod(MJD,1)*24*3600*1000)/(3600*1000))*(3600*1000));
 nStringOut = char();
+% The new mjulian2greg is pretty chatty. Silence it here temprorarily.
+ftbverbose = false;
 for i=1:nTimes
     [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(MJD(i));
     nDate = [nYr, nMon, nDay, nHour, nMin, nSec];
     nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ',nDate)];
 end
+ftbverbose = true;
 netcdf.putVar(nc,Times_varid,nStringOut);
 netcdf.putVar(nc,elevation_varid,Mobj.surfaceElevation);
 
