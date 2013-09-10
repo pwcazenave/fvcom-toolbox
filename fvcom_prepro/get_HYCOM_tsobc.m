@@ -204,8 +204,8 @@ for v = 1:length(fields)
                         itempobc(i) = tpctemp2(ii(1));
 
                         %clf
-                        %pcolor(hycom.lon, hycom.lat, landmask * 1); shading flat; colorbar; hold on
-                        %plot(lon(ir, ic), lat(ir, ic), 'wo')
+                        %pcolor(hycom.lon, hycom.lat, landmask * 1); colorbar; hold on
+                        %plot(lon(ir, ic), lat(ir, ic), 'ko')
                         %plot(fx, fy, 'rx')
                         %plot(tlon(ii(1)), tlat(ii(1)), 'gs')
                         %axis('square')
