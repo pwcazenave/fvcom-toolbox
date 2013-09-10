@@ -1,9 +1,8 @@
 function Mobj = interp_POLCOMS2FVCOM(Mobj, ts, start_date, varlist)
 % Use an FVCOM restart file to seed a model run with spatially varying
-% versions of otherwise constant variables (temperature and salinity only
-% for the time being).
+% versions of otherwise constant variables.
 %
-% function interp_POLCOMS2FVCOM(Mobj, ts, start_date, fv_restart, varlist)
+% function interp_POLCOMS2FVCOM(Mobj, ts, start_date, varlist)
 %
 % DESCRIPTION:
 %    FVCOM does not yet support spatially varying temperature and salinity
@@ -21,21 +20,19 @@ function Mobj = interp_POLCOMS2FVCOM(Mobj, ts, start_date, varlist)
 %                   nodes.
 %                   - Mobj.lon, Mobj.lat - node coordinates (long/lat)
 %                   - Mobj.lonc, Mobj.latc - element coordinates (long/lat)
-%                   - Mobj.ts_times - time series for the POLCOMS
-%                   temperature and salinity data.
 %   ts          = Cell array of POLCOMS AMM NetCDF file(s) in which 4D
 %   variables of temperature and salinity (called 'ETWD' and 'x1XD') exist.
 %   Its/their shape should be (y, x, sigma, time).
 %   start_date  = Gregorian start date array (YYYY, MM, DD, hh, mm, ss).
 %   varlist     = cell array of variables to extract from the NetCDF files.
-% 
+%
 % OUTPUT:
 %   Mobj.restart = struct whose field names are the variables which have
 %   been interpolated (e.g. Mobj.restart.ETWD for POLCOMS daily mean
 %   temperature).
 %
 % EXAMPLE USAGE
-%   interp_POLCOMS2FVCOM(Mobj, '/tmp/ts.nc', '2006-01-01 00:00:00', ...
+%   interp_POLCOMS2FVCOM(Mobj, '/tmp/ts.nc', [2006, 01, 01, 00, 00, 00], ...
 %       {'lon', 'lat', 'ETWD', 'x1XD', 'ucurD', 'vcurD', 'rholocalD', 'time'})
 %
 % Author(s):
@@ -195,7 +192,6 @@ clear plon plat flon flat flonc flatc ptempz psalz pdenz puvelz pvvelz
 
 % We can assume that all layers will have NaNs in the same place
 % (horizontally), so just use the surface layer (1) for the identification
-
 % of NaNs. Also store the finite values so we can find the nearest real
 % value to the current NaN node and use its temperature and salinity
 % values.
