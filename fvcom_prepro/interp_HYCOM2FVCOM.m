@@ -98,17 +98,13 @@ for vv = 1:length(varlist);
             % Make a land mask of the HYCOM domain (based on the surface
             % layer from the first time step).
             landmask = hycom.(currvar).data(:, :, 1, 1) > 1.26e29;
-            
+
             % Create a mask of all the layers which are deeper than the
             % water depth.
             zmask = hycom.(currvar).data(:, :, :, 1) > 1.26e29;
 
             % Set invalid depths to NaN.
             hdepth(zmask) = nan;
-
-            % Find the indices of the bottom of the ocean
-            %[~, seabedidx] = nanmin(hdepth, [], 3);
-            %[~, surfaceidx] = nanmax(hdepth, [], 3);
 
             ftbverbose = false;
             hyinterp.(currvar) = grid_vert_interp(Mobj, ...
