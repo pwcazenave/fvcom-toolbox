@@ -153,7 +153,11 @@ for vv = 1:length(vars)
             % parallelisable (is that a word?):
             tmp_fvcom_data = zeros(nElems, ntimes);
             tmp_fvcom_node = zeros(nVerts, ntimes);
-            tmp_data_data = data.(vars{vv}).data; % input to the interpolation
+            try
+                tmp_data_data = data.(vars{vv}).data; % input to the interpolation
+            catch
+                tmp_data_data = data.(vars{vv}); % input to the interpolation
+            end
 
             % Check the size of the input data matches the size of the
             % position arrays.
