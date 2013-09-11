@@ -113,10 +113,6 @@ for vv = 1:length(varlist);
                 hdepth, landmask);
             ftbverbose = true;
 
-            % Clear out additional values which have fallen through the
-            % mask check above.
-            hyinterp.(currvar)(hyinterp.(currvar) > 1.26e20) = nan;
-
             %--------------------------------------------------------------
             % Now we have vertically interpolated data, we can interpolate
             % each sigma layer onto the FVCOM unstructured grid ready to
