@@ -43,6 +43,8 @@ function MetUM = read_MetUM_forcing(files, varlist)
 %   state), it might be better to use the forecast data to partially fill
 %   in gaps from missing files. However, given this forcing is hourly and I
 %   was previously using four times daily forcing, I'm not that fussed.
+%   2013-09-12 Add support for extracting the surface pressure level from
+%   the 4D temperature variable (temp_2).
 %
 %==========================================================================
 
@@ -54,6 +56,27 @@ if ftbverbose
 end
 
 assert(iscell(files), 'List of files provided must be a cell array.')
+
+% Find the approximate surface pressure level (1013.25mbar) for the 4D
+% temperature data.
+nc = netcdf.open(files{1}, 'NOWRITE');
+[~, numvars, ~, ~] = netcdf.inq(nc);
+for f = 1:numvars
+    [varname, ~, ~, ~] = netcdf.inqVar(nc, f - 1);
+    if strcmp(varname, 'p') % p = pressure levels in the temp_2 variable.
+        varid = netcdf.inqVarID(nc, varname);
+        tmpdata = netcdf.getVar(nc, varid, 'double');
+        % Find the index for the level closest to 1013.25mbar (pressure at
+        % sealevel).
+        [~, levelidx] = min(abs(tmpdata - 1000));
+    end
+end
+
+% If that failed, use a best guess of the 5th index (based on my checking a
+% bunch of random files where the 1000mbar value falls in the p index).
+if isempty(levelidx)
+    levelidx = 5;
+end
 
 MetUM = struct();
 
@@ -100,10 +123,17 @@ for f = 1:length(files)
                     otherwise
                         try
                             % Append along last dimension.
-                            MetUM.(safename) = cat(nn, MetUM.(safename), tmpdata(:, :, 1:end - 4));
-                        catch
+                            if nn == 3
+                                MetUM.(safename) = cat(nn, MetUM.(safename), tmpdata(:, :, 1:end - 4));
+                            else
+                                % We're flattening from 4D to 3D here, so
+                                % nn - 1.
+                                MetUM.(safename) = cat(nn - 1, MetUM.(safename), squeeze(tmpdata(:, :, levelidx, 1:end - 4)));
+                            end
+                        catch err
                             fprintf('\n')
                             warning('Couldn''t append %s to the existing field from file %s.', safename, files{f})
+                            fprintf('%s\n', err.message)
                         end
 
                 end
@@ -116,7 +146,14 @@ for f = 1:length(files)
                         % times.
                         MetUM.(safename) = fix_time(nc, varid, varAtts);
                     otherwise
-                        MetUM.(safename) = tmpdata(:, :, 1:end - 4);
+                        if nn == 3
+                            MetUM.(safename) = tmpdata(:, :, 1:end - 4);
+                        else
+                            % Assume temperature at pressure levels.
+                            % Extract the 1000mb pressure level
+                            % (approximately the surface).
+                            MetUM.(safename) = squeeze(tmpdata(:, :, levelidx, 1:end - 4));
+                        end
                 end
             end
         end
