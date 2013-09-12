@@ -210,8 +210,20 @@ netcdf.putVar(nc, xc_varid, xc);
 netcdf.putVar(nc, yc_varid, yc);
 netcdf.putVar(nc, airt_varid, data.air.node);
 netcdf.putVar(nc, rhum_varid, data.rhum.node);
-netcdf.putVar(nc, dlwrf_varid, data.dlwrf.node);
-netcdf.putVar(nc, dswrf_varid, data.dswrf.node);
+try
+    % NCEP
+    netcdf.putVar(nc, dlwrf_varid, data.dlwrf.node);
+catch
+    % Met Office Unified Model
+    netcdf.putVar(nc, dlwrf_varid, data.nlwrf.node);
+end
+try
+    % NCEP
+    netcdf.putVar(nc, dswrf_varid, data.dswrf.node);
+catch
+    % Met Office Unified Model
+    netcdf.putVar(nc, dswrf_varid, data.nswrf.node);
+end
 try % work with both slp and pres data.
     netcdf.putVar(nc, slp_varid, data.slp.node);
 catch
@@ -220,9 +232,9 @@ end
 
 % Build the Times string and output to NetCDF.
 nStringOut = char();
+[nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(data.time);
 for tt=1:ntimes
-    [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(data.time(tt));
-    nDate = [nYr, nMon, nDay, nHour, nMin, nSec];
+    nDate = [nYr(tt), nMon(tt), nDay(tt), nHour(tt), nMin(tt), nSec(tt)];
     nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ', nDate)];
 end
 netcdf.putVar(nc, times_varid, nStringOut);
