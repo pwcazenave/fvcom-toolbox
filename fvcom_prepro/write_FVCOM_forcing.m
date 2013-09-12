@@ -253,7 +253,8 @@ for i=1:length(suffixes)
                     % Only on the elements (both U10/V10 and uwind_speed and
                     % vwind_speed).
                     used_varids = [used_varids, {'u10_varid', 'v10_varid', 'uwind_varid', 'vwind_varid'}];
-                    used_fnames = [used_fnames, {'uwnd', 'vwnd', 'uwnd', 'vwnd'}];
+                    pref = fnames{vv}(1);
+                    used_fnames = [used_fnames, {[pref, 'wnd'], [regexprep(pref, 'u', 'v'), 'wnd'], [pref, '10'], [regexprep(pref, 'u', 'v'), '10']}];
                     used_dims = [used_dims, {'nElems', 'nElems', 'nElems', 'nElems'}];
                 end
                 
@@ -368,7 +369,8 @@ for i=1:length(suffixes)
                         netcdf.putAtt(nc,nhf_varid,'type','data');
                     end
                 end
-                if strcmpi(suffixes{i}, '_hfx') || ~multi_out
+                %if strcmpi(suffixes{i}, '_hfx') || ~multi_out
+                if ~multi_out % write out only if we're doing a single file
                     % We need to save the current variable name even if
                     % we've already made its attribute.
                     used_varids = [used_varids, 'nhf_varid'];
@@ -462,7 +464,11 @@ for i=1:length(suffixes)
             if strcmpi(used_dims{ff}, 'nNodes')
                 eval(['netcdf.putVar(nc,',used_varids{ff},',[0,0],[',used_dims{ff},',ntimes],data.',used_fnames{ff},'.node);'])
             else
-                eval(['netcdf.putVar(nc,',used_varids{ff},',[0,0],[',used_dims{ff},',ntimes],data.',used_fnames{ff},'.data);'])
+                try
+                    eval(['netcdf.putVar(nc,',used_varids{ff},',[0,0],[',used_dims{ff},',ntimes],data.',used_fnames{ff},'.data);'])
+                catch err
+                    fprintf('%s\n', err.message)
+                end
             end
         end
         if ftbverbose
