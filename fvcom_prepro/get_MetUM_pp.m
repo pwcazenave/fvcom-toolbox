@@ -53,6 +53,10 @@ function met_files = get_MetUM_pp(modelTime, credentials)
 %   conversion from PP format to NetCDF to separate functions
 %   (get_BADC_data.m and pp2nc.m, respectively). Renamed the function from
 %   get_MetUM_forcing to get_MetUM_pp to better reflect what it does.
+%   2013-09-11 Add support for the post-2011 output files. Also make the
+%   downloads in parallel (this does abuse the BADC somewhat if you have
+%   loads of threads running and will still only go as fast as they
+%   throttle individual connections, assuming they do that).
 %
 %==========================================================================
 
@@ -86,8 +90,8 @@ assert(yearStart >= 2006, 'The MetUM repository does not contain data earlier th
 % Four times daily outputs at 0000, 0600, 1200 and 1800
 t = modelTime(1):1/4:modelTime(end);
 
-% For the pre-2010 data, we need to download several files with
-% unique names. The names are based on the STASH numbers and the date:
+% For the pre-2010 data, we need to download several files with unique
+% names. The names are based on the STASH numbers and the date:
 %   naamYYYYMMDDHH_STASH#_00.pp
 % The numbers we're interested in are stored in stash.
 stash = [2, 3, 407, 408, 409, 4222, 9229, 16004, ...
