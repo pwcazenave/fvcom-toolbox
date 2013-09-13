@@ -61,6 +61,7 @@ assert(iscell(files), 'List of files provided must be a cell array.')
 % temperature data.
 nc = netcdf.open(files{1}, 'NOWRITE');
 [~, numvars, ~, ~] = netcdf.inq(nc);
+levelidx = [];
 for f = 1:numvars
     [varname, ~, ~, ~] = netcdf.inqVar(nc, f - 1);
     if strcmp(varname, 'p') % p = pressure levels in the temp_2 variable.
