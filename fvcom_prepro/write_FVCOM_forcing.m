@@ -415,7 +415,9 @@ for i=1:length(suffixes)
 
     % Now do the dynamic ones. Set the heat flux to not done (hf_done = 0)
     % until we hit one of the holy quad (shtfl, lhtfl, nlwrs and nswrs).
+    % Also make sure we have wind data, either as u10/v10 or uwnd/vwnd.
     hf_done = 0;
+    wnd_done = 0;
     for ff=1:length(used_fnames)
         if ftbverbose
             fprintf('write : %s... ', used_fnames{ff})
@@ -466,8 +468,9 @@ for i=1:length(suffixes)
             else
                 try
                     eval(['netcdf.putVar(nc,',used_varids{ff},',[0,0],[',used_dims{ff},',ntimes],data.',used_fnames{ff},'.data);'])
+                    wnd_done = wnd_done + 1;
                 catch err
-                    fprintf('%s\n', err.message)
+                    fprintf('%s', err.message)
                 end
             end
         end
@@ -480,6 +483,10 @@ for i=1:length(suffixes)
         % four, we haven't got everything we need. Only trigger this
         % warning if we've been given any of the net heat flux components.
         warning('Did not have all the required heat flux parameters. Need ''shtfl'', ''lhtfl'', ''nlwrs'' and ''nwsrs''.')
+    end
+
+    if wnd_done < 2;
+        warning('No wind data was provided (or one component was missing). Expected fields u10 and v10 or uwnd and vwnd.')
     end
 
     % Close the NetCDF file(s)
