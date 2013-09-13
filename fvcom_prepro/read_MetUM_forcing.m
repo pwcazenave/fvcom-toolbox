@@ -78,12 +78,24 @@ if isempty(levelidx)
     levelidx = 5;
 end
 
+% Set the number of time steps to extract (6 seems to exclude the 4
+% forecast time steps in the pre-2012 data and also matches the total
+% number of outputs in the 2012 and onwards data).
+nh = 6;
+
 MetUM = struct();
 
 for f = 1:length(files)
     
     if ftbverbose
-        fprintf('File %s... ', files{f})
+        % Don't display the full path if it's really long.
+        if length(files{f}) > 80
+            [~, fname, fext] = fileparts(files{f});
+            dispname = [fname, fext];
+        else
+            dispname = files{f};
+        end
+        fprintf('File %i of %i (%s)... ', f, length(files), dispname)
     end
 
     nc = netcdf.open(files{f}, 'NOWRITE');
@@ -118,17 +130,17 @@ for f = 1:length(files)
                     case {'t', 't_1'}
                         % Get the time attribute so we can store proper
                         % times.
-                        tt = fix_time(nc, varid, varAtts);
+                        tt = fix_time(nc, varid, varAtts, nh);
                         MetUM.(safename) = cat(1, MetUM.(safename), tt);
                     otherwise
                         try
                             % Append along last dimension.
                             if nn == 3
-                                MetUM.(safename) = cat(nn, MetUM.(safename), tmpdata(:, :, 1:end - 4));
+                                MetUM.(safename) = cat(nn, MetUM.(safename), tmpdata(:, :, 1:nh));
                             else
                                 % We're flattening from 4D to 3D here, so
                                 % nn - 1.
-                                MetUM.(safename) = cat(nn - 1, MetUM.(safename), squeeze(tmpdata(:, :, levelidx, 1:end - 4)));
+                                MetUM.(safename) = cat(nn - 1, MetUM.(safename), squeeze(tmpdata(:, :, levelidx, 1:nh)));
                             end
                         catch err
                             fprintf('\n')
@@ -144,15 +156,15 @@ for f = 1:length(files)
                     case {'t', 't_1'}
                         % Get the time attribute so we can store proper
                         % times.
-                        MetUM.(safename) = fix_time(nc, varid, varAtts);
+                        MetUM.(safename) = fix_time(nc, varid, varAtts, nh);
                     otherwise
                         if nn == 3
-                            MetUM.(safename) = tmpdata(:, :, 1:end - 4);
+                            MetUM.(safename) = tmpdata(:, :, 1:nh);
                         else
                             % Assume temperature at pressure levels.
                             % Extract the 1000mb pressure level
                             % (approximately the surface).
-                            MetUM.(safename) = squeeze(tmpdata(:, :, levelidx, 1:end - 4));
+                            MetUM.(safename) = squeeze(tmpdata(:, :, levelidx, 1:nh));
                         end
                 end
             end
@@ -175,7 +187,7 @@ if ftbverbose
     fprintf('end   : %s \n', subname)
 end
 
-function tt = fix_time(nc, varid, varAtts)
+function tt = fix_time(nc, varid, varAtts, nh)
 % Little helper function to get the time attribute so we can store proper
 % times.
 %
@@ -183,6 +195,7 @@ function tt = fix_time(nc, varid, varAtts)
 %   nc : netCDF file handle
 %   varid : current variable ID
 %   varAtts : number of variable attributes
+%   nh : number of time steps to extract
 %
 % OUTPUT:
 %   tt : date string for the current file (Gregorian date)
@@ -202,4 +215,4 @@ if isempty(t)
     t = 0;
 end
 % Add the offset and convert back to a date string.
-tt = datestr(mt + t(1:end - 4), 'yyyy-mm-dd HH:MM:SS');
+tt = datestr(mt + t(1:nh), 'yyyy-mm-dd HH:MM:SS');
