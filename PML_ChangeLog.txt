@@ -1,5 +1,95 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20130917
+--------
+
+Update to include the ability to use HYCOM and Met Office Unified Model
+outputs.
+
+fvcom_prepro:
+   calc_sponge_radius.m
+      * Fix typo.
+   get_FVCOM_rivers.m
+      * Use the full set of coastal coordinates when finding the appropriate
+      river node.
+   get_HYCOM_forcing.m
+      * Major update to this function. Now it correctly downloads the relevant
+      HYCOM data from the HYCOM OPeNDAP server. Does not work with the third-
+      party OPeNDAP toolbox.
+   get_HYCOM_tsobc.m
+      * New function: interpolates HYCOM data to the boundary nodes for
+      temperature and salinity boundary forcing.
+   get_MetUM_pp.m
+      * Update to build a list of the downloaded files from the BADC server
+      Also add new model outputs to the list of files available for download
+      (the new files are post-2011 but live in a different directory from the
+      pre-2012 data). Also download files in parallel to speed up the process
+      (this may be a bad idea so may be removed if that proves to be the
+      case).
+   get_NCEP_forcing.m
+      * Fairly significant change in that this function can now download any
+      of the Reanalysis-1, Reanalysis-2 and 20th Century Reanalysis data from
+      the NCEP server. Where 4D data are requested, only the surface data is
+      returned. I have not tested this with the third-part OPeNDAP toolbox.
+   interp_HYCOM2FVCOM.m
+      * Use to create spatially varying temperature, salinity, u and v data
+      for use in an FVCOM restart file from HYCOM data.
+   interp_POLCOMS2FVCOM.m
+      * Add inteprolation of the u and v data in the POLCOMS netCDF files.
+      Eventually this function will be adjusted to allow the selection of
+      only specific variables to be interpolated (as is the case with
+      interp_HYCOM2FVCOM).
+   read_MetUM_forcing.m
+      * New function: reads the specified variables from the netCDF files of
+      the converted Met Office Unified Model PP files.
+   read_sms_mesh.m
+      * Fairly major restructuring to decrease the time it takes to read an
+      SMS file by about 50%. This was mainly done to maintain my sanity.
+   write_FVCOM_elevtide.m
+      * Minor change to the verbose output following the rewritten
+      mjulian2greg function.
+   write_FVCOM_forcing.m
+      * Add support for alternative name for the pressure variable. Also tweak
+      the output of the net surface heat flux to only occur when we are
+      writing out to a single file.
+   write_FVCOM_heating.m
+      * Add failsafe functionality when writing the variables to better handle
+      NCEP and Met Office data.
+   write_FVCOM_restart.m
+      * Add support for writing out u and v data (on the element centres 
+      rather than node positions).
+   write_FVCOM_river_nml.m
+      * Add support for an optional string to be written out (e.g. 'uniform')
+      for the vertical distribution of river discharge to bypass the automated
+      string generation.
+   write_WRF_forcing.m
+      * New function: writes out regularly gridded data in wrf_grid format for
+      direct use in FVCOM. The interpolation then occurs within FVCOM rather
+      than here, in MATLAB. Thanks to Dmitry Aleynik for his MATLAB function
+      which was used as the basis for this function.
+
+utilities:
+   grid2fvcom.m
+      * Fix a bug in which the position arrays could be written out transposed
+      relative to the data arrays (leading to forcing data being in the wrong
+      place).
+   grid_vert_interp.m
+      * Remove any NaN values in the vertical profile to support HYCOM data
+      (which have a set of fixed vertical levels).
+   pp2nc.m
+      * Incorporate changes to better support paths in Windows (in particular
+      paths with spaces).
+   pp2nc.tcl
+      * Add (but leave commented out) functions to interpolate the Met Office 
+      data onto a geographical grid.
+   pp2nc_subset.m
+      * New function: wrapper function to use convsh to interpolates Met 
+      Office Unified Model PP files onto a geographical grid (i.e. lat/long).
+   subset.tcl
+      * New TCL script to interpolate the Met Office Unified Model PP files
+      onto a geographical grid.
+
+
 20130719
 --------
 
