@@ -82,6 +82,8 @@ end
 % Set the number of time steps to extract (6 seems to exclude the 4
 % forecast time steps in the pre-2012 data and also matches the total
 % number of outputs in the 2012 and onwards data).
+% TODO: Add check against number of loaded times in tmpdata and set nh to
+% minimum of nh or number of loaded times
 nh = 6;
 
 MetUM = struct();
