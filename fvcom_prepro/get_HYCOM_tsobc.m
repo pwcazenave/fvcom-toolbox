@@ -167,7 +167,12 @@ for v = 1:length(fields)
 
                 [~, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
                 % Get the n nearest nodes from HYCOM data (more? fewer?).
-                ixy = ii(1:16);
+                np = 16;
+                if length(ii) < np;
+                    % Reset np to the number of points we actually have.
+                    np = length(ii);
+                end
+                ixy = ii(1:np);
 
                 % If the minimum distance away is greater than three times
                 % the HYCOM grid resolution, skip this point at this
@@ -182,9 +187,15 @@ for v = 1:length(fields)
                 plat = tlat(ixy);
                 ptemp = tpctemp2(ixy);
 
-                % Use a triangulation to do the horizontal interpolation.
-                tritemp = TriScatteredInterp(plon, plat, ptemp, 'natural');
-                itempobc(i) = tritemp(fx, fy);
+                % Use a triangulation to do the horizontal interpolation if
+                % we have enough points, otherwise take the mean of the two
+                % values.
+                if length(plon) < 3
+                    itempobc(i) = mean(ptemp);
+                else
+                    tritemp = TriScatteredInterp(plon, plat, ptemp, 'natural');
+                    itempobc(i) = tritemp(fx, fy);
+                end
 
                 if isnan(itempobc(i))
                     % Use the surface layer as the canonical land mask and
