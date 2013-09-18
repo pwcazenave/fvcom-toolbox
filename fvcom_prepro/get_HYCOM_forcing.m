@@ -321,6 +321,10 @@ for aa = 1:length(fields)
     end
 end
 
+if ftbverbose
+    fprintf('end   : %s\n', subname)
+end
+
 function url = get_url(time)
 % Child function to find the relevant URL to use for a given time step.
 %
