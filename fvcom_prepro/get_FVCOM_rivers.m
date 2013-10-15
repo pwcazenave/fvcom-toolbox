@@ -2,7 +2,7 @@ function Mobj = get_FVCOM_rivers(Mobj, dist_thresh)
 % Extract river discharges from the supplied river positions for the FVCOM
 % grid in Mobj.
 %
-% get_FVCOM_rivers(Mobj, rivers, dist_thresh)
+% get_FVCOM_rivers(Mobj, dist_thresh)
 %
 % DESCRIPTION:
 %   For the positioins in fvcom_xy, find the nearest unstructured grid node
@@ -40,11 +40,11 @@ function Mobj = get_FVCOM_rivers(Mobj, dist_thresh)
 %   Mobj.river_time - time series for the river discharge data
 %
 % EXAMPLE USAGE:
-%   Mobj = get_FVCOM_rivers(Mobj, Mobj.rivers, 0.025)
+%   Mobj = get_FVCOM_rivers(Mobj, 0.025)
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
-%    Karen Amoudry (National Oceanography Centre, Liverpool)
+%   Karen Amoudry (National Oceanography Centre, Liverpool)
 %
 % Revision history:
 %   2013-03-27 - First version.
