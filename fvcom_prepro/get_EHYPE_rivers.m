@@ -5,12 +5,12 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh)
 % get_EHYPE_rivers(Mobj, dist_thresh)
 %
 % DESCRIPTION:
-%   For the positioins in fvcom_xy, find the nearest unstructured grid node
-%   and extract the river discharge from polcoms_flow. If dist_thresh is
-%   specified, the river positions must fall within the specified distance.
-%   If multiple rivers are assigned to the same node, their discharges are
-%   summed. The resulting river name is generated from the contributing
-%   rives, separated by a hyphen.
+%   For the positioins in Mobj.rivers.positions, find the nearest
+%   unstructured grid node and extract the river discharge from
+%   polcoms_flow. If dist_thresh is specified, the river positions must
+%   fall within the specified distance. If multiple rivers are assigned to
+%   the same node, their discharges are summed. The resulting river name is
+%   generated from the contributing rives, separated by a hyphen.
 %
 % INPUT:
 %   Mobj - MATLAB mesh object containing:
@@ -22,6 +22,7 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh)
 %       * rivers - river data struct with the following fields:
 %           - positions - river positions in lon, lat.
 %           - names - list of river names
+%           - river_flux - path to the EHYPE ASCII fil data directory.
 %   dist_thresh - [optional] maximum distance away from a river node beyond
 %       which the search for an FVCOM node is abandoned. Units in degrees.
 %
@@ -36,7 +37,7 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh)
 %   Mobj.river_time - time series for the river discharge data
 %
 % EXAMPLE USAGE:
-%   Mobj = get_EHYPE_rivers(Mobj, 0.025)
+%   Mobj = get_EHYPE_rivers(Mobj, 0.15)
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -93,7 +94,7 @@ for ff = 1:fv_nr
     [c, idx] = min(fv_dist);
     if c > dist_thresh && dist_thresh ~= -1 % -1 is for no distance check
         if ftbverbose
-            fprintf('\tskipping river %07d (%f, %f [%f])\n', ehype_name(ff), ehype_xy(ff, 1), ehype_xy(ff, 2), c)
+            fprintf('\tskipping river %07d (%f, %f [%fdeg away])\n', ehype_name(ff), ehype_xy(ff, 1), ehype_xy(ff, 2), c)
         end
         continue
     else
@@ -170,17 +171,20 @@ for ff = 1:fv_nr
     assert(fid >= 0, 'Failed to open EHYPE river flow data.')
     eflow = textscan(fid, '%s %f %f %f %f %f %f %f %f %f', 'delimiter', '\t', 'HeaderLines', 2, 'MultipleDelimsAsOne', 1);
     fclose(fid);
-%     fv_flow(:, vc) = ehype_flow(:, ff);
+    fv_flow(:, vc) = eflow{2};
     if ftbverbose
-        fprintf('added (%f, %f).\n', Mobj.lon(fv_obc(vc)), Mobj.lat(fv_obc(vc)))
+        fprintf('added (%f, %f)\n', Mobj.lon(fv_obc(vc)), Mobj.lat(fv_obc(vc)))
     end
 end
+
+% Get the length of the EHYPE time series.
+ehype_nt = size(fv_flow, 1);
 
 % Now we've got a list and some of the nodes will be duplicates. Sum the
 % discharge values assigned to those nodes.
 fv_uniq_obc = unique(fv_obc);
 
-fv_uniq_flow = nan(pc_nt, length(fv_uniq_obc));
+fv_uniq_flow = nan(ehype_nt, length(fv_uniq_obc));
 fv_uniq_names = cell(length(fv_uniq_obc), 1);
 
 fv_idx = 1:length(fvcom_names);
@@ -202,14 +206,12 @@ Mobj.river_nodes = fv_uniq_obc;
 Mobj.river_flux = fv_uniq_flow;
 Mobj.river_names = fv_uniq_names;
 
-% Create a Modified Julian Day time series starting at January 1st for the
-% year in Mobj.rivers.year.
-rtimes = datevec( ...
-    datenum([Mobj.rivers.year, 1, 1, 0, 0, 0]): ...
-    datenum([Mobj.rivers.year, 1, 1, 0, 0, 0]) + pc_nt - 1 ...
-    );
-Mobj.river_time = nan(pc_nt, 1);
-for tt = 1:pc_nt
+% Create a Modified Julian Day time series of the EHYPE river data. Assume
+% all the EHYPE model outputs are for the same period and have the same
+% sampling interval.
+rtimes = datevec(eflow{1});
+Mobj.river_time = nan(ehype_nt, 1);
+for tt = 1:ehype_nt
     Mobj.river_time(tt) = greg2mjulian( ...
         rtimes(tt, 1), rtimes(tt, 2), rtimes(tt, 3), ...
         rtimes(tt, 4), rtimes(tt, 5), rtimes(tt, 6) ...
@@ -222,13 +224,13 @@ end
 
 % Figure to check what's going on with identifying river nodes
 % figure
-% plot(fvcom_xy(:, 1), fvcom_xy(:, 2), 'o', 'MarkerFaceColor', 'b')
+% plot(ehype_xy(:, 1), ehype_xy(:, 2), '.', 'MarkerFaceColor', 'b')
 % hold on
-% plot(Mobj.lon(bnd), Mobj.lat(bnd), 'go', 'MarkerFaceColor', 'g')
-% axis('equal', 'tight')
-% plot(Mobj.lon(coast_nodes), Mobj.lat(coast_nodes), 'ro')
-% plot(Mobj.lon(Mobj.river_nodes), Mobj.lat(Mobj.river_nodes), 'ko', 'MarkerFaceColor', 'k')
-% text(Mobj.lon(Mobj.river_nodes) + 0.025, Mobj.lat(Mobj.river_nodes) + 0.025, Mobj.river_names)
+% plot(Mobj.lon(bnd), Mobj.lat(bnd), 'g.', 'MarkerFaceColor', 'g')
+% axis('square', 'tight')
+% plot(Mobj.lon(coast_nodes), Mobj.lat(coast_nodes), 'r.')
+% plot(Mobj.lon(Mobj.river_nodes), Mobj.lat(Mobj.river_nodes), 'k.', 'MarkerFaceColor', 'k')
+% % text(Mobj.lon(Mobj.river_nodes) + 0.025, Mobj.lat(Mobj.river_nodes) + 0.025, Mobj.river_names)
 % axis([min(Mobj.lon), max(Mobj.lon), min(Mobj.lat), max(Mobj.lat)])
-% legend('POLCOMS nodes', 'Grid boundary', 'Land nodes', 'Selected nodes', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')
+% legend('EHYPE nodes', 'Grid boundary', 'Land nodes', 'Selected nodes', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')
 % legend('BoxOff')
