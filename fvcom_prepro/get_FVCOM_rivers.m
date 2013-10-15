@@ -5,12 +5,13 @@ function Mobj = get_FVCOM_rivers(Mobj, dist_thresh)
 % get_FVCOM_rivers(Mobj, dist_thresh)
 %
 % DESCRIPTION:
-%   For the positioins in fvcom_xy, find the nearest unstructured grid node
-%   and extract the river discharge from polcoms_flow. If dist_thresh is
-%   specified, the river positions must fall within the specified distance.
-%   If multiple rivers are assigned to the same node, their discharges are
-%   summed. The resulting river name is generated from the contributing
-%   rives, separated by a hyphen.
+%   For the positions in Mobj.rivers.positions, find the nearest
+%   unstructured grid node and extract the river discharge from
+%   Mobj.rivers.discharge. If dist_thresh is specified, the river positions
+%   must fall within the specified distance. If multiple rivers are
+%   assigned to the same node, their discharges are summed. The resulting
+%   river name is generated from the contributing rives, separated by a
+%   hyphen.
 %
 % INPUT:
 %   Mobj - MATLAB mesh object containing:
