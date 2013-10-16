@@ -48,8 +48,7 @@ subname = 'write_FVCOM_river';
 
 global ftbverbose
 if ftbverbose
-    fprintf('\n')
-    fprintf(['begin : ' subname '\n'])
+    fprintf('\nbegin : %s\n', subname)
 end
 
 [nTimes, nRivnodes] = size(flux);
@@ -58,11 +57,13 @@ if ftbverbose
     fprintf('# of time frames: %d\n', nTimes);
 end
 
-[year, month, day, ~, ~, ~] = mjulian2greg(time(1));
-if ftbverbose; fprintf('time series begins at:\t%04d %02d %02d\n', year, month, day); end
-[year, month, day, ~, ~, ~] = mjulian2greg(time(end));
-if ftbverbose; fprintf('time series ends at:\t%04d %02d %02d\n', year, month, day); end
-clear year month day
+[year1, month1, day1, ~, ~, ~] = mjulian2greg(time(1));
+[year2, month2, day2, ~, ~, ~] = mjulian2greg(time(end));
+if ftbverbose
+    fprintf('time series begins at:\t%04d %02d %02d\n', year1, month1, day1);
+    fprintf('time series ends at:\t%04d %02d %02d\n', year2, month2, day2);
+end
+clear year? month? day?
 
 %--------------------------------------------------------------------------
 % dump to netcdf file
@@ -137,9 +138,9 @@ netcdf.putVar(nc, river_salt_varid, salt');
 
 % build the time string and output to NetCDF.
 nStringOut = char();
+[nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(time);
 for tt = 1:nTimes
-    [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(time(tt));
-    nDate = [nYr, nMon, nDay, nHour, nMin, nSec];
+    nDate = [nYr(tt), nMon(tt), nDay(tt), nHour(tt), nMin(tt), nSec(tt)];
     nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ', nDate)];
 end
 netcdf.putVar(nc, times_varid, nStringOut);
