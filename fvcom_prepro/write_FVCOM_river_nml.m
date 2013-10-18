@@ -34,29 +34,28 @@ function write_FVCOM_river_nml(Mobj, nml_file, nc_file, vString)
 %   2013-03-21 - First version.
 %   2013-08-16 - Add optional fourth argument of a string to supply as the
 %   RIVER_VERTICAL_DISTRIBUTION (e.g. 'uniform').
+%   2013-10-16 - Fix the handling of the optional vString argument.
 %
 %==========================================================================
 
-subname = 'get_POLCOMS_rivers';
+subname = 'write_FVCOM_river_nml';
 
 global ftbverbose;
 if ftbverbose
-    fprintf(['\nbegin : ' subname '\n'])
+    fprintf('\nbegin : %s\n', subname)
 end
 
 nr = length(Mobj.river_nodes);
 
 f = fopen(nml_file, 'w');
-if f < 0
-    error('Error writing to %s. Check permissions and try again.', nml_file)
-end
+assert(f >= 0, 'Error writing to %s. Check permissions and try again.', nml_file)
 
 % Build the vertical distribution string. Round to 15 decimal places so the
 % unique check works (hopefully no one needs that many vertical layers...).
 vDist = roundn(abs(diff(Mobj.siglev)), -15);
-if length(unique(vDist)) == 1 || nargin > 3
+if length(unique(vDist)) == 1
     vString = '''uniform''';
-else
+elseif nargin <= 3
     vString = char();
     for ii = 1:length(vDist)
         vString = [vString, sprintf('%f ', vDist(ii))];
