@@ -120,6 +120,13 @@ netcdf.putAtt(nc, nswrf_varid, 'grid', 'wrf_grid');
 netcdf.putAtt(nc, nswrf_varid, 'coordinates', 'lat lon');
 netcdf.putAtt(nc, nswrf_varid, 'type', 'data');
 
+nlwrf_varid = netcdf.defVar(nc, 'long_wave', 'NC_FLOAT', [we_dimid, sn_dimid, time_dimid]);
+netcdf.putAtt(nc, nlwrf_varid, 'long_name', 'Longwave, upward is negative');
+netcdf.putAtt(nc, nlwrf_varid, 'units', 'W m-2');
+netcdf.putAtt(nc, nlwrf_varid, 'grid', 'wrf_grid');
+netcdf.putAtt(nc, nlwrf_varid, 'coordinates', 'lat lon');
+netcdf.putAtt(nc, nlwrf_varid, 'type', 'data');
+
 nshf_varid = netcdf.defVar(nc, 'net_heat_flux', 'NC_FLOAT', [we_dimid, sn_dimid, time_dimid]);
 netcdf.putAtt(nc, nshf_varid, 'long_name', 'Sum of shortwave, longwave, sensible and latent heat fluxes, ocean lose heat is negative');
 netcdf.putAtt(nc, nshf_varid, 'units', 'W m-2');
@@ -173,13 +180,6 @@ netcdf.putAtt(nc, rh_varid, 'grid', 'wrf_grid');
 netcdf.putAtt(nc, rh_varid, 'coordinates', 'lat lon');
 netcdf.putAtt(nc, rh_varid, 'type', 'data');
 
-nlwrf_varid = netcdf.defVar(nc, 'long_wave', 'NC_FLOAT', [we_dimid, sn_dimid, time_dimid]);
-netcdf.putAtt(nc, nlwrf_varid, 'long_name', 'Longwave, upward is negative');
-netcdf.putAtt(nc, nlwrf_varid, 'units', 'W m-2');
-netcdf.putAtt(nc, nlwrf_varid, 'grid', 'wrf_grid');
-netcdf.putAtt(nc, nlwrf_varid, 'coordinates', 'lat lon');
-netcdf.putAtt(nc, nlwrf_varid, 'type', 'data');
-
 
 % End definitions
 netcdf.endDef(nc);
@@ -200,7 +200,7 @@ netcdf.putVar(nc, times_varid, [0, 0], [19, ntimes], nStringOut);
 netcdf.putVar(nc, x_varid, x');
 netcdf.putVar(nc, y_varid, flipdim(y', 2));
 netcdf.putVar(nc, nswrf_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nswrf, 2));
-% netcdf.putVar(nc, nlwrf_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nlwrf, 2));
+netcdf.putVar(nc, nlwrf_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nlwrf, 2));
 netcdf.putVar(nc, nshf_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nshf, 2));
 netcdf.putVar(nc, u10_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.u10, 2));
 netcdf.putVar(nc, v10_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.v10, 2));
@@ -208,7 +208,7 @@ netcdf.putVar(nc, prate_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], fl
 netcdf.putVar(nc, evap_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.evap, 2));
 netcdf.putVar(nc, pres_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.pres, 2));
 netcdf.putVar(nc, rh_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.rhum, 2));
-netcdf.putVar(nc, nlwrf_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nlwrf, 2));
+
 
 % Close the netCDF file
 netcdf.close(nc);
