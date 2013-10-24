@@ -76,9 +76,11 @@ for f = 1:numvars
     if strcmp(varname, 'p') % p = pressure levels in the temp_2 variable.
         varid = netcdf.inqVarID(nc, varname);
         tmpdata = netcdf.getVar(nc, varid, 'double');
-        % Find the index for the level closest to 1013.25mbar (pressure at
-        % sealevel).
-        [~, levelidx] = min(abs(tmpdata - 1000));
+        % Find the index for the level closest to the surface. The
+        % documentation at:
+        %   http://badc.nerc.ac.uk/data/um/Met_Office_NAE_Output.pdf
+        % suggests 980hPa is the surface.
+        [~, levelidx] = min(abs(tmpdata - 980));
     end
 end
 
