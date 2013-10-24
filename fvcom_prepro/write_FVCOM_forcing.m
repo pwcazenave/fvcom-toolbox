@@ -86,7 +86,7 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   2013-10-24 - Add support for writing all the variables needed for a
 %   HEATING_CALCULATED model run. This essentially makes
 %   write_FVCOM_heating redundant, but I'll leave it in as it's a bit
-%   simpler to understand what's going on there. A;so update the way the
+%   simpler to understand what's going on there. Also update the way the
 %   net surface heat flux is calculated (sum long and short, subtract
 %   latent and sensible).
 %
