@@ -33,6 +33,8 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %     - 'nswrs'             - net shortwave radiation*,**
 %     - 'shtfl'             - sensible heat net flux*,**
 %     - 'lhtfl'             - latent heat net flux*,**
+%     - 'rhum'              - relative humidity
+%     - 'air'               - air temperature
 %     - 'lon'               - longitude (vector)
 %     - 'lat'               - latitude (vector)
 %     - 'x'                 - eastings (vector)
@@ -42,7 +44,7 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 % Fields marked with an * are combined to form the "surface net heat flux"
 % (nshf) as follows:
 %
-%   nshf = -(nlwrs + nswrs + lhtfl + shtfl);
+%   nshf = nlwrs + nswrs - lhtfl - shtfl;
 %
 % ** Alternatively, a new field 'nshf' (net surface heat flux) can be
 % supplied, in which case shtfl and lhtfl are not necessary as their only
@@ -81,6 +83,12 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   2013-06-21 - Remove support for pevpr (pevpr is in W/m^{2} from the
 %   NCEP Reanalysis 2 data (FVCOM wants evaporation in m/s). Update the
 %   help accordingly.
+%   2013-10-24 - Add support for writing all the variables needed for a
+%   HEATING_CALCULATED model run. This essentially makes
+%   write_FVCOM_heating redundant, but I'll leave it in as it's a bit
+%   simpler to understand what's going on there. A;so update the way the
+%   net surface heat flux is calculated (sum long and short, subtract
+%   latent and sensible).
 %
 % KJA Revision history:
 %   2013-01-16 - Added support for output of sea level pressure.
@@ -340,6 +348,36 @@ for i=1:length(suffixes)
                     used_dims = [used_dims, 'nNodes'];
                 end
 
+            case 'air'
+                if strcmpi(suffixes{i}, '_hfx') || ~multi_out
+                    % Longwave radiation
+                    airt_varid = netcdf.defVar(nc, 'air_temperature', 'NC_FLOAT', [node_dimid, time_dimid]);
+                    netcdf.putAtt(nc, airt_varid, 'long_name', 'Surface air temperature');
+                    netcdf.putAtt(nc, airt_varid, 'units', 'Celsius Degree');
+                    netcdf.putAtt(nc, airt_varid, 'grid', 'fvcom_grid');
+                    netcdf.putAtt(nc, airt_varid, 'coordinates', coordString);
+                    netcdf.putAtt(nc, airt_varid, 'type', 'data');
+                    used_varids = [used_varids, 'airt_varid'];
+                    used_fnames = [used_fnames, fnames{vv}];
+                    used_dims = [used_dims, 'nNodes'];
+                end
+
+            case 'rhum'
+                if strcmpi(suffixes{i}, '_hfx') || ~multi_out
+                    % Longwave radiation
+
+                    rhum_varid = netcdf.defVar(nc, 'relative_humidity', 'NC_FLOAT', [node_dimid, time_dimid]);
+                    netcdf.putAtt(nc, rhum_varid, 'long_name', 'surface air relative humidity');
+                    netcdf.putAtt(nc, rhum_varid, 'units', 'percentage');
+                    netcdf.putAtt(nc, rhum_varid, 'grid', 'fvcom_grid');
+                    netcdf.putAtt(nc, rhum_varid, 'coordinates', coordString);
+                    netcdf.putAtt(nc, rhum_varid, 'type', 'data');
+
+                    used_varids = [used_varids, 'rhum_varid'];
+                    used_fnames = [used_fnames, fnames{vv}];
+                    used_dims = [used_dims, 'nNodes'];
+                end
+
             case {'shtfl', 'lhtfl', 'nshf'} % , 'nlwrs', 'nswrs'}
                 % We can't trigger on nlwrs and nswrs here because they're
                 % the triggers for the net longwave and shortwave variables
@@ -432,8 +470,10 @@ for i=1:length(suffixes)
                 end
                 % We've got all four heat parameters, so dump them into the
                 % file.
-                hf = -(data.shtfl.node + data.lhtfl.node + ...
-                    data.nlwrs.node + data.nswrs.node);
+                %hf = -(data.shtfl.node + data.lhtfl.node + ...
+                %    data.nlwrs.node + data.nswrs.node);
+                hf = data.nlwrs.node + data.nswrs.node - ...
+                    data.shtfl.node - data.lhtfl.node;
                 netcdf.putVar(nc,nhf_varid,[0,0],[nNodes,ntimes],hf)
             elseif strcmpi(used_fnames{ff}, 'nswrs') || strcmpi(used_fnames{ff}, 'nlwrs')
                 % We've already done the net surface heat flux but we're on
