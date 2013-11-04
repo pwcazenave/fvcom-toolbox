@@ -180,6 +180,14 @@ netcdf.putAtt(nc, rh_varid, 'grid', 'wrf_grid');
 netcdf.putAtt(nc, rh_varid, 'coordinates', 'lat lon');
 netcdf.putAtt(nc, rh_varid, 'type', 'data');
 
+air_varid = netcdf.defVar(nc, 'air_temperature', 'NC_FLOAT', [we_dimid, sn_dimid, time_dimid]);
+netcdf.putAtt(nc, air_varid, 'long_name', 'Air Temperature');
+netcdf.putAtt(nc, air_varid, 'description', 'Bulk air temperature');
+netcdf.putAtt(nc, air_varid, 'units', 'Celsius');
+netcdf.putAtt(nc, air_varid, 'grid', 'wrf_grid');
+netcdf.putAtt(nc, air_varid, 'coordinates', 'lat lon');
+netcdf.putAtt(nc, air_varid, 'type', 'data');
+
 
 % End definitions
 netcdf.endDef(nc);
@@ -208,6 +216,7 @@ netcdf.putVar(nc, prate_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], fl
 netcdf.putVar(nc, evap_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.evap, 2));
 netcdf.putVar(nc, pres_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.pres, 2));
 netcdf.putVar(nc, rh_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.rhum, 2));
+netcdf.putVar(nc, air_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.air, 2));
 
 
 % Close the netCDF file
