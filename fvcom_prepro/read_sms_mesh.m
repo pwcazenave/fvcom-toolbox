@@ -1,17 +1,17 @@
-function [Mobj] = read_sms_mesh(varargin) 
+function [Mobj] = read_sms_mesh(varargin)
 % Read sms mesh files into Matlab mesh object.
 %
 % [Mobj] = function read_fvcom_mesh(varargin)
 %
 % DESCRIPTION:
-%    Read SMS 2dm file and bathymetry file 
-%    Store in a matlab mesh object 
+%    Read SMS 2dm file and bathymetry file
+%    Store in a matlab mesh object
 %
-% INPUT [keyword pairs]:  
-%   '2dm'                   = sms 2dm file [e.g. tst_grd.dat] 
-%   [optional] 'bath'       = sms bathymetry file [e.g. tst_dep.dat] 
+% INPUT [keyword pairs]:
+%   '2dm'                   = sms 2dm file [e.g. tst_grd.dat]
+%   [optional] 'bath'       = sms bathymetry file [e.g. tst_dep.dat]
 %   [optional] 'coordinate' = coordinate system [spherical; cartesian (default)]
-%   [optional] 'project'    = generate (x,y) coordinates if input is (lon,lat) 
+%   [optional] 'project'    = generate (x,y) coordinates if input is (lon,lat)
 %                             generate (lon,lat) coordinates if input is (x,y)
 %                            ['true' ; 'false' (default)], see myproject.m
 %   [optional] 'addCoriolis' = calculate Coriolis param (f), requires [lon,lat]
@@ -22,7 +22,7 @@ function [Mobj] = read_sms_mesh(varargin)
 % EXAMPLE USAGE
 %    Mobj = read_sms_mesh('2dm','skagit.2dm','bath','bathy.dat')
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
@@ -62,17 +62,17 @@ coordinate = 'cartesian';
 %--------------------------------------------------------------------------
 
 if mod(length(varargin), 2) ~= 0
-	error('incorrect usage of read_sms_mesh, use keyword pairs')
+    error('incorrect usage of read_sms_mesh, use keyword pairs')
 end
 
 for i = 1:2:length(varargin) - 1
-	keyword = lower(varargin{i});
+    keyword = lower(varargin{i});
 
-	if ~ischar(keyword)
-		error('incorrect usage of read_sms_mesh')
+    if ~ischar(keyword)
+        error('incorrect usage of read_sms_mesh')
     end
 
-	switch keyword
+    switch keyword
         case '2dm'
             sms_2dm = varargin{i + 1};
             have_2dm = true;
@@ -132,7 +132,7 @@ nStrings = 0;
 nHeader = 0;
 StillReading = true;
 while StillReading
-	lin = fgetl(fid);
+    lin = fgetl(fid);
     if lin ~= -1 % EOF is -1
         switch lin(1:2)
             case 'E3'
@@ -158,8 +158,8 @@ fclose(fid);
 fid = fopen(sms_2dm, 'rt');
 
 if ftbverbose
-  fprintf('nVerts: %d\n', nVerts); 
-  fprintf('nElems: %d\n', nElems); 
+  fprintf('nVerts: %d\n', nVerts);
+  fprintf('nElems: %d\n', nElems);
   fprintf('reading in connectivity and grid points\n')
 end
 
@@ -223,19 +223,19 @@ end
 have_lonlat = false;
 have_xy     = false;
 if strcmpi(coordinate, 'spherical')
-	lon = x;
-	lat = y;
+    lon = x;
+    lat = y;
     % Why reset everything to zero here?
-	%x = x * 0.0;
-	%y = y * 0.0;
-	have_lonlat = true;
+    %x = x * 0.0;
+    %y = y * 0.0;
+    have_lonlat = true;
     % Just do a double check on the coordinates to make sure we don't
     % actually have cartesian
     if max(lon) > 360
         warning('You''ve specified spherical coordinates, but your upper longitude value exceeds 360 degrees. Are you sure you have spherical data?')
     end
 elseif strcmpi(coordinate, 'cartesian')
-	have_xy = true;
+    have_xy = true;
 else
     warning('Unrecognised coordinate system (%s). Valid values are ''spherical'' and ''cartesian''.', coordinate)
 end
@@ -248,32 +248,32 @@ fclose(fid);
 
 bath_range = max(h) - min(h);
 if have_bath || bath_range == 0
-	fid = fopen(sms_bath, 'rt');
-	if fid < 0
-		error('file: %s does not exist', sms_bath);
-	else
-		if ftbverbose; fprintf('reading sms bathymetry from: %s\n', sms_bath); end
+    fid = fopen(sms_bath, 'rt');
+    if fid < 0
+        error('file: %s does not exist', sms_bath);
+    else
+        if ftbverbose; fprintf('reading sms bathymetry from: %s\n', sms_bath); end
     end
-	lin = fgetl(fid);
-	lin = fgetl(fid);
-	lin = fgetl(fid);
-	C = textscan(fid, '%s %d', 1);
-	nVerts_tmp = C{2};
-	C = textscan(fid, '%s %d', 1);
-	nElems_tmp = C{2};
-	if (nVerts - nVerts_tmp) * (nElems - nElems_tmp) ~= 0
-		fprintf('dimensions of bathymetry file do not match 2dm file\n')
-		fprintf('bathymetry nVerts: %d\n',nVerts_tmp)
-		fprintf('bathymetry nElems: %d\n',nElems_tmp)
-		error('stopping...')
+    lin = fgetl(fid);
+    lin = fgetl(fid);
+    lin = fgetl(fid);
+    C = textscan(fid, '%s %d', 1);
+    nVerts_tmp = C{2};
+    C = textscan(fid, '%s %d', 1);
+    nElems_tmp = C{2};
+    if (nVerts - nVerts_tmp) * (nElems - nElems_tmp) ~= 0
+        fprintf('dimensions of bathymetry file do not match 2dm file\n')
+        fprintf('bathymetry nVerts: %d\n',nVerts_tmp)
+        fprintf('bathymetry nElems: %d\n',nElems_tmp)
+        error('stopping...')
     end
-	lin = fgetl(fid);
-	lin = fgetl(fid);
-	lin = fgetl(fid);
+    lin = fgetl(fid);
+    lin = fgetl(fid);
+    lin = fgetl(fid);
     lin = fgetl(fid); % extra one for the new format from SMS 10.1, I think
     C2 = textscan(fid, '%f', nVerts);
     h = C2{1};
-	have_bath = true;
+    have_bath = true;
 
     clear C2
 elseif bath_range ~= 0
@@ -290,13 +290,13 @@ end
 %--------------------------------------------------------------------------
 if userproject
     if strcmpi(coordinate, 'cartesian')
-		fprintf('inverse projecting to get (lon,lat)\n')
-		[lon, lat] = my_project(x, y, 'inverse');
-		have_lonlat = true;
+        fprintf('inverse projecting to get (lon,lat)\n')
+        [lon, lat] = my_project(x, y, 'inverse');
+        have_lonlat = true;
     elseif strcmpi(coordinate, 'spherical')
-		fprintf('forward projecting to get (x,y)\n')
-		[x, y] = my_project(lon, lat, 'forward');
-		have_xy = true;
+        fprintf('forward projecting to get (x,y)\n')
+        [x, y] = my_project(lon, lat, 'forward');
+        have_xy = true;
     else
         warning('Unrecognised coordinate system (%s). Valid values are ''spherical'' and ''cartesian''.', coordinate)
     end
@@ -311,13 +311,13 @@ Mobj.nElems  = nElems;
 Mobj.nativeCoords = coordinate;
 
 if have_lonlat
-	Mobj.have_lonlat    = have_lonlat;
+    Mobj.have_lonlat    = have_lonlat;
 end
 if have_xy
-	Mobj.have_xy        = have_xy;
+    Mobj.have_xy        = have_xy;
 end
 if have_bath
-	Mobj.have_bath      = have_bath;
+    Mobj.have_bath      = have_bath;
 end
 if have_strings
     Mobj.have_strings   = have_strings;
