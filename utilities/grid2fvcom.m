@@ -165,7 +165,7 @@ for vv = 1:length(vars)
             if isfield(data, 'xalt')
                 [fvxalt, fvyalt] = size(data.xalt);
             end
-            [ncx, ncy] = size(tmp_data_data);
+            [ncx, ncy, ~] = size(tmp_data_data);
             if isfield(data, 'xalt')
                 if (ncx ~= fvx || ncy ~= fvy) || (ncx ~= fvxalt || ncy ~= fvyalt)
                     % Flipping the input array so it hopefully matches the
