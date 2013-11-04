@@ -1,14 +1,14 @@
-function [Mobj] = read_fvcom_mesh(gridfile) 
+function [Mobj] = read_fvcom_mesh(gridfile)
 
-% Read fvcom mesh file into Matlab mesh object  
+% Read fvcom mesh file into Matlab mesh object
 %
 % [Mobj] = function read_fvcom_mesh(gridfile)
 %
 % DESCRIPTION:
 %    Read FVCOM Grid file (connectivity + nodes)
-%    Store in a matlab mesh object 
+%    Store in a matlab mesh object
 %
-% INPUT [keyword pairs]:  
+% INPUT [keyword pairs]:
 %   'gridfile'  = fvcom mesh file
 %
 % OUTPUT:
@@ -17,11 +17,11 @@ function [Mobj] = read_fvcom_mesh(gridfile)
 % EXAMPLE USAGE
 %    Mobj = read_fvcom_mesh('tst_grd.dat')
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %
 % Revision history
-%   
+%
 %==============================================================================
 
 subname = 'read_fvcom_mesh';
@@ -46,15 +46,15 @@ have_lonlat = false;
 
 fid = fopen(gridfile,'r');
 if(fid  < 0)
-	error(['file: ' gridfile ' does not exist']);
+    error(['file: ' gridfile ' does not exist']);
 end;
 
 %----------------------------------------------------
-% read in the fvcom connectivity and vertices 
+% read in the fvcom connectivity and vertices
 %----------------------------------------------------
 C = textscan(fid, '%s %s %s %d', 1); nVerts = C{4};
 C = textscan(fid, '%s %s %s %d', 1); nElems = C{4};
-tri = zeros(nElems,3); 
+tri = zeros(nElems,3);
 x   = zeros(nVerts,1);
 y   = zeros(nVerts,1);
 h   = zeros(nVerts,1);
@@ -69,7 +69,7 @@ for i=1:nElems
   C = textscan(fid,' %d %d %d %d %d\n',1);
   tri(i,1) = C{2};  tri(i,2) = C{3}; tri(i,3) = C{4};
 end;
-for i=1:nVerts 
+for i=1:nVerts
   C = textscan(fid, '%d %f %f %f', 1);
   x(i) = C{2};
   y(i) = C{3};
@@ -86,13 +86,13 @@ Mobj.nElems  = nElems;
 Mobj.nativeCoords = coordinate;
 
 if(have_lonlat)
-	Mobj.have_lonlat  = have_lonlat;
+    Mobj.have_lonlat  = have_lonlat;
 end;
 if(have_xy)
-	Mobj.have_xy      = have_xy;
+    Mobj.have_xy      = have_xy;
 end;
 if(have_bath)
-	Mobj.have_bath    = have_bath;
+    Mobj.have_bath    = have_bath;
 end;
 Mobj.x            = x;
 Mobj.y            = y;
