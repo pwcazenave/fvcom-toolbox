@@ -72,7 +72,44 @@ for r = 1:nr
 end
 
 % Now we have the climatologies for the relevant river nodes, we need to
-% repeat it to fit the length of the Mobj.river_time array.
+% repeat it to fit the length of the Mobj.river_time array. Since the
+% climatology data are for a year only, we need to find the correct index
+% for the start and end of the Mobj.river_time array so that we don't put
+% January temperature in July, for example.
+[yyyy, mm, dd, HH, MM, SS] = mjulian2greg(Mobj.river_time);
+startday = (datenum(yyyy(1), mm(1), dd(1), HH(1), MM(1), SS(1)) - ...
+    datenum(min(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
+endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
+    datenum(max(yyyy), 1, 1, 0, 0, 0));
+
+% Build up the time series using the number of unique years we have.
+years = unique(yyyy);
+ny = length(years);
+for y = 1:ny
+    % Find the number of days in this year and only extract that number
+    % from the climatology.
+    nd = sum(eomday(years(y), 1:12));
+    if y == 1
+        % This is the part year for the first year. Prepend the existing
+        % array with the number of days required.
+        repclim = clim(startday:end, :);
+    elseif y == ny
+        repclim = [repclim; clim(1:endday, :)];
+    elseif y ~= 1 || y ~= ny
+        % We're in the middle years, so just repeat add the clim array to
+        % the end of the previous interation's.
+        repclim = [repclim; clim];
+    end
+
+    % We need to add an extra day's data to the end of the array for this
+    % year.
+    if nd == 366
+        repclim = [repclim; repclim(end, :)];
+    end
+end
+
+% Add the temperature climatology to Mobj.
+Mobj.river_temp = repclim;
 
 if ftbverbose
     fprintf('end   : %s \n', subname)
