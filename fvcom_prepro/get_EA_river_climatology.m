@@ -1,7 +1,7 @@
 function Mobj = get_EA_river_climatology(Mobj, ea, dist_thresh)
 % Read river temperature climatologies from the Environment Agency river
 % temperature data. If no data are found within the threshold specified, a
-% mean climatology from all data points is provided instead.
+% mean climatology from the nearest 30 sites is provided instead.
 %
 % function Mobj = get_EA_river(Mogj, ea)
 %
@@ -14,6 +14,8 @@ function Mobj = get_EA_river_climatology(Mobj, ea, dist_thresh)
 %                   - Mobj.river_nodes - river node IDs.
 %                   - Mobj.lon, Mobj.lat - unstructured grid node
 %                   positions.
+%                   - Mobj.river_time - Modified Julian Day array of the
+%                   times for the river discharge data (Mobj.river_flux).
 %   ea          : Full path to the river climatology netCDF file.
 %   dist_thresh : distance threshold beyond which a river temperature
 %                 climatology data point is considered too far to be valid
@@ -39,10 +41,9 @@ if ftbverbose
     fprintf('\nbegin : %s \n', subname)
 end
 
+% Load the position (lon/lat), time, climatology and SiteType variables
+% only. Not really bothered about the other variables.
 nc = netcdf.open(ea, 'NOWRITE');
-
-% Load the position (lon/lat), time and climatology variables only. Not
-% really bothered about the other variables.
 varid = netcdf.inqVarID(nc, 'climatology');
 climatology = netcdf.getVar(nc, varid, 'single');
 varid = netcdf.inqVarID(nc, 'time');
@@ -51,8 +52,24 @@ varid = netcdf.inqVarID(nc, 'lon');
 lon = netcdf.getVar(nc, varid, 'single');
 varid = netcdf.inqVarID(nc, 'lat');
 lat = netcdf.getVar(nc, varid, 'single');
-
+varid = netcdf.inqVarID(nc, 'SiteType');
+SiteType = netcdf.getVar(nc, varid);
 netcdf.close(nc)
+clear varid
+
+% Remove any sites which aren't RIVER in SiteType. This is not pretty but
+% relatively speedy, so it'll have to do.
+good = [];
+for i = 1:size(SiteType, 2)
+    if strcmp(strtrim(SiteType(:, i)'), 'RIVER')
+        good = [good, i];
+    end
+end
+
+% Clear out the bad sites.
+climatology = climatology(:, good);
+lon = lon(good);
+lat = lat(good);
 
 % Now find the nearest nodes to the river node positions.
 nr = length(Mobj.river_nodes);
@@ -64,7 +81,9 @@ for r = 1:nr
     [howclose, idx] = min(dist);
     
     if howclose > dist_thresh
-        clim(:, r) = median(climatology, 2);
+        % Find the 30 closest sites and use their data instead.
+        [~, idx] = sort(dist);
+        clim(:, r) = median(climatology(:, idx(1:30)), 2);
     else
         % Get the relevant climatology.
         clim(:, r) = climatology(:, idx);
