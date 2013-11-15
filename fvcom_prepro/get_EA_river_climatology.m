@@ -99,7 +99,7 @@ end
 startday = (datenum(yyyy(1), mm(1), dd(1), HH(1), MM(1), SS(1)) - ...
     datenum(min(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
 endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
-    datenum(max(yyyy), 1, 1, 0, 0, 0));
+    datenum(max(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
 
 years = unique(yyyy);
 ny = length(years);
@@ -114,19 +114,19 @@ else
         % from the climatology.
         nd = sum(eomday(years(y), 1:12));
         if y == 1
-            % This is the part year for the first year. Prepend the existing
-            % array with the number of days required.
+            % This is the part year for the first year. Prepend the
+            % existing array with the number of days required.
             repclim = clim(startday:end, :);
         elseif y == ny
             repclim = [repclim; clim(1:endday, :)];
         elseif y ~= 1 || y ~= ny
-            % We're in the middle years, so just repeat add the clim array to
-            % the end of the previous interation's.
+            % We're in the middle years, so just repeat add the clim array
+            % to the end of the previous interation's.
             repclim = [repclim; clim];
         end
 
-        % We need to add an extra day's data to the end of the array for this
-        % year.
+        % We need to add an extra day's data to the end of the array for
+        % this year.
         if nd == 366
             repclim = [repclim; repclim(end, :)];
         end
