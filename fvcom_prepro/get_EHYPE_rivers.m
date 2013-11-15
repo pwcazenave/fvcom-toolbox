@@ -1,16 +1,16 @@
-function Mobj = get_EHYPE_rivers(Mobj, dist_thresh)
+function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 % Extract river discharges from the supplied river positions for the FVCOM
 % grid in Mobj.
 %
 % get_EHYPE_rivers(Mobj, dist_thresh)
 %
 % DESCRIPTION:
-%   For the positioins in Mobj.rivers.positions, find the nearest
+%   For the positions in Mobj.rivers.positions, find the nearest
 %   unstructured grid node and extract the river discharge from
-%   polcoms_flow. If dist_thresh is specified, the river positions must
-%   fall within the specified distance. If multiple rivers are assigned to
-%   the same node, their discharges are summed. The resulting river name is
-%   generated from the contributing rives, separated by a hyphen.
+%   Mobj.rivers.river_flux. The river positions must fall within the
+%   specified distance (dist_thresh). If multiple rivers are assigned to
+%   the same node, their discharges are summed and the resulting river name
+%   is generated from the contributing rives, separated by a hyphen.
 %
 % INPUT:
 %   Mobj - MATLAB mesh object containing:
@@ -22,9 +22,13 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh)
 %       * rivers - river data struct with the following fields:
 %           - positions - river positions in lon, lat.
 %           - names - list of river names
-%           - river_flux - path to the EHYPE ASCII fil data directory.
+%           - river_flux - path to the EHYPE ASCII file data directory.
 %   dist_thresh - [optional] maximum distance away from a river node beyond
 %       which the search for an FVCOM node is abandoned. Units in degrees.
+%   model_year - [optional] When giving climatology, a year must be
+%   specified so that the time series can be anchored in time. The returned
+%   time series will be 3 years long centred on the specified year.
+%   Discharges will be repeated for the two additional years.
 %
 % OUTPUT:
 %   Mobj.river_flux - volume flux at the nodes within the model domain.
@@ -44,6 +48,10 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh)
 %
 % Revision history:
 %   2013-10-15 - First version based on get_FVCOM_rivers.m.
+%   2013-11-14 - Update the help to reflect the functionality.
+%   2013-11-15 - Add support for using a river climatology from the E-HYPE
+%   time series data (must be precomputed) instead of a specified section
+%   of the E-HYPE model output.
 %
 %==========================================================================
 
@@ -57,6 +65,10 @@ end
 % Check inputs
 if ~Mobj.have_lonlat
     error('Require unstructured grid positions in lon/lat format to compare against supplied river positions.')
+end
+
+if nargin == 3
+    yr = varargin{1};
 end
 
 % Separate the inputs into separate arrays.
@@ -113,7 +125,7 @@ for ff = 1:fv_nr
     % We don't need the column to get the other nodes in the element, only
     % the row is required.
     [row, ~] = find(Mobj.tri == coast_nodes(idx));
-    
+
     if length(row) == 1
         % This is a bad node because it is a part of only one element. The
         % rivers need two adjacent elements to work reliably (?). So, we
@@ -121,12 +133,12 @@ for ff = 1:fv_nr
         % connected to two elements. We'll try the other nodes in the
         % current element before searching the rest of the coastline (which
         % is computationally expensive).
-        
+
         % Remove the current node index from the list of candidates (i.e.
         % leave only the two other nodes in the element).
         mask = Mobj.tri(row, :) ~= coast_nodes(idx);
         n_tri = Mobj.tri(row, mask);
-        
+
         % Remove values which aren't coastline values (we don't want to set
         % the river node to an open water node).
         n_tri = intersect(n_tri, coast_nodes);
@@ -168,8 +180,14 @@ for ff = 1:fv_nr
     fvcom_names{vc} = sprintf('%07d', ehype_name(ff));
     fv_riv_idx(vc) = ff;
     fid = fopen(fullfile(ehype_flow, [fvcom_names{vc}, '.txt']));
-    assert(fid >= 0, 'Failed to open EHYPE river flow data.')
-    eflow = textscan(fid, '%s %f %f %f %f %f %f %f %f %f', 'delimiter', '\t', 'HeaderLines', 2, 'MultipleDelimsAsOne', 1);
+    assert(fid >= 0, 'Failed to open E-HYPE river flow data.')
+    if nargin ~= 3
+        % Time series have a 2 line header.
+        eflow = textscan(fid, '%s %f %f %f %f %f %f %f %f %f', 'delimiter', '\t', 'HeaderLines', 2, 'MultipleDelimsAsOne', 1);
+    else
+        % Climatology, so we have no header.
+        eflow = textscan(fid, '%s %f %f %f %f %f %f %f %f %f', 'delimiter', '\t', 'MultipleDelimsAsOne', 1);
+    end
     fclose(fid);
     fv_flow(:, vc) = eflow{2};
     if ftbverbose
@@ -189,9 +207,9 @@ fv_uniq_names = cell(length(fv_uniq_obc), 1);
 
 fv_idx = 1:length(fvcom_names);
 for nn = 1:length(fv_uniq_obc)
-    
+
     dn = fv_idx(fv_obc == fv_uniq_obc(nn));
-    
+
     fv_uniq_flow(:, nn) = sum(fv_flow(:, dn), 2);
     % Concatenate the river names so we know at least which rivers'
     % discharges have been summed.
@@ -201,21 +219,61 @@ for nn = 1:length(fv_uniq_obc)
 
 end
 
-% Assign the relevant arrays to the Mobj.
+% Assign the relevant arrays to the Mobj. Flux is added in the section
+% dealing with either climatology or time series data.
 Mobj.river_nodes = fv_uniq_obc;
-Mobj.river_flux = fv_uniq_flow;
 Mobj.river_names = fv_uniq_names;
+
 
 % Create a Modified Julian Day time series of the EHYPE river data. Assume
 % all the EHYPE model outputs are for the same period and have the same
-% sampling interval.
-rtimes = datevec(eflow{1});
-Mobj.river_time = nan(ehype_nt, 1);
-for tt = 1:ehype_nt
-    Mobj.river_time(tt) = greg2mjulian( ...
-        rtimes(tt, 1), rtimes(tt, 2), rtimes(tt, 3), ...
-        rtimes(tt, 4), rtimes(tt, 5), rtimes(tt, 6) ...
-        );
+% sampling interval. If the eflow{1} data is a number below 367, assume
+% we've been given a climatology. In that case, find the model year we're
+% using and generate the time string for a year each side of that year (to
+% cover the period at each end of a year). For that to work, we need to be
+% given the model year as an optional third argument to the function.
+checkdate = cellfun(@str2num, eflow{1});
+if max(checkdate) < 367
+    % Climatology.
+    if nargin ~= 3
+        error('For climatology, a year must be specified for the time series to be generated.')
+    else
+        % Get to Gregorian first.
+
+        % Make three years of data starting from the year before the
+        % current one. Do so accounting for leap years.
+        daysinyr = [sum(eomday(yr - 1, 1:12)), ...
+            sum(eomday(yr, 1:12)), ...
+            sum(eomday(yr + 1, 1:12))];
+        % Offset the checkdate by one to add zero for the first day.
+        % Alternative would be to specify the day as the end of the
+        % previous month (or a day value of zero?).
+        offsetdays = (1:sum(daysinyr)) - 1;
+        mtime = datevec(datenum(yr - 1, 1, 1, 0, 0, 0) + offsetdays);
+        Mobj.river_time = greg2mjulian(mtime(:, 1), mtime(:, 2), ...
+            mtime(:, 3), mtime(:, 4), mtime(:, 5), mtime(:, 6));
+
+        % Repeat the river flux for the climatology before adding to the
+        % Mobj.
+        Mobj.river_flux = [...
+            fv_uniq_flow(1:daysinyr(1), :); ...
+            fv_uniq_flow(1:daysinyr(2), :); ...
+            fv_uniq_flow(1:daysinyr(3), :)];
+    end
+else
+    % Time series.
+    rtimes = datevec(eflow{1});
+    Mobj.river_time = nan(ehype_nt, 1);
+    for tt = 1:ehype_nt
+        Mobj.river_time(tt) = greg2mjulian( ...
+            rtimes(tt, 1), rtimes(tt, 2), rtimes(tt, 3), ...
+            rtimes(tt, 4), rtimes(tt, 5), rtimes(tt, 6) ...
+            );
+    end
+
+    % Add the river flux to the Mobj for the time series data.
+    Mobj.river_flux = fv_uniq_flow;
+
 end
 
 if ftbverbose
