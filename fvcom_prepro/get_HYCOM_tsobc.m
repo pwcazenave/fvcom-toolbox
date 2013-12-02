@@ -16,7 +16,7 @@ function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)
 %               - Mobj.nObcNodes - number of nodes in each open boundary.
 %   hycom   = Struct with HYCOM data covering the model domain. Unless
 %             varlist is specified (see below), all 4D fields will be
-%             interpolation onto the open boundaries (1-3D data will be
+%             interpolated onto the open boundaries (1-3D data will be
 %             ignored).
 %   varlist = [optional] cell array of variable (field) names to use from
 %             hycom.
@@ -346,6 +346,10 @@ for s = 1:length(fvfields)
             Mobj.u = fvcom.u;
         case 'v'
             Mobj.v = fvcom.v;
+        case 'density'
+            Mobj.rho1 = fvcom.density;
+        case 'ssh'
+            Mobj.ssh = fvcom.ssh;
         otherwise
             warning('Unrecognised variable %s', fvfields{s})
     end
