@@ -1,6 +1,6 @@
 function data = get_HYCOM_forcing(Mobj, modelTime)
-% Get mean flow, temperature and salinity data from HYCOM model outputs
-% through their OPeNDAP server. 
+% Get mean flow, temperature, salinity, surface elevation and denstiy data
+% from HYCOM model outputs through their OPeNDAP server.
 %
 % data = get_HYCOM_forcing(Mobj, modelTime)
 %
@@ -9,20 +9,24 @@ function data = get_HYCOM_forcing(Mobj, modelTime)
 %   forcing file.
 %
 % INPUT: 
-%   Mobj - MATLAB mesh object
+%   Mobj - MATLAB mesh object with the following fields:
+%           - have_lonlat - boolean indicating whether lat/long values are
+%           present in Mobj.
+%           - lon, lat - longitude and latitudes of the model grid nodes.
 %   modelTime - Modified Julian Date start and end times
 %
 % OUTPUT:
 %   data - struct of the data necessary to force FVCOM. These can be
-%   interpolated onto an unstructured grid in Mobj using
-%   grid2fvcom.m.
+%   interpolated onto an unstructured grid in Mobj using grid2fvcom.m.
 %
 % The parameters which are obtained from the HYCOM data are:
 %     - time
 %     - temperature
 %     - salinity
-%     - u mean flow component
-%     - v mean flow component
+%     - u mean flow component [currently disabled]
+%     - v mean flow component [currently disabled]
+%     - density [currently disabled]
+%     - daily mean sea surface height
 %
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -37,6 +41,8 @@ function data = get_HYCOM_forcing(Mobj, modelTime)
 %   the HYCOM OPeNDAP server.
 %   2013-09-05 It's working! Also add a data.time variable with the time
 %   stamps from the HYCOM data.
+%   2013-12-02 Add sea surface height to the list of variables that can be
+%   downloaded.
 %
 %==========================================================================
 
@@ -89,6 +95,7 @@ suffix.salinity     = '?salinity';
 suffix.u            = '?u';
 suffix.v            = '?v';
 suffix.density      = '?density';
+suffix.ssh          = '?ssh';
 suffix.X            = '?X';
 suffix.Y            = '?Y';
 
@@ -97,6 +104,7 @@ hycom.MT            = [url, suffix.MT];             % time [1D]
 hycom.Longitude     = [url, suffix.Longitude];      % [2D]
 hycom.Latitude      = [url, suffix.Latitude];       % [2D]
 hycom.Depth         = [url, suffix.Depth];          % water depth [2D]
+hycom.ssh           = [url, suffix.ssh];            % sea surface height [3D]
 hycom.temperature   = [url, suffix.temperature];    % [4D]
 hycom.salinity      = [url, suffix.salinity];       % [4D]
 % % Leave out U and V velocities for the time being (the HYCOM OPeNDAP
@@ -229,7 +237,7 @@ for aa = 1:length(fields)
             % beginning of this function. These are largely time
             % independent data, so no need to get them here as they don't
             % have 4 dimensions, whereas the code after the otherwise
-            % assumed 4D data.
+            % assumes 4D data (except for ssh which is 3D).
             continue
 
         otherwise
@@ -252,20 +260,29 @@ for aa = 1:length(fields)
                 %   - y (Y)
                 %   - depth (Depth)
                 %   - time (MT)
-                % We probably want all depths but only a subset in time and
-                % space.
+                % except in the case of sea surface height, where we lose
+                % the depth dimension. For all other variables, we want all
+                % depths but only a subset in time and space.
 
                 % Since the HYCOM OPeNDAP server is so spectacularly slow,
                 % extract a day's data at a time and stick them together
                 % here. If nothing else, this at least means I can give
-                % some indication of progress rather than just wait for
-                % something to magically happen.
+                % some indication of progress, rather than just wait for
+                % something to eventually happen.
                 nx = (xrange(2) - xrange(1)) + 1;
                 ny = (yrange(2) - yrange(1)) + 1;
 
                 % Preallocate the output so we don't append to an array
-                % (which is slow).
-                data.(fields{aa}).data = nan(nx, ny, nz, nt);
+                % (which is slow). Sea surface height is 3D only (all the
+                % other variables are 4D). So, it needs its own little
+                % check all to itself.
+                if strcmpi(fields{aa}, 'ssh') == 1
+                    was_zeta = true; % set boolean for surface elevation
+                    data.(fields{aa}).data = nan(nx, ny, nt);
+                else
+                    was_zeta = false;
+                    data.(fields{aa}).data = nan(nx, ny, nz, nt);
+                end
 
                 c = 0; % counter for iterating through tmjd.
 
@@ -295,11 +312,17 @@ for aa = 1:length(fields)
                     % time.
                     [~, ts] = min(abs(tmjd{c} - times(tt)));
 
-                    % netCDF starts at zero, hence -1.
-                    start = [xrange(1), yrange(1), 1, ts] - 1;
-                    count = [nx, ny, nz, 1];
-
-                    data.(fields{aa}).data(:, :, :, tt) = netcdf.getVar(ncid, varid, start, count, 'double');
+                    if was_zeta
+                        % netCDF starts at zero, hence -1.
+                        start = [xrange(1), yrange(1), ts] - 1;
+                        count = [nx, ny, 1];
+                        data.(fields{aa}).data(:, :, tt) = netcdf.getVar(ncid, varid, start, count, 'double');
+                    else
+                        % netCDF starts at zero, hence -1.
+                        start = [xrange(1), yrange(1), 1, ts] - 1;
+                        count = [nx, ny, nz, 1];
+                        data.(fields{aa}).data(:, :, :, tt) = netcdf.getVar(ncid, varid, start, count, 'double');
+                    end
 
                     % Build an array of the HYCOM times. Only do so once so
                     % we don't end up appending it multiple times.
