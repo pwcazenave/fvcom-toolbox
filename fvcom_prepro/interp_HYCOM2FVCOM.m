@@ -20,6 +20,8 @@ function Mobj = interp_HYCOM2FVCOM(Mobj, hycom, start_date, varlist)
 %                   nodes.
 %                   - Mobj.lon, Mobj.lat - node coordinates (long/lat)
 %                   - Mobj.lonc, Mobj.latc - element coordinates (long/lat)
+%                   - Mobj.ts_times - Modified Julian Day times for the
+%                   model run.
 %   hycom       = Struct output by get_HYCOM_forcing. Must include fields:
 %                   - hycom.lon, hycom.lat - rectangular arrays.
 %                   - hycom.Depth - HYCOM depth levels.
@@ -66,7 +68,7 @@ end
 [fn, fz] = size(Mobj.siglayz);
 fe = numel(Mobj.lonc);
 
-% Given our intput time (in start_date), find the nearest time index for
+% Given our input time (in start_date), find the nearest time index for
 % the HYCOM data.
 stime = greg2mjulian(start_date(1), start_date(2), ...
     start_date(3), start_date(4), ...
