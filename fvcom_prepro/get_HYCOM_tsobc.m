@@ -100,8 +100,11 @@ fz = size(Mobj.siglayz, 2);
 % this on the fly.
 hdepth = permute(repmat(hycom.Depth.data, [1, nx, ny]), [2, 3, 1]);
 mask = hycom.(fields{ff}).data(:, :, :, 1) > 1.26e29;
-hdepth(mask) = nan;
-landmask = hycom.(fields{ff}).data(:, :, 1, 1) > 1.26e29;
+% Used to use the landmask to check whether to extrapolate data onto land.
+% Realised this is no longer necessary, so comment this out for future
+% removal.
+% hdepth(mask) = nan;
+% landmask = hycom.(fields{ff}).data(:, :, 1, 1) > 1.26e29;
 
 if ftbverbose
     tic
@@ -207,10 +210,17 @@ for v = 1:length(fields)
                     % interpolation will strip out the NaN depths so we
                     % shouldn't have any problems from that perspective.
 
-                    % Find the closest value in the original grid.
-                    [~, jj] = min(sqrt((lon(:) - fx).^2 + (lat(:) - fy).^2));
-                    [ir, ic] = ind2sub(size(lon), jj);
-                    if landmask(ir, ic) == 1 && j == 1
+                    % I used to check we were on land, but really,
+                    % itempobc(i) will only equal NaN if we're on land for
+                    % this layer. This is only a problem when we're at the
+                    % surface as we always need at least one value to do
+                    % the vertical interpolation. So, check if we're at the
+                    % surface and if so, grab the nearest point. Otherwise,
+                    % leave the NaN in place.
+                    %[~, jj] = min(sqrt((lon(:) - fx).^2 + (lat(:) - fy).^2));
+                    %[ir, ic] = ind2sub(size(lon), jj);
+                    %if landmask(ir, ic) == 1 && j == 1
+                    if j == 1
                         %fprintf('Sea surface or on land (j = %i, lon: %.5f, lat: %.5f)\n', j, lon(ir, ic), lat(ir, ic))
                         itempobc(i) = tpctemp2(ii(1));
 
@@ -361,9 +371,9 @@ end
 % distribution of interpolated values over the HYCOM data. Add the location
 % of the vertical profile (both FVCOM and HYCOM) to the plot.
 
-% nn = 110;   % open boundary index
+% nn = 128;  % open boundary index
 % tt = 1;    % time index
-% fvz = 1;   % fvcom depth index (currently 1-21)
+% fvz = 1;   % fvcom depth index (currently 1-20)
 % hyz = 1;   % hycom depth index (1-33)
 %
 % % Find the HYCOM seabed indices
@@ -423,7 +433,7 @@ end
 % % Add the interpolated surface data (first sigma layer)
 % scatter(Mobj.lon(oNodes), Mobj.lat(oNodes), 40, Mobj.temperature(:, fvz, tt), 'filled', 'MarkerEdgeColor', 'k')
 % axis([min(Mobj.lon(oNodes)), max(Mobj.lon(oNodes)), min(Mobj.lat(oNodes)), max(Mobj.lat(oNodes))])
-% caxis([6, 20])
+% caxis([3, 13])
 % plot(lon(xidx, yidx), lat(xidx, yidx), 'rs') % polcoms is all backwards
 % plot(Mobj.lon(oNodes(nn)), Mobj.lat(oNodes(nn)), 'wo')
 % colorbar
