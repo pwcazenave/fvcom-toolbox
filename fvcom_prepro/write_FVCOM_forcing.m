@@ -97,6 +97,10 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   2013-09-03 - Removed PWC's fix for timestrings. Issue was due to
 %   rounding errors caused by mjulian2greg.m, which have now been fixed.
 %
+% ROM Revision History:
+%   Change the output of tri' to tri, as tri was being written the wrong
+%   way around (for windows matlab anyway)
+%
 %==========================================================================
 
 multi_out = false; % default to 3.1.6, single output file
@@ -430,7 +434,7 @@ for i=1:length(suffixes)
     netcdf.endDef(nc);
 
     % Put the easy ones in first.
-    netcdf.putVar(nc,nv_varid, tri');
+    netcdf.putVar(nc,nv_varid, tri);
     netcdf.putVar(nc,time_varid,0,ntimes,data.time);
     netcdf.putVar(nc,itime_varid,0,ntimes,floor(data.time));
 %     netcdf.putVar(nc,itime2_varid,0,ntimes,mod(data.time,1)*24*3600*1000); % PWC original
