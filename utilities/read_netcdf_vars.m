@@ -1,9 +1,20 @@
-% Read in listed variables from a netCDF file
-% Optionally select a dimension to select a range for
-% This should work for any netCDF, but was written with FCOM output files in mind
+function [M] = read_netcdf_vars(varargin)
 %
-% Example Usage:
-%   Extract variables time, x, y:
+% Function to read in listed variables from a netCDF file
+%
+% [M] = read_netcdf_vars(varargin)
+%
+% DESCRIPTION:
+%   Optionally select a dimension to select a range for
+%   This should work for any netCDF, but was written with FCOM output files in mind
+%
+% INPUT
+%   Pass the variable names that you want to extract
+%   [optional pair] filename, the netCDF filename
+%   [optional triple] dimrange, the dimension name, the dimension range
+
+% EXAMPLE USAGE
+%   Extract variables time, x, y
 %   M = read_netcdf_vars('time', 'x', 'y');
 %
 %   Extract variables time, x, y from filename text.nc:
@@ -17,11 +28,12 @@
 %   indicies 0-99 and siglay index of 0:
 %   M = read_netcdf_vars('filename', 'test.nc', 'dimrange', 'time', [0 100], ...
 %                        'dimrange', 'siglay', [0 1], 'time', 'x', 'y', 'u', 'v');
-% 
-% Rory O'Hara Murray, Marine Scotland Science
-% 11 July 2013
+% Author(s)
+%   Rory O'Hara Murray, Marine Scotland Science
 %
-function [M] = read_netcdf_vars(varargin)
+% Revision history
+%   v0 July 2013
+%==========================================================================
 
 dimrange = false;
 
