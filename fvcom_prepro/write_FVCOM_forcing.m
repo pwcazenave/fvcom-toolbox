@@ -98,8 +98,8 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   rounding errors caused by mjulian2greg.m, which have now been fixed.
 %
 % ROM Revision History:
-%   Change the output of tri' to tri, as tri was being written the wrong
-%   way around (for windows matlab anyway)
+%   2013-12-02 Change the output of tri' to tri, as tri was being written
+%   the wrong way around.
 %
 %==========================================================================
 
