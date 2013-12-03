@@ -104,14 +104,14 @@ hycom.MT            = [url, suffix.MT];             % time [1D]
 hycom.Longitude     = [url, suffix.Longitude];      % [2D]
 hycom.Latitude      = [url, suffix.Latitude];       % [2D]
 hycom.Depth         = [url, suffix.Depth];          % water depth [2D]
-hycom.ssh           = [url, suffix.ssh];            % sea surface height [3D]
 hycom.temperature   = [url, suffix.temperature];    % [4D]
 hycom.salinity      = [url, suffix.salinity];       % [4D]
-% % Leave out U and V velocities for the time being (the HYCOM OPeNDAP
-% server is slow enough as it is).
+hycom.ssh           = [url, suffix.ssh];            % sea surface height [3D]
+% % Leave out U and V velocities and density for the time being (the HYCOM
+% % OPeNDAP server is slow enough as it is).
 % % hycom.u             = [url, suffix.u];              % mean flow % [4D]
 % % hycom.v             = [url, suffix.v];              % mean flow % [4D]
-% hycom.density       = [url, suffix.density];        % don't need for now
+% % hycom.density       = [url, suffix.density];        % don't need for now
 % hycom.X             = [url, suffix.X];              % crashes MATLAB...
 % hycom.Y             = [url, suffix.Y];              % crashes MATLAB...
 
