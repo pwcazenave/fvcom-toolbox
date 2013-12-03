@@ -1,4 +1,5 @@
 function [Mobj] = read_sms_mesh(varargin) 
+%varargin = {'2dm','FoF_Aug_4.2dm','bath','FoF_Aug_4_MSL.dat','project','true'};
 
 % Read sms mesh files into Matlab mesh object  
 %
@@ -33,6 +34,8 @@ function [Mobj] = read_sms_mesh(varargin)
 %   2012-06-26 Added more resilient support for reading in SMS files.
 %   2012-06-29 Further improved ability to read files with variable length
 %   headers.
+%   2013-10-01 Further improved ability to read files with variable length
+%   headers (ROM).
 %   
 %==============================================================================
 
@@ -134,7 +137,7 @@ while StillReading
             nVerts = nVerts + 1;
         elseif(lin(1:2) == 'NS')
             nStrings = nStrings + 1;
-        elseif(lin(1:2) == 'ME')
+        elseif(lin(1:2) == 'ME' | lin(1:2) == 'NU')
             % Header values
             nHeader = nHeader + 1;
         else
@@ -166,12 +169,8 @@ ts  = zeros(nVerts,1);
 validObs = 1;
 
 % skip the header
-for i=1:nHeader
-    if i==1
-        C = textscan(fid,'%s',1);
-    else
-        C = textscan(fid,'%s',2);
-    end
+for ii=1:nHeader
+    C = fgetl(fid);
 end
 clear C
 

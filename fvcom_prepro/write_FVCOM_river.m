@@ -58,9 +58,9 @@ if ftbverbose
     fprintf('# of time frames: %d\n', nTimes);
 end
 
-[year, month, day, ~, ~, ~] = mjulian2greg(time(1));
+[year, month, day] = mjulian2greg(time(1));
 if ftbverbose; fprintf('time series begins at:\t%04d %02d %02d\n', year, month, day); end
-[year, month, day, ~, ~, ~] = mjulian2greg(time(end));
+[year, month, day] = mjulian2greg(time(end));
 if ftbverbose; fprintf('time series ends at:\t%04d %02d %02d\n', year, month, day); end
 clear year month day
 

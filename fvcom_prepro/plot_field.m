@@ -29,7 +29,9 @@ function plot_field(Mobj,PlotField,varargin)
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %
 % Revision history
-%   
+% 2013-08-22 optional function to pass the axes id to the function added.
+% Rory O'Hara Murray, MSS
+%
 %==============================================================================
 
 subname = 'plot_field';
@@ -45,6 +47,7 @@ PlotCartesian = 'cartesian';
 ShowGrid = false;
 HaveTitle = false;
 PlotExtra = false;
+HaveAxes = false;
 
 nArgs = length(varargin);
 if(mod(nArgs,2) ~= 0)
@@ -84,6 +87,9 @@ for i=1:2:length(varargin)-1
 		else
 			PlotExtra = false;
 		end;
+    case 'aid'
+        aid = varargin{i+1};
+        HaveAxes = true;
 	otherwise
 		error(['Can''t understand value for:' keyword]);
 	end; %switch keyword
@@ -115,7 +121,12 @@ else
 	y = Mobj.lat;
 end;
 
-figure
+if HaveAxes
+    axes(aid)
+else
+    figure
+end
+    
 patch('Vertices',[x,y],'Faces',Mobj.tri,...
       	'Cdata',field,'edgecolor',edgecolor,'facecolor','interp');
 colorbar

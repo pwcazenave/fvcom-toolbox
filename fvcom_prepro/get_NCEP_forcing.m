@@ -44,13 +44,14 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 %
 % REQUIRES:
 %   The air_sea toolbox:
-%       http://woodshole.er.usgs.gov/operations/sea-mat/air_sea-html/index.html
+%       http://woodshoNCEP le.er.usgs.gov/operations/sea-mat/air_sea-html/index.html
 %   The OPeNDAP toolbox:
 %       http://www.opendap.org/pub/contributed/source/ml-toolbox/
 %
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %   Ricardo Torres (Plymouth Marine Laboratory)
+%   Rory O'Hara Murray (Marine Scotland Science)
 %
 % Revision history:
 %   2012-10-31 First version based on get_NCEP_L4.m.
@@ -66,10 +67,34 @@ function data = get_NCEP_forcing(Mobj, modelTime)
 %   the toolbox's need. Also, we're not actually using 'pevpr' for the
 %   calculation of evaporation since we're estimating that from the latent
 %   heat net flux ('lhtfl'), so it's superfluous anyway.
-%
+%   2013-06-28 Changed the way the Matlab version is determiend. Now using
+%   release date rather then version number. For example version 7.13 >
+%   verion 7.7 but 7.13 is not greater than 7.7. (ROM)
+%   2013-07-01 Added the 'actual_range' attribute to the native matlab
+%   download section, as this is needed later when identifying the domain
+%   range and replacing values outside this with NaNs. (ROM)
+%   2013-08-02 Added the 'precision' attribute to the native matlab
+%   download section. Reduced the precision of the 'add_offset' and
+%   'scale_foctor' attributes to that specified in the netCDF file. This is
+%   becasue errors can occure when rescaling the data with very high
+%   precision scale factors and offsets. (ROM)
 %==========================================================================
 
 subname = 'get_NCEP_forcing';
+
+% Define date that matlab version 7.14 was released.
+% OPeNDAP was included in version 7.14
+% see http://en.wikipedia.org/wiki/MATLAB and
+% https://publicwiki.deltares.nl/display/OET/OPeNDAP+access+with+Matlab
+version_7_14_date = datenum(2012,3,1);
+%version_7_13_date = datenum(2011,9,1);
+
+% Depending on the MATLAB version, either use the native netcdf
+% libraries to load the OPeNDAP data, otherwise we need the relevant
+% third-party toolbox.
+out = ver('MATLAB');
+% Look at the date rather than the version number
+native_netcdf = datenum(out.Date) >= version_7_14_date;
 
 global ftbverbose;
 if ftbverbose
@@ -83,7 +108,9 @@ else
     % Add a buffer of one grid cell in latitude and two in longitude to
     % make sure the model domain is fully covered by the extracted data.
     [dx, dy] = deal(2.5, 2.5); % NCEP resolution in degrees
-    extents = [min(Mobj.lon(:))-(2*dx), max(Mobj.lon(:))+(2*dx), min(Mobj.lat(:))-dy, max(Mobj.lat(:))+dy];
+    % extents = [min(Mobj.lon(:))-(2*dx), max(Mobj.lon(:))+(2*dx), min(Mobj.lat(:))-dy, max(Mobj.lat(:))+dy];
+    % one grid cell in both longitude and latitude
+    extents = [min(Mobj.lon(:))-dx, max(Mobj.lon(:))+dx, min(Mobj.lat(:))-dy, max(Mobj.lat(:))+dy]; % ROM 13/11/2013
 end
 
 if modelTime(end) - modelTime(1) > 365
@@ -111,6 +138,15 @@ ncep.lhtfl  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanaly
 ncep.shtfl  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/shtfl.sfc.gauss.',num2str(year),'.nc'];
 % ncep.pevpr  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/pevpr.sfc.gauss.',num2str(year),'.nc'];
 
+% % only take a few of the above variables if they are listed as arguments
+% if nargin>2
+%     for ii=1:size(varargin,2)
+%         ncep1.(varargin{ii}) = ncep.(varargin{ii});
+%     end
+%     ncep = ncep1;
+%     clear ncep1
+% end
+
 % The fields below can be used to create the net shortwave and longwave
 % fluxes if the data you're using don't include net fluxes. Subtract the
 % downward from upward fluxes to get net fluxes.
@@ -128,12 +164,8 @@ for aa = 1:length(fields)
     data.(fields{aa}).lon = [];
     data_attributes.(fields{aa}) = [];
 
-    % Depending on the MATLAB version, either use the native netcdf
-    % libraries to load the OPeNDAP data, otherwise we need the relevant
-    % third-party toolbox.
-    out = ver('MATLAB');
-    if str2double(out.Version) > 7.13
-
+    if native_netcdf
+        
         %ncid_info = ncinfo(ncep.(fields{aa}));
         ncid = netcdf.open(ncep.(fields{aa}));
 
@@ -148,6 +180,18 @@ for aa = 1:length(fields)
             netcdf.getAtt(ncid,varid,'scale_factor','double');
         data_attributes.(fields{aa}).(fields{aa}).add_offset = ...
             netcdf.getAtt(ncid,varid,'add_offset','double');
+        data_attributes.(fields{aa}).(fields{aa}).actual_range = ...
+            netcdf.getAtt(ncid,varid,'actual_range','double');
+        data_attributes.(fields{aa}).(fields{aa}).precision = ...
+            netcdf.getAtt(ncid,varid,'precision','double');
+
+        % Change the precision of the attributes to avoid errors
+        precision = 10^data_attributes.(fields{aa}).(fields{aa}).precision;
+        data_attributes.(fields{aa}).(fields{aa}).scale_factor = ...
+            round(precision*data_attributes.(fields{aa}).(fields{aa}).scale_factor)./precision;
+        data_attributes.(fields{aa}).(fields{aa}).add_offset   = ...
+            round(precision*data_attributes.(fields{aa}).(fields{aa}).add_offset)./precision;
+        
         varid = netcdf.inqVarID(ncid,'lon');
         data_lon.lon = netcdf.getVar(ncid,varid,'double');
         varid = netcdf.inqVarID(ncid,'lat');
@@ -208,7 +252,7 @@ for aa = 1:length(fields)
     if iscell(index_lon)
         data.(fields{aa}).lon = data_lon.lon(cat(1,index_lon{:}));
 
-        if str2double(out.Version) > 7.13
+        if native_netcdf
             % varidlon = netcdf.inqVarID(ncid,'lon');
             % varidtime = netcdf.inqVarID(ncid,'time');
             % varidlat = netcdf.inqVarID(ncid,'lat');
@@ -282,7 +326,7 @@ for aa = 1:length(fields)
         % We have a straightforward data extraction
         data.(fields{aa}).lon = data_lon.lon(index_lon);
 
-        if str2double(out.Version) > 7.13
+        if native_netcdf
             varid = netcdf.inqVarID(ncid,(fields{aa}));
             % [varname,xtype,dimids,natts] = netcdf.inqVar(ncid,varid);
             % [~,length1] = netcdf.inqDim(ncid,dimids(1))

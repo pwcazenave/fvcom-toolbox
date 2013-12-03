@@ -261,7 +261,7 @@ for aa=1:length(varnames)
                     % consecutive numbers)
                     idx=RestrictDims.idx{dimidx(dd)}-start(dd)+1;
                     if ( do_restrict(dd) & ~(count(dd)==length(idx)) )
-                        [~,idx]=setdiff(start(dd):RestrictDims.idx{dimidx(dd)}(end),RestrictDims.idx{dimidx(dd)});
+                        [tmp,idx]=setdiff(start(dd):RestrictDims.idx{dimidx(dd)}(end),RestrictDims.idx{dimidx(dd)});
                         eval([varnames{aa},' = shiftdim(',varnames{aa},',sd);'])
                         switch  dimens
                             case 2

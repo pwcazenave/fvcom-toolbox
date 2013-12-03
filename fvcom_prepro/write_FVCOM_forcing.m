@@ -82,6 +82,9 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 % KJT Revision history:
 %   2013-01-16 - Added support for output of sea level pressure.
 %
+% ROM Revision History:
+%   Change the output of tri' to tri, as tri was being written the wrong
+%   way around (for windows matlab anyway)
 %==========================================================================
 
 multi_out = false; % default to 3.1.6, single output file
@@ -383,7 +386,7 @@ for i=1:length(suffixes)
     netcdf.endDef(nc);
 
     % Put the easy ones in first.
-    netcdf.putVar(nc,nv_varid, tri');
+    netcdf.putVar(nc,nv_varid, tri);
     netcdf.putVar(nc,time_varid,0,ntimes,data.time);
     netcdf.putVar(nc,itime_varid,0,ntimes,floor(data.time));
     netcdf.putVar(nc,itime2_varid,0,ntimes,mod(data.time,1)*24*3600*1000);

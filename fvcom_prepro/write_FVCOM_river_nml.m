@@ -29,10 +29,12 @@ function write_FVCOM_river_nml(Mobj, nml_file, nc_file)
 %
 % Revision history:
 %   2013-03-21 - First version.
+%   2013-08-15 - Removed lines adding "uniform" river forcing as this
+%   doens't seem to work. (ROM)
 %
 %==========================================================================
 
-subname = 'get_POLCOMS_rivers';
+subname = 'write_FVCOM_river_nml';
 
 global ftbverbose;
 if ftbverbose
@@ -49,14 +51,14 @@ end
 % Build the vertical distribution string. Round to 15 decimal places so the
 % unique check works (hopefully no one needs that many vertical layers...).
 vDist = roundn(abs(diff(Mobj.siglev)), -15);
-if length(unique(vDist)) == 1
-    vString = '''uniform''';
-else
+% if length(unique(vDist)) == 1
+%     vString = '''uniform''';
+% else
     vString = char();
     for ii = 1:length(vDist)
         vString = [vString, sprintf('%f ', vDist(ii))];
     end
-end
+% end
 
 for r = 1:nr
     fprintf(f, ' &NML_RIVER\n');
