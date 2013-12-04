@@ -77,6 +77,10 @@ function fvcom = grid2fvcom(Mobj, vars, data)
 %   implement that functionality, please do so! I also added commented-out
 %   figure at the end to check the interpolation has worked properly,
 %   should you wish to check manually.
+%   2013-12-04 Check for the presence of the input fields being requested
+%   in the input struct to avoid finding out that the last field in vars
+%   doesn't exist in data. Change the way the alternative coordinate arrays
+%   are used to accommodate subtleties in the parallel code in MATLAB.
 %
 %==========================================================================
 
@@ -89,6 +93,13 @@ subname = 'grid2fvcom';
 global ftbverbose;
 if ftbverbose
     fprintf('\nbegin : %s \n', subname)
+end
+
+% Before we go too far into this, check we have all the fields in the input
+% data that are being requested.
+for ff = 1:length(vars)
+    assert(isfield(data, vars{ff}), ...
+        'Missing field %s in the input data struct.', vars{ff})
 end
 
 % Run jobs on multiple workers if we have that functionality. Not sure if
@@ -155,23 +166,45 @@ for vv = 1:length(vars)
             tmp_fvcom_node = zeros(nVerts, ntimes);
             try
                 tmp_data_data = data.(vars{vv}).data; % input to the interpolation
-            catch
+            catch msg
+                fprintf('Trying for alternative data structure. (%s) ', ...
+                    msg.message)
                 tmp_data_data = data.(vars{vv}); % input to the interpolation
+                fprintf('success!\n')
             end
 
-            % Check the size of the input data matches the size of the
+            xx = data.x(:);
+            yy = data.y(:);
+            % Sometimes the parfor loop will fail if xxalt and yyalt
+            % aren't defined at all. So, make them empty here. This
+            % shouldn't impact data where we need those alternative arrays
+            % because if the data.xalt and data.yalt arrays exist, then
+            % these values will be overwritten with them. It does ensure
+            % that xxalt and yyalt always exist though.
+            xxalt = [];
+            yyalt = [];
+
+            % Check the shapes of the input data match those of the
             % position arrays.
             [fvx, fvy] = size(data.x);
+            [ncx, ncy, ~] = size(tmp_data_data);
+
             if isfield(data, 'xalt')
                 [fvxalt, fvyalt] = size(data.xalt);
-            end
-            [ncx, ncy, ~] = size(tmp_data_data);
-            if isfield(data, 'xalt')
+                xxalt = data.xalt(:);
+                yyalt = data.yalt(:);
                 if (ncx ~= fvx || ncy ~= fvy) || (ncx ~= fvxalt || ncy ~= fvyalt)
                     % Flipping the input array so it hopefully matches the
                     % position arrays.
                     tmp_data_data = permute(tmp_data_data, [2, 1, 3]);
                     warning('Transposed ''%s'' input data to match position array dimensions', vars{vv})
+                end
+                if isfield(data, 'lsmalt')
+                    % If we have a land mask, mask off the coastal and land
+                    % points in the coordinates arrays with the alternative
+                    % mask.
+                    xxalt(data.lsmalt ~= 0) = [];
+                    yyalt(data.lsmalt ~= 0) = [];
                 end
             else
                 if (ncx ~= fvx || ncy ~= fvy)
@@ -180,12 +213,19 @@ for vv = 1:length(vars)
                     tmp_data_data = permute(tmp_data_data, [2, 1, 3]);
                     warning('Transposed ''%s'' input data to match position array dimensions', vars{vv})
                 end
+                % If we have a land mask, mask off the coastal and land points
+                % in the coordinates arrays.
+                if isfield(data, 'lsm')
+                    xx(data.lsm ~= 0) = [];
+                    yy(data.lsm ~= 0) = [];
+                end
             end
+
             % Use a parallel loop for the number of time steps we're
-            % interpolating (should be quicker, but will use more
-            % memory...).
+            % interpolating.
+            varname = vars{vv};
             parfor i = 1:ntimes
-                fprintf('interpolating %s, frame %d of %d\n', vars{vv}, i, ntimes);
+                fprintf('interpolating %s, frame %d of %d\n', varname, i, ntimes);
 
                 % Serial version:
                 % currvar = data.(vars{vv}).data(:, :, i);
@@ -197,24 +237,54 @@ for vv = 1:length(vars)
                 %fvcom.(vars{vv}).data(:,i) = griddata(wind.x,wind.y,currvar,xc,yc,'cubic');
 
                 % TriScatteredInterp way (with natural neighbour
-                % interpolation) Use a try/catch to account for the
-                % different grids over which the humidity and sealevel
-                % pressure data are sampled.
-                try
-                    ftsin = TriScatteredInterp(data.x(:), data.y(:), currvar(:), 'natural');
-                catch err
-                    % In my experience, the matlabpool size - 1 is the
-                    % first iteration that actually gets printed to the
-                    % display.
-                    if i == matlabpool('size') - 1
-                        % Only print the warning on the "first" iteration.
-                        warning([err.identifier, ': Some NCEP data are projected' ...
-                            ' onto a different grid. Check you have specified' ...
-                            ' data.xalt and data.yalt arrays which are on the' ...
-                            ' same grid as the data to be interpolated.'])
-                    end
-                    ftsin = TriScatteredInterp(data.xalt(:), data.yalt(:), currvar(:), 'natural');
+                % interpolation). Instead of the quite crude try/catch that
+                % was here, count the number of elements in the coordinate
+                % (xx and yy) and data (currvar) arrays: if they differ,
+                % try the same thing with the xxalt and xyalt coordinate
+                % arrays. If they still differ, then error out. The reason
+                % for this different approach is that the parfor sometimes
+                % failed for me when using non-NCEP data as the source for
+                % the interpolation.
+                ndata = numel(currvar(~isnan(currvar)));
+                nxx = numel(xx);
+                nyy = numel(yy);
+                assert(nxx == nyy, 'Inconsistent coordinate array sizes.')
+                if nxx == ndata
+                    ftsin = TriScatteredInterp(...
+                        xx, ...
+                        yy, ...
+                        currvar(~isnan(currvar(:))), ...
+                        'natural');
+                elseif exist('xxalt', 'var') && numel(xxalt) == ndata
+                    ftsin = TriScatteredInterp(...
+                        xxalt, ...
+                        yyalt, ...
+                        currvar(~isnan(currvar(:))), ...
+                        'natural');
+                else
+                    error('Can''t interpolate the data: non-matching coordinate array sizes.')
                 end
+%                 try
+%                     ftsin = TriScatteredInterp(...
+%                         xx, ...
+%                         yy, ...
+%                         currvar(~isnan(currvar(:))), ...
+%                         'natural');
+%                 catch err
+%                     % In my experience, the matlabpool size - 1 is the
+%                     % first iteration that actually gets printed to the
+%                     % display.
+%                     if i == matlabpool('size') - 1
+%                         % Only print the warning on the "first" iteration.
+%                         warning([err.identifier, ': Some NCEP data are projected' ...
+%                             ' onto a different grid. Check you have specified' ...
+%                             ' data.xalt and data.yalt arrays which are on the' ...
+%                             ' same grid as the data to be interpolated.'])
+%                     end
+%                     ftsin = TriScatteredInterp(xxalt, yyalt, ...
+%                         currvar(~isnan(currvar(:))), 'natural');
+%                 end
+
                 % Serial version:
                 % fvcom.(vars{vv}).node(:,i) = ftsin(x,y);
                 % fvcom.(vars{vv}).data(:,i) = ftsin(xc,yc);
@@ -242,9 +312,14 @@ for vv = 1:length(vars)
     end
 end
 
-if wasOpened
-    matlabpool close
-end
+% if wasOpened
+%     matlabpool close
+% end
+
+% Better way of closing the pool after each invocation (though this might
+% incur some overhead due to the time it takes to spin up/close down a
+% MATLAB pool of workers).
+cleaner = onCleanup(@() matlabpool('close'));
 
 if ftbverbose
     fprintf('end   : %s \n', subname)
@@ -256,22 +331,41 @@ end
 %
 % figure
 %
-% vartoplot='nshf';
+% vartoplot = 'nswrf';
+% tidx = 12; % time index
 %
 % subplot(2, 1, 1)
-% pcolor(data.lon, data.lat, data.(vartoplot).data(:, :, 1)')
+% try
+%     pcolor(data.lon, data.lat, data.(vartoplot).data(:, :, tidx)')
+% catch
+%     pcolor(data.lon, data.lat, data.(vartoplot)(:, :, tidx)')
+% end
 % shading flat
 % axis('equal', 'tight')
-% title([vartoplot, ' (NCEP)'])
+% title([vartoplot, ' (regularly gridded)'])
 % colorbar
-% caxis([min(min(data.(vartoplot).data(:, :, 1))), max(max(data.(vartoplot).data(:, :, 1)))])
+% try
+%     caxis([min(fvcom.(vartoplot).data(:, tidx)), max(fvcom.(vartoplot).data(:, tidx))])
+% catch
+%     caxis([min(fvcom.(vartoplot)(:, tidx)), max(fvcom.(vartoplot)(:, tidx))])
+% end
+% axis([min(Mobj.lon), max(Mobj.lon), min(Mobj.lat), max(Mobj.lat)])
 %
 % subplot(2, 1, 2)
-% patch('Vertices', [Mobj.lon, Mobj.lat], 'Faces', Mobj.tri, 'cData', fvcom.(vartoplot).data(:, 1));
+% try
+%     patch('Vertices', [Mobj.lon, Mobj.lat], 'Faces', Mobj.tri, 'cData', fvcom.(vartoplot).data(:, tidx));
+% catch
+%     patch('Vertices', [Mobj.lon, Mobj.lat], 'Faces', Mobj.tri, 'cData', fvcom.(vartoplot)(:, tidx));
+% end
 % shading flat
 % axis('equal')
 % axis([min(data.lon(:)), max(data.lon(:)), min(data.lat(:)), max(data.lat(:))])
 % title([vartoplot, ' (interpolated)'])
 % colorbar
-% caxis([min(min(data.(vartoplot).data(:, :, 1))), max(max(data.(vartoplot).data(:, :, 1)))])
+% try
+%     caxis([min(fvcom.(vartoplot).data(:, tidx)), max(fvcom.(vartoplot).data(:, tidx))])
+% catch
+%     caxis([min(fvcom.(vartoplot)(:, tidx)), max(fvcom.(vartoplot)(:, tidx))])
+% end
+% axis([min(Mobj.lon), max(Mobj.lon), min(Mobj.lat), max(Mobj.lat)])
 
