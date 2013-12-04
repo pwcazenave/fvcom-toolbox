@@ -137,7 +137,7 @@ for f = 1:length(files)
 
             if isfield(MetUM, safename)
                 switch varname
-                    case {'x', 'y', 'x_1', 'y_1', 'longitude', 'latitude'}
+                    case {'x', 'y', 'x_1', 'y_1', 'longitude', 'latitude', 'lsm'}
                         continue
                     case {'t', 't_1', 't_2', 't_3', 't_4', 't_5', 't_6', 't_7', 't_8'}
                         % Ignore time variables.
@@ -184,7 +184,7 @@ for f = 1:length(files)
                 end
             else % first time around
                 switch varname
-                    case {'x', 'y', 'x_1', 'y_1', 'longitude', 'latitude'}
+                    case {'x', 'y', 'x_1', 'y_1', 'longitude', 'latitude', 'lsm'}
                         MetUM.(safename).data = tmpdata;
                     case {'t', 't_1', 't_2', 't_3', 't_4', 't_5', 't_6', 't_7', 't_8'}
                         % Ignore time variables.
