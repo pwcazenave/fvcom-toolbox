@@ -25,10 +25,9 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %
 % The fields in data may be called any of:
 %     - 'u10', 'v10', 'uwnd', 'vwnd' - wind components
-%     - 'slp'               - sea level pressure
+%     - 'slp' or 'pres'     - mean sea level pressure
 %     - 'Et'                - evaporation
 %     - 'prate' or 'P_E'    - precipitation
-%     - 'slp'               - sea level pressure
 %     - 'nlwrs'             - net longwave radiation*,**
 %     - 'nswrs'             - net shortwave radiation*,**
 %     - 'shtfl'             - sensible heat net flux*,**
@@ -63,6 +62,7 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %   Karen Amoudry (National Oceanography Centre, Liverpool)
+%   Rory O'Hara Murray (Marine Scotland Science)
 %
 % PWC Revision history:
 %   2012-11-01 - First version based on the parts of grid2fvcom_U10V10.m
@@ -434,7 +434,7 @@ for i=1:length(suffixes)
     netcdf.endDef(nc);
 
     % Put the easy ones in first.
-    netcdf.putVar(nc,nv_varid, tri);
+    netcdf.putVar(nc, nv_varid, tri);
     netcdf.putVar(nc,time_varid,0,ntimes,data.time);
     netcdf.putVar(nc,itime_varid,0,ntimes,floor(data.time));
 %     netcdf.putVar(nc,itime2_varid,0,ntimes,mod(data.time,1)*24*3600*1000); % PWC original
@@ -448,9 +448,9 @@ for i=1:length(suffixes)
 
     % Build the time string and output to NetCDF.
     nStringOut = char();
+    [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(data.time);
     for tt=1:ntimes
-        [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(data.time(tt));
-        nDate = [nYr, nMon, nDay, nHour, nMin, nSec];
+        nDate = [nYr(tt), nMon(tt), nDay(tt), nHour(tt), nMin(tt), nSec(tt)];
         nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ',nDate)];
     end
     netcdf.putVar(nc,times_varid,nStringOut);
