@@ -26,7 +26,7 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 % The fields in data may be called any of:
 %     - 'u10', 'v10', 'uwnd', 'vwnd' - wind components
 %     - 'slp' or 'pres'     - mean sea level pressure
-%     - 'Et'                - evaporation
+%     - 'Et' or 'evap'      - evaporation
 %     - 'prate' or 'P_E'    - precipitation
 %     - 'nlwrs'             - net longwave radiation*,**
 %     - 'nswrs'             - net shortwave radiation*,**
@@ -290,7 +290,7 @@ for i=1:length(suffixes)
                     used_dims = [used_dims, 'nNodes'];
                 end
 
-            case 'Et'
+            case {'Et', 'evap'}
                 if strcmpi(suffixes{i}, '_evap') || ~multi_out
                     % Evaporation
                     pevpr_varid=netcdf.defVar(nc,'evap','NC_FLOAT',[node_dimid, time_dimid]);
