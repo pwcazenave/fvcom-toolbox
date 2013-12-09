@@ -1,4 +1,4 @@
-function data = get_HYCOM_forcing(Mobj, modelTime)
+function data = get_HYCOM_forcing(Mobj, modelTime, varlist)
 % Get mean flow, temperature, salinity, surface elevation and denstiy data
 % from HYCOM model outputs through their OPeNDAP server.
 %
@@ -14,19 +14,34 @@ function data = get_HYCOM_forcing(Mobj, modelTime)
 %           present in Mobj.
 %           - lon, lat - longitude and latitudes of the model grid nodes.
 %   modelTime - Modified Julian Date start and end times
+%   varlist - [optional] cell array of variables to download. Use HYCOM
+%       names (e.g. ssh, salinity, temperature, u, v, density). If omitted,
+%       downloads salinity, temperature and ssh only.
 %
 % OUTPUT:
 %   data - struct of the data necessary to force FVCOM. These can be
-%   interpolated onto an unstructured grid in Mobj using grid2fvcom.m.
+%   interpolated onto the unstructured grid in Mobj using grid2fvcom.m.
 %
-% The parameters which are obtained from the HYCOM data are:
-%     - time
-%     - temperature
-%     - salinity
-%     - u mean flow component [currently disabled]
-%     - v mean flow component [currently disabled]
-%     - density [currently disabled]
-%     - daily mean sea surface height
+% The parameters (and the corresponding field names returned) which are
+% obtained from the HYCOM data are:
+%     - time [MT]
+%     - temperature [temperature]
+%     - salinity [salinity]
+%     - u mean flow component [currently disabled] [u]
+%     - v mean flow component [currently disabled] [v]
+%     - density [currently disabled] [density]
+%     - daily mean sea surface height [ssh]
+%
+% EXAMPLE USAGE:
+%   To download the default parameters (temperature, salinity and ssh):
+%
+%       modeltime = [55561, 55591]; % time period in Modified Julian Days
+%       hycom = get_HYCOM_forcing(Mobj, modeltime);
+%
+%   To download only sea surface height and density:
+%
+%       modeltime = [55561, 55591]; % time period in Modified Julian Days
+%       hycom = get_HYCOM_forcing(Mobj, modeltime, {'ssh', 'density'})
 %
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -43,6 +58,7 @@ function data = get_HYCOM_forcing(Mobj, modelTime)
 %   stamps from the HYCOM data.
 %   2013-12-02 Add sea surface height to the list of variables that can be
 %   downloaded.
+%   2013-12-09 Add ability to specify particular variables to download.
 %
 %==========================================================================
 
@@ -67,6 +83,14 @@ if datenum(currdate) < v714date
         'support and this function relies on that support. If you ', ...
         'require this function, you will have to add the ', ...
         'functionality with the third-party OPeNDAP toolbox.'])
+end
+
+% Check if we've been given a cell array of variables and set the varlist
+% to that, otherwise default to temperature, salinity and sea surface
+% height.
+assert(iscell(varlist), 'List of variables to extract must be a cell array: {''var1'', ''var2''}')
+if nargin == 2
+    varlist = {'temperature', 'salinity', 'ssh'};
 end
 
 % Get the extent of the model domain (in spherical).
@@ -107,13 +131,19 @@ hycom.Depth         = [url, suffix.Depth];          % water depth [2D]
 hycom.temperature   = [url, suffix.temperature];    % [4D]
 hycom.salinity      = [url, suffix.salinity];       % [4D]
 hycom.ssh           = [url, suffix.ssh];            % sea surface height [3D]
-% % Leave out U and V velocities and density for the time being (the HYCOM
-% % OPeNDAP server is slow enough as it is).
-% % hycom.u             = [url, suffix.u];              % mean flow % [4D]
-% % hycom.v             = [url, suffix.v];              % mean flow % [4D]
-% % hycom.density       = [url, suffix.density];        % don't need for now
+hycom.u             = [url, suffix.u];              % mean flow [4D]
+hycom.v             = [url, suffix.v];              % mean flow [4D]
+hycom.density       = [url, suffix.density];        % water density [4D]
 % hycom.X             = [url, suffix.X];              % crashes MATLAB...
 % hycom.Y             = [url, suffix.Y];              % crashes MATLAB...
+
+% Before we go off downloading data, check the variables we've been asked
+% for are actually valid HYCOM names.
+for vv = 1:length(varlist)
+    if iscell(varlist) && ~isfield(hycom, varlist{vv})
+        error('Variable %s is not a valid HYCOM variable name.', varlist{vv})
+    end
+end
 
 data.time = [];
 
@@ -203,7 +233,7 @@ if datenum(currdate) > v714date
             % for the time indices for each time step later.
             data.MT.data{c} = netcdf.getVar(ncid, varid, 'double');
 
-            % Convert to MATLAB days and then to Modified Julian Days.
+            % Convert to Gregorian date and then to Modified Julian Days.
             t{c} = datevec(data.MT.data{c} + datenum(1900, 12, 31, 0, 0, 0));
             tmjd{c} = greg2mjulian(t{c}(:,1), t{c}(:,2), t{c}(:,3), t{c}(:,4), t{c}(:,5), t{c}(:,6));
 
@@ -226,7 +256,10 @@ end
 
 netcdf.close(ncid);
 
-fields = fieldnames(hycom);
+% Set the fields to iterate through to be the varlist plus those which are
+% essential (time, positions and depth).
+% fields = fieldnames(hycom);
+fields = ['MT', 'Longitude', 'Latitude', 'Depth', varlist];
 
 for aa = 1:length(fields)
 
