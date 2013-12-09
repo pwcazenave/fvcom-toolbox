@@ -104,13 +104,13 @@ end
 
 % Run jobs on multiple workers if we have that functionality. Not sure if
 % it's necessary, but check we have the Parallel Toolbox first.
-wasOpened = false;
+% wasOpened = false;
 if license('test', 'Distrib_Computing_Toolbox')
     % We have the Parallel Computing Toolbox, so launch a bunch of workers.
     if matlabpool('size') == 0
         % Force pool to be local in case we have remote pools available.
         matlabpool open local
-        wasOpened = true;
+%         wasOpened = true;
     end
 end
 
