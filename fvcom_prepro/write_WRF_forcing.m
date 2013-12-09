@@ -13,8 +13,8 @@ function write_WRF_forcing(WRF, filename)
 %       lat   : latitude, rectangular array (see MESHGRID).
 %       time  : Modified Julian Day times.
 %       pres  : surface pressure [mb]
-%       nswrf : shortwave radiation (upward = negative) [W/m^{2}]
-%       nlwrf : longwave radiation (upward = negative) [W/m^{2}]
+%       nswrs : shortwave radiation (upward = negative) [W/m^{2}]
+%       nlwrs : longwave radiation (upward = negative) [W/m^{2}]
 %       nshf  : net surface heat flux (ocean losing = negative) [W/m^{2}]
 %       u10   : eastward wind velocity [m/s]
 %       v10   : northward wind velocity [m/s]
@@ -42,6 +42,9 @@ function write_WRF_forcing(WRF, filename)
 %   net_heat_flux variable (rather than Net_heat). Adjusted accordingly.
 %   2013-10-24 - Add full suite of variables so that HEATING_CALCULATED can
 %   be used instead.
+%   2013-12-05 - Fix names of the fields for long and shortwave radiation
+%   to match the NCEP ones (from n{l,s}wrf to n{l,s}wrs i.e. change last
+%   letter from f to s).
 %
 %==========================================================================
 
@@ -113,19 +116,19 @@ netcdf.putAtt(nc, times_varid, 'description', 'GMT time');
 % netcdf.putAtt(nc, times_varid, 'format', 'String: Calendar Time');
 % netcdf.putAtt(nc, times_varid, 'time_zone', 'UTC');
 
-nswrf_varid = netcdf.defVar(nc, 'Shortwave', 'NC_FLOAT', [we_dimid, sn_dimid, time_dimid]);
-netcdf.putAtt(nc, nswrf_varid, 'long_name', 'Shortwave, upward is negative');
-netcdf.putAtt(nc, nswrf_varid, 'units', 'W m-2');
-netcdf.putAtt(nc, nswrf_varid, 'grid', 'wrf_grid');
-netcdf.putAtt(nc, nswrf_varid, 'coordinates', 'lat lon');
-netcdf.putAtt(nc, nswrf_varid, 'type', 'data');
+nswrs_varid = netcdf.defVar(nc, 'Shortwave', 'NC_FLOAT', [we_dimid, sn_dimid, time_dimid]);
+netcdf.putAtt(nc, nswrs_varid, 'long_name', 'Shortwave, upward is negative');
+netcdf.putAtt(nc, nswrs_varid, 'units', 'W m-2');
+netcdf.putAtt(nc, nswrs_varid, 'grid', 'wrf_grid');
+netcdf.putAtt(nc, nswrs_varid, 'coordinates', 'lat lon');
+netcdf.putAtt(nc, nswrs_varid, 'type', 'data');
 
-nlwrf_varid = netcdf.defVar(nc, 'long_wave', 'NC_FLOAT', [we_dimid, sn_dimid, time_dimid]);
-netcdf.putAtt(nc, nlwrf_varid, 'long_name', 'Longwave, upward is negative');
-netcdf.putAtt(nc, nlwrf_varid, 'units', 'W m-2');
-netcdf.putAtt(nc, nlwrf_varid, 'grid', 'wrf_grid');
-netcdf.putAtt(nc, nlwrf_varid, 'coordinates', 'lat lon');
-netcdf.putAtt(nc, nlwrf_varid, 'type', 'data');
+nlwrs_varid = netcdf.defVar(nc, 'long_wave', 'NC_FLOAT', [we_dimid, sn_dimid, time_dimid]);
+netcdf.putAtt(nc, nlwrs_varid, 'long_name', 'Longwave, upward is negative');
+netcdf.putAtt(nc, nlwrs_varid, 'units', 'W m-2');
+netcdf.putAtt(nc, nlwrs_varid, 'grid', 'wrf_grid');
+netcdf.putAtt(nc, nlwrs_varid, 'coordinates', 'lat lon');
+netcdf.putAtt(nc, nlwrs_varid, 'type', 'data');
 
 nshf_varid = netcdf.defVar(nc, 'net_heat_flux', 'NC_FLOAT', [we_dimid, sn_dimid, time_dimid]);
 netcdf.putAtt(nc, nshf_varid, 'long_name', 'Sum of shortwave, longwave, sensible and latent heat fluxes, ocean lose heat is negative');
@@ -207,8 +210,8 @@ netcdf.putVar(nc, times_varid, [0, 0], [19, ntimes], nStringOut);
 % And the rest...
 netcdf.putVar(nc, x_varid, x');
 netcdf.putVar(nc, y_varid, flipdim(y', 2));
-netcdf.putVar(nc, nswrf_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nswrf, 2));
-netcdf.putVar(nc, nlwrf_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nlwrf, 2));
+netcdf.putVar(nc, nswrs_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nswrs, 2));
+netcdf.putVar(nc, nlwrs_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nlwrs, 2));
 netcdf.putVar(nc, nshf_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nshf, 2));
 netcdf.putVar(nc, u10_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.u10, 2));
 netcdf.putVar(nc, v10_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.v10, 2));
