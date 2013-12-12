@@ -160,10 +160,10 @@ for ii = 1:numvars
     for vv = 1:nf
         if strcmp(varname, fnames{vv}) && writtenAlready == 0
             if ftbverbose
-                fprintf('new data... ')
+                fprintf('NEW DATA... ')
             end
-            % To make the scaling go from the initial value to the POLCOMS
-            % value, we need to scale the difference between the end
+            % To make the scaling go from the initial value to the supplied
+            % data value, we need to scale the difference between the end
             % members by the scaling factor at each time and add to the
             % current time's value.
             sfvdata = nan(nd, ns, nt);
