@@ -42,6 +42,9 @@ function Mobj = interp_HYCOM2FVCOM(Mobj, hycom, start_date, varlist)
 %
 % Revision history
 %   2013-09-10 First version based on interp_POLCOMS2FVCOM.m.
+%   2013-12-10 Fix the identification of the time index in the HYCOM data
+%   (use hycom.time instead of Mobj.ts_times). Also ignore a field name of
+%   'MT' if supplied in varlist.
 %
 %==========================================================================
 
@@ -73,14 +76,14 @@ fe = numel(Mobj.lonc);
 stime = greg2mjulian(start_date(1), start_date(2), ...
     start_date(3), start_date(4), ...
     start_date(5), start_date(6));
-[~, tidx] = min(abs(Mobj.ts_times - stime));
+[~, tidx] = min(abs(hycom.time - stime));
 
 for vv = 1:length(varlist);
     
     currvar = varlist{vv};
 
     switch currvar
-        case {'lon', 'lat', 'longitude', 'latitude', 't_1', 'time', 'Depth'}
+        case {'lon', 'lat', 'longitude', 'latitude', 't_1', 'time', 'Depth', 'MT'}
             continue
 
         otherwise
