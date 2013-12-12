@@ -1,4 +1,4 @@
-function data = get_HYCOM_forcing(Mobj, modelTime, varlist)
+function data = get_HYCOM_forcing(Mobj, modelTime, varargin)
 % Get mean flow, temperature, salinity, surface elevation and denstiy data
 % from HYCOM model outputs through their OPeNDAP server.
 %
@@ -15,7 +15,7 @@ function data = get_HYCOM_forcing(Mobj, modelTime, varlist)
 %           - lon, lat - longitude and latitudes of the model grid nodes.
 %   modelTime - Modified Julian Date start and end times
 %   varlist - [optional] cell array of variables to download. Use HYCOM
-%       names (e.g. ssh, salinity, temperature, u, v, density). If omitted,
+%       names (e.g. ssh, salinity, temperature, u, v). If omitted,
 %       downloads salinity, temperature and ssh only.
 %
 % OUTPUT:
@@ -27,9 +27,8 @@ function data = get_HYCOM_forcing(Mobj, modelTime, varlist)
 %     - time [MT]
 %     - temperature [temperature]
 %     - salinity [salinity]
-%     - u mean flow component [currently disabled] [u]
-%     - v mean flow component [currently disabled] [v]
-%     - density [currently disabled] [density]
+%     - u mean flow component [u]
+%     - v mean flow component [v]
 %     - daily mean sea surface height [ssh]
 %
 % EXAMPLE USAGE:
@@ -38,10 +37,10 @@ function data = get_HYCOM_forcing(Mobj, modelTime, varlist)
 %       modeltime = [55561, 55591]; % time period in Modified Julian Days
 %       hycom = get_HYCOM_forcing(Mobj, modeltime);
 %
-%   To download only sea surface height and density:
+%   To download only sea surface height:
 %
 %       modeltime = [55561, 55591]; % time period in Modified Julian Days
-%       hycom = get_HYCOM_forcing(Mobj, modeltime, {'ssh', 'density'})
+%       hycom = get_HYCOM_forcing(Mobj, modeltime, {'ssh'})
 %
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -59,6 +58,7 @@ function data = get_HYCOM_forcing(Mobj, modelTime, varlist)
 %   2013-12-02 Add sea surface height to the list of variables that can be
 %   downloaded.
 %   2013-12-09 Add ability to specify particular variables to download.
+%   2013-12-12 Fix the handling of the variable input list of field names.
 %
 %==========================================================================
 
@@ -88,9 +88,11 @@ end
 % Check if we've been given a cell array of variables and set the varlist
 % to that, otherwise default to temperature, salinity and sea surface
 % height.
-assert(iscell(varlist), 'List of variables to extract must be a cell array: {''var1'', ''var2''}')
 if nargin == 2
     varlist = {'temperature', 'salinity', 'ssh'};
+else
+    assert(iscell(varargin{1}), 'List of variables to extract must be a cell array: {''var1'', ''var2''}')
+    varlist = varargin{1};
 end
 
 % Get the extent of the model domain (in spherical).
@@ -118,7 +120,7 @@ suffix.temperature  = '?temperature';
 suffix.salinity     = '?salinity';
 suffix.u            = '?u';
 suffix.v            = '?v';
-suffix.density      = '?density';
+% suffix.density      = '?density';
 suffix.ssh          = '?ssh';
 suffix.X            = '?X';
 suffix.Y            = '?Y';
@@ -133,7 +135,7 @@ hycom.salinity      = [url, suffix.salinity];       % [4D]
 hycom.ssh           = [url, suffix.ssh];            % sea surface height [3D]
 hycom.u             = [url, suffix.u];              % mean flow [4D]
 hycom.v             = [url, suffix.v];              % mean flow [4D]
-hycom.density       = [url, suffix.density];        % water density [4D]
+% hycom.density       = [url, suffix.density];        % water density [4D]
 % hycom.X             = [url, suffix.X];              % crashes MATLAB...
 % hycom.Y             = [url, suffix.Y];              % crashes MATLAB...
 
