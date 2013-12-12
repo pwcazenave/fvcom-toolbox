@@ -61,14 +61,17 @@ function Mobj = get_FVCOM_rivers(Mobj, dist_thresh)
 %   searches for another node in the element which is part of at least two
 %   elements, thereby avoiding the "element filling" issue. Also updated
 %   the help to list all the required fields in the Mobj.
+%   2013-12-10 - Change the unique call to preserve the order by replacing
+%   'first' with 'stable'. This requires a relatively modern MATLAB
+%   (post-2011b).
 %
 %==========================================================================
 
 subname = 'get_FVCOM_rivers';
 
-global ftbverbose;
+global ftbverbose
 if ftbverbose
-    fprintf(['\nbegin : ' subname '\n'])
+    fprintf('\nbegin : %s \n', subname)
 end
 
 % Check inputs
@@ -89,7 +92,7 @@ polcoms_flow = Mobj.rivers.discharge;
 % For duplicates, we need, therefore, to work out a way to handle them
 % elegantly. We will assume that rivers with the same name are close to one
 % another. As such, we'll sum their discharges. 
-[~, di] = unique(fvcom_name, 'first');
+[~, di] = unique(fvcom_name, 'stable'); % stable preserves order.
 fv_dupes = 1:length(fvcom_name);
 fv_dupes(di) = []; % index of duplicates (does this work with more than two?)
 
