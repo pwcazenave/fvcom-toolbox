@@ -23,12 +23,12 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %           - positions - river positions in lon, lat.
 %           - names - list of river names
 %           - river_flux - path to the EHYPE ASCII file data directory.
-%   dist_thresh - [optional] maximum distance away from a river node beyond
+%   dist_thresh - maximum distance away from a river node beyond
 %       which the search for an FVCOM node is abandoned. Units in degrees.
-%   model_year - [optional] When giving climatology, a year must be
-%   specified so that the time series can be anchored in time. The returned
-%   time series will be 3 years long centred on the specified year.
-%   Discharges will be repeated for the two additional years.
+%   model_year - [optional] when giving climatology, a year must be
+%       specified so that the time series can be anchored in time. The
+%       returned time series will be 3 years long centred on the specified
+%       year. Discharges will be repeated for the two additional years.
 %
 % OUTPUT:
 %   Mobj.river_flux - volume flux at the nodes within the model domain.
@@ -52,6 +52,7 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %   2013-11-15 - Add support for using a river climatology from the E-HYPE
 %   time series data (must be precomputed) instead of a specified section
 %   of the E-HYPE model output.
+%   2013-12-12 - Remove some redundant variables.
 %
 %==========================================================================
 
@@ -96,15 +97,14 @@ tlat = Mobj.lat(coast_nodes);
 
 fv_obc = nan;
 fvcom_names = cell(0);
-fv_riv_idx = nan;
 
 for ff = 1:fv_nr
-    % Find the open boundary node closest to this river.
+    % Find the coastline node closest to this river.
     fv_dist = sqrt( ...
         (ehype_xy(ff, 1) - tlon).^2 + ...
         (ehype_xy(ff, 2) - tlat).^2);
     [c, idx] = min(fv_dist);
-    if c > dist_thresh && dist_thresh ~= -1 % -1 is for no distance check
+    if c > dist_thresh
         if ftbverbose
             fprintf('\tskipping river %07d (%f, %f [%fdeg away])\n', ehype_name(ff), ehype_xy(ff, 1), ehype_xy(ff, 2), c)
         end
@@ -178,7 +178,6 @@ for ff = 1:fv_nr
     % the discharges for the rivers will be incorrect (i.e. you might put
     % the Severn discharge somewhere in the Baltic).
     fvcom_names{vc} = sprintf('%07d', ehype_name(ff));
-    fv_riv_idx(vc) = ff;
     fid = fopen(fullfile(ehype_flow, [fvcom_names{vc}, '.txt']));
     assert(fid >= 0, 'Failed to open E-HYPE river flow data.')
     if nargin ~= 3
