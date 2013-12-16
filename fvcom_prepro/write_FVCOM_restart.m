@@ -192,7 +192,7 @@ for ii = 1:numvars
         % restart file with an arbitrary time period.
         elseif strcmpi(varname, 'time') && writtenAlready == 0 && nargin == 4
             if ftbverbose
-                fprintf('new data... ')
+                fprintf('NEW DATA... ')
             end
             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
@@ -202,7 +202,7 @@ for ii = 1:numvars
 
         elseif strcmpi(varname, 'Times') && writtenAlready == 0 && nargin == 4
             if ftbverbose
-                fprintf('new data... ')
+                fprintf('NEW DATA... ')
             end
             tmp_time = [];
             for i = 1:nt;
@@ -214,7 +214,7 @@ for ii = 1:numvars
 
         elseif strcmpi(varname, 'Itime') && writtenAlready == 0 && nargin == 4
             if ftbverbose
-                fprintf('new data... ')
+                fprintf('NEW DATA... ')
             end
             tmp_start_time = greg2mjulian(start_date(1), start_date(2), start_date(3) - 7, start_date(4), start_date(5), start_date(6));
             tmp_time = tmp_start_time:(tmp_start_time + nt - 1);
