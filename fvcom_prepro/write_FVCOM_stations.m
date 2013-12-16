@@ -1,6 +1,5 @@
 function [Mobj]  = write_FVCOM_stations(Mobj,filename)
-
-% Add a set of stations at which FVCOM will output time series. 
+% Add a set of stations at which FVCOM will output wave data.
 %
 % function write_FVCOM_stations(Mobj,filename)
 %
@@ -19,12 +18,12 @@ function [Mobj]  = write_FVCOM_stations(Mobj,filename)
 % EXAMPLE USAGE
 %    write_FVCOM_stations(Mobj, 'tst_stations.dat')
 %
-% Author(s):  
+% Author(s):
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
 %    2012-11-30 First version.
-%   
+%
 %==========================================================================
 subname = 'write_FVCOM_stations';
 global ftbverbose
@@ -36,18 +35,18 @@ end
 % Parse input arguments
 %--------------------------------------------------------------------------
 if exist('Mobj', 'var') ~= 1 || exist('filename', 'var') ~= 1
-	error('arguments to %s are incorrect', subname)
+    error('arguments to %s are incorrect', subname)
 end
 
 %--------------------------------------------------------------------------
 % Dump the file
 %--------------------------------------------------------------------------
 if strcmpi(Mobj.nativeCoords, 'cartesian')
-	x = Mobj.Positions(:,3);
-	y = Mobj.Positions(:,4);
+    x = Mobj.Positions(:,3);
+    y = Mobj.Positions(:,4);
 elseif strcmpi(Mobj.nativeCoords, 'spherical')
-	x = Mobj.Positions(:,1);
-	y = Mobj.Positions(:,2);
+    x = Mobj.Positions(:,1);
+    y = Mobj.Positions(:,2);
 else
     error('Unknown native coordinate system string: %s', Mobj.nativeCoords)
 end
@@ -61,7 +60,7 @@ fprintf(fid, ' No           X        Y      Node (Cell)        Station Name\n');
 
 for s=1:length(Mobj.stations)
     fprintf(fid, '%i %f %f %i %f %s\n', cell2mat(Mobj.stations{s}(1:5)), char(Mobj.stations{s}(6)));
-end   
+end
 
 fclose(fid);
 
