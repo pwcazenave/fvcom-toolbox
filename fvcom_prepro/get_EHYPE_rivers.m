@@ -53,6 +53,8 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %   time series data (must be precomputed) instead of a specified section
 %   of the E-HYPE model output.
 %   2013-12-12 - Remove some redundant variables.
+%   2013-12-13 - Remove the loop through the time at the end and instead
+%   use greg2mjulian to work on the whole time vector array.
 %
 %==========================================================================
 
@@ -262,13 +264,10 @@ if max(checkdate) < 367
 else
     % Time series.
     rtimes = datevec(eflow{1});
-    Mobj.river_time = nan(ehype_nt, 1);
-    for tt = 1:ehype_nt
-        Mobj.river_time(tt) = greg2mjulian( ...
-            rtimes(tt, 1), rtimes(tt, 2), rtimes(tt, 3), ...
-            rtimes(tt, 4), rtimes(tt, 5), rtimes(tt, 6) ...
-            );
-    end
+    Mobj.river_time = greg2mjulian(...
+        rtimes(:, 1), rtimes(:, 2), rtimes(:, 3), ...
+        rtimes(:, 4), rtimes(:, 5), rtimes(:, 6) ...
+    );
 
     % Add the river flux to the Mobj for the time series data.
     Mobj.river_flux = fv_uniq_flow;
