@@ -20,18 +20,33 @@
 function plot_fvcom_field(M, plot_field, varargin)
 MJD_datenum = datenum('1858-11-17 00:00:00');
 
-xE = M.x(M.nv)';
-yE = M.y(M.nv)';
+% check to see if nv or tri should be used.
+if isfield(M, 'nv')
+    nv = M.nv;
+elseif isfield(M, 'tri')
+    nv = M.tri;
+end
+
+% check to see if a time variable is there or not
+if isfield(M, 'time') %& size(M.time,1)>1
+    time_flag = true;
+else
+    time_flag = false;
+end
+
+xE = M.x(nv)';
+yE = M.y(nv)';
 plot_field = squeeze(plot_field);
 
-if size(plot_field,1)==size(M.nv,1) % plot on elements
+if size(plot_field,1)==size(nv,1) % plot on elements
     patch_func = @(dummy) patch(xE, yE, dummy', 'linestyle', 'none');
 elseif size(plot_field,1)==size(M.x,1) % plot on nodes
-    patch_func = @(dummy) patch('Vertices',[M.x, M.y], 'Faces',M.nv, 'Cdata',dummy,'linestyle','none','facecolor','interp');
+    patch_func = @(dummy) patch('Vertices',[M.x, M.y], 'Faces',nv, 'Cdata',dummy,'linestyle','none','facecolor','interp');
 end
 
 % defaults
 clims = [min(plot_field(:)) max(plot_field(:))];
+if clims(1)==clims(2) clims(1)=clims(1)-0.1; clims(2)=clims(2)+0.1; end
 gif = false;
 
 for ii=1:1:length(varargin)
@@ -59,7 +74,7 @@ for ii=1:size(plot_field,2)
     patch_func(plot_field(:,ii));
     colorbar
     set(gca, 'clim', clims)
-    title(['time = ' datestr(M.time(ii)+MJD_datenum, 'HH:MM dd/mm/yyyy')])
+    if time_flag title(['time = ' datestr(M.time(ii)+MJD_datenum, 'HH:MM dd/mm/yyyy')]); end
     
     if gif
         axis off

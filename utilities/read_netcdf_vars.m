@@ -12,7 +12,7 @@ function [M] = read_netcdf_vars(varargin)
 %   Pass the variable names that you want to extract
 %   [optional pair] filename, the netCDF filename
 %   [optional triple] dimrange, the dimension name, the dimension range
-
+%
 % EXAMPLE USAGE
 %   Extract variables time, x, y
 %   M = read_netcdf_vars('time', 'x', 'y');
@@ -51,7 +51,7 @@ for ii=1:1:length(varargin)
         case 'dimrange'
             dimrange = true;
             subsample_num = subsample_num + 1;
-            subsample_dim(subsample_num) = {varargin{ii+1}}
+            subsample_dim(subsample_num) = {varargin{ii+1}};
             subsample_ran(:,subsample_num) = varargin{ii+2};
             freeI([ii ii+1 ii+2]) = 0;
     end
@@ -72,6 +72,23 @@ ncid = netcdf.open(netcdf_filename, 'NC_NOWRITE');
 
 [ndims,nvars,ngatts,unlimdimid] = netcdf.inq(ncid);
 
+% get a list of the variables avaliable and check the inputs
+for ii=0:nvars-1
+    variable_names_avaliable{ii+1} = netcdf.inqVar(ncid, ii);
+end
+test = [];
+for ii=1:size(varnames,2);
+    test1 = strmatch(varnames{ii}, variable_names_avaliable, 'exact');
+    if size(test1,1)==0 test = [test ii]; end
+end
+
+if sum(test)>0
+    disp([varnames(test) ' could not be found']);
+    disp(['variables avaliable are: ' variable_names_avaliable]);
+    M = 0; netcdf.close(ncid);
+    return
+end
+    
 % Get global attributes
 for ii=1:ngatts
     M.gattname{ii} = netcdf.inqAttName(ncid,netcdf.getConstant('NC_GLOBAL'),ii-1);

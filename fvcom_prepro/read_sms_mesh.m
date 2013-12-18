@@ -36,7 +36,7 @@ function [Mobj] = read_sms_mesh(varargin)
 %   headers.
 %   2013-10-01 Further improved ability to read files with variable length
 %   headers (ROM).
-%   
+%   2013-12-11 Closed the sms_2dm file usig fclose (ROM).
 %==============================================================================
 
 subname = 'read_sms_mesh';
@@ -236,7 +236,7 @@ if(coordinate(1:5) == 'spher')
 else
 	have_xy = true;
 end;
-
+fclose(fid);
 
 %------------------------------------------------------------------------------
 % Read the topography from the bathymetry file
