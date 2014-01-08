@@ -24,7 +24,7 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %       for specific forcing data (wind, heating and precipitation).
 %
 % The fields in data may be called any of:
-%     - 'u10', 'v10', 'uwnd', 'vwnd' - wind components
+%     - 'u10', 'v10' or 'uwnd', 'vwnd' - wind components
 %     - 'slp' or 'pres'     - mean sea level pressure
 %     - 'Et' or 'evap'      - evaporation
 %     - 'prate' or 'P_E'    - precipitation
@@ -89,6 +89,9 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   simpler to understand what's going on there. Also update the way the
 %   net surface heat flux is calculated (sum long and short, subtract
 %   latent and sensible).
+%   2014-01-08 - Fix the way the wind variables are handled so that both
+%   the U10/V10 and uwind_speed/vwind_speed netCDF variables are written if
+%   only one of data.u10/data.v10 or data.uwnd/data.vwnd is given.
 %
 % KJA Revision history:
 %   2013-01-16 - Added support for output of sea level pressure.
@@ -262,11 +265,22 @@ for i=1:length(suffixes)
                     netcdf.putAtt(nc,vwind_varid,'grid','fvcom_grid');
                     netcdf.putAtt(nc,vwind_varid,'type','data');
 
-                    % Only on the elements (both U10/V10 and uwind_speed and
-                    % vwind_speed).
+                    % Only on the elements (both U10/V10 and uwind_speed
+                    % and vwind_speed).
                     used_varids = [used_varids, {'u10_varid', 'v10_varid', 'uwind_varid', 'vwind_varid'}];
-                    pref = fnames{vv}(1);
-                    used_fnames = [used_fnames, {[pref, 'wnd'], [regexprep(pref, 'u', 'v'), 'wnd'], [pref, '10'], [regexprep(pref, 'u', 'v'), '10']}];
+                    % We should only have one of {u,v}wnd or {u,v}10 as the
+                    % field name and used_fnames needs to reflect that.
+                    if isfield(data, 'uwnd') && ~isfield(data, 'u10')
+                        % We have uwnd and vwnd variants (no u10/v10).
+                        used_fnames = [used_fnames, {'uwnd', 'vwnd', 'uwnd', 'vwnd'}];
+                    elseif isfield(data, 'u10') && ~isfield(data, 'uwnd')
+                        % We have only u10 and v10 variants (no uwnd/vwnd)
+                        used_fnames = [used_fnames, {'u10', 'v10', 'u10', 'v10'}];
+                    elseif isfield(data, 'u10') && isfield(data, 'uwnd')
+                        error('Supply only one set of wind fields: ''uwnd'' and ''vwnd'' or ''u10'' and ''v10''.')
+                    else
+                        error('Unrecognised wind field names.')
+                    end
                     used_dims = [used_dims, {'nElems', 'nElems', 'nElems', 'nElems'}];
                 end
                 
