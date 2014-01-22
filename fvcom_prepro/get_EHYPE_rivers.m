@@ -9,8 +9,8 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %   unstructured grid node and extract the river discharge from
 %   Mobj.rivers.river_flux. The river positions must fall within the
 %   specified distance (dist_thresh). If multiple rivers are assigned to
-%   the same node, their discharges are summed and the resulting river name
-%   is generated from the contributing rives, separated by a hyphen.
+%   the same node, the river with the larger of the set of discharges is
+%   used.
 %
 % INPUT:
 %   Mobj - MATLAB mesh object containing:
@@ -55,6 +55,8 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %   2013-12-12 - Remove some redundant variables.
 %   2013-12-13 - Remove the loop through the time at the end and instead
 %   use greg2mjulian to work on the whole time vector array.
+%   2014-01-22 - For nodes with mulitple rivers assigned, use the largest
+%   of the rivers rather than summing their fluxes.
 %
 %==========================================================================
 
@@ -211,12 +213,24 @@ for nn = 1:length(fv_uniq_obc)
 
     dn = fv_idx(fv_obc == fv_uniq_obc(nn));
 
-    fv_uniq_flow(:, nn) = sum(fv_flow(:, dn), 2);
-    % Concatenate the river names so we know at least which rivers'
-    % discharges have been summed.
-    s = fvcom_names(dn);
-    s = [sprintf('%s-', s{1:end-1}, s{end})];
-    fv_uniq_names{nn} = s(1:end-1); % lose the trailing -.
+    % Instead of summing the values (which causes very large discharges
+    % because of the way the E-HYPE river mouths are determined), use the
+    % river flux with the largest mean over the entire time series (~20
+    % years).
+    flow_bar = mean(fv_flow(:, dn), 1); % get a mean for each time series
+    [~, max_idx] = max(flow_bar, [], 2);
+    fv_uniq_flow(:, nn) = fv_flow(:, dn(max_idx));
+    fv_uniq_names{nn} = fvcom_names(dn(max_idx));
+
+    % % This is the old way where nodes which are grouped together are
+    % % summed. This yielded unrealistically high discharges, particularly at
+    % % the Fowey near Plymouth. It probably did elsewhere too.
+    %fv_uniq_flow(:, nn) = sum(fv_flow(:, dn), 2);
+    % % Concatenate the river names so we know at least which rivers'
+    % % discharges have been summed.
+    %s = fvcom_names(dn);
+    %s = [sprintf('%s-', s{1:end-1}, s{end})];
+    %fv_uniq_names{nn} = s(1:end-1); % lose the trailing -.
 
 end
 
