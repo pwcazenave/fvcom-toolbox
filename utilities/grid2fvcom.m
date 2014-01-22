@@ -225,7 +225,9 @@ for vv = 1:length(vars)
             % interpolating.
             varname = vars{vv};
             parfor i = 1:ntimes
-                fprintf('interpolating %s, frame %d of %d\n', varname, i, ntimes);
+                if ftbverbose
+                    fprintf('interpolating %s, frame %d of %d\n', varname, i, ntimes);
+                end
 
                 % Serial version:
                 % currvar = data.(vars{vv}).data(:, :, i);
@@ -308,7 +310,9 @@ for vv = 1:length(vars)
             fvcom.(vars{vv}).data = tmp_fvcom_data;
             clear nnans* tmp_*
 
-            fprintf('interpolation of %s complete\n', vars{vv});
+            if ftbverbose
+                fprintf('interpolation of %s complete\n', vars{vv});
+            end
     end
 end
 
