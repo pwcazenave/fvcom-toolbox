@@ -196,15 +196,17 @@ for ff = 1:fv_nr
     if ftbverbose
         fprintf('added (%f, %f)\n', Mobj.lon(fv_obc(vc)), Mobj.lat(fv_obc(vc)))
     end
+
 end
 
 % Get the length of the EHYPE time series.
 ehype_nt = size(fv_flow, 1);
 
-% Now we've got a list and some of the nodes will be duplicates. Sum the
-% discharge values assigned to those nodes.
+% Now we've got a list and some of the nodes will be duplicates. Use the
+% larger of the two discharge values assigned to those nodes and ditch the
+% smaller one. The output is stored in a new fv_uniq_flow array (names and
+% nodes are similarly stored in their unique format).
 fv_uniq_obc = unique(fv_obc);
-
 fv_uniq_flow = nan(ehype_nt, length(fv_uniq_obc));
 fv_uniq_names = cell(length(fv_uniq_obc), 1);
 
@@ -220,7 +222,7 @@ for nn = 1:length(fv_uniq_obc)
     flow_bar = mean(fv_flow(:, dn), 1); % get a mean for each time series
     [~, max_idx] = max(flow_bar, [], 2);
     fv_uniq_flow(:, nn) = fv_flow(:, dn(max_idx));
-    fv_uniq_names{nn} = fvcom_names(dn(max_idx));
+    fv_uniq_names{nn} = fvcom_names{dn(max_idx)};
 
     % % This is the old way where nodes which are grouped together are
     % % summed. This yielded unrealistically high discharges, particularly at
