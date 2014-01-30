@@ -20,7 +20,7 @@ function write_FVCOM_heating(Mobj, fileprefix, data)
 %   data - Struct of the data to be written out.
 %
 % The fields in data may be called any of:
-%     - 'slp'               - sea level pressure
+%     - 'slp' or 'pres'     - sea level pressure
 %     - 'rhum'              - relative humidity
 %     - 'dlwrf'             - downward longwave radiation
 %     - 'dswrf'             - downward shortwave radiation
