@@ -56,7 +56,9 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %   2013-12-13 - Remove the loop through the time at the end and instead
 %   use greg2mjulian to work on the whole time vector array.
 %   2014-01-22 - For nodes with mulitple rivers assigned, use the largest
-%   of the rivers rather than summing their fluxes.
+%   of the rivers rather than summing their fluxes. Also eliminate having
+%   two adjacent river nodes (instead use the average of their flux and
+%   assign the position to the first river node).
 %
 %==========================================================================
 
@@ -237,6 +239,114 @@ for nn = 1:length(fv_uniq_obc)
     %fv_uniq_names{nn} = s(1:end-1); % lose the trailing -.
 
 end
+
+% Some of the river fluxes are being assigned to adjacent coastal nodes.
+% This is no good because we end up putting too much water in (similar
+% problem to the multiple river inputs on a single node which is fixed in
+% the loop above). So, we need to check each node and check its neighbours
+% aren't also rivers. If one (or more?) is, then we need to pick the larger
+% discharge (as defined by the mean over the entire time series) and use
+% that, removing the other node from the list.
+
+% Finding the neighbouring nodes is not as straightforward as it might seem
+% at first. Simply using poly2cw is no good because our coastline is too
+% complicated for that (poly2cw assumes a convex hull). So, we'll find the
+% 2 nearest coastline nodes to each river node. If any of those 2 is also a
+% river, then merge the two rivers together (use the mean discharge).
+
+% This breaks down a bit when three rivers are adjacent to one another, but
+% most of the time that shouldn't happen...
+
+% Build a list of the nodes we're considering as neighbouring in
+% fv_dups_idx and fv_keep_idx. Store the meaned flow in fv_dups_flow (we'll
+% remove the original un-meaned flows at the end). Also store the
+% duplicated names in fv_dups_names. All these duplicate arrays will be
+% sorted out after the loop to find the adjacent nodes has finished. This
+% is less horrible than looping through and adjusting the values in the
+% original arrays because the mean of a meaned value and a new value is not
+% the same as the mean of the three original values, that is:
+%   mean([mean([2, 5]), 10]) ~= mean([2, 5, 10]).
+
+fv_dups_obc = cell(0);
+fv_dups_idx = [];
+fv_dups_flow = fv_uniq_flow;
+fv_dups_names = cell(0);
+fv_uniq_obc_orig = fv_uniq_obc;
+c = 0;
+for nn = 1:length(fv_uniq_obc)
+    [~, idx] = sort(sqrt(...
+        (Mobj.x(coast_nodes) - Mobj.x(fv_uniq_obc(nn))).^2 + ...
+        (Mobj.y(coast_nodes) - Mobj.y(fv_uniq_obc(nn))).^2));
+    if any(ismember(fv_uniq_obc, coast_nodes(idx(2:3))))
+        % Build a list of the indices which we want to merge.
+        fv_dups_idx = [fv_dups_idx, nn];
+
+        c = c + 1;
+        % Remove the current node from the list of river nodes.
+        fv_dups_obc{c, 1} = fv_uniq_obc(nn);
+        fv_dups_obc{c, 2} = fv_uniq_obc(ismember(fv_uniq_obc, coast_nodes(idx(2:3))));
+        fv_uniq_obc(nn) = nan;
+
+        % We can sort out the names and discharges here too. We'll store
+        % the modified fluxes in a copy of the flux array so we can append
+        % them once we've cleaned out the duplicate IDs. This way we can
+        % still get accurate means if we need to reuse a particular node's
+        % flux. Similarly, merge river names into a separate array.
+        fv_dups_flow(:, fv_uniq_obc_orig == fv_dups_obc{c, 1}) = mean([fv_uniq_flow(:, fv_uniq_obc_orig == fv_dups_obc{c, 1}), ...
+            fv_uniq_flow(:, fv_uniq_obc_orig == fv_dups_obc{c, 2})], 2);
+        fv_dups_names{c} = sprintf('%s-%s', fv_uniq_names{fv_uniq_obc_orig == fv_dups_obc{c, 1}}, ...
+            fv_uniq_names{fv_uniq_obc_orig == fv_dups_obc{c, 2}});
+    end
+end
+
+clear c idx
+
+% Now we can remove the duplicate data from the names, nodes and fluxes.
+fv_uniq_obc(fv_dups_idx) = [];
+fv_uniq_flow(:, fv_dups_idx) = [];
+fv_uniq_names(fv_dups_idx) = [];
+% And append the averaged flow, names and nodes to the relevant arrays.
+fv_uniq_flow = cat(2, fv_uniq_flow, fv_dups_flow(:, fv_dups_idx));
+fv_uniq_obc = [fv_uniq_obc, [fv_dups_obc{:, 1}]];
+fv_uniq_names = [fv_uniq_names; fv_dups_names'];
+
+% % Merge the river discharges for the rivers we've identified as adjacent to
+% % one another on the coastline.
+% assert(mod(numel(fv_dups_obc), 2) ~= 1, 'Odd number of river pairs.')
+% assert(mod(length(unique(fv_dups_obc)), 2) ~= 1, 'Duplicate river node in being removed for two separate rivers.')
+% nr = length(fv_dups_obc);
+% for nn = 1:nr
+%     % Find the indices for the flow data for the node to keep and remove.
+%     [~, idx1] = find(fv_uniq_obc_orig == fv_dups_obc{nn, 1}); % keep
+%     [~, idx2] = find(fv_uniq_obc_orig == fv_dups_obc{nn, 2}); % remove
+%     idx = [idx1, idx2]; clear idx1 idx2
+%     % Set the first column to the mean of the two rivers and set the other
+%     % one to NaN. We'll clear out the NaNs afterwards.
+%     fv_uniq_flow(:, idx(1)) = mean(fv_uniq_flow(:, idx), 2);
+%     fv_uniq_flow(:, idx(2)) = nan;
+%
+%     fv_uniq_names{idx(1)} = sprintf('%s-%s', fv_uniq_names{idx(1)}, ...
+%         fv_uniq_names{idx(2)});
+%     fv_uniq_names{idx(2)} = '';
+% end
+%
+% % Collapse the NaNs out of the flow data; rename the rivers to be
+% % hyphenated based on the two source rivers that have been merged.
+% nanidx = 1:size(fv_uniq_flow, 2);
+% nanidx = nanidx(~isnan(fv_uniq_flow(1, :)));
+% fv_uniq_flow = fv_uniq_flow(:, nanidx);
+% % Clear out the empty names too.
+% c = 0;
+% names = cell(0);
+% for i = 1:length(fv_uniq_names)
+%     if ~isempty(fv_uniq_names{i})
+%         c = c + 1;
+%         names{c, 1} = fv_uniq_names{i};
+%     end
+% end
+% fv_uniq_names = names;
+% clear names
+
 
 % Assign the relevant arrays to the Mobj. Flux is added in the section
 % dealing with either climatology or time series data.
