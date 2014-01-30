@@ -1,11 +1,11 @@
 function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
-% Write data out to FVCOM NetCDF forcing file.
+% Write data out to FVCOM netCDF forcing file.
 %
 % write_FVCOM_forcing(Mobj, fvcom_forcing_file, data, infos, fver)
 %
 % DESCRIPTION:
 %   Takes the given interpolated data (e.g. from grid2fvcom) and writes out
-%   to a NetCDF file.
+%   to a netCDF file.
 %
 % INPUT:
 %   Mobj - MATLAB mesh object containing fields:
@@ -14,26 +14,28 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %       nElems - number of grid elements
 %       nativeCoords - model coordinate type ('cartesian' or 'spherical')
 %       x, y or lon, lat - node positions (depending on nativeCoords value)
-%   fileprefix - Output NetCDF file prefix (plus path) will be
+%   fileprefix - Output netCDF file prefix (plus path) will be
 %       fileprefix_{wnd,hfx,evap}.nc if fver is '3.1.0', otherwise output
 %       files will be fileprefix_wnd.nc.
 %   data - Struct of the data to be written out.
-%   infos - Additional remarks to be written to the "infos" NetCDF variable
+%   infos - Additional remarks to be written to the "infos" netCDF variable
 %   fver - Output for version 3.1.0 or 3.1.6. The latter means all the
 %       forcing can go in a single file, the former needs separate files
 %       for specific forcing data (wind, heating and precipitation).
 %
 % The fields in data may be called any of:
 %     - 'u10', 'v10' or 'uwnd', 'vwnd' - wind components
-%     - 'slp' or 'pres'     - mean sea level pressure
 %     - 'Et' or 'evap'      - evaporation
 %     - 'prate' or 'P_E'    - precipitation
 %     - 'nlwrs'             - net longwave radiation*,**
 %     - 'nswrs'             - net shortwave radiation*,**
 %     - 'shtfl'             - sensible heat net flux*,**
 %     - 'lhtfl'             - latent heat net flux*,**
-%     - 'rhum'              - relative humidity
-%     - 'air'               - air temperature
+%     - 'slp' or 'pres'     - mean sea level pressure***
+%     - 'dswrf'             - downward shortwave flux***
+%     - 'dlwrf'             - downward longwave flux***
+%     - 'rhum'              - relative humidity***
+%     - 'air'               - air temperature***
 %     - 'lon'               - longitude (vector)
 %     - 'lat'               - latitude (vector)
 %     - 'x'                 - eastings (vector)
@@ -51,8 +53,10 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 % eliminates the need to interpolate so many variables onto the FVCOM grid,
 % thus decreasing the time needed to generate the FVCOM input files.
 %
+% *** These fields are required for HEATING_CALCULATED model input files.
+%
 % OUTPUT:
-%   FVCOM wind speed forcing NetCDF file(s)
+%   FVCOM forcing netCDF file(s)
 %
 % EXAMPLE USAGE:
 %   windBase = '/path/to/output/casename_wnd.nc';
@@ -66,7 +70,7 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %
 % PWC Revision history:
 %   2012-11-01 - First version based on the parts of grid2fvcom_U10V10.m
-%   which dealt with writing the NetCDF file. This version now dynamically
+%   which dealt with writing the netCDF file. This version now dynamically
 %   deals with varying numbers of forcing data.
 %   2012-11-09 - Add the correct calculation for the net surface heat flux.
 %   2013-02-14 - Fix the surface net heat flux sign convention, include the
@@ -142,7 +146,7 @@ xc = nodes2elems(x, Mobj);
 yc = nodes2elems(y, Mobj);
 
 %--------------------------------------------------------------------------
-% Create the NetCDF header for the FVCOM forcing file
+% Create the netCDF header for the FVCOM forcing file
 %--------------------------------------------------------------------------
 
 if multi_out
@@ -227,7 +231,7 @@ for i=1:length(suffixes)
 
     for vv=1:length(fnames)
         % Need to check both whether we have the data but also whether
-        % we're outputting to several NetCDF files. If so, we drop some
+        % we're outputting to several netCDF files. If so, we drop some
         % variables if we're in the wrong file loop.
         switch fnames{vv}
             case {'uwnd', 'u10'}
@@ -237,7 +241,6 @@ for i=1:length(suffixes)
                     % On the elements
                     u10_varid=netcdf.defVar(nc,'U10','NC_FLOAT',[nele_dimid, time_dimid]);
                     netcdf.putAtt(nc,u10_varid,'long_name','Eastward Wind Speed');
-%                     netcdf.putAtt(nc,u10_varid,'standard_name','Eastward Wind Speed');
                     netcdf.putAtt(nc,u10_varid,'units','m/s');
                     netcdf.putAtt(nc,u10_varid,'grid','fvcom_grid');
                     netcdf.putAtt(nc,u10_varid,'coordinates',coordString);
@@ -245,7 +248,6 @@ for i=1:length(suffixes)
 
                     v10_varid=netcdf.defVar(nc,'V10','NC_FLOAT',[nele_dimid, time_dimid]);
                     netcdf.putAtt(nc,v10_varid,'long_name','Northward Wind Speed');
-%                     netcdf.putAtt(nc,v10_varid,'standard_name','Northward Wind Speed');
                     netcdf.putAtt(nc,v10_varid,'units','m/s');
                     netcdf.putAtt(nc,v10_varid,'grid','fvcom_grid');
                     netcdf.putAtt(nc,v10_varid,'coordinates',coordString);
@@ -322,7 +324,7 @@ for i=1:length(suffixes)
 
             case {'prate', 'P_E'}
                 if strcmpi(suffixes{i}, '_evap') || ~multi_out
-                    % Precipitation
+                    % Precipitation (or precipitation - evaporation)
                     prate_varid=netcdf.defVar(nc,'precip','NC_FLOAT',[node_dimid, time_dimid]);
                     netcdf.putAtt(nc,prate_varid,'long_name','Precipitation');
                     netcdf.putAtt(nc,prate_varid,'description','Precipitation, ocean lose water is negative');
@@ -338,7 +340,7 @@ for i=1:length(suffixes)
 
             case 'nswrs'
                 if strcmpi(suffixes{i}, '_hfx') || ~multi_out
-                    % Shortwave radiation
+                    % Net shortwave radiation
                     nswrs_varid=netcdf.defVar(nc,'short_wave','NC_FLOAT',[node_dimid, time_dimid]);
                     netcdf.putAtt(nc,nswrs_varid,'long_name','Short Wave Radiation');
                     netcdf.putAtt(nc,nswrs_varid,'units','W m-2');
@@ -353,7 +355,7 @@ for i=1:length(suffixes)
 
             case 'nlwrs'
                 if strcmpi(suffixes{i}, '_hfx') || ~multi_out
-                    % Longwave radiation
+                    % Net longwave radiation
                     nlwrs_varid=netcdf.defVar(nc,'long_wave','NC_FLOAT',[node_dimid, time_dimid]);
                     netcdf.putAtt(nc,nlwrs_varid,'long_name','Long Wave Radiation');
                     netcdf.putAtt(nc,nlwrs_varid,'units','W m-2');
@@ -368,7 +370,7 @@ for i=1:length(suffixes)
 
             case 'air'
                 if strcmpi(suffixes{i}, '_hfx') || ~multi_out
-                    % Longwave radiation
+                    % Air temperature.
                     airt_varid = netcdf.defVar(nc, 'air_temperature', 'NC_FLOAT', [node_dimid, time_dimid]);
                     netcdf.putAtt(nc, airt_varid, 'long_name', 'Surface air temperature');
                     netcdf.putAtt(nc, airt_varid, 'units', 'Celsius Degree');
@@ -382,7 +384,7 @@ for i=1:length(suffixes)
 
             case 'rhum'
                 if strcmpi(suffixes{i}, '_hfx') || ~multi_out
-                    % Longwave radiation
+                    % Relative humidity
 
                     rhum_varid = netcdf.defVar(nc, 'relative_humidity', 'NC_FLOAT', [node_dimid, time_dimid]);
                     netcdf.putAtt(nc, rhum_varid, 'long_name', 'surface air relative humidity');
@@ -392,6 +394,38 @@ for i=1:length(suffixes)
                     netcdf.putAtt(nc, rhum_varid, 'type', 'data');
 
                     used_varids = [used_varids, 'rhum_varid'];
+                    used_fnames = [used_fnames, fnames{vv}];
+                    used_dims = [used_dims, 'nNodes'];
+                end
+
+            case 'dswrf'
+                if strcmpi(suffixes{i}, '_hfx') || ~multi_out
+                    % Downward shortwave radiation
+
+                    dswrf_varid = netcdf.defVar(nc, 'short_wave', 'NC_FLOAT', [node_dimid, time_dimid]);
+                    netcdf.putAtt(nc, dswrf_varid, 'long_name', 'Downward solar shortwave radiation flux');
+                    netcdf.putAtt(nc, dswrf_varid, 'units', 'Watts meter-2');
+                    netcdf.putAtt(nc, dswrf_varid, 'grid', 'fvcom_grid');
+                    netcdf.putAtt(nc, dswrf_varid, 'coordinates', coordString);
+                    netcdf.putAtt(nc, dswrf_varid, 'type', 'data');
+
+                    used_varids = [used_varids, 'dswrf_varid'];
+                    used_fnames = [used_fnames, fnames{vv}];
+                    used_dims = [used_dims, 'nNodes'];
+                end
+
+            case 'dlwrf'
+                if strcmpi(suffixes{i}, '_hfx') || ~multi_out
+                    % Downward longwave radiation
+
+                    dlwrf_varid = netcdf.defVar(nc, 'long_wave', 'NC_FLOAT', [node_dimid, time_dimid]);
+                    netcdf.putAtt(nc, dlwrf_varid, 'long_name', 'Downward solar longwave radiation flux');
+                    netcdf.putAtt(nc, dlwrf_varid, 'units', 'Watts meter-2');
+                    netcdf.putAtt(nc, dlwrf_varid, 'grid', 'fvcom_grid');
+                    netcdf.putAtt(nc, dlwrf_varid, 'coordinates', coordString);
+                    netcdf.putAtt(nc, dlwrf_varid, 'type', 'data');
+
+                    used_varids = [used_varids, 'dlwrf_varid'];
                     used_fnames = [used_fnames, fnames{vv}];
                     used_dims = [used_dims, 'nNodes'];
                 end
@@ -460,7 +494,7 @@ for i=1:length(suffixes)
     netcdf.putVar(nc,xc_varid,xc);
     netcdf.putVar(nc,yc_varid,yc);
 
-    % Build the time string and output to NetCDF.
+    % Build the time string and output to netCDF.
     nStringOut = char();
     [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(data.time);
     for tt=1:ntimes
@@ -474,7 +508,7 @@ for i=1:length(suffixes)
     % Also make sure we have wind data, either as u10/v10 or uwnd/vwnd.
     hf_done = 0;
     wnd_done = 0;
-    for ff=1:length(used_fnames)
+    for ff = 1:length(used_fnames)
         if ftbverbose
             fprintf('write : %s... ', used_fnames{ff})
         end
@@ -540,14 +574,14 @@ for i=1:length(suffixes)
         % hf_done might be higher than four, but unless it is at least
         % four, we haven't got everything we need. Only trigger this
         % warning if we've been given any of the net heat flux components.
-        warning('Did not have all the required heat flux parameters. Need ''shtfl'', ''lhtfl'', ''nlwrs'' and ''nwsrs''.')
+        warning('Did not have all the required heat flux parameters for HEATING_ON. Need ''shtfl'', ''lhtfl'', ''nlwrs'' and ''nwsrs''.')
     end
 
     if wnd_done < 2;
         warning('No wind data was provided (or one component was missing). Expected fields u10 and v10 or uwnd and vwnd.')
     end
 
-    % Close the NetCDF file(s)
+    % Close the netCDF file(s)
     netcdf.close(nc);
 end
 
