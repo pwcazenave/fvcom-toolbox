@@ -171,7 +171,9 @@ for ff = 1:fv_nr
             % does get here...
             continue
         end
-        fprintf('alternate node ')
+        if ftbverbose
+            fprintf('alternate node ')
+        end
     end
 
     % Add it to the list of valid rivers
