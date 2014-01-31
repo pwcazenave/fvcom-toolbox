@@ -126,7 +126,7 @@ for ff = 1:fv_nr
     % We need to make sure the element in which this node occurs does not
     % have two land boundaries (otherwise the model sometimes just fills up
     % that element without releasing the water into the adjacent element).
-    
+
     % Find the other nodes which are joined to the node we've just found.
     % We don't need the column to get the other nodes in the element, only
     % the row is required.
