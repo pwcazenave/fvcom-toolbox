@@ -1,5 +1,100 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20140131
+--------
+
+Update to include some fixes to the forcing scripts as well as new scripts to
+better handle various river data sources.
+
+README.md
+    * Add note about the Tidal Model Driver toolbox being an optional
+    dependency.
+
+fvcom_prepro:
+    get_EA_river_climatology.m
+        * New function to use pre-calculated Environment Agency river
+        temperature climatology data as input to the FVCOM river
+        temperature time series.
+    get_EHYPE_rivers.m
+        * New function to apply E-HYPE river discharge data to a given model
+        domain.
+    get_FVCOM_rivers
+        * Change the unique call to preserve the order by replacing 'first'
+        with 'stable'. This requires a relatively modern MATLAB (post-2011b).
+    get_HYCOM_forcing.m
+        * Add sea surface height to the list of variables that can be
+        downloaded and add the ability to specify particular variables to
+        download.
+    get_HYCOM_tsobc.m
+        * Add support for sea surface height and make the interpolation to the
+        boundary nodes less likely to fail when too few HYCOM points are found
+        nearby.
+    interp_HYCOM2FVCOM.m
+        * Fix the identification of the time index in the HYCOM data (use
+        hycom.time instead of Mobj.ts_times). Also ignore a field name of 'MT'
+        if supplied in varlist.
+    read_MetUM_forcing.m
+        * Fix the way time is handled. Previously a time variable had to be
+        specified in varlist. Now, each data variable's time is returned as an
+        array within the MetUM.(variable) struct, giving
+        MetUM.(variable).time and MetUM.(variable).data. This means if each
+        data variable uses a different time sampling, that can be accounted for
+        later (by interpolating to a common time series with interp3, for
+        example). Currently the code extracts the first 6 hour's worth of data.
+        The assumption there is that the Met Office do 4 runs per day, so
+        6 hours of data from each run gives you a day's worth.
+    read_sms_map.m
+        * Minor cosmetic changes.
+    read_sms_mesh.m
+        * Minor cosmetic changes.
+    write_FVCOM_elevtide.m
+        * Simplify the verbose output stuff.
+    write_FVCOM_forcing.m
+        * Add support for writing all the variables needed for
+        a HEATING_CALCULATED model run. This essentially makes
+        write_FVCOM_heating redundant, but I'll leave it in as it's a bit
+        simpler to understand what's going on there. Also update the way the
+        net surface heat flux is calculated (sum long and short, subtract
+        latent and sensible). Fix the way the wind variables are handled so
+        that both the U10/V10 and uwind_speed/vwind_speed netCDF variables are
+        written if only one of data.u10/data.v10 or data.uwnd/data.vwnd is
+        given. Change the output of tri' to tri, as tri was being written the
+        wrong way around (thanks to Rory O'Hara Murray for spotting that one).
+    write_FVCOM_heating.m
+        * Clarify the help a bit.
+    write_FVCOM_restart.m
+        * Make it more obvious when new data is being written in place of
+        existing data.
+    write_FVCOM_river.m
+        * Tidy up the way the times are handled.
+    write_FVCOM_river_nml.m
+        * Fix the handling of the optional vertical distribution string
+        argument.
+    write_FVCOM_stations.m
+        * Minor cosmetic changes.
+    write_WRF_forcing.m
+        * Add full suite of variables so that HEATING_CALCULATED can be used
+        instead. Fix names of the fields for long and shortwave radiation to
+        match the NCEP ones (from n{l,s}wrf to n{l,s}wrs i.e. change last
+        letter from f to s).
+
+
+utilities:
+    grid2fvcom.m
+        * Check for the presence of the input fields being requested in the
+        input struct to avoid finding out that the last field in vars doesn't
+        exist in data half way through a time consuming loop. Change the way
+        the alternative coordinate arrays are used to accommodate subtleties in
+        the parallel code in MATLAB. Also fix some problems which sometimes
+        arose when interpolating using the Parallel Computing toolbox (they
+        were not reproducible with the serial version, annoyingly).
+    read_fvcom_mesh.m
+        * Minor cosmetic changes.
+    read_netCDF_FVCOM.m
+        * Add support for missing Itime and Itime2 values in an output file,
+        falling back on the time variable instead.
+
+
 20130917
 --------
 
@@ -56,7 +151,7 @@ fvcom_prepro:
       * Add failsafe functionality when writing the variables to better handle
       NCEP and Met Office data.
    write_FVCOM_restart.m
-      * Add support for writing out u and v data (on the element centres 
+      * Add support for writing out u and v data (on the element centres
       rather than node positions).
    write_FVCOM_river_nml.m
       * Add support for an optional string to be written out (e.g. 'uniform')
@@ -80,10 +175,10 @@ utilities:
       * Incorporate changes to better support paths in Windows (in particular
       paths with spaces).
    pp2nc.tcl
-      * Add (but leave commented out) functions to interpolate the Met Office 
+      * Add (but leave commented out) functions to interpolate the Met Office
       data onto a geographical grid.
    pp2nc_subset.m
-      * New function: wrapper function to use convsh to interpolates Met 
+      * New function: wrapper function to use convsh to interpolates Met
       Office Unified Model PP files onto a geographical grid (i.e. lat/long).
    subset.tcl
       * New TCL script to interpolate the Met Office Unified Model PP files
