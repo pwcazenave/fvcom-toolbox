@@ -78,7 +78,6 @@ fvcom_prepro:
         match the NCEP ones (from n{l,s}wrf to n{l,s}wrs i.e. change last
         letter from f to s).
 
-
 utilities:
     grid2fvcom.m
         * Check for the presence of the input fields being requested in the
