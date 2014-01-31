@@ -79,7 +79,7 @@ clim = nan(length(time), nr);
 for r = 1:nr
     dist = sqrt((lon - Mobj.lon(Mobj.river_nodes(r))).^2 + (lat - Mobj.lat(Mobj.river_nodes(r))).^2);
     [howclose, idx] = min(dist);
-    
+
     if howclose > dist_thresh
         % Find the 30 closest sites and use their data instead.
         [~, idx] = sort(dist);
@@ -98,8 +98,14 @@ end
 [yyyy, mm, dd, HH, MM, SS] = mjulian2greg(Mobj.river_time);
 startday = (datenum(yyyy(1), mm(1), dd(1), HH(1), MM(1), SS(1)) - ...
     datenum(min(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
+warning('Don''t know what''s going on with this here. Check the code to find the end day for the river climatology.')
+
+%%% FIXME!!! %%%
+% endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
+%     datenum(max(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
 endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
-    datenum(max(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
+    datenum(max(yyyy), 1, 1, 0, 0, 0));
+%%% FIXME!!! %%%
 
 years = unique(yyyy);
 ny = length(years);
