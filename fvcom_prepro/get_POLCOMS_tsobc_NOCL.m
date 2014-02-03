@@ -42,16 +42,16 @@ function Mobj = get_POLCOMS_tsobc_NOCL(Mobj, inputConf)
 %
 % Author(s):
 %    Pierre Cazenave (Plymouth Marine Laboratory)
-%    Karen Thurston (National Oceanography Centre, Liverpool)
+%    Karen Amoudry (National Oceanography Centre, Liverpool)
 %
 % PWC Revision history
 %    2013-01-09 First version based on the FVCOM shelf model
 %    get_POLCOMS_forcing.m script (i.e. not a function but a plain script).
 %
-% KJT Revision history:
+% KJA Revision history:
 %    2013-02-05 Adapted from PWC's script to fit NOCL file formats.
 %    2013-08-01 Fixed bug which transposed arrays and resulted in incorrect 
-%	outputs. Incorporated PWC's bugfixes from his 'get_POLCOMS_tsobc.m'
+%	 outputs. Incorporated PWC's bugfixes from his 'get_POLCOMS_tsobc.m'
 %    function. His notes: "2013-06-03 Fix some bugs in the way the open 
 %    boundary node values were stored (the order in which they were stored
 %    did not match the order of the nodes in Casename_obc.dat). Also fix
@@ -59,6 +59,8 @@ function Mobj = get_POLCOMS_tsobc_NOCL(Mobj, inputConf)
 %    at the surface instead of mirroring POLCOMS' approach (where the first
 %    value is the seabed). The effect of these two fixes (nodes and
 %    vertical) should match what FVCOM expects."
+%    2013-10-14 Added support for timeseries which cross multiple months
+%    (and thus multiple POLCOMS files).
 %
 %==========================================================================
 
@@ -72,45 +74,60 @@ end
 %%
 varlist = {'lon', 'lat', 'tem', 'sal', 'time'};
 
-if (inputConf.startDate(:,2)==inputConf.startDate(:,2))
-    polcoms_ts = [inputConf.polcoms_ts,num2str(inputConf.startDate(:,1)),...
-        '-',num2str(inputConf.startDate(:,2),'%02i'),'.nc'];
-else
-    error('Model run spans two months. I have not prepared for this eventuality yet.')
-end
-
-% Get the results
-nc = netcdf.open(polcoms_ts, 'NOWRITE');
-
-for var=1:numel(varlist)
-    
-    getVar = varlist{var};
-    varid_pc = netcdf.inqVarID(nc, getVar);
-    
-    data = netcdf.getVar(nc, varid_pc, 'single');
-    pc.(getVar).data = double(data);
-    % Try to get some units (important for the calculation of MJD).
-    try
-        units = netcdf.getAtt(nc,varid_pc,'units');
-    catch
-        units = [];
-    end
-    pc.(getVar).units = units;
-end
-
-netcdf.close(nc)
-
-% Get rid of data outside the time we're interested in
 % Create an array of hourly timesteps, ensuring the output time series is
 % at least as long as the FVCOM model run time.
 timesteps = datevec(datenum(inputConf.startDate):1/24:datenum(inputConf.endDate)+1);
 
+% Find the number of months in the timeseries
+[months,ia]=unique(timesteps(:,1:2),'rows');
+
+for i=1:size(months,1)
+    % Create the POLCOMS filename based on the year and month of interest
+    polcoms_ts = [inputConf.polcoms_ts,num2str(timesteps(ia(i),1)),...
+        '-',num2str(timesteps(ia(i),2),'%02i'),'.nc'];
+    
+    % Get the results from the POLCOMS file
+    nc = netcdf.open(polcoms_ts, 'NOWRITE');
+    
+    for var=1:numel(varlist)
+        
+        getVar = varlist{var};
+        varid_pc = netcdf.inqVarID(nc, getVar);
+        
+        data = netcdf.getVar(nc, varid_pc, 'single');
+        
+        if i==1 % If it's the first file, get the data
+            pc.(getVar).data = double(data);
+        elseif ~strcmp(getVar,'time') && ~strcmp(getVar,'lat') && ~strcmp(getVar,'lon')
+                % if it's the second or greater file, concatecate the data
+            pc.(getVar).data = cat(4,pc.(getVar).data,double(data));
+        elseif strcmp(getVar,'time')
+            % if it's the second or greater file, concatecate the data
+            % time is concatenated differently
+            pc.(getVar).data = cat(1,pc.(getVar).data,double(data));
+        end
+        
+        % Try to get some units (important for the calculation of MJD).
+        try
+            units = netcdf.getAtt(nc,varid_pc,'units');
+        catch
+            units = [];
+        end
+        pc.(getVar).units = units;
+    end
+    
+    netcdf.close(nc)
+    
+end
+
+% Get rid of data outside the time we're interested in
 % Convert FVCOM timestep into AMM/S12 output (seconds since 20071101:000000)
 AMM_time = etime(timesteps,repmat([2007,11,01,0,0,0],size(timesteps,1),1));
 keep_time = (pc.time.data >= AMM_time(1) & pc.time.data <= AMM_time(end));
 pc.tem.data = pc.tem.data(:,:,:,keep_time);
 pc.sal.data = pc.sal.data(:,:,:,keep_time);
 
+% Import the POLCOMS sigma info
 pc = get_POLCOMS_sigma(pc,inputConf);
 
 % Data format:
@@ -140,8 +157,6 @@ fz = size(Mobj.siglayz, 2);
 % isal = nan(nf, nz, nt); % POLCOMS interpolated salinities
 fvtemp = nan(nf, fz, nt); % FVCOM interpolated temperatures
 fvsal = nan(nf, fz, nt); % FVCOM interpolated salinities
-
-
 
 if ftbverbose
     tic
@@ -311,17 +326,22 @@ if ftbverbose
     toc
 end
 
+%%
 % Convert NOC model output temperatures from Kelvin to Celsius
 fvtemp = fvtemp - 273.15;
 
-Mobj.temperature = fvtemp;
-Mobj.salt = fvsal;
-
-% Interpolate to the FVCOM time series. Operational model daily output is
-% at noon, and we want midnight.
+% Timeshift to match the expected FVCOM input times. The temperature and
+% salinity values are a daily average (midnight to midnight). They are
+% given a timestamp of the middle time in this period (noon). Each day's
+% value applies to the whole day (e.g. from midnight to midnight).
+% Therefore, we can shift the time to midnight at the start of the relevant
+% day and apply the value to the whole day. This makes FVCOM (and me)
+% happy.
 Mobj.ts_times = greg2mjulian(2007, 11, 0, 0, 0, 0) + ...    % Convert NOC model reference time to MJD
     ((pc.time.data(keep_time)+(12*3600)) / 3600 / 24);  % Add NOC model output time and 12 hour offset
- 
+
+Mobj.temperature = fvtemp;
+Mobj.salt = fvsal;
 
 if ftbverbose
     fprintf(['end   : ' subname '\n'])
