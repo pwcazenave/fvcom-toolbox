@@ -1,4 +1,4 @@
-function [Mobj] = add_river_nodes_list(Mobj,Nlist,RiverName)
+function [Mobj] = add_river_nodes_list(Mobj,Nlist,RiverName,plotFig)
 
 % Add a set of river nodes comprising a single river to Mesh structure  
 % Using a set of user-defined nodes
@@ -11,6 +11,7 @@ function [Mobj] = add_river_nodes_list(Mobj,Nlist,RiverName)
 % INPUT
 %    Mobj = Matlab mesh object
 %    RiverName = Name of the River
+%    plotFig = [optional] show a figure of the mesh (1 = yes)
 %
 % OUTPUT:
 %    Mobj = Matlab mesh object with an additional river nodelist
@@ -30,6 +31,8 @@ function [Mobj] = add_river_nodes_list(Mobj,Nlist,RiverName)
 %    2013-01-02 KJA bug fix: amended usage of 'unique' to prevent it from
 %    sorting the values it returns. Amended by Pierre to support pre-2012
 %    versions of MATLAB whilst giving the same result.
+%    2013-10-22 KJA: added capability to turn off figures (copied from
+%    Pierre's adaptation to add_obc_nodes_list.m)
 %   
 %==========================================================================
 subname = 'add_river_nodes_list';
@@ -37,6 +40,11 @@ global ftbverbose
 if ftbverbose
     fprintf('\n')
     fprintf(['begin : ' subname '\n'])
+end
+
+% Do we want a figure showing how we're getting along?
+if nargin == 3
+    plotFig = 0;
 end
 
 %--------------------------------------------------------------------------
@@ -56,22 +64,23 @@ end
 %--------------------------------------------------------------------------
 % Plot the mesh 
 %--------------------------------------------------------------------------
-
-if strcmpi(Mobj.nativeCoords(1:3), 'car')
-    x = Mobj.x;
-    y = Mobj.y;
-else
-    x = Mobj.lon;
-    y = Mobj.lat;
-end
-
-figure
-patch('Vertices', [x,y], 'Faces', Mobj.tri,...
+if plotFig == 1
+    if strcmpi(Mobj.nativeCoords(1:3), 'car')
+        x = Mobj.x;
+        y = Mobj.y;
+    else
+        x = Mobj.lon;
+        y = Mobj.lat;
+    end
+    
+    figure
+    patch('Vertices', [x,y], 'Faces', Mobj.tri,...
         'Cdata', Mobj.h, 'edgecolor', 'k', 'facecolor', 'interp');
-hold on
-
-plot(x(Nlist), y(Nlist), 'ro')
-title('river nodes')
+    hold on
+    
+    plot(x(Nlist), y(Nlist), 'ro')
+    title('river nodes')
+end
 
 % add to mesh object
 npts = numel(Nlist);
