@@ -41,6 +41,7 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %     - 'x'                 - eastings (vector)
 %     - 'y'                 - northings (vector)
 %     - 'nshf'              - pre-computed net surface heat flux**
+%     - 'lcc'               - low cloud cover
 %
 % Fields marked with an * are combined to form the "surface net heat flux"
 % (nshf) as follows:
@@ -103,6 +104,8 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   when converting from double to single format.
 %   2013-09-03 - Removed PWC's fix for timestrings. Issue was due to
 %   rounding errors caused by mjulian2greg.m, which have now been fixed.
+%   2013-09-26 - Added support for output of low cloud cover and specific
+%   humidity.
 %
 % ROM Revision History:
 %   2013-12-02 Change the output of tri' to tri, as tri was being written
@@ -306,7 +309,37 @@ for i=1:length(suffixes)
                     used_dims = [used_dims, 'nNodes'];
                 end
 
-            case {'Et', 'evap'}
+            case 'lcc'
+                if strcmpi(suffixes{i}, '_low_cloud_cover') || ~multi_out
+                    % Low cloud cover
+                    slp_varid=netcdf.defVar(nc,'low_cloud_cover','NC_FLOAT',[node_dimid, time_dimid]);
+                    netcdf.putAtt(nc,slp_varid,'long_name','Low cloud cover');
+                    netcdf.putAtt(nc,slp_varid,'units','Fraction');
+                    netcdf.putAtt(nc,slp_varid,'grid','fvcom_grid');
+                    netcdf.putAtt(nc,slp_varid,'coordinates',coordString);
+                    netcdf.putAtt(nc,slp_varid,'type','data');
+
+                    used_varids = [used_varids, 'lcc_varid'];
+                    used_fnames = [used_fnames, fnames{vv}];
+                    used_dims = [used_dims, 'nNodes'];
+                end
+                
+            case 'shum'
+                if strcmpi(suffixes{i}, '_specific_humidity') || ~multi_out
+                    % Specific humidity
+                    slp_varid=netcdf.defVar(nc,'specific_humidity','NC_FLOAT',[node_dimid, time_dimid]);
+                    netcdf.putAtt(nc,slp_varid,'long_name','Specific humidity');
+                    netcdf.putAtt(nc,slp_varid,'units','Kg kg^-1');
+                    netcdf.putAtt(nc,slp_varid,'grid','fvcom_grid');
+                    netcdf.putAtt(nc,slp_varid,'coordinates',coordString);
+                    netcdf.putAtt(nc,slp_varid,'type','data');
+
+                    used_varids = [used_varids, 'shum_varid'];
+                    used_fnames = [used_fnames, fnames{vv}];
+                    used_dims = [used_dims, 'nNodes'];
+                end
+                
+            case 'Et'
                 if strcmpi(suffixes{i}, '_evap') || ~multi_out
                     % Evaporation
                     pevpr_varid=netcdf.defVar(nc,'evap','NC_FLOAT',[node_dimid, time_dimid]);
