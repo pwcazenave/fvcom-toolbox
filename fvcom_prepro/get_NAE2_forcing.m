@@ -188,66 +188,87 @@ if max(FIEJ)+1 > nelf
     nelf = max(FIEJ)+1;
 end
 
-PASTIT = false;
-kline = 0;
+%%
+% Create an array of daily timesteps, ensuring the output time series is
+% at least as long as the FVCOM model run time.
+timesteps = datevec(datenum(inputConf.startDate):datenum(inputConf.endDate)+1);
 
-% Open the met file
-fid = fopen(metfname);
+% Find the number of months in the timeseries
+[months,ia]=unique(timesteps(:,1:2),'rows');
 
-% calculate the number of lines per data segment
-I = fgets(fid);
-m1 = sscanf(I,'%u');
-data_seg = ceil(m1(1)/m1(2));
-
-frewind(fid);
-
-% Initialise the met data array
-met_temp = cell(1);
-
-% Get met data from the met file and write to temporary cell array
-while PASTIT == false
-    kline = kline + 2;
-    I = fgets(fid);
-    if I==-1
-        % break the loop, it's the EOF
-        break
+for i=1:size(months,1)
+    % Where are the met data files?
+    if isunix       % Unix?
+        metfname = ['/bank/jane/met/',num2str(timesteps(ia(i),1)),...
+            '/',lower(datestr(timesteps(ia(i),:),'mmmYY')),'nae10R.dat'];
+    elseif ispc     % Or Windows?
+        metfname = ['\\store\bank\jane\met\',num2str(timesteps(ia(i),1)),...
+            '\',lower(datestr(timesteps(ia(i),:),'mmmYY')),'nae10R.dat'];
     end
-    J = fgets(fid);
-    if J==-1
-        % break the loop, it's the EOF
-        break
-    end
-
-    % find the date in the met file
-    datem = sscanf(J,'%u');
-    datem = datenum(datem(4),datem(3),datem(2),datem(1),0,0);
     
-    % Compare met file date with inputConf.startDate (is it bigger?) and
-    % with inputConf.endDate (is it smaller?) If yes and yes, then we want
-    % this. Write data to a temporary array.
-    if (datem >= datenum(inputConf.startDate)) && ...
-            (datem <= datenum(inputConf.endDate))
-        % Initialise temp cell array
-        temp = cell(data_seg+2,1);
-        % write I and J
-        temp{1} = sscanf(I,'%u');
-        temp{2} = sscanf(J,'%u');
-        % Get the actual data
-        for m = 1:data_seg
-            I = fgetl(fid);
-            temp{m+2} = sscanf(I,'%10f');
-        end
-        met_temp{end+1}=temp;
-        clear temp;
-    else
-        PASTIT = true;
+    PASTIT = false;
+    kline = 0;
+    
+    % Open the met file
+    fid = fopen(metfname);
+    
+    % calculate the number of lines per data segment
+    I = fgets(fid);
+    m1 = sscanf(I,'%u');
+    data_seg = ceil(m1(1)/m1(2));
+    
+    frewind(fid);
+    
+    if i==1
+        % Initialise the met data array
+        met_temp = cell(1);
     end
+    
+    % Get met data from the met file and write to temporary cell array
+    while PASTIT == false
+        kline = kline + 2;
+        I = fgets(fid);
+        if I==-1
+            % break the loop, it's the EOF
+            break
+        end
+        J = fgets(fid);
+        if J==-1
+            % break the loop, it's the EOF
+            break
+        end
+        
+        % find the date in the met file
+        datem = sscanf(J,'%u');
+        datem = datenum(datem(4),datem(3),datem(2),datem(1),0,0);
+        
+        % Compare met file date with inputConf.startDate (is it bigger?) and
+        % with inputConf.endDate (is it smaller?) If yes and yes, then we want
+        % this. Write data to a temporary array.
+        if (datem >= datenum(inputConf.startDate)) && ...
+                (datem <= datenum(inputConf.endDate))
+            % Initialise temp cell array
+            temp = cell(data_seg+2,1);
+            % write I and J
+            temp{1} = sscanf(I,'%u');
+            temp{2} = sscanf(J,'%u');
+            % Get the actual data
+            for m = 1:data_seg
+                I = fgetl(fid);
+                temp{m+2} = sscanf(I,'%10f');
+            end
+            met_temp{end+1}=temp;
+            clear temp;
+        else
+            PASTIT = true;
+        end
+    end
+    
+    fclose(fid);
 end
 
-fclose(fid);
-
 met_temp = met_temp(2:end);
-
+    
 % Not sure what these numbers are for.
 JBLP = IBLP-NCCP;
 JBRP = IBRP-NCCP;
@@ -260,12 +281,6 @@ elf = zeros(nelf,1);
 P2 = zeros(NTOTI,1);
 tmpa = zeros(NTOTI,1);
 tmpb = zeros(NTOTI,1);
-
-% i1j1 = zeros(4,Mobj.nElems);
-% A1 = zeros(2,Mobj.nElems);
-% A2 = zeros(2,Mobj.nElems);
-% A3 = zeros(2,Mobj.nElems);
-% A4 = zeros(2,Mobj.nElems);
 
 % FirstInt = true;
 kline = 1;
@@ -365,17 +380,6 @@ Mobj.Met.uwnd.data = uwnd;
 Mobj.Met.vwnd.data = vwnd;
 Mobj.Met.time = MJD_time;
 
-%% mjd0 = nml file start time (inputConf.startDate)
-% mjd1 = nml file finish time (inputConf.endDate)
-% mjd2 = variable time from met data file
-% mjd3 = variable time from temporary met data file
-% mjd4 = variable time from surge data file
-% mjd5 = time at start of surge data file, the reference start point of the
-%           harmonic analysis
-
-% What are the surge parameters? (Don't know if I need these in this file.
-% Let's keep them here for now)
-% surge_lonstart = -19.916667;
-% surge_latstart = 40.0555555;
-% surge_loninc = 1/6;
-% surge_latinc = 1/9;
+if(ftbverbose);
+    fprintf(['end   : ' subname '\n']);
+end
