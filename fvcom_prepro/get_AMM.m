@@ -1,13 +1,13 @@
 function [Mobj] = get_AMM(Mobj,StartDate,EndDate,ModelFolder)
 
-% Extract boundary forcing information from NOC Operational Tide Surge
-% Model output.
+% Extract boundary forcing information from NOC Operational Tide Model
+% output.
 %
 % function get_AMM(Mobj,StartDate,EndDate,ModelFolder)
 %
 % DESCRIPTION:
-%    Extract boundary forcing information from NOC Operational Tide Surge
-%    Model output and interpolate to FVCOM open boundary nodes.
+%    Extract boundary forcing information from NOC Operational Tide
+%    Model (no surge) output and interpolate to FVCOM open boundary nodes.
 %
 % INPUT
 %    Mobj          = Matlab mesh object
