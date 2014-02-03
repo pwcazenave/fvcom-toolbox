@@ -1,5 +1,5 @@
 function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
-% Write data out to FVCOM NetCDF forcing file.
+% Write data out to FVCOM NetCDF forcing file.   
 %
 % write_FVCOM_forcing(Mobj, fvcom_forcing_file, data, infos, fver)
 %
