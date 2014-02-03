@@ -106,7 +106,7 @@ netcdf.endDef(ncout);
 % variables which match the fieldnames in the data struct.
 for ii = 1:numvars
 
-    [varname, ~, varDimIDs, ~] = netcdf.inqVar(nc, ii - 1);
+    [varname, tmp, varDimIDs] = netcdf.inqVar(nc, ii - 1);
     varid = netcdf.inqVarID(nc, varname);
 
     if ftbverbose

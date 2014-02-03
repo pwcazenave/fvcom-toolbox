@@ -72,6 +72,7 @@ function data = get_NCEP_forcing(Mobj, modelTime, varargin)
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %   Ricardo Torres (Plymouth Marine Laboratory)
+%   Rory O'Hara Murray (Marine Scotland Science)
 %
 % Revision history:
 %   2012-10-31 First version based on get_NCEP_L4.m.
@@ -89,9 +90,17 @@ function data = get_NCEP_forcing(Mobj, modelTime, varargin)
 %   heat net flux ('lhtfl'), so it's superfluous anyway.
 %   2013-06-28 Changed the way the Matlab version is determiend. Now using
 %   release date rather then version number. For example version 7.13 >
-%   verion 7.7 but 7.13 is not greater than 7.7.
+%   verion 7.7 but 7.13 is not greater than 7.7. (ROM)
+%   2013-07-01 Added the 'actual_range' attribute to the native matlab
+%   download section, as this is needed later when identifying the domain
+%   range and replacing values outside this with NaNs. (ROM)
 %   2013-07-18 Add support for selecting only a subset of the available
-%   variables from NCEP.
+%   variables from NCEP (PC).
+%   2013-08-02 Added the 'precision' attribute to the native matlab
+%   download section. Reduced the precision of the 'add_offset' and
+%   'scale_foctor' attributes to that specified in the netCDF file. This is
+%   becasue errors can occure when rescaling the data with very high
+%   precision scale factors and offsets. (ROM)
 %   2013-08-07 Update the URL from which to download the data (actually use
 %   NCEP Reanalysis-2 now instead of the original NMC reanalysis). This has 
 %   necessitated a change in some field names (slp is now pres). The NCEP
@@ -101,10 +110,11 @@ function data = get_NCEP_forcing(Mobj, modelTime, varargin)
 %   latitude data (particularly important for interpolation onto the
 %   unstructured grid with grid2fvcom). I haven't fully tested these
 %   changes with the third-party OPeNDAP toolbox, but I have in principle
-%   added the necessary support.
+%   added the necessary support (PC).
 %   2013-08-08 Make the script a generic script to download either the
 %   original reanalysis ('reanalysis1'), the reanalysis-2 ('reanalysis2')
-%   or the 20th Century Reanalysis-2 ('20thC') data.
+%   or the 20th Century Reanalysis-2 ('20thC') data (PC).
+%   2014-02-03 Merge Rory's changes to my latest version (PC).
 %
 %==========================================================================
 
@@ -116,6 +126,13 @@ subname = 'get_NCEP_forcing';
 % https://publicwiki.deltares.nl/display/OET/OPeNDAP+access+with+Matlab
 version_7_14_date = datenum(2012,3,1);
 %version_7_13_date = datenum(2011,9,1);
+
+% Depending on the MATLAB version, either use the native netcdf
+% libraries to load the OPeNDAP data, otherwise we need the relevant
+% third-party toolbox.
+out = ver('MATLAB');
+% Look at the date rather than the version number
+native_netcdf = datenum(out.Date) >= version_7_14_date;
 
 global ftbverbose;
 if ftbverbose
@@ -299,8 +316,7 @@ for aa = 1:length(fields)
     % Depending on the MATLAB version, either use the native netcdf
     % libraries to load the OPeNDAP data, otherwise we need the relevant
     % third-party toolbox.
-    out = ver('MATLAB');
-    if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
+    if native_netcdf
 
         %ncid_info = ncinfo(ncep.(fields{aa}));
         ncid = netcdf.open(ncep.(fields{aa}));
@@ -324,6 +340,19 @@ for aa = 1:length(fields)
             netcdf.getAtt(ncid,varid,'add_offset','double');
         data_attributes.(fields{aa}).(fields{aa}).unpacked_valid_range = ...
             netcdf.getAtt(ncid, varid, 'unpacked_valid_range');
+
+        data_attributes.(fields{aa}).(fields{aa}).actual_range = ...
+            netcdf.getAtt(ncid,varid,'actual_range','double');
+        data_attributes.(fields{aa}).(fields{aa}).precision = ...
+            netcdf.getAtt(ncid,varid,'precision','double');
+
+        % Change the precision of the attributes to avoid errors
+        precision = 10^data_attributes.(fields{aa}).(fields{aa}).precision;
+        data_attributes.(fields{aa}).(fields{aa}).scale_factor = ...
+            round(precision*data_attributes.(fields{aa}).(fields{aa}).scale_factor)./precision;
+        data_attributes.(fields{aa}).(fields{aa}).add_offset   = ...
+            round(precision*data_attributes.(fields{aa}).(fields{aa}).add_offset)./precision;
+
         varid = netcdf.inqVarID(ncid,'lon');
         data_lon.lon = netcdf.getVar(ncid,varid,'double');
         varid = netcdf.inqVarID(ncid,'lat');
@@ -434,7 +463,7 @@ for aa = 1:length(fields)
         data.(fields{aa}).lon = data_lon.lon(cat(1,index_lon{:}));
 
         % We need to do each half and merge them
-        if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
+        if native_netcdf
             % varidlon = netcdf.inqVarID(ncid,'lon');
             % varidtime = netcdf.inqVarID(ncid,'time');
             % varidlat = netcdf.inqVarID(ncid,'lat');
@@ -542,7 +571,7 @@ for aa = 1:length(fields)
         % We have a straightforward data extraction
         data.(fields{aa}).lon = data_lon.lon(index_lon);
 
-        if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
+        if native_netcdf
             varid = netcdf.inqVarID(ncid,(fields{aa}));
             % [varname,xtype,dimids,natts] = netcdf.inqVar(ncid,varid);
             % [~,length1] = netcdf.inqDim(ncid,dimids(1))
@@ -615,14 +644,6 @@ end
 
 % Now we have some data, we need to create some additional parameters
 % required by FVCOM.
-
-% FVCOM's sign convention is the opposite of the NCEP data for heat fluxes
-% (FVCOM: positive = downward flux = ocean heating, negative = upward flux
-% = ocean cooling. NCEP: positive = upward flux = ocean cooling, negative =
-% downward flux = ocean heating). So, rather than do the corrections in
-% create_files.m or wherever, do them here instead.
-% data.nlwrs.data = -data.nlwrs.data;
-% data.nswrs.data = -data.nswrs.data;
 
 % Convert precipitation from kg/m^2/s to m/s (required by FVCOM) by
 % dividing by freshwater density (kg/m^3).

@@ -38,6 +38,9 @@ function [Mobj] = read_sms_mesh(varargin)
 %   parsing the input file (lines 132-152). My brief testing would suggest
 %   the overhead of converting from strings to doubles shouldn't be
 %   underestimated.
+%   2013-10-01 Further improved ability to read files with variable length
+%   headers (ROM).
+%   2013-12-11 Closed the sms_2dm file using fclose (ROM).
 %
 %==============================================================================
 
@@ -141,7 +144,7 @@ while StillReading
                 nVerts = nVerts + 1;
             case 'NS'
                 nStrings = nStrings + 1;
-            case 'ME'
+            case {'ME', 'NU'}
                 nHeader = nHeader + 1;
             case 'E4'
                 error('Quadrilateral elements are unsupported in FVCOM')
