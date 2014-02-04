@@ -269,7 +269,36 @@ for ii = 1:numvars
             % Only repeat the values when we've bracketed the data,
             % otherwise scale up from the first time step.
             if bracketed
-                sfvdata = repmat(data(:, :, end), [1, 1, nt]);
+                % Use the new input data repeated the required number of
+                % times.
+                if wasUnlimited < 0 % no time, easy peasy.
+                    sfvdata = indata.(fnames{vv});
+                else
+                    % Damn. We've got to filter based on the shape of the
+                    % input data first (do we have a scalar input we need
+                    % to repeat to the shape of the output?) and then on
+                    % the basis of the expected output (is it 1D, 2D or
+                    % 3D?).
+                    if isscalar(indata.(fnames{vv}))
+                        if isscalar(data)
+                            sfvdata = indata.(fnames{vv});
+                        elseif isvector(data)
+                            sfvdata = repmat(indata.(fnames{vv}), [nd, nt]);
+                        else
+                            sfvdata = repmat(indata.(fnames{vv}), [nd, ns, nt]);
+                        end
+                    else
+                        % We don't have scalar input so repeat the last
+                        % time in the given input nt times.
+                        if isscalar(data)
+                            sfvdata = indata.(fnames{vv});
+                        elseif isvector(data)
+                            sfvdata = repmat(indata.(fnames{vv})(:, :, end), [1, nt]);
+                        else
+                            sfvdata = repmat(indata.(fnames{vv})(:, :, end), [1, 1, nt]);
+                        end
+                    end
+                end
             else
                 % To make the scaling go from the initial value to the
                 % supplied data value, we need to scale the difference
