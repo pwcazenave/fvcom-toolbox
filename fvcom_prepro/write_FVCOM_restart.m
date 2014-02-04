@@ -253,19 +253,6 @@ for ii = 1:numvars
                 fprintf('NEW DATA... ')
             end
 
-            % Grab the data
-            data = netcdf.getVar(nc, varid);
-
-            % If the input data is a scalar, check that the output array is
-            % expecting a scalar. Otherwise, tile the input scalar to the
-            % size of the expected output array.
-            if isscalar(indata.(fnames{vv})) && ~isscalar(data)
-                if ftbverbose
-                    fprintf('tiling input scalar to non-scalar array... ')
-                end
-                data = repmat(indata.(fnames{vv}), size(data));
-            end
-            
             % Only repeat the values when we've bracketed the data,
             % otherwise scale up from the first time step.
             if bracketed
@@ -280,23 +267,36 @@ for ii = 1:numvars
                     % the basis of the expected output (is it 1D, 2D or
                     % 3D?).
                     if isscalar(indata.(fnames{vv}))
-                        if isscalar(data)
+                        if isempty(ns) && isempty(nd)
                             sfvdata = indata.(fnames{vv});
-                        elseif isvector(data)
+                        elseif isempty(ns) || isempty(nd)
+                            if ftbverbose
+                                fprintf('tiling input scalar to non-scalar array... ')
+                            end
                             sfvdata = repmat(indata.(fnames{vv}), [nd, nt]);
-                        else
+                        elseif ~isempty(ns) && ~isempty(nd)
+                            if ftbverbose
+                                fprintf('tiling input scalar to non-scalar array... ')
+                            end
                             sfvdata = repmat(indata.(fnames{vv}), [nd, ns, nt]);
+                        else
+                            error('Hmmm... FVCOM doesn''t have 4D arrays...')
                         end
                     else
                         % We don't have scalar input so repeat the last
                         % time in the given input nt times.
-                        if isscalar(data)
+                        if isempty(ns) && isempty(nd)
                             sfvdata = indata.(fnames{vv});
-                        elseif isvector(data)
+                        elseif isempty(ns) || isempty(nd)
                             sfvdata = repmat(indata.(fnames{vv})(:, :, end), [1, nt]);
-                        else
+                        elseif ~isempty(ns) && ~isempty(nd)
                             sfvdata = repmat(indata.(fnames{vv})(:, :, end), [1, 1, nt]);
+                        else
+                            error('Hmmm... FVCOM doesn''t have 4D arrays...')
                         end
+                    end
+                    if ftbverbose
+                        fprintf('clipping in time... ')
                     end
                 end
             else
@@ -304,7 +304,11 @@ for ii = 1:numvars
                 % supplied data value, we need to scale the difference
                 % between the end members by the scaling factor at each
                 % time and add to the current time's value.
+                data = netcdf.getVar(nc, varid);
                 if ~isscalar(data)
+                    if isscalar(indata.(fnames{vv})) && ftbverbose
+                        fprintf('tiling input scalar to non-scalar array... ')
+                    end
                     sfvdata = nan(nd, ns, nt);
                     ss = 0:1 / (nt - 1):1; % scale from 0 to 1.
                     startdata = squeeze(data(:, :, 1)); % use the first modelled time step
@@ -315,6 +319,9 @@ for ii = 1:numvars
                             td = indata.(fnames{vv}) - startdata;
                             sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
                         end
+                    end
+                    if ftbverbose
+                        fprintf('ramping data in time... ')
                     end
                 else
                     sfvdata = data;
