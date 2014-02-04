@@ -34,7 +34,8 @@ function write_FVCOM_restart(fv_restart, out_restart, indata, varargin)
 %       write_FVCOM_restart('/tmp/fvcom_restart.nc', ...
 %           '/tmp/fvcom_restart_interp.nc', indata)
 %
-%   Replace temperature only and change the restart times:
+%   Replace temperature only and change the restart times to bracketed
+%   values:
 %       indata.temp = interpolated_temp;
 %       write_FVCOM_restart('/tmp/fvcom_restart.nc', ...
 %           '/tmp/fvcom_restart_interp.nc', indata, 'out_date', ...
@@ -44,6 +45,15 @@ function write_FVCOM_restart(fv_restart, out_restart, indata, varargin)
 %       indata.temp = 13;
 %       write_FVCOM_restart('/tmp/fvcom_restart.nc', ...
 %           '/tmp/fvcom_restart_interp.nc', indata)
+%
+%   Replace temperature with a constant at all positions and times and all
+%   times with a new array of times (for a restart file with five time
+%   steps):
+%       newtime = datevec(datenum([2004, 06, 20, 11, 09, 44]) + ...
+%           [-0.5, -0.25, 0, 0.25, 0.5]);
+%       indata.temp = 13;
+%       write_FVCOM_restart('/tmp/fvcom_restart.nc', ...
+%           '/tmp/fvcom_restart_interp.nc', indata, 'out_time', newtime)
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -76,6 +86,13 @@ if ftbverbose
     fprintf('\nbegin : %s \n', subname)
 end
 
+% Default to not bracketing data. If we've got a single time input, then
+% this will be set to true and the data will be bracketed around that time.
+% If we've got a new input time array, the new data will be ramped to the
+% new input data values and bracketed is left false. If we have no new
+% times, then the new data will also be ramped up.
+bracketed = false;
+
 if nargin > 3
     assert(rem(length(varargin), 2) == 0, 'Incorrect keyword-value arguments.')
     for aa = 1:2:length(varargin)
@@ -83,18 +100,27 @@ if nargin > 3
         val = varargin{aa + 1};
         switch key
             case 'out_date'
-                % Bracket the date by 30 minutes either way.
-                tOffset = 30;
-                out_date = datevec([...
-                    datenum(...
-                        val(1), val(2), val(3), val(4), val(5) - tOffset, val(6)); ...
-                    datenum(...
-                        val(1), val(2), val(3), val(4), val(5), val(6));...
-                    datenum(...
-                    val(1), val(2), val(3), val(4), val(5) + tOffset, val(6))...
-                    ]);
+                if isscalar(val(:, 1))
+                    % Bracket the date by 30 minutes either way.
+                    bracketed = true;
+                    tOffset = 30;
+                    out_date = val;
+                    new_date = datevec([...
+                        datenum(...
+                            val(1), val(2), val(3), val(4), val(5) - tOffset, val(6)); ...
+                        datenum(...
+                            val(1), val(2), val(3), val(4), val(5), val(6));...
+                        datenum(...
+                        val(1), val(2), val(3), val(4), val(5) + tOffset, val(6))...
+                        ]);
+                else
+                    % Assume we've been given a time series. We need to
+                    % make sure (later) that this is the same length as the
+                    % input file times.
+                    new_date = val;
+                end
             otherwise
-                warning('Unrecognised keyword in optional arguments.')
+                warning('Unrecognised input argument keyword ''%s'' and value ''%s''.', key, varargin{v + 1})
         end
     end
 end
@@ -119,6 +145,13 @@ for ii = 1:numdims
     % of the time dimension to three (bracketed by two time steps each
     % way).
     if exist('out_date', 'var') && ii == unlimdimID + 1
+        if length(out_date(:, 1)) == dimlen
+            % We're replacing times with those in new_date
+            out_date = new_date;
+        elseif isvector(out_date)
+            % We have bracketed dates
+            out_date = new_date;
+        end
         dimlen = length(out_date(:, 1));
     end
 
@@ -233,25 +266,29 @@ for ii = 1:numvars
                 data = repmat(indata.(fnames{vv}), size(data));
             end
             
-            % Extract the last time step from the supplied data and repeat
-            % three times for the bracketed times.
-            if exist('out_date', 'var')
+            % Only repeat the values when we've bracketed the data,
+            % otherwise scale up from the first time step.
+            if bracketed
                 sfvdata = repmat(data(:, :, end), [1, 1, nt]);
             else
                 % To make the scaling go from the initial value to the
                 % supplied data value, we need to scale the difference
                 % between the end members by the scaling factor at each
                 % time and add to the current time's value.
-                sfvdata = nan(nd, ns, nt);
-                ss = 0:1 / (nt - 1):1; % scale from 0 to 1.
-                startdata = squeeze(data(:, :, 1)); % use the first modelled time step
-                for tt = 1:nt
-                    if tt == 1
-                        sfvdata(:, :, 1) = startdata;
-                    else
-                        td = indata.(fnames{vv}) - startdata;
-                        sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
+                if ~isscalar(data)
+                    sfvdata = nan(nd, ns, nt);
+                    ss = 0:1 / (nt - 1):1; % scale from 0 to 1.
+                    startdata = squeeze(data(:, :, 1)); % use the first modelled time step
+                    for tt = 1:nt
+                        if tt == 1
+                            sfvdata(:, :, 1) = startdata;
+                        else
+                            td = indata.(fnames{vv}) - startdata;
+                            sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
+                        end
                     end
+                else
+                    sfvdata = data;
                 end
             end
             % Replace the values with the scaled interpolated values,
