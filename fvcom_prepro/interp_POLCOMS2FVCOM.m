@@ -1,9 +1,8 @@
 function Mobj = interp_POLCOMS2FVCOM(Mobj, ts, start_date, varlist)
 % Use an FVCOM restart file to seed a model run with spatially varying
-% versions of otherwise constant variables (temperature and salinity only
-% for the time being).
+% versions of otherwise constant variables.
 %
-% function interp_POLCOMS2FVCOM(Mobj, ts, start_date, fv_restart, varlist)
+% function interp_POLCOMS2FVCOM(Mobj, ts, start_date, varlist)
 %
 % DESCRIPTION:
 %    FVCOM does not yet support spatially varying temperature and salinity
@@ -19,23 +18,22 @@ function Mobj = interp_POLCOMS2FVCOM(Mobj, ts, start_date, varlist)
 %   Mobj        = MATLAB mesh structure which must contain:
 %                   - Mobj.siglayz - sigma layer depths for all model
 %                   nodes.
-%                   - Mobj.lon, Mobj.lat - node coordinates (long/lat).
-%                   - Mobj.ts_times - time series for the POLCOMS
-%                   temperature and salinity data.
+%                   - Mobj.lon, Mobj.lat - node coordinates (long/lat)
+%                   - Mobj.lonc, Mobj.latc - element coordinates (long/lat)
 %   ts          = Cell array of POLCOMS AMM NetCDF file(s) in which 4D
 %   variables of temperature and salinity (called 'ETWD' and 'x1XD') exist.
 %   Its/their shape should be (y, x, sigma, time).
 %   start_date  = Gregorian start date array (YYYY, MM, DD, hh, mm, ss).
 %   varlist     = cell array of variables to extract from the NetCDF files.
-% 
+%
 % OUTPUT:
 %   Mobj.restart = struct whose field names are the variables which have
 %   been interpolated (e.g. Mobj.restart.ETWD for POLCOMS daily mean
 %   temperature).
 %
 % EXAMPLE USAGE
-%   interp_POLCOMS2FVCOM(Mobj, '/tmp/ts.nc', '2006-01-01 00:00:00', ...
-%       {'lon', 'lat', 'ETWD', 'x1XD', 'time'})
+%   interp_POLCOMS2FVCOM(Mobj, '/tmp/ts.nc', [2006, 01, 01, 00, 00, 00], ...
+%       {'lon', 'lat', 'ETWD', 'x1XD', 'ucurD', 'vcurD', 'rholocalD', 'time'})
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -49,6 +47,8 @@ function Mobj = interp_POLCOMS2FVCOM(Mobj, ts, start_date, varlist)
 %   surface; its depths are stored surface to seabed; FVCOM stores
 %   everything surface to seabed. As such, the POLCOMS scalar values need
 %   to be flipped upside down to match everything else.
+%   2013-07-30 Add density and u/v velocity components to the variables to
+%   interpolate.
 %
 %==========================================================================
 
@@ -83,6 +83,7 @@ pc = get_POLCOMS_netCDF(ts, varlist);
 
 % Number of sigma layers.
 [fn, fz] = size(Mobj.siglayz);
+fe = numel(Mobj.lonc);
 
 % Make rectangular arrays for the nearest point lookup.
 [lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
@@ -121,12 +122,16 @@ end
 temperature = permute(squeeze(pc.ETWD.data(:, :, :, tidx)), [2, 1, 3]);
 salinity = permute(squeeze(pc.x1XD.data(:, :, :, tidx)), [2, 1, 3]);
 density = permute(squeeze(pc.rholocalD.data(:, :, :, tidx)), [2, 1, 3]);
+u = permute(squeeze(pc.ucurD.data(:, :, :, tidx)), [2, 1, 3]);
+v = permute(squeeze(pc.vcurD.data(:, :, :, tidx)), [2, 1, 3]);
 depth = permute(squeeze(pc.depth.data(:, :, :, tidx)), [2, 1, 3]);
 mask = depth(:, :, end) >= 0; % land is positive.
 
 pc.tempz = grid_vert_interp(Mobj, lon, lat, temperature, depth, mask);
 pc.salz = grid_vert_interp(Mobj, lon, lat, salinity, depth, mask);
 pc.denz = grid_vert_interp(Mobj, lon, lat, density, depth, mask);
+pc.uvelz = grid_vert_interp(Mobj, lon, lat, u, depth, mask);
+pc.vvelz = grid_vert_interp(Mobj, lon, lat, v, depth, mask);
 
 if ftbverbose
     fprintf('done.\n') 
@@ -146,14 +151,20 @@ end
 fvtemp = nan(fn, fz);
 fvsalt = nan(fn, fz);
 fvdens = nan(fn, fz);
+fvuvel = nan(fe, fz);
+fvvvel = nan(fe, fz);
 
 plon = lon(:);
 plat = lat(:);
 flon = Mobj.lon;
 flat = Mobj.lat;
+flonc = Mobj.lonc;
+flatc = Mobj.latc;
 ptempz = pc.tempz;
 psalz = pc.salz;
 pdenz = pc.denz;
+puvelz = pc.uvelz;
+pvvelz = pc.vvelz;
 
 tic
 parfor zi = 1:fz
@@ -161,13 +172,17 @@ parfor zi = 1:fz
     ft = TriScatteredInterp(plon, plat, reshape(ptempz(:, :, zi), [], 1), 'natural');
     fs = TriScatteredInterp(plon, plat, reshape(psalz(:, :, zi), [], 1), 'natural');
     fd = TriScatteredInterp(plon, plat, reshape(pdenz(:, :, zi), [], 1), 'natural');
+    fu = TriScatteredInterp(plon, plat, reshape(puvelz(:, :, zi), [], 1), 'natural');
+    fv = TriScatteredInterp(plon, plat, reshape(pvvelz(:, :, zi), [], 1), 'natural');
     % Interpolate temperature and salinity onto the unstructured grid.
     fvtemp(:, zi) = ft(flon, flat);
     fvsalt(:, zi) = fs(flon, flat);
     fvdens(:, zi) = fd(flon, flat);
+    fvuvel(:, zi) = fu(flonc, flatc);
+    fvvvel(:, zi) = fv(flonc, flatc);
 end
 
-clear plon plat flon flat ptempz psalz pdenz
+clear plon plat flon flat flonc flatc ptempz psalz pdenz puvelz pvvelz
 
 % Unfortunately, TriScatteredInterp won't extrapolate, returning instead
 % NaNs outside the original data's extents. So, for each NaN position, find
@@ -177,7 +192,6 @@ clear plon plat flon flat ptempz psalz pdenz
 
 % We can assume that all layers will have NaNs in the same place
 % (horizontally), so just use the surface layer (1) for the identification
-
 % of NaNs. Also store the finite values so we can find the nearest real
 % value to the current NaN node and use its temperature and salinity
 % values.
@@ -198,6 +212,8 @@ for ni = 1:length(fvnanidx)
     fvtemp(fvnanidx(ni), :) = fvtemp(fvfinidx(di), :);
     fvsalt(fvnanidx(ni), :) = fvsalt(fvfinidx(di), :);
     fvdens(fvnanidx(ni), :) = fvdens(fvfinidx(di), :);
+    fvuvel(fvnanidx(ni), :) = fvuvel(fvfinidx(di), :);
+    fvvvel(fvnanidx(ni), :) = fvvvel(fvfinidx(di), :);
 end
 
 if ftbverbose
@@ -208,6 +224,8 @@ end
 Mobj.restart.temp = fvtemp;
 Mobj.restart.salinity = fvsalt;
 Mobj.restart.rho1 = fvdens;
+Mobj.restart.u = fvuvel;
+Mobj.restart.v = fvvvel;
 
 % Close the MATLAB pool if we opened it.
 if wasOpened

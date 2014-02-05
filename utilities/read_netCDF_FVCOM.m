@@ -118,17 +118,28 @@ vars = squeeze(Vars(1,:,:));
 %------------------------------------------------------------------------------
 % find variable Itime
 %------------------------------------------------------------------------------
-Itime.idx=find(strcmpi(vars,'Itime'));
-Itime.ID=netcdf.inqVarID(nc,'Itime');
-Itime.Data  = netcdf.getVar(nc,Itime.ID,'int32');
-Itime2.Data  = netcdf.getVar(nc,Itime.ID+1,'int32');
-%
-[start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);
-[start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
-%
-var_time = double(Itime.Data)+time_offset+double(Itime2.Data)./(24*600*6000);
-start_date=sum(start_d.*[1 1/(24*60*60)]);
-end_date = sum(end_d.*[1 1/(24*60*60)]);
+try
+    Itime.idx=find(strcmpi(vars,'Itime'));
+    Itime.ID=netcdf.inqVarID(nc,'Itime');
+    Itime.Data  = netcdf.getVar(nc,Itime.ID,'int32');
+    Itime2.Data  = netcdf.getVar(nc,Itime.ID+1,'int32');
+    %
+    [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);
+    [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
+    %
+    var_time = double(Itime.Data)+time_offset+double(Itime2.Data)./(24*600*6000);
+    start_date=sum(start_d.*[1 1/(24*60*60)]);
+    end_date = sum(end_d.*[1 1/(24*60*60)]);
+catch me
+    fprintf('No ''Itime'' and/or ''Itime2'' variables, using ''time'' instead.\n(%s)\n', me.message)
+    Itime.idx=find(strcmpi(vars,'time'));
+    Itime.ID=netcdf.inqVarID(nc,'time');
+    Itime.Data  = netcdf.getVar(nc,Itime.ID,'double');
+
+    var_time = (Itime.Data)+time_offset;
+    [start_date,end_date] = deal(var_time(1),var_time(end));
+end
+
 if (length(all_data)==2)
     req_st = datenum(all_data{1},'dd/mm/yy HH:MM:SS');
     req_end = datenum(all_data{2},'dd/mm/yy HH:MM:SS');

@@ -1,8 +1,8 @@
-function met_files = get_MetUM_pp(Mobj, modelTime, credentials)
+function met_files = get_MetUM_pp(modelTime, credentials)
 % Get the required parameters from the Met Office Unified Model (TM)
 % (hereafter MetUM) to use in FVCOM surface forcing.
 %
-% data = get_MetUM_pp(Mobj, modelTime, credentials)
+% met_files = get_MetUM_pp(modelTime, credentials)
 %
 % DESCRIPTION:
 %   Using FTP access, extract the necessary parameters to create an FVCOM
@@ -10,9 +10,8 @@ function met_files = get_MetUM_pp(Mobj, modelTime, credentials)
 %   it). Data are sampled four times daily.
 %
 % INPUT:
-%   Mobj - MATLAB mesh object
-%   modelTime - Modified Julian Date start and end times
-%   credentials - struct with fields username and password to access the
+%   modelTime - Modified Julian Date start and end times array
+%   credentials - cell array of username and password to access the BADC
 %   FTP server.
 %
 % OUTPUT:
@@ -23,6 +22,7 @@ function met_files = get_MetUM_pp(Mobj, modelTime, credentials)
 %     - surface_downwelling_shortwave_flux_in_air (W m-2)
 %     - surface_net_downward_longwave_flux (W m-2)
 %     - surface_downwelling_longwave_flux_in_air (W m-2)
+%     - surface_upward_latent_heat_flux (W m-2)
 %     - surface_upward_sensible_heat_flux (W m-2)
 %     - eastward_wind / x_wind (m s-1)
 %     - northward_wind / y_wind (m s-1)
@@ -36,10 +36,9 @@ function met_files = get_MetUM_pp(Mobj, modelTime, credentials)
 % Precipitation is converted from kg/m^2/s to m/s. Evaporation is
 % calculated from the mean daily latent heat net flux (lhtfl) at the
 % surface.
-% 
+%
 % EXAMPLE USAGE:
-%   metum_forcing = get_MetUM_pp(Mobj, [51725, 51757], ...
-%       {'username', 'password'});
+%   met_files = get_MetUM_pp([51725, 51757], {'username', 'password'});
 %
 % TODO:
 %   Add support for the AP directories on the FTP server.
@@ -54,13 +53,30 @@ function met_files = get_MetUM_pp(Mobj, modelTime, credentials)
 %   conversion from PP format to NetCDF to separate functions
 %   (get_BADC_data.m and pp2nc.m, respectively). Renamed the function from
 %   get_MetUM_forcing to get_MetUM_pp to better reflect what it does.
+%   2013-09-11 Add support for the post-2011 output files. Also make the
+%   downloads in parallel (this does abuse the BADC somewhat if you have
+%   loads of threads running and will still only go as fast as they
+%   throttle individual connections, assuming they do that).
 %
 %==========================================================================
+
 subname = 'get_MetUM_forcing';
 
 global ftbverbose
 if ftbverbose
     fprintf('\nbegin : %s \n', subname)
+end
+
+% Run jobs on multiple workers if we have that functionality. Not sure if
+% it's necessary, but check we have the Parallel Toolbox first.
+wasOpened = false;
+if license('test', 'Distrib_Computing_Toolbox')
+    % We have the Parallel Computing Toolbox, so launch a bunch of workers.
+    if matlabpool('size') == 0
+        % Force pool to be local in case we have remote pools available.
+        matlabpool open local
+        wasOpened = true;
+    end
 end
 
 nt = ceil(modelTime(end)) - floor(modelTime(1));
@@ -69,22 +85,22 @@ if nt > 365
 end
 
 yearStart = mjulian2greg(modelTime(1));
-yearEnd = mjulian2greg(modelTime(end));
+assert(yearStart >= 2006, 'The MetUM repository does not contain data earlier than 2006.')
 
 % Four times daily outputs at 0000, 0600, 1200 and 1800
 t = modelTime(1):1/4:modelTime(end);
 
-assert(yearEnd == yearStart, 'Can''t (yet) process across a year boundary.')
-assert(yearStart >= 2006 && yearEnd <= 2012, 'The MetUM repository does not contain data earlier than 2006 and later than 2012')
-
-% For the pre-2010 data, we need to download several files with
-% unique names. The names are based on the STASH numbers and the date:
+% For the pre-2010 data, we need to download several files with unique
+% names. The names are based on the STASH numbers and the date:
 %   naamYYYYMMDDHH_STASH#_00.pp
 % The numbers we're interested in are stored in stash.
 stash = [2, 3, 407, 408, 409, 4222, 9229, 16004, ...
     1201, 1235, 2207, 2201, 3217, 3225, 3226, 3234, 3236, 3237, 3245, ...
     5216, 16222, 20004];
-% The stash numbers, and their corresponding forcing type:
+% The stash numbers and their corresponding forcing type.
+%
+% AP = analysis, pressure levels
+% AM = analysis, model levels
 %
 % |---------|-------------------------------------------|
 % | stash # | forcing type                              |
@@ -109,7 +125,7 @@ stash = [2, 3, 407, 408, 409, 4222, 9229, 16004, ...
 % | 3217    | surface_upward_sensible_heat_flux         |
 % | 3225    | eastward_wind / x_wind                    |
 % | 3226    | northward_wind / y_wind                   |
-% | 3234    | surface_upward_latenet_heat_flux          |
+% | 3234    | surface_upward_latent_heat_flux           |
 % | 3236    | air_temperature                           |
 % | 3237    | specific_humidity                         |
 % | 3245    | relative_humidity                         |
@@ -118,18 +134,34 @@ stash = [2, 3, 407, 408, 409, 4222, 9229, 16004, ...
 % | 20004   | [RIVER OUTFLOW]                           |
 % |---------|-------------------------------------------|
 %
+% For the post-2010 data, the stash codes are depracated in favour of
+% single files with individual variables. As such, in those instances, the
+% four data files are downloaded and then the extraction of the variables
+% of interest can be done when the PP files have been converted to netCDF
+% and are subsequently read in with read_MetUM_forcing.m.
 
 ns = length(stash);
 
 % From where will we be downloading the data?
 site = 'ftp.ceda.ac.uk';
-basePath = 'badc/ukmo-um/data/nae/';
+
+% Preallocate the output cell arrays.
+tmp_met_files = cell(1, nt * 4);
+met_files = cell(1, nt * 4);
 
 % Depending on the year we're extracting, we need to append different
 % directories to get the data. 
-for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
+parfor i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
 
     [year, month, day, hour] = mjulian2greg(t(i));
+
+    % Pre-2012 data are in a different directory from the post-2012 data,
+    % so adjust accordingly here.
+    if year < 2012
+        basePath = 'badc/ukmo-um/data/nae/';
+    else
+        basePath = 'badc/ukmo-nwp/data/nae/all_years';
+    end
 
     % Cell array for the files to download.
     files = cell(0);
@@ -158,13 +190,13 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
             end
         else
             % Use the mn data
-            prefix = 'mn';
+            prefix = 'sn';
             filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
                 prefix, ...
                 year, ...
                 month, ...
                 day);
-            files = sprintf('%s_%04d%02d%02d%02d_s00.pp', ...
+            files{length(files + 1)} = sprintf('%s_%04d%02d%02d%02d_s00.pp', ...
                 prefix, ...
                 year, ...
                 month, ...
@@ -197,29 +229,6 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
             end
         end
 
-    % Check the 2012 data are from before the 17th January, 2012.
-    elseif year == 2012
-        if month > 1
-            error('The MetUM repository does not contain data later than 17th January, 2012')
-        elseif month == 1
-            if day > 17
-                error('The MetUM repository does not contain data later than 17th January, 2012')
-            else
-                prefix = 'mn';
-            filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
-                    prefix, ...
-                    year, ...
-                    month, ...
-                    day);
-                files = sprintf('%s_%04d%02d%02d%02d_s00.pp', ...
-                    prefix, ...
-                    year, ...
-                    month, ...
-                    day, ...
-                    hour);
-            end
-        end
-
     % Pre-2010 files.
     elseif year < 2010
         % Use the am data.
@@ -239,16 +248,29 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
                     stash(f));
             end
 
-    % Post-2010 files.
-    elseif year > 2010
-        % Use the mn data.
-        prefix = 'mn';
-            filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
+    % 2011-2012 files.
+    elseif year > 2010 && year < 2012
+        % Use the sn data (has everything we need but doesn't have 70
+        % vertical levels!).
+        prefix = 'sn';
+        filepath = sprintf('%sna/%s/%04d/%02d/%02d', basePath, ...
             prefix, ...
             year, ...
             month, ...
             day);
-        files = sprintf('%s_%04d%02d%02d%02d_s00.pp', ...
+        files{length(files) + 1} = sprintf('%s_%04d%02d%02d%02d_s00.pp', ...
+            prefix, ...
+            year, ...
+            month, ...
+            day, ...
+            hour);
+
+    elseif year >= 2012
+        % Marginally more straightforward in this case.
+        prefix = 'prods_op_nae-mn';
+        filepath = sprintf('%s/%02d/%02d/%02d', basePath, year, month, day);
+        % prods_op_nae-mn_20120101_00_012.pp
+        files{length(files) + 1} = sprintf('%s_%04d%02d%02d_%02d_012.pp', ...
             prefix, ...
             year, ...
             month, ...
@@ -256,8 +278,22 @@ for i = 1:nt * 4 % four files per day (at 0000, 0600, 1200 and 1800).
             hour);
     end
 
-    met_files{i} = get_BADC_data(site, filepath, files, credentials);
+    tmp_met_files{i} = get_BADC_data(site, filepath, files, credentials);
 
+end
+
+% Clean up the output to be a single cell array of file names.
+c = 0;
+for i = 1:length(tmp_met_files)
+    for j = 1:length(tmp_met_files{i})
+        c = c + 1;
+        met_files(c) = tmp_met_files{i}{j};
+    end
+end
+
+% Close the MATLAB pool if we opened it.
+if wasOpened
+    matlabpool close
 end
 
 if ftbverbose

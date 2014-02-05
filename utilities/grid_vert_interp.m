@@ -22,7 +22,7 @@ function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask)
 %   data, depth = x by y by z (where z is vertical layers) grids of the
 %   data and water depths to be interpolated onto the vertical grid defined
 %   by Mobj.siglayz.
-%   mesh        = logical array of positions outside the regularly gridded
+%   mask        = logical array of positions outside the regularly gridded
 %   domain (e.g. if the regular data contains NaNs or other undefined
 %   values, create a logical array of those positions so they can be
 %   omitted quickly).
@@ -118,7 +118,12 @@ parfor xi = 1:nx
             % layers and linearly interpolate through the water column onto
             % the FVCOM vertical profile.
             tpz = xdepth(yi, :);
-            ydata(yi, :) = interp1(tpz, xdata(yi, :), tfz, 'linear', 'extrap');
+
+            % Remove any NaN values in the vertical depths (as is the case
+            % with the HYCOM data, and interpolate only the data we have
+            % that are finite).
+            nidx = isnan(tpz);
+            ydata(yi, :) = interp1(tpz(~nidx), xdata(yi, ~nidx), tfz, 'linear', 'extrap');
         end
     end
     dataz(xi, :, :) = ydata;

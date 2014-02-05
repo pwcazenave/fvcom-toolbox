@@ -1,7 +1,7 @@
-function data = get_NCEP_forcing(Mobj, modelTime, varlist)
-% Get the required parameters from NCEP OPeNDAP data to force FVCOM
-% (through any of Casename_wnd.nc, Casename_sst.nc, Casename_hfx.nc
-% or Casename_pre_evap.nc).
+function data = get_NCEP_forcing(Mobj, modelTime, varargin)
+% Get the required parameters from NCEP products to force FVCOM (through
+% any of Casename_wnd.nc, Casename_sst.nc, Casename_hfx.nc or
+% Casename_pre_evap.nc).
 %
 % data = get_NCEP_forcing(Mobj, modelTime)
 %
@@ -16,8 +16,13 @@ function data = get_NCEP_forcing(Mobj, modelTime, varlist)
 %       have_lonlat - boolean to signify whether coordinates are spherical
 %                   or cartesian.
 %   modelTime - Modified Julian Date start and end times
-%   varlist [optional] - cell array of data to download from NCEP. Use the
-%   NetCDF file prefix (e.g. uwnd, slp etc.).
+%   varargin - parameter/value pairs
+%       - list of variables to extract:
+%           'varlist', {'nshf', 'uwnd', 'vwnd'}
+%       - data source:
+%           'source', 'reanalysis1'
+%           'source', 'reanalysis2' [default]
+%           'source', '20thC'
 %
 % OUTPUT:
 %   data - struct of the data necessary to force FVCOM. These can be
@@ -26,39 +31,48 @@ function data = get_NCEP_forcing(Mobj, modelTime, varlist)
 % The parameters which can be obtained from the NCEP data are:
 %     - u wind component (uwnd)
 %     - v wind component (vwnd)
-%     - Net longwave radiation surface (nlwrs)
-%     - Net shortwave radiation surface (nswrs)
+%     - Net longwave radiation surface (nlwrs = ulwrf - dlwrf)
+%     - Net shortwave radiation surface (nswrs = uswrf - dswrf)
 %     - Air temperature (air)
 %     - Relative humidity (rhum)
 %     - Precipitation rate (prate)
-%     - Sea level pressure (slp)
+%     - Sea level pressure (pres or press)
 %     - Latent heat flux (lhtfl)
 %     - Surface heat flux (shtfl)
 %     - Potential evaporation rate (pevpr)
+%     - Topography (topo)
 %
-% In addition to these, the momentum flux is calculated from wind data.
-% Precipitation is converted from kg/m^2/s to m/s. Evaporation is
-% calculated from the mean daily latent heat net flux (lhtfl) at the
-% surface.
+% In addition to these, the momentum flux (tau) is calculated from wind
+% data. Precipitation is converted from kg/m^2/s to m/s. Evaporation (Et)
+% is calculated from the mean daily latent heat net flux (lhtfl) at the
+% surface. Precipitation-evaporation is also created (P_E).
+%
+% This output struct also includes a land mask extracted from the pevpr
+% data. If the pevpr data is not requested, then no land mask is returned.
 %
 % EXAMPLE USAGE:
 %   To download the default set of data (see list above):
 %
 %       forcing = get_NCEP_forcing(Mobj, [51345, 51376]);
 %
-%   To only downloading wind data:
+%   To only download wind data:
 %
-%       forcing = get_NCEP_forcing(Mobj, [51345, 51376], {'uwnd', 'vwnd'});
+%       forcing = get_NCEP_forcing(Mobj, [51345, 51376], 'varlist', {'uwnd', 'vwnd'});
+% 
+%   To use the 20th Century Reanalysis 2 data:
+% 
+%       forcing = get_NCEP_forcing(Mobj, [51345, 51376], 'source', '20thC');
 %
 % REQUIRES:
 %   The air_sea toolbox:
 %       http://woodshole.er.usgs.gov/operations/sea-mat/air_sea-html/index.html
-%   The OPeNDAP toolbox:
+%   The OPeNDAP toolbox (MALTAB 2011b or older only):
 %       http://www.opendap.org/pub/contributed/source/ml-toolbox/
 %
 % Author(s)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %   Ricardo Torres (Plymouth Marine Laboratory)
+%   Rory O'Hara Murray (Marine Scotland Science)
 %
 % Revision history:
 %   2012-10-31 First version based on get_NCEP_L4.m.
@@ -76,9 +90,31 @@ function data = get_NCEP_forcing(Mobj, modelTime, varlist)
 %   heat net flux ('lhtfl'), so it's superfluous anyway.
 %   2013-06-28 Changed the way the Matlab version is determiend. Now using
 %   release date rather then version number. For example version 7.13 >
-%   verion 7.7 but 7.13 is not greater than 7.7.
+%   verion 7.7 but 7.13 is not greater than 7.7. (ROM)
+%   2013-07-01 Added the 'actual_range' attribute to the native matlab
+%   download section, as this is needed later when identifying the domain
+%   range and replacing values outside this with NaNs. (ROM)
 %   2013-07-18 Add support for selecting only a subset of the available
-%   variables from NCEP.
+%   variables from NCEP (PC).
+%   2013-08-02 Added the 'precision' attribute to the native matlab
+%   download section. Reduced the precision of the 'add_offset' and
+%   'scale_foctor' attributes to that specified in the netCDF file. This is
+%   becasue errors can occure when rescaling the data with very high
+%   precision scale factors and offsets. (ROM)
+%   2013-08-07 Update the URL from which to download the data (actually use
+%   NCEP Reanalysis-2 now instead of the original NMC reanalysis). This has 
+%   necessitated a change in some field names (slp is now pres). The NCEP
+%   Reanalysis-2 data don't have net {long,short}wave radiation flux data,
+%   so this is calcualted from the downward and upward fluxes. Also check
+%   the returned data from NCEP match the dimensions of the longitude and
+%   latitude data (particularly important for interpolation onto the
+%   unstructured grid with grid2fvcom). I haven't fully tested these
+%   changes with the third-party OPeNDAP toolbox, but I have in principle
+%   added the necessary support (PC).
+%   2013-08-08 Make the script a generic script to download either the
+%   original reanalysis ('reanalysis1'), the reanalysis-2 ('reanalysis2')
+%   or the 20th Century Reanalysis-2 ('20thC') data (PC).
+%   2014-02-03 Merge Rory's changes to my latest version (PC).
 %
 %==========================================================================
 
@@ -91,9 +127,33 @@ subname = 'get_NCEP_forcing';
 version_7_14_date = datenum(2012,3,1);
 %version_7_13_date = datenum(2011,9,1);
 
+% Depending on the MATLAB version, either use the native netcdf
+% libraries to load the OPeNDAP data, otherwise we need the relevant
+% third-party toolbox.
+out = ver('MATLAB');
+% Look at the date rather than the version number
+native_netcdf = datenum(out.Date) >= version_7_14_date;
+
 global ftbverbose;
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
+end
+
+% Parse the input arguments
+src = 'reanalysis2';
+varlist = [];
+if nargin > 2
+    for a = 1:2:nargin - 2
+        switch varargin{a}
+            case 'varlist'
+                varlist = varargin{a + 1};
+            case 'source'
+                src = varargin{a + 1};
+        end
+    end
+end
+if ftbverbose
+    fprintf('Extracting %s data.\n', src)
 end
 
 % Get the extent of the model domain (in spherical)
@@ -119,43 +179,132 @@ else
 end
 
 % Set up a struct of the NCEP remote locations in which we're interested.
-ncep.uwnd   = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/uwnd.10m.gauss.',num2str(year),'.nc'];
-ncep.vwnd   = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/vwnd.10m.gauss.',num2str(year),'.nc'];
-ncep.nlwrs  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/nlwrs.sfc.gauss.',num2str(year),'.nc'];
-ncep.nswrs  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/nswrs.sfc.gauss.',num2str(year),'.nc'];
-ncep.air    = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/air.2m.gauss.',num2str(year),'.nc'];
-ncep.rhum   = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface/rhum.sig995.',num2str(year),'.nc'];
-ncep.prate  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/prate.sfc.gauss.',num2str(year),'.nc'];
-ncep.slp    = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface/slp.',num2str(year),'.nc'];
-ncep.lhtfl  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/lhtfl.sfc.gauss.',num2str(year),'.nc'];
-ncep.shtfl  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/shtfl.sfc.gauss.',num2str(year),'.nc'];
-% ncep.pevpr  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/pevpr.sfc.gauss.',num2str(year),'.nc'];
+% This list depends on the value of src (default is reanalysis2).
+switch src
+    case 'reanalysis1'
+        url = 'http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/';
+        % Set up a struct of the NCEP remote locations in which we're interested.
+        ncep.uwnd = [url, 'surface_gauss/uwnd.10m.gauss.', num2str(year), '.nc'];
+        ncep.vwnd = [url, 'surface_gauss/vwnd.10m.gauss.', num2str(year), '.nc'];
+        ncep.nlwrs = [url, 'surface_gauss/nlwrs.sfc.gauss.', num2str(year), '.nc'];
+        ncep.nswrs = [url, 'surface_gauss/nswrs.sfc.gauss.', num2str(year), '.nc'];
+        ncep.air = [url, 'surface_gauss/air.2m.gauss.', num2str(year), '.nc'];
+        ncep.rhum = [url, 'surface/rhum.sig995.', num2str(year), '.nc'];
+        ncep.prate = [url, 'surface_gauss/prate.sfc.gauss.', num2str(year), '.nc'];
+        ncep.slp = [url, 'surface/slp.', num2str(year), '.nc'];
+        ncep.lhtfl = [url, 'surface_gauss/lhtfl.sfc.gauss.', num2str(year), '.nc'];
+        ncep.shtfl = [url, 'surface_gauss/shtfl.sfc.gauss.', num2str(year), '.nc'];
+        ncep.pevpr = [url, 'surface_gauss/pevpr.sfc.gauss.', num2str(year), '.nc'];
 
-% The fields below can be used to create the net shortwave and longwave
-% fluxes if the data you're using don't include net fluxes. Subtract the
-% downward from upward fluxes to get net fluxes.
-ncep.dswrf  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/dswrf.sfc.gauss.',num2str(year),'.nc'];
-ncep.uswrf  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/uswrf.sfc.gauss.',num2str(year),'.nc'];
-ncep.dlwrf  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/dlwrf.sfc.gauss.',num2str(year),'.nc'];
-ncep.ulwrf  = ['http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis/surface_gauss/ulwrf.sfc.gauss.',num2str(year),'.nc'];
+        % The fields below can be used to create the net shortwave and longwave
+        % fluxes if the data you're using don't include net fluxes. Subtract the
+        % downward from upward fluxes to get net fluxes.
+        ncep.dswrf = [url, 'surface_gauss/dswrf.sfc.gauss.', num2str(year),'.nc'];
+        ncep.uswrf = [url, 'surface_gauss/uswrf.sfc.gauss.', num2str(year),'.nc'];
+        ncep.dlwrf = [url, 'surface_gauss/dlwrf.sfc.gauss.', num2str(year),'.nc'];
+        ncep.ulwrf = [url, 'surface_gauss/ulwrf.sfc.gauss.', num2str(year),'.nc'];
 
+    case 'reanalysis2'
+        url = 'http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis2/';
+        % Grab the topo to mask off the land values (makes the
+        % interpolation to an FVCOM domain more sensible). This is
+        % geopotential height, so not really that useful in the end.
+        % I'll leave it in in case its of some use to someone.
+        ncep.topo  = [url, 'surface/topo.sfc.nc'];
+
+        % Get the forcing data.
+        ncep.uwnd   = [url, 'gaussian_grid/uwnd.10m.gauss.', num2str(year), '.nc'];
+        ncep.vwnd   = [url, 'gaussian_grid/vwnd.10m.gauss.', num2str(year), '.nc'];
+        ncep.air    = [url, 'gaussian_grid/air.2m.gauss.', num2str(year), '.nc'];
+        ncep.rhum   = [url, 'pressure/rhum.', num2str(year), '.nc'];
+        ncep.prate  = [url, 'gaussian_grid/prate.sfc.gauss.', num2str(year), '.nc'];
+        ncep.pres   = [url, 'surface/pres.sfc.', num2str(year), '.nc'];
+        ncep.lhtfl  = [url, 'gaussian_grid/lhtfl.sfc.gauss.', num2str(year), '.nc'];
+        ncep.shtfl  = [url, 'gaussian_grid/shtfl.sfc.gauss.', num2str(year), '.nc'];
+
+        % The NCEP reanalysis data include net radiation fluxes whereas
+        % the reanalysis-2 data don't. Instead, we calculate nswrs and
+        % nlwrs from the downward and upward fluxes.
+        % ncep.nlwrs  = [url, 'gaussian_grid/nlwrs.sfc.gauss.', num2str(year), '.nc'];
+        % ncep.nswrs  = [url, 'gaussian_grid/nswrs.sfc.gauss.', num2str(year), '.nc'];
+
+        % Evaporation is given in W/m^{2} whereas we want m/s. We
+        % estimate evaporation from lhtfl instead and call it Et.
+        % Instead we'll use this as a land mask since pevpr is only
+        % given on land.
+        ncep.pevpr  = [url, 'gaussian_grid/pevpr.sfc.gauss.', num2str(year), '.nc'];
+
+        % The fields below can be used to create the net shortwave and
+        % longwave fluxes if the data you're using don't include net
+        % fluxes. Subtract the downward from upward fluxes to get net
+        % fluxes.
+        ncep.dswrf  = [url, 'gaussian_grid/dswrf.sfc.gauss.', num2str(year), '.nc'];
+        ncep.uswrf  = [url, 'gaussian_grid/uswrf.sfc.gauss.', num2str(year), '.nc'];
+        ncep.dlwrf  = [url, 'gaussian_grid/dlwrf.sfc.gauss.', num2str(year), '.nc'];
+        ncep.ulwrf  = [url, 'gaussian_grid/ulwrf.sfc.gauss.', num2str(year), '.nc'];
+    case '20thC'
+        % Set up a struct of the NCEP remote locations in which we're interested.
+        url = 'http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/20thC_ReanV2/';
+
+        % Get the forcing data.
+        ncep.uwnd   = [url, 'gaussian/monolevel/uwnd.10m.', num2str(year), '.nc'];
+        ncep.vwnd   = [url, 'gaussian/monolevel/vwnd.10m.', num2str(year), '.nc'];
+        ncep.air    = [url, 'gaussian/monolevel/air.2m.', num2str(year), '.nc'];
+        ncep.rhum   = [url, 'pressure/rhum.', num2str(year), '.nc'];
+        ncep.prate  = [url, 'gaussian/monolevel/prate.', num2str(year), '.nc'];
+        ncep.press  = [url, 'gaussian/monolevel/press.sfc.', num2str(year), '.nc'];
+        ncep.lhtfl  = [url, 'gaussian/monolevel/lhtfl.', num2str(year), '.nc'];
+        ncep.shtfl  = [url, 'gaussian/monolevel/shtfl.', num2str(year), '.nc'];
+
+        % The NCEP reanalysis data include net radiation fluxes whereas
+        % the 20th Century Reanalysis-2 data don't. Instead, we
+        % calculate nswrs and nlwrs from the downward and upward
+        % fluxes.
+        % ncep.nlwrs  = [url, 'gaussian/monolevel/nlwrs.sfc.', num2str(year), '.nc'];
+        % ncep.nswrs  = [url, 'gaussian/monolevel/nswrs.sfc.', num2str(year), '.nc'];
+
+        % Evaporation is given in W/m^{2} whereas we want m/s. We
+        % estimate evaporation from lhtfl instead and call it Et.
+        % Instead we'll use this as a land mask since pevpr is only
+        % given on land.
+        ncep.pevpr  = [url, 'gaussian/monolevel/pevpr.', num2str(year), '.nc'];
+
+        % The fields below can be used to create the net shortwave and
+        % longwave fluxes if the data you're using don't include net
+        % fluxes. Subtract the downward from upward fluxes to get net
+        % fluxes.
+        ncep.dswrf  = [url, 'gaussian/monolevel/dswrf.sfc.', num2str(year), '.nc'];
+        ncep.uswrf  = [url, 'gaussian/monolevel/uswrf.sfc.', num2str(year), '.nc'];
+        ncep.dlwrf  = [url, 'gaussian/monolevel/dlwrf.sfc.', num2str(year), '.nc'];
+        ncep.ulwrf  = [url, 'gaussian/monolevel/ulwrf.sfc.', num2str(year), '.nc'];
+    otherwise
+        error('Unrecognised ''source'' type. Valid values are ''reanalysis1'', ''reanalysis2'', ''20thC''.')
+end
+            
 fields = fieldnames(ncep);
 
 for aa = 1:length(fields)
 
-    % Skip the downward/upward arrays (most of the time we'll be using the
-    % NCEP-provided net values).
-    if strcmpi(fields{aa}, 'dswrf') || strcmpi(fields{aa}, 'dlwrf') || strcmpi(fields{aa}, 'uswrf') || strcmpi(fields{aa}, 'ulwrf')
-        % But only if we haven't been given a list of variables to fetch.
-        if nargin ~= 3
-            continue
-        end
-    end
+%     % Skip the downward/upward arrays (most of the time we'll be using the
+%     % NCEP-provided net values).
+%     if strcmpi(fields{aa}, 'dswrf') || strcmpi(fields{aa}, 'dlwrf') || strcmpi(fields{aa}, 'uswrf') || strcmpi(fields{aa}, 'ulwrf')
+%         if ftbverbose
+%             fprintf('skipping.\n')
+%         end
+%         % But only if we haven't been given a list of variables to fetch.
+%         if nargin ~= 3
+%             continue
+%         end
+%     end
 
     % We've been given a list of variables to do, so skip those that aren't
     % in the list.
-    if nargin == 3 && max(strcmp(fields{aa}, varlist)) ~= 1
+    if ~isempty(varlist) && max(strcmp(fields{aa}, varlist)) ~= 1
         continue
+    end
+
+    if ftbverbose
+        fprintf('getting ''%s'' data... ', fields{aa})
     end
     
     data.(fields{aa}).data = [];
@@ -167,8 +316,7 @@ for aa = 1:length(fields)
     % Depending on the MATLAB version, either use the native netcdf
     % libraries to load the OPeNDAP data, otherwise we need the relevant
     % third-party toolbox.
-    out = ver('MATLAB');
-    if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
+    if native_netcdf
 
         %ncid_info = ncinfo(ncep.(fields{aa}));
         ncid = netcdf.open(ncep.(fields{aa}));
@@ -178,29 +326,89 @@ for aa = 1:length(fields)
         %[numdims,numvars,numglobalatts,unlimdimid] = netcdf.inq(ncid);
         varid = netcdf.inqVarID(ncid, 'time');
         data_time.time = netcdf.getVar(ncid, varid, 'double');
-        varid = netcdf.inqVarID(ncid, (fields{aa}));
+        if strcmpi(fields{aa}, 'topo')
+            % The topography variable isn't called topo but hgt. Why is
+            % beyond me.
+            varid = netcdf.inqVarID(ncid, 'hgt');
+        else
+            varid = netcdf.inqVarID(ncid, (fields{aa}));
+        end
 
         data_attributes.(fields{aa}).(fields{aa}).scale_factor = ...
             netcdf.getAtt(ncid,varid,'scale_factor','double');
         data_attributes.(fields{aa}).(fields{aa}).add_offset = ...
             netcdf.getAtt(ncid,varid,'add_offset','double');
+        data_attributes.(fields{aa}).(fields{aa}).unpacked_valid_range = ...
+            netcdf.getAtt(ncid, varid, 'unpacked_valid_range');
+
+        data_attributes.(fields{aa}).(fields{aa}).actual_range = ...
+            netcdf.getAtt(ncid,varid,'actual_range','double');
+        data_attributes.(fields{aa}).(fields{aa}).precision = ...
+            netcdf.getAtt(ncid,varid,'precision','double');
+
+        % Change the precision of the attributes to avoid errors
+        precision = 10^data_attributes.(fields{aa}).(fields{aa}).precision;
+        data_attributes.(fields{aa}).(fields{aa}).scale_factor = ...
+            round(precision*data_attributes.(fields{aa}).(fields{aa}).scale_factor)./precision;
+        data_attributes.(fields{aa}).(fields{aa}).add_offset   = ...
+            round(precision*data_attributes.(fields{aa}).(fields{aa}).add_offset)./precision;
+
         varid = netcdf.inqVarID(ncid,'lon');
         data_lon.lon = netcdf.getVar(ncid,varid,'double');
         varid = netcdf.inqVarID(ncid,'lat');
         data_lat.lat = netcdf.getVar(ncid,varid,'double');
+        % Some of the NCEP Reanalysis 2 data are 4D, but with a single
+        % vertical level (e.g. uwnd, vwnd, air, rhum).
+        data_level_idx = [];
+        try % not all data have a 'level', so fail gracefully here.
+            varid = netcdf.inqVarID(ncid, 'level');
+            data_level.level = netcdf.getVar(ncid, varid, 'double');
+            if length(data_level.level) > 1
+                % Assume we've got rhum and we want humidity at the sea
+                % surface (1013 millibars (or hPa)). As such, ZQQ must be
+                % 0.0 in the FVCOM model namelist. Find the closest level
+                % to pressure at 1 standard atmosphere.
+                [~, data_level_idx] = min(abs(data_level.level - 1013));
+            end
+        end
+        if isempty(data_level_idx) % default to the first
+            data_level_idx = 1;
+        end
 
-        timevec = datevec((data_time.time)/24+365);
+        if strcmpi(src, 'reanalysis1')
+            timevec = datevec((data_time.time)/24+365);
+        else
+            timevec = datevec((data_time.time / 24) + datenum(1800, 1, 1, 0, 0, 0));
+        end
+
 
     else
         % We'll use the third-party OPeNDAP toolbox.
         data_time = loaddap([ncep.(fields{aa}),'?time']);
         data_attributes.(fields{aa}) = loaddap('-A',[ncep.(fields{aa})]);
-        timevec = datevec((data_time.time)/24+365);
+        if strcmpi(src, 'reanalysis1')
+            timevec = datevec((data_time.time)/24+365);
+        else
+            timevec = datevec((data_time.time / 24) + datenum(1800, 1, 1, 0, 0, 0));
+        end
 
         % Clip the data to the model domain
         data_lon = loaddap([ncep.(fields{aa}),'?lon']);
         % If the extents are negative in longitude, we need to extract the NCEP
         data_lat = loaddap([ncep.(fields{aa}),'?lat']);
+
+        data_level_idx = 1;
+        try
+            data_level = loaddap([ncep.(fields{aa}),'?level']);
+            if length(data_level.level) > 1
+                % Assume we've got rhum and we want humidity at the sea
+                % surface (since ZQQ = 0.0 in the FVCOM model namelist).
+                data_level_idx = find(data_level.level == 1000);
+            end
+        end
+        if isempty(data_level_idx) % default to the first
+            data_level_idx = 1;
+        end
     end
 
     % Get the data time and convert to Modified Julian Day.
@@ -210,7 +418,17 @@ for aa = 1:length(fields)
     data_time_mask = data.time >= modelTime(1) & data.time <= modelTime(end);
     data_time_idx = 1:size(data.time,1);
     data_time_idx = data_time_idx(data_time_mask);
-    data.time = data.time(data_time_mask);
+    if ~isempty(data_time_idx) % for the topo data mainly
+        data.time = data.time(data_time_mask);
+    else
+        % Reset the index to its original size. This is for data with only
+        % a single time stamp which falls outside the model time (as is the
+        % case with the topography data). Only reset it when the length of
+        % the input time is equal to 1.
+        if length(data.time) == 1
+            data_time_idx = 1:size(data.time, 1);
+        end
+    end
 
     % Check the times
     %[yyyy,mm,dd,hh,MM,ss] = mjulian2greg(data.time(1))
@@ -244,37 +462,72 @@ for aa = 1:length(fields)
     if iscell(index_lon)
         data.(fields{aa}).lon = data_lon.lon(cat(1,index_lon{:}));
 
-        if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
+        % We need to do each half and merge them
+        if native_netcdf
             % varidlon = netcdf.inqVarID(ncid,'lon');
             % varidtime = netcdf.inqVarID(ncid,'time');
             % varidlat = netcdf.inqVarID(ncid,'lat');
 
-            varid = netcdf.inqVarID(ncid,(fields{aa}));
-            % [varname,xtype,dimids,natts] = netcdf.inqVar(ncid,varid);
-            % [~,length1] = netcdf.inqDim(ncid,dimids(1))
-            % [~,length2] = netcdf.inqDim(ncid,dimids(2))
-            % [~,length3] = netcdf.inqDim(ncid,dimids(3))
-            start=[min(index_lon{1})-1,min(index_lat)-1,min(data_time_idx)-1];
-            count=[length(index_lon{1}),length(index_lat),length(data_time_idx)];
-            data1_west.(fields{aa}).(fields{aa}) = netcdf.getVar(ncid,varid,start,count,'double');
-            start=[min(index_lon{2})-1,min(index_lat)-1,min(data_time_idx)-1];
-            count=[length(index_lon{2}),length(index_lat),length(data_time_idx)];
-            data1_east.(fields{aa}).(fields{aa}) = netcdf.getVar(ncid,varid,start,count,'double');
-            data1.(fields{aa}).(fields{aa}).(fields{aa})=cat(1,data1_west.(fields{aa}).(fields{aa}), data1_east.(fields{aa}).(fields{aa}));
+            if strcmpi(fields{aa}, 'topo')
+                varid = netcdf.inqVarID(ncid, 'hgt');
+            else
+                varid = netcdf.inqVarID(ncid,(fields{aa}));
+            end
+            %[varname,xtype,dimids,natts] = netcdf.inqVar(ncid,varid);
+            %[~, length1] = netcdf.inqDim(ncid, dimids(1))
+            %[~, length2] = netcdf.inqDim(ncid, dimids(2))
+            %[~, length3] = netcdf.inqDim(ncid, dimids(3))
+            %[~, length4] = netcdf.inqDim(ncid, dimids(4))
+            % Dimension order is [lon, lat, level, time] or [lon, lat,
+            % time]. Offset indices by 1 (netcdf counts from 0).
+            [~, ~, dimids, ~] = netcdf.inqVar(ncid,varid);
+            if length(dimids) == 4
+                start = [min(index_lon{1}), min(index_lat), data_level_idx, min(data_time_idx)] - 1;
+                count = [length(index_lon{1}), length(index_lat), length(data_level_idx), length(data_time_idx)];
+            elseif length(dimids) == 3
+                start = [min(index_lon{1}), min(index_lat), min(data_time_idx)] - 1;
+                count = [length(index_lon{1}), length(index_lat), length(data_time_idx)];
+            end
+            data1_west.(fields{aa}).(fields{aa}) = netcdf.getVar(ncid, varid, start, count, 'double');
+
+            if length(dimids) == 4
+                start = [min(index_lon{2}), min(index_lat), data_level_idx, min(data_time_idx)] - 1;
+                count = [length(index_lon{2}), length(index_lat), length(data_level_idx), length(data_time_idx)];
+            elseif length(dimids) == 3
+                start = [min(index_lon{2}), min(index_lat), min(data_time_idx)] - 1;
+                count = [length(index_lon{2}), length(index_lat), length(data_time_idx)];
+            end
+            data1_east.(fields{aa}).(fields{aa}) = netcdf.getVar(ncid, varid, start, count, 'double');
+            
+            data1.(fields{aa}).(fields{aa}).(fields{aa}) = ...
+                cat(1, data1_west.(fields{aa}).(fields{aa}), data1_east.(fields{aa}).(fields{aa}));
 
         else
-            % We need to do each half and merge them
+            % The topo needs to be handled slightly differently because its
+            % variable name is not the same as the prefix in the file name.
+            if strcmpi(fields{aa}, 'topo')
+                tmpvarname = 'hgt';
+            else
+                tmpvarname = fields{aa};
+            end
             eval(['data1_west.(fields{aa}) = loaddap(''', ncep.(fields{aa}),'?',...
-                fields{aa},'[', num2str(min(data_time_idx)-1),':',...
+                tmpvarname,'[', num2str(min(data_time_idx)-1),':',...
                 num2str(max(data_time_idx)-1), '][',...
                 num2str(min(index_lat)-1), ':', num2str(max(index_lat)-1),...
                 '][', num2str(min(index_lon{1})-1), ':',...
                 num2str(length(data_lon.lon)-1), ']'');']);
             eval(['data1_east.(fields{aa}) = loaddap(''', ncep.(fields{aa}),'?',...
-                fields{aa}, '[', num2str(min(data_time_idx)-1),':',...
+                tmpvarname, '[', num2str(min(data_time_idx)-1),':',...
                 num2str(max(data_time_idx)-1), '][',...
                 num2str(min(index_lat)-1), ':', num2str(max(index_lat)-1),...
                 '][', '0', ':', num2str(max(index_lon{2})-1), ']'');']);
+            
+            if strcmpi(fields{aa}, 'topo')
+                data1_east.(fields{aa}).(fields{aa}) = data1_east(fields{aa}).(tmpvarname);
+                data1_west.(fields{aa}).(fields{aa}) = data1_west(fields{aa}).(tmpvarname);
+                clear data1_east(fields{aa}.(tmpvarname) data1_west(fields{aa}).(tmpvarname)
+            end
+
             % Merge the two sets of data together
             structfields = fieldnames(data1_west.(fields{aa}).(fields{aa}));
             for ii=1:length(structfields)
@@ -318,7 +571,7 @@ for aa = 1:length(fields)
         % We have a straightforward data extraction
         data.(fields{aa}).lon = data_lon.lon(index_lon);
 
-        if datenum(out.Date) > version_7_14_date % Look at the date rather than the version number
+        if native_netcdf
             varid = netcdf.inqVarID(ncid,(fields{aa}));
             % [varname,xtype,dimids,natts] = netcdf.inqVar(ncid,varid);
             % [~,length1] = netcdf.inqDim(ncid,dimids(1))
@@ -341,8 +594,14 @@ for aa = 1:length(fields)
     datatmp = squeeze(data1.(fields{aa}).(fields{aa}).(fields{aa}));
     datatmp = (datatmp * data_attributes.(fields{aa}).(fields{aa}).scale_factor) + data_attributes.(fields{aa}).(fields{aa}).add_offset;
 
+    % Fix the longitude ranges for all data.
+    data.(fields{aa}).lon(data.(fields{aa}).lon > 180) = ...
+        data.(fields{aa}).lon(data.(fields{aa}).lon > 180) - 360;
+    
     data.(fields{aa}).data = datatmp;
     data.(fields{aa}).time = data.time;
+    data.(fields{aa}).unpacked_valid_range = ...
+        data_attributes.(fields{aa}).(fields{aa}).unpacked_valid_range;
     %     data.(fields{aa}).time = cat(1, data.(fields{aa}).time, squeeze(data1.(fields{aa}).(fields{aa}).time));
     %     data.(fields{aa}).lat = squeeze(data1.(fields{aa}).(fields{aa}).lat);
     %     data.(fields{aa}).lon = squeeze(data1.(fields{aa}).(fields{aa}).lon);
@@ -354,22 +613,37 @@ for aa = 1:length(fields)
     % if something fails later on (e.g. the interpolation) because there's
     % NaNs, that should be a wakeup call to check what's going on with the
     % data.
-    actual_min = data_attributes.(fields{aa}).(fields{aa}).actual_range(1);
-    actual_max = data_attributes.(fields{aa}).(fields{aa}).actual_range(2);
-    mask = data.(fields{aa}).data < actual_min | data.(fields{aa}).data > actual_max;
-    data.(fields{aa}).data(mask) = NaN;
+    if isfield(data_attributes.(fields{aa}).(fields{aa}), 'actual_range')
+        actual_min = data_attributes.(fields{aa}).(fields{aa}).actual_range(1);
+        actual_max = data_attributes.(fields{aa}).(fields{aa}).actual_range(2);
+        mask = data.(fields{aa}).data < actual_min | data.(fields{aa}).data > actual_max;
+        data.(fields{aa}).data(mask) = NaN;
+    end
+
+    if ftbverbose
+        if isfield(data, fields{aa})
+            fprintf('done.\n')
+        else
+            fprintf('error!\n')
+        end
+    end
+end
+
+% Calculate the net long and shortwave radiation fluxes.
+if isfield(data, 'ulwrf') && isfield(data, 'uswrf') && isfield(data, 'dlwrf') && isfield(data, 'dswrf')
+    vars = {'nswrs', 'nlwrs'};
+    up = {'uswrf', 'ulwrf'};
+    down = {'dswrf', 'dlwrf'};
+    for i = 1:length(vars)
+        data.(vars{i}).data = data.(up{i}).data - data.(down{i}).data;
+        data.(vars{i}).time = data.(up{i}).time;
+        data.(vars{i}).lon = data.(up{i}).lon;
+        data.(vars{i}).lat = data.(up{i}).lat;
+    end
 end
 
 % Now we have some data, we need to create some additional parameters
 % required by FVCOM.
-
-% FVCOM's sign convention is the opposite of the NCEP data for heat fluxes
-% (FVCOM: positive = downward flux = ocean heating, negative = upward flux
-% = ocean cooling. NCEP: positive = upward flux = ocean cooling, negative =
-% downward flux = ocean heating). So, rather than do the corrections in
-% create_files.m or wherever, do them here instead.
-% data.nlwrs.data = -data.nlwrs.data;
-% data.nswrs.data = -data.nswrs.data;
 
 % Convert precipitation from kg/m^2/s to m/s (required by FVCOM) by
 % dividing by freshwater density (kg/m^3).
@@ -407,20 +681,88 @@ if isfield(data, 'uwnd') && isfield(data, 'vwnd')
     data.ty.data=reshape(data.ty.data*0.1, size(data.uwnd.data)); % dyn/cm^2 to N/m^2
 end
 
-% Get the fields we need for the subsequent interpolation
-if nargin == 3
-    data.lon = data.(varlist{1}).lon;
-    data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
-    data.lat = data.(varlist{1}).lat;
-else
-    data.lon = data.(fields{1}).lon;
-    data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
-    data.lat = data.(fields{1}).lat;
+% Get the fields we need for the subsequent interpolation Find the position
+% of a sensibly sized array (i.e. not 'topo', 'rhum' or 'pres'.
+for vv = 1:length(fields)
+    if ~isempty(varlist) && max(strcmp(fields{vv}, varlist)) ~= 1
+        continue
+    end
+
+    switch fields{vv}
+        % Set ii in each instance in case we've been told to only use
+        % one of the three alternatively gridded data.
+        case 'topo'
+            ii = vv;
+            continue
+        case 'rhum'
+            ii = vv;
+            continue
+        case {'pres', 'press'}
+            ii = vv;
+            continue
+        otherwise
+            % We've got one, so stop looking.
+            ii = vv;
+            break
+    end
+end
+data.lon = data.(fields{ii}).lon;
+data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
+data.lat = data.(fields{ii}).lat;
+
+% Create a land mask from the pevpr data (if it's been extracted).
+if isfield(data, 'pevpr')
+    % Find any value less than or equal to the valid maximum across all
+    % time steps.
+    data.land_mask = max(data.pevpr.data <= data.pevpr.unpacked_valid_range(2), [], 3);
 end
 
 % Convert temperature to degrees Celsius (from Kelvin)
 if isfield(data, 'air')
     data.air.data = data.air.data - 273.15;
+end
+
+% Make sure all the data we have downloaded is the same shape as the
+% longitude and latitude arrays. This is complicated by the fact the NCEP
+% surface products (e.g. rhum, pres) are on a different grid from the rest
+% (e.g. uwnd).
+for aa = 1:length(fields)
+%     if strcmpi(fields{aa}, 'dswrf') || strcmpi(fields{aa}, 'dlwrf') || strcmpi(fields{aa}, 'uswrf') || strcmpi(fields{aa}, 'ulwrf')
+%         % But only if we haven't been given a list of variables to fetch.
+%         if nargin ~= 3
+%             continue
+%         end
+%     end
+
+    if ~isempty(varlist) && max(strcmp(fields{aa}, varlist)) ~= 1
+        % We've been given a list of variables to extract, so skip those
+        % that aren't in that list
+        continue
+    else
+        if isfield(data, fields{aa})
+            [px, py] = deal(length(data.(fields{aa}).lon), length(data.(fields{aa}).lat));
+            [ncx, ncy, ~] = size(data.(fields{aa}).data);
+            if ncx ~= px || ncy ~= py
+                data.(fields{aa}).data = permute(data.(fields{aa}).data, [2, 1, 3]);
+
+                % Check everything's OK now.
+                [ncx, ncy, ~] = size(data.(fields{aa}).data);
+                if ncx ~= px || ncy ~= py
+                    error('Unable to resize data arrays to match position data orientation. Are these data NCEP surface data (i.e. on a different horizontal grid?)')
+                else
+                    if ftbverbose
+                        fprintf('Matching %s data dimensions to position arrays\n', fields{aa})
+                    end
+                end
+            end
+        else
+            warning('Variable %s requested but not downloaded?', fields{aa})
+        end
+    end
+end
+
+if datenum(out.Date) > version_7_14_date
+    netcdf.close(ncid)
 end
 
 % Have a look at some data.
@@ -429,7 +771,7 @@ end
 %     figure(1)
 %     clf
 %     uv = sqrt(data.uwnd.data(:, :, i).^2 + data.vwnd.data(:, :, i).^2);
-%     pcolor(X, Y, uv)
+%     pcolor(X, Y, uv')
 %     shading flat
 %     axis('equal','tight')
 %     pause(0.1)

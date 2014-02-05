@@ -2,15 +2,16 @@ function Mobj = get_FVCOM_rivers(Mobj, dist_thresh)
 % Extract river discharges from the supplied river positions for the FVCOM
 % grid in Mobj.
 %
-% get_FVCOM_rivers(Mobj, rivers, dist_thresh)
+% get_FVCOM_rivers(Mobj, dist_thresh)
 %
 % DESCRIPTION:
-%   For the positioins in fvcom_xy, find the nearest unstructured grid node
-%   and extract the river discharge from polcoms_flow. If dist_thresh is
-%   specified, the river positions must fall within the specified distance.
-%   If multiple rivers are assigned to the same node, their discharges are
-%   summed. The resulting river name is generated from the contributing
-%   rives, separated by a hyphen.
+%   For the positions in Mobj.rivers.positions, find the nearest
+%   unstructured grid node and extract the river discharge from
+%   Mobj.rivers.discharge. If dist_thresh is specified, the river positions
+%   must fall within the specified distance. If multiple rivers are
+%   assigned to the same node, their discharges are summed. The resulting
+%   river name is generated from the contributing rives, separated by a
+%   hyphen.
 %
 % INPUT:
 %   Mobj - MATLAB mesh object containing:
@@ -40,11 +41,11 @@ function Mobj = get_FVCOM_rivers(Mobj, dist_thresh)
 %   Mobj.river_time - time series for the river discharge data
 %
 % EXAMPLE USAGE:
-%   Mobj = get_FVCOM_rivers(Mobj, Mobj.rivers, 0.025)
+%   Mobj = get_FVCOM_rivers(Mobj, 0.025)
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
-%    Karen Amoudry (National Oceanography Centre, Liverpool)
+%   Karen Amoudry (National Oceanography Centre, Liverpool)
 %
 % Revision history:
 %   2013-03-27 - First version.
@@ -60,14 +61,17 @@ function Mobj = get_FVCOM_rivers(Mobj, dist_thresh)
 %   searches for another node in the element which is part of at least two
 %   elements, thereby avoiding the "element filling" issue. Also updated
 %   the help to list all the required fields in the Mobj.
+%   2013-12-10 - Change the unique call to preserve the order by replacing
+%   'first' with 'stable'. This requires a relatively modern MATLAB
+%   (post-2011b).
 %
 %==========================================================================
 
 subname = 'get_FVCOM_rivers';
 
-global ftbverbose;
+global ftbverbose
 if ftbverbose
-    fprintf(['\nbegin : ' subname '\n'])
+    fprintf('\nbegin : %s \n', subname)
 end
 
 % Check inputs
@@ -88,7 +92,7 @@ polcoms_flow = Mobj.rivers.discharge;
 % For duplicates, we need, therefore, to work out a way to handle them
 % elegantly. We will assume that rivers with the same name are close to one
 % another. As such, we'll sum their discharges. 
-[~, di] = unique(fvcom_name, 'first');
+[~, di] = unique(fvcom_name, 'stable'); % stable preserves order.
 fv_dupes = 1:length(fvcom_name);
 fv_dupes(di) = []; % index of duplicates (does this work with more than two?)
 
@@ -189,8 +193,8 @@ for ff = 1:fv_nr
         % Of the remaining nodes in the element, find the closest one to
         % the original river location (in fvcom_xy).
         [~, n_idx] = sort(sqrt( ...
-            (fvcom_xy(ff, 1) - tlon(n_tri)).^2 ...
-            + (fvcom_xy(ff, 2) - tlat(n_tri)).^2));
+            (fvcom_xy(ff, 1) - Mobj.lon(n_tri)).^2 ...
+            + (fvcom_xy(ff, 2) - Mobj.lon(n_tri)).^2));
 
         [row_2, ~] = find(Mobj.tri == n_tri(n_idx(1)));
         if length(n_idx) > 1

@@ -34,15 +34,14 @@ function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle)
 %    when converting from double to single format.
 %    2013-09-03 - Removed PWC's fix for timestrings. Issue was due to
 %    rounding errors caused by mjulian2greg.m, which have now been fixed.
+%    2014-01-27 - (PWC) Simplify the ftbverbose/report stuff.
 %   
 %==========================================================================
 
 global ftbverbose
-report = false;
-if(ftbverbose); report = true; end
+
 subname = 'write_FVCOM_elevtide';
-if(report); fprintf('\n'); end
-if(report); fprintf(['begin : ' subname '\n']); end
+if ftbverbose; fprintf('\nbegin : %s \n', subname); end
 
 % Get a list of the open boundary nodes. Transpose Mobj.obc_nodes so the
 % order of the boundary nodes is preserved.
@@ -55,10 +54,10 @@ ObcNodes = tmpObcNodes(tmpObcNodes~=0)';
 % Sanity check on input and dimensions
 %--------------------------------------------------------------------------
 nTimes = numel(MJD);
-if(report); fprintf('Number of time steps %d\n',nTimes); end
+if ftbverbose; fprintf('Number of time steps %d\n',nTimes); end
 
 nObcs = numel(ObcNodes);
-if(report); fprintf('Number of Open Boundary Nodes %d\n',nObcs); end
+if ftbverbose; fprintf('Number of Open Boundary Nodes %d\n',nObcs); end
 
 [chk1, chk2] = size(Mobj.surfaceElevation);
 if nObcs ~= chk1 || nTimes ~= chk2
@@ -129,9 +128,9 @@ netcdf.putVar(nc,itime_varid,floor(MJD));
 % Rounds to nearest multiple of the number of msecs in an hour
 netcdf.putVar(nc,itime2_varid,0,nTimes,round((mod(MJD,1)*24*3600*1000)/(3600*1000))*(3600*1000));
 nStringOut = char();
+[nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(MJD);
 for i=1:nTimes
-    [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(MJD(i));
-    nDate = [nYr, nMon, nDay, nHour, nMin, nSec];
+    nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
     nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ',nDate)];
 end
 netcdf.putVar(nc,Times_varid,nStringOut);
@@ -140,5 +139,5 @@ netcdf.putVar(nc,elevation_varid,Mobj.surfaceElevation);
 % close file
 netcdf.close(nc);
 
-if(report); fprintf(['end   : ' subname '\n']); end;
+if ftbverbose; fprintf('end   : %s \n', subname); end;
 

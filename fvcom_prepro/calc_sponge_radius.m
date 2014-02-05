@@ -43,7 +43,7 @@ end
 %--------------------------------------------------------------------------
 % Get a unique list and make sure they are in the range of node numbers 
 %--------------------------------------------------------------------------
-% Make this works in versions of MATLAB older than 2012a (newer versions
+% Make this work in versions of MATLAB older than 2012a (newer versions
 % can just use unique(A, 'stable'), but checking versions is a pain).
 [~, Nidx] = unique(Nlist);
 Nlist = Nlist(sort(Nidx));
