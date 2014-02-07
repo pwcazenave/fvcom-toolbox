@@ -101,11 +101,11 @@ if nargin > 3
         val = varargin{aa + 1};
         switch key
             case 'out_date'
+                out_date = val;
                 if isscalar(val(:, 1))
                     % Bracket the date by 30 minutes either way.
                     bracketed = true;
                     tOffset = 30;
-                    out_date = val;
                     new_date = datevec([...
                         datenum(...
                             val(1), val(2), val(3), val(4), val(5) - tOffset, val(6)); ...
@@ -306,7 +306,7 @@ for ii = 1:numvars
                 % between the end members by the scaling factor at each
                 % time and add to the current time's value.
                 data = netcdf.getVar(nc, varid);
-                if ~isscalar(data)
+                if ~isscalar(data) && ~isempty(nt)
                     if isscalar(indata.(fnames{vv})) && ftbverbose
                         fprintf('tiling input scalar to non-scalar array... ')
                     end
@@ -324,6 +324,8 @@ for ii = 1:numvars
                     if ftbverbose
                         fprintf('ramping data in time... ')
                     end
+                elseif ~isscalar(data) && isempty(nt)
+                    sfvdata = indata.(fnames{vv});
                 else
                     sfvdata = data;
                 end
