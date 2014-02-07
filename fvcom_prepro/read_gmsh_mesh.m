@@ -291,6 +291,7 @@ end
 
 Mobj.x            = x;
 Mobj.y            = y;
+Mobj.z            = z; % for 3D grids
 Mobj.lon          = lon;
 Mobj.lat          = lat;
 Mobj.tri          = tri2;
