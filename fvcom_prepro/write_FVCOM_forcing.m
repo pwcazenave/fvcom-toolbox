@@ -339,7 +339,7 @@ for i=1:length(suffixes)
                     used_dims = [used_dims, 'nNodes'];
                 end
                 
-            case 'Et'
+            case {'Et', 'evap'}
                 if strcmpi(suffixes{i}, '_evap') || ~multi_out
                     % Evaporation
                     pevpr_varid=netcdf.defVar(nc,'evap','NC_FLOAT',[node_dimid, time_dimid]);
