@@ -29,17 +29,20 @@ function write_FVCOM_probes(nml_file, interval, probes)
 %           PROBE_STORE for the full list of supported variables. I've
 %           reproduced that list in the NOTES below.
 %       longname    - long name for the current variable. Must also match
-%       the number of variables.
+%           the number of variables.
+%       levels      - start and end level for 3D variables (u, v, w, ww,
+%           t1, s1, q2, l, q2l, km, kh, kq, rho1).
 %
 % OUTPUT:
 %   Namelist for inclusion in the main FVCOM namelist (PROBES_FILE).
 %
 % EXAMPLE USAGE:
-%   probes.newlyn.node = 1045;
 %   probes.newlyn.file = 'newlyn_elev.dat';
+%   probes.newlyn.node = 1045;
 %   probes.newlyn.description = 'Elevation at Newlyn';
 %   probes.newlyn.variable = 'el';
 %   probes.newlyn.longname = 'Surface elevation (m)';
+%   probes.newlyn.levels = [1, length(Mobj.siglay)];
 %   write_FVCOM_river_nml(Mobj, 'casename_probes.nml', 600, probes)
 %
 % NOTES:
@@ -99,12 +102,18 @@ for p = 1:np
         name = sprintf('%s_%s%s', name, vname, ext);
         file = fullfile(pathstr, name);
         fprintf(f, '&NML_PROBE\n');
-        fprintf(f, ' PROBE_INTERVAL = ''seconds=%.1f'',\n', interval);
+        fprintf(f, ' PROBE_INTERVAL = "seconds=%.1f",\n', interval);
         fprintf(f, ' PROBE_LOCATION = %i,\n', probes.(fnames{p}).node);
-        fprintf(f, ' PROBE_TITLE = ''%s'',\n', file);
-        fprintf(f, ' PROBE_DESCRIPTION = ''%s'',\n', desc);
-        fprintf(f, ' PROBE_VARIABLE = ''%s'',\n', vname);
-        fprintf(f, ' PROBE_VAR_NAME = ''%s''\n', lname);
+        fprintf(f, ' PROBE_TITLE = "%s",\n', file);
+        % If we've got something which is vertically resolved, output the
+        % vertical levels.
+        switch vname
+            case {'u', 'v', 'w', 'ww', 't1', 's1', 'km', 'kh', 'q2', 'l', 'q2l', 'kq', 'rho1'}
+                fprintf(f, ' PROBE_LEVELS = %i %i,\n', probes.(fnames{p}).levels);
+        end
+        fprintf(f, ' PROBE_DESCRIPTION = "%s",\n', desc);
+        fprintf(f, ' PROBE_VARIABLE = "%s",\n', vname);
+        fprintf(f, ' PROBE_VAR_NAME = "%s"\n', lname);
         fprintf(f, '/\n');
     end
 end
