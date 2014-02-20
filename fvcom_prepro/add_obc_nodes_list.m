@@ -53,9 +53,9 @@ end
 [~, Nidx] = unique(Nlist);
 Nlist = Nlist(sort(Nidx));
 
-if(max(Nlist) > Mobj.nVerts);
+if max(Nlist) > Mobj.nVerts
   fprintf('your open boundary node number exceed the total number of nodes in the domain\n');
-  error('stopping...\n')
+  error('stopping...')
 end
 
 %--------------------------------------------------------------------------
