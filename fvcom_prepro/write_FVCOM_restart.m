@@ -71,6 +71,11 @@ function write_FVCOM_restart(fv_restart, out_restart, indata, varargin)
 %   scalar value is given in the input struct but the output is non-scalar
 %   (i.e. an array), then that scalar is tiled to the size of the expected
 %   output array.
+%   2014-02-13 Fix output when only a single time step is in the input
+%   template restart file (fv_restart). Single time step files have the
+%   indata put in the time step (previously the ramping from model to
+%   indata values meant that the output contained only the model data,
+%   which makes no sense.
 %
 % KJA Revision history:
 %   2014-01-23 Add functionality to specify length of time series in output
@@ -311,18 +316,27 @@ for ii = 1:numvars
                         fprintf('tiling input scalar to non-scalar array... ')
                     end
                     sfvdata = nan(nd, ns, nt);
-                    ss = 0:1 / (nt - 1):1; % scale from 0 to 1.
-                    startdata = squeeze(data(:, :, 1)); % use the first modelled time step
-                    for tt = 1:nt
-                        if tt == 1
-                            sfvdata(:, :, 1) = startdata;
-                        else
-                            td = indata.(fnames{vv}) - startdata;
-                            sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
+                    % Scale from 0 to 1 if we have more than one time step,
+                    % otherwise just dump the data we've been given as
+                    % input.
+                    if nt == 1
+                        % Use the observed data.
+                        sfvdata = indata.(fnames{vv});
+                    else
+                        ss = 0:1 / (nt - 1):1; % scale from 0 to 1.
+                        % Use the first modelled time step.
+                        startdata = squeeze(data(:, :, 1));
+                        for tt = 1:nt
+                            if tt == 1
+                                sfvdata(:, :, 1) = startdata;
+                            else
+                                td = indata.(fnames{vv}) - startdata;
+                                sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
+                            end
                         end
-                    end
-                    if ftbverbose
-                        fprintf('ramping data in time... ')
+                        if ftbverbose
+                            fprintf('ramping data in time... ')
+                        end
                     end
                 elseif ~isscalar(data) && isempty(nt)
                     sfvdata = indata.(fnames{vv});
