@@ -7,9 +7,8 @@ function [varargout]=read_netCDF_FVCOM(varargin)
 % DESCRIPTION:
 %    Function to extract data from a Netcdf file output from FVCOM
 %    Outputs data in cell array
-%    
 %
-% INPUT [keyword pairs]:  
+% INPUT [keyword pairs]:
 %   Options are passed in pairs.
 %   The list of options (in no particular order) includes:
 %   params_opts={'time','data_dir','file_netcdf','varnames','nele_idx','node_idx','siglay_idx','siglev_idx'};
@@ -49,15 +48,16 @@ function [varargout]=read_netCDF_FVCOM(varargin)
 %     'node_idx',node_idx,'varnames',var_2_xtractFVCOM_0);
 %
 %
-% Author(s):  
+% Author(s):
 %    Ricardo Torres - Plymouth Marine Laboratory 2012
+%    Hakeem Johnson - CH2M
 %
 % Revision history
 %   v0 March 2012
 %==============================================================================
 %%
 %------------------------------------------------------------------------------
-%  Parse input arguments 
+%  Parse input arguments
 %------------------------------------------------------------------------------
 CD=pwd;
 disp('Using date conversion of +678942 to go from FVCOM time to matlab time')
@@ -128,8 +128,8 @@ try
     [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
     %
     var_time = double(Itime.Data)+time_offset+double(Itime2.Data)./(24*600*6000);
-    start_date=sum(start_d.*[1 1/(24*60*60)]);
-    end_date = sum(end_d.*[1 1/(24*60*60)]);
+    start_date=sum(start_d.*[1 1/(24*60*60*1000)]);     %hkj missing 1000 inserted
+    end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       %hkj missing 1000 inserted
 catch me
     fprintf('No ''Itime'' and/or ''Itime2'' variables, using ''time'' instead.\n(%s)\n', me.message)
     Itime.idx=find(strcmpi(vars,'time'));
@@ -203,10 +203,10 @@ for aa=1:length(varnames)
         return
     end
     varID=netcdf.inqVarID(nc,vars{varidx(aa)});
-    
+
     [name,xtype,dimids,natts] = netcdf.inqVar(nc,varID);
     dimens=length(dimids);
-    
+
     for dd=1:length(dimids)
         [dimName{dd},dimLength(dd)] = netcdf.inqDim(nc,dimids(dd));
         disp(['Variable ',name,' has ',num2str(dimens),' dimensions: ',dimName{dd}])
@@ -214,7 +214,7 @@ for aa=1:length(varnames)
 %------------------------------------------------------------------------------
 % Get the data!
 %------------------------------------------------------------------------------
-    
+
     start=zeros(size(dimLength));
     count=dimLength;
     switch dimens
@@ -224,7 +224,9 @@ for aa=1:length(varnames)
                 case 'time'
                     if time_idx>=0
                         % only restrict data on access if dimension is TIME
-                        eval([varnames{aa},'=netcdf.getVar(nc,varID,time_idx(1),length(time_idx));'])
+                        %hkj it appears the first value in matlab netcdf interface is 0.
+                        %hkj time_idx(1) CORRECTED TO time_idx(1)-1
+                        eval([varnames{aa},'=netcdf.getVar(nc,varID,time_idx(1)-1,length(time_idx));'])
                     end
                 case 'nele'
                     eval([varnames{aa},'=netcdf.getVar(nc,varID);'])
@@ -255,8 +257,13 @@ for aa=1:length(varnames)
                     % if restriction is not -1 then select specified
                     % indices otherwise read all
                     if RestrictDims.idx{dimidx(dd)}(1)>=0
-                        start(dd)=RestrictDims.idx{dimidx(dd)}(1);
-                        count(dd)=length(start(dd):RestrictDims.idx{dimidx(dd)}(end));
+                        if (strcmpi(dimName(dd),'time'))
+                            start(dd)=RestrictDims.idx{dimidx(dd)}(1)-1;
+                            count(dd)=length(start(dd)+1:RestrictDims.idx{dimidx(dd)}(end));
+                        else
+                            start(dd)=RestrictDims.idx{dimidx(dd)}(1);
+                            count(dd)=length(start(dd):RestrictDims.idx{dimidx(dd)}(end));
+                        end
                         do_restrict(dd)=1;
                     end
                 end
@@ -279,7 +286,7 @@ for aa=1:length(varnames)
                                 eval([varnames{aa},'(idx, :) = [];'])
                             case 3
                                 eval([varnames{aa},'(idx, :,:) = [];'])
-                                
+
                             case 4
                                 eval([varnames{aa},'(idx, :,:,:) = [];'])
                         end
