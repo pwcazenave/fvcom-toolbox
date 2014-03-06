@@ -1,62 +1,92 @@
-function [varargout]=read_netCDF_FVCOM(varargin)
+function data =read_netCDF_FVCOM(varargin)
+% Function to extract data from a Netcdf file output from FVCOM.
 %
-% Function to extract data from a Netcdf file output from FVCOM
-%
-% [data] = read_netCDF_FVCOM(varargin)
+% data = read_netCDF_FVCOM(varargin)
 %
 % DESCRIPTION:
-%    Function to extract data from a Netcdf file output from FVCOM
-%    Outputs data in cell array
+%    Function to extract data from a netCDF file output from FVCOM. Outputs
+%    data in struct array.
 %
 % INPUT [keyword pairs]:
 %   Options are passed in pairs.
-%   The list of options (in no particular order) includes:
-%   params_opts={'time','data_dir','file_netcdf','varnames','nele_idx','node_idx','siglay_idx','siglev_idx'};
 %
-%   time  time_interval = {'30/01/06 00:00:00','01/02/06 23:00:00'} or -1 to
-%   extract all times in NC file
+%   The list of keywords is:
+%       - 'time'
+%       - 'data_dir'
+%       - 'file_netcdf'
+%       - 'varnames'
+%       - 'nele_idx'
+%       - 'node_idx'
+%       - 'siglay_idx'
+%       - 'siglev_idx'
 %
-%   data_dir '/home_nfs/rito/models/FVCOM/...' directory where NC file is.
-%   default value is ../fvcom_postproc/netcdf
+%   'time' - {'30/01/06 00:00:00', '01/02/06 23:00:00'} or -1 to extract
+%   all times.
 %
-%   file_netcdf 'filename.nc'  default value is file_netcdf='*.nc', but it
-%   only access the first file in alphabetical order in the directory
+%   'data_dir' - '/home/fvcom/results/...' directory where netCDF file is.
+%   Default value is ../fvcom_postproc/netcdf
 %
-%   varnames  {'Itime','Itime2','xc','yc','art1','art2','h','siglay','siglev','nv','zeta','ua','va'}
-%   cell array of variable names to be read from NC file
-%   the variables need to exist in the file but they are case insensitive. The complete list is given by
-%   running this script with varnames set to [];
+%   'file_netcdf' - 'filename.nc'. Default value is '*.nc', but it only
+%   access the first file in alphabetical order in the directory.
 %
-%   The variables can be restricted in five possible dimensions
-%   node_idx, nele_idx, siglev_idx, siglay_idx and time_idx
-%   default values cause the script to extract all available data for all
-%   possible dimensions. time_idx is constructed from time_interval. All
-%   other indices need to be zero referenced as is Netcdf standard.
-%   No checks are done on the bounds of each dimension so make sure you
-%   choose them right!
+%   'varnames' - Cell array of variable names to read from the netCDF file.
+%   The variables need to exist in the file but they are case insensitive.
+%   Choose FVCOM output variable names. For example:
+%       - 'Itime'
+%       - 'Itime2'
+%       - 'xc'
+%       - 'yc'
+%       - 'art1'
+%       - 'art2'
+%       - 'h'
+%       - 'siglay'
+%       - 'siglev'
+%       - 'nv'
+%       - 'zeta'
+%       - 'ua'
+%       - 'va'
+%   The complete list for a given file is given by running this script with
+%   varnames set to [].
+%
+%   The variables can be restricted in five possible dimensions:
+%       - 'node_idx'
+%       - 'nele_idx'
+%       - 'siglev_idx'
+%       - 'siglay_idx'
+%       - 'time_idx'
+%   Default values cause the script to extract all available data for all
+%   possible dimensions. All indices except time need to be zero referenced
+%   as is standard for netCDF indexing. No checks are done on the bounds of
+%   each dimension so make sure you choose them right!
 %
 %
 % OUTPUT:
-%    data = cell array with variables in the order they were requested
+%    data = struct with variables in the order they were requested.
 %
 % EXAMPLE USAGE
-%   var_2_xtractFVCOM_0 = {'Itime','Itime2','xc','yc','art1','art2','h','siglay','siglev','nv','zeta','ua','va'};
-%   date_range={'30/01/06 00:00:00','15/02/06 23:00:00'};  1 if all available data wanted
-%   node_idx=[10:30,40:50];% zero referenced!
-%   FVCOM_data=read_netCDF_FVCOM_in_progress('time',date_range,'data_dir','/home_nfs/models/FVCOM/runCO2_leak/output/',...
-%     'file_netcdf','co2_S1_0001.nc','siglev_idx',1,...
-%     'node_idx',node_idx,'varnames',var_2_xtractFVCOM_0);
-%
+%   vars = {'Times', 'xc', 'yc', 'h', 'siglay', 'nv', 'zeta', 'ua', 'va'};
+%   date_range = {'30/01/06 00:00:00', '15/02/06 23:00:00'};
+%   node_idx = [10:30, 40:50]; % zero referenced!
+%   data_dir = '/home/fvcom/results/output/';
+%   FVCOM = read_netCDF_FVCOM('data_dir', data_dir, ...
+%       'file_netcdf', 'casename_0001.nc', ...
+%       'time', date_range, ...
+%       'siglev_idx', 1, ...
+%       'node_idx', node_idx, ...
+%       'varnames', vars);
 %
 % Author(s):
 %    Ricardo Torres - Plymouth Marine Laboratory 2012
 %    Hakeem Johnson - CH2M
+%    Pierre Cazenave - Plymouth Marine Laboratory
 %
-% Revision history
+% Revision history:
 %   v0 March 2012
-%==============================================================================
-%%
-%------------------------------------------------------------------------------
+%   2014-03-06 - Add the global verbose flag. Also tidy up the help a bit.
+%   Also change some verbose statements to use fprintf instead of disp for
+%   better control over formatting.
+%
+%==========================================================================
 %  Parse input arguments
 %------------------------------------------------------------------------------
 CD=pwd;
