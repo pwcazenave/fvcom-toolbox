@@ -5,7 +5,7 @@ function data =read_netCDF_FVCOM(varargin)
 %
 % DESCRIPTION:
 %    Function to extract data from a netCDF file output from FVCOM. Outputs
-%    data in struct array.
+%    data in cell array.
 %
 % INPUT [keyword pairs]:
 %   Options are passed in pairs.
@@ -61,7 +61,7 @@ function data =read_netCDF_FVCOM(varargin)
 %
 %
 % OUTPUT:
-%    data = struct with variables in the order they were requested.
+%    data = cell with variables in the order they were requested.
 %
 % EXAMPLE USAGE
 %   vars = {'Times', 'xc', 'yc', 'h', 'siglay', 'nv', 'zeta', 'ua', 'va'};
@@ -327,7 +327,7 @@ for aa=1:length(varnames)
             dimidx=nan*ones(size(dimName));
             for dd=1:length(dimName)
                 test=find(strcmpi(RestrictDims.Name,dimName{dd}));
-                if ~isempty(test); dimidx(dd)=test;   end
+                if ~isempty(test); dimidx(dd)=test; end
             end
             % create start index for dimensions of the variable to
             % access
