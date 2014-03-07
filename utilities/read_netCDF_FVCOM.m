@@ -244,8 +244,9 @@ for dd=1:length(DimsAll)
         cc=cc+1;
     end
 end
-RestrictDims.Name=TEMP;
-RestrictDims.idx=TEMPidx;clear TEMP TEMPidx
+RestrictDims.Name = TEMP;
+RestrictDims.idx = TEMPidx;
+clear TEMP TEMPidx
 
 %--------------------------------------------------------------------------
 % Start Processing extraction of data from NC file
