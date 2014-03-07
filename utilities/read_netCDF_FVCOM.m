@@ -307,15 +307,15 @@ for aa=1:length(varnames)
                         % hkj it appears the first value in matlab netcdf
                         % interface is 0.
                         % hkj time_idx(1) CORRECTED TO time_idx(1)-1.
-                        eval([varnames{aa},'=netcdf.getVar(nc,varID,time_idx(1)-1,length(time_idx));'])
+                        eval([varnames{aa},'=netcdf.getVar(nc,varID,time_idx(1)-1,length(time_idx),''double'');'])
                     end
                 case 'nele'
-                    eval([varnames{aa},'=netcdf.getVar(nc,varID);'])
+                    eval([varnames{aa},'=netcdf.getVar(nc,varID,''double'');'])
                     if nele_idx>=0
                         eval([varnames{aa},' = ',varnames{aa},'(nele_idx);'])
                     end
                 case 'node'
-                    eval([varnames{aa},'=netcdf.getVar(nc,varID);'])
+                    eval([varnames{aa},'=netcdf.getVar(nc,varID,''double'');'])
                     if node_idx>=0
                         eval([varnames{aa},' = ',varnames{aa},'(node_idx);'])
                     end
@@ -355,7 +355,9 @@ for aa=1:length(varnames)
                     fprintf('Wrong selection of dimensions to extract.\nExtracting all values in current variable.\n');
                 end
             end
-            eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count);'])
+
+            eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count,''double'');'])
+
             % only restrict if required...
             if sum(do_restrict)
                 for dd=1:length(do_restrict)
