@@ -84,7 +84,9 @@ function data =read_netCDF_FVCOM(varargin)
 %   v0 March 2012
 %   2014-03-06 - Add the global verbose flag. Also tidy up the help a bit.
 %   Also change some verbose statements to use fprintf instead of disp for
-%   better control over formatting.
+%   better control over formatting. Also fixed a bug where if a 2D array
+%   was requested after a 3D array, the 2D array would cause the function
+%   to crash (because it was using a 3D index for getVar).
 %
 %==========================================================================
 
@@ -256,6 +258,10 @@ for aa=1:length(varnames)
     %----------------------------------------------------------------------
     % Extract number of dimensions, lengths and names of all variables
     %----------------------------------------------------------------------
+
+    % Tidy up the previous iteration's variables so we don't get confused.
+    clear dimName dimLength
+
     TF = strcmpi(varnames{aa},vars);
     if ~isempty(find(TF));
         varidx(aa) = find(TF);
