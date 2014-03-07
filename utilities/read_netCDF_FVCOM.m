@@ -103,7 +103,7 @@ params_opts = {'time', 'data_dir', 'file_netcdf', 'varnames', 'nele_idx', ...
     'node_idx', 'siglay_idx', 'siglev_idx'};
 
 if ftbverbose
-    disp('Input parameters being used are:')
+    fprintf('Input parameters being used are:\n')
 end
 var_in_list = {'all_data', 'netfile_dir', 'file_netcdf', 'varnames', ...
     'nele_idx', 'node_idx', 'siglay_idx', 'siglev_idx'};
@@ -180,10 +180,10 @@ try
     Itime.ID=netcdf.inqVarID(nc,'Itime');
     Itime.Data  = netcdf.getVar(nc,Itime.ID,'int32');
     Itime2.Data  = netcdf.getVar(nc,Itime.ID+1,'int32');
-    %
+
     [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);
     [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
-    %
+
     var_time = double(Itime.Data)+time_offset+double(Itime2.Data)./(24*600*6000);
     start_date=sum(start_d.*[1 1/(24*60*60*1000)]);     %hkj missing 1000 inserted
     end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       %hkj missing 1000 inserted
@@ -199,11 +199,11 @@ catch me
     [start_date,end_date] = deal(var_time(1),var_time(end));
 end
 
-if (length(all_data)==2)
+if length(all_data) == 2
     req_st = datenum(all_data{1},'dd/mm/yy HH:MM:SS');
     req_end = datenum(all_data{2},'dd/mm/yy HH:MM:SS');
 else
-    req_st =start_date;
+    req_st = start_date;
     req_end =end_date;
 end
 time_idx = find(req_st <= var_time &   var_time <= req_end );
@@ -221,7 +221,9 @@ if ftbverbose
     fprintf('Possible variables to extract are:\n')
 end
 for ii = 1:length(vars)
-    fprintf(' %s\n',vars{ii})
+    if ftbverbose
+        fprintf(' %s\n', vars{ii})
+    end
 end
 if isempty(varnames)
     data = 0;
@@ -230,7 +232,7 @@ if isempty(varnames)
 end
 
 %--------------------------------------------------------------------------
-% re-organise RestrictDims to follow order of dimensions in nc file from
+% Re-organise RestrictDims to follow order of dimensions in nc file from
 % FVCOM
 %--------------------------------------------------------------------------
 cc=1;
@@ -285,7 +287,7 @@ for aa=1:length(varnames)
             end
         end
     end
-    fprintf('\n')
+    if ftbverbose; fprintf('\n'); end
 
     %----------------------------------------------------------------------
     % Get the data!
@@ -348,7 +350,9 @@ for aa=1:length(varnames)
                     end
                 end
             else
-                fprintf('Wrong selection of dimensions to extract.\nExtracting all values in current variable.\n');
+                if ftbverbose
+                    fprintf('Wrong selection of dimensions to extract.\nExtracting all values in current variable.\n');
+                end
             end
             eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count);'])
             % only restrict if required...
