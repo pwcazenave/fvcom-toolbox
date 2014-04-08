@@ -178,7 +178,7 @@ for f = 1:length(files)
                         catch err
                             fprintf('\n')
                             warning('Couldn''t append %s to the existing field from file %s.', safename, files{f})
-                            fprintf('%s\n', err.message)
+                            warning('%s\n', err.message)
                         end
 
                 end
