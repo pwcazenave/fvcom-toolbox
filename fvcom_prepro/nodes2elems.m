@@ -1,7 +1,7 @@
-function [fieldout] = nodes2elems(fieldin,Mobj)
+function fieldout = nodes2elems(fieldin,Mobj)
 % Transfer a field from vertices to elements
 %
-% function [fieldout] = nodes2elems(fieldin, Mobj)  
+% function fieldout = nodes2elems(fieldin, Mobj)  
 %
 % DESCRIPTION:
 %    Transfer a field from vertices (nodes) to elements
@@ -18,15 +18,19 @@ function [fieldout] = nodes2elems(fieldin,Mobj)
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
+%   2014-03-10 Made the calculation array-based instead of loop-based
+%   (increases performance).
 %   
 %==========================================================================
+
 subname = 'nodes2elems';
-global ftbverbose;
-if ftbverbose;
-    fprintf('\n')
-    fprintf(['begin : ' subname '\n'])
+
+global ftbverbose
+if ftbverbose
+    fprintf('\nbegin : %s \n', subname)
 end
 
 %--------------------------------------------------------------------------
@@ -44,14 +48,9 @@ end
 %--------------------------------------------------------------------------
 % Tranfser
 %--------------------------------------------------------------------------
-fieldout = zeros(Mobj.nElems,1);
 
-for i=1:Mobj.nElems
-	fieldout(i) = sum(fieldin(Mobj.tri(i,1:3)))/3.; 
-end;
-
+fieldout = mean(fieldin(Mobj.tri), 2);
 
 if ftbverbose
-    fprintf(['end   : ' subname '\n'])
+    fprintf('end   : %s \n', subname)
 end
-
