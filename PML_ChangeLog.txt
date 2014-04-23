@@ -1,5 +1,49 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20140423
+--------
+
+Relatively minor update to bring in some improvements in consistency in the
+toolbox (i.e. remove duplicated functions) and fix some bugs in the function to
+read the FVCOM outputs (read_netCDF_FVCOM.m).
+
+README.md
+    * Flesh out the README with links to the tagged releases as well as a bit
+    of history of the toolbox.
+
+fvcom_prepro:
+    nodes2elems.m
+        * Made the calculation array-based instead of loop-based to increase
+        performance.
+    smoothfield.m
+        * Minor cosmetic changes to the code.
+    write_FVCOM_forcing.m
+        * Fix a typo.
+    read_fvcom_mesh.m [REMOVED]
+        * Remove this duplicate function (leave the version in utilities
+        instead).
+
+swan_scripts:
+    calc_tauw.m
+        * Bring in the differences between this version of calc_tauw.m and the
+        one in utilities/ (which has been removed).
+
+utilities:
+    calc_rad.m
+        * New function to calculate theoretical shortwave irradiance based on
+        latitude and time of day.
+    read_fvcom_mesh.m
+        * Bring in the changes from the (now removed) version of this script
+        which was in fvcom_prepro.
+    read_netCDF_FVCOM.m
+        * Fixed a bug where if a 2D array was requested after a 3D array, the
+        2D array would cause the function to crash (because it was using a 3D
+        index for getVar).
+        * Add the global verbose flag and tidy up the help a bit. Change some
+        verbose statements to use fprintf instead of disp for better control
+        over formatting.
+
+
 20140131
 --------
 
