@@ -49,8 +49,16 @@ z0 = z0/1000;
 %------------------------------------------------------------------------------
 nc = netcdf(ncfile,'w');
 
-Ubot = nc{'Ubot'}(:,:);
-TmBot = nc{'TmBot'}(:,:);
+nctime=ncdim('time',nc);
+nctime = size(nctime);
+nctime=nctime(1,1);
+ncnode=ncdim('node',nc);
+node = size(ncnode);
+node = node(1,1);
+Ubot = ncvar('Ubot',nc);
+Ubot = Ubot.*ones(nctime,node);
+TmBot = ncvar('TmBot',nc);
+TmBot = TmBot.*ones(nctime,node);
 
 
 

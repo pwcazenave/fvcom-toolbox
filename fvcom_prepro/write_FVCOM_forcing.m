@@ -587,7 +587,7 @@ for i=1:length(suffixes)
             netcdf.putVar(nc, nhf_varid, [0, 0], [nNodes, ntimes], data.nshf.node)
         else
             % One of the other data sets for which we can simply dump the
-            % existing array without waiting for other data
+            % existing array without waiting for other data.
             if strcmpi(used_dims{ff}, 'nNodes')
                 eval(['netcdf.putVar(nc,',used_varids{ff},',[0,0],[',used_dims{ff},',ntimes],data.',used_fnames{ff},'.node);'])
             else
