@@ -27,7 +27,7 @@ function [Mobj] = read_fvcom_mesh(gridfile)
 %==============================================================================
 
 subname = 'read_fvcom_mesh';
-global ftbverbose
+global ftbverbose;
 if ftbverbose
     fprintf('\nbegin : %s \n', subname)
 end
