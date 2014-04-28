@@ -37,6 +37,12 @@ function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)
 %
 % Revision history
 %    2013-09-03 First version based on get_POLCOMS_tsobc.m.
+%    2014-04-28 Update interp1 function to use pchip instead of csap as the
+%    latter will be removed in a future version of MATLAB and the
+%    innumerable warnings were doing my nut in. I checked the output using
+%    the new interp1 call and it's identical to the old version. Also
+%    update the parallel toolbox stuff for the same reason (future
+%    removal).
 %
 %==========================================================================
 
@@ -51,10 +57,19 @@ end
 wasOpened = false;
 if license('test', 'Distrib_Computing_Toolbox')
     % We have the Parallel Computing Toolbox, so launch a bunch of workers.
-    if matlabpool('size') == 0
-        % Force pool to be local in case we have remote pools available.
-        matlabpool open local
-        wasOpened = true;
+    try
+        % New version for MATLAB 2014a (I think) onwards.
+        if isempty(gcp('nocreate')) == 0
+            pool = parpool('local');
+            wasOpened = true;
+        end
+    catch
+        % Version for pre-2014a MATLAB.
+        if matlabpool('size') == 0
+            % Force pool to be local in case we have remote pools available.
+            matlabpool open local
+            wasOpened = true;
+        end
     end
 end
 
@@ -304,7 +319,7 @@ for v = 1:length(fields)
                 % Get the temperature and salinity values for this node and
                 % interpolate down the water column (from HYCOM to FVCOM).
                 if ~isnan(norm_tpz)
-                    fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, ~mm), tfz, 'csaps', 'extrap');
+                    fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, ~mm), tfz, 'pchip', 'extrap');
 
                     %figure(800);
                     %clf
@@ -361,7 +376,11 @@ end
 
 % Close the MATLAB pool if we opened it.
 if wasOpened
-    matlabpool close
+    try
+        pool.delete
+    catch
+        matlabpool close
+    end
 end
 
 if ftbverbose
