@@ -1,4 +1,4 @@
-function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask)
+function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask, varargin)
 % Child function to interpolate a given 3D array (x by y by sigma) values
 % to the unstructured grid vertical layers.
 %
@@ -14,9 +14,10 @@ function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask)
 %
 % INPUT:
 %   Mobj        = MATLAB mesh structure which must contain:
+%                   - Mobj.have_lonlat - boolean for spherical coordinate
+%                   fields (Mobj.lon, Mobj.lat) presence (true = yes).
 %                   - Mobj.siglayz - sigma layer depths for all model
 %                   nodes.
-%                   - Mobj.lon, Mobj.lat - node coordinates (long/lat).
 %   lon, lat    = Rectangular arrays of longitude and latitude (see
 %   meshgrid).
 %   data, depth = x by y by z (where z is vertical layers) grids of the
@@ -26,13 +27,22 @@ function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask)
 %   domain (e.g. if the regular data contains NaNs or other undefined
 %   values, create a logical array of those positions so they can be
 %   omitted quickly).
+%   'extrapolate' [optional] = keyword-argument pair in which the argument
+%   specifies the coordinates to use for the extrapolation (e.g.
+%   'extrapolate', [Mobj.lonc, Mobj.latc] to extrapolate onto the element
+%   centres). Defaults to the element nodes (i.e. [Mobj.lon, Mobj.lat]).
 %   
 % OUTPUT:
 %   x by y by z array of vertically interpolated values at each regular
 %   grid location.
 %
 % EXAMPLE USAGE
-%   grid_vert_interp(Mobj, lon, lat, data, depth, mask)
+%   Basic usage:
+%       grid_vert_interp(Mobj, lon, lat, data, depth, mask)
+%
+%   Extrapolate using the element centres.
+%       grid_vert_interp(Mobj, lon, lat, data, depth, mask, ...
+%           'extrapolate', [Mobj.lonc, Mobj.latc])
 % 
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -41,6 +51,14 @@ function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask)
 %   2013-02-08 First version.
 %   2013-05-16 Add support for parallel for-loops (not mandatory, but
 %   enabled if the Parallel Computing Toolbox is available).
+%   2014-04-28 Add new argument to allow specifying different coordinates
+%   for the extrapolation. This allows us to interpolate data which belongs
+%   either to the element centres or element nodes (defaults to element
+%   nodes). This is only really important when the model grid falls outside
+%   the coverage of the supplied data and we're extrapolating data. Update
+%   the parallel pool code to use the new parpool function instead of
+%   matlabpool in anticipation of the latter's eventual removal from
+%   MATLAB. Also update the help.
 %
 %==========================================================================
 
@@ -62,6 +80,18 @@ end
 
 if sum(size(lon) ~= size(data(:, :, 1))) ~= 0 || sum(size(lat) ~= size(data(:, :, 1))) ~= 0
     error('Size of the longitude or latitude arrays do not match the supplied data array')
+end
+
+% Extract the extrapolation coordinates. Default to nodes but use
+% whatever's given if we have the 'extrapolate' argument.
+ulon = Mobj.lon;
+ulat = Mobj.lat;
+for aa = 1:2:length(varargin)
+    switch varargin{aa}
+        case 'extrapolate'
+            ulon = varargin{aa + 1}(:, 1);
+            ulat = varargin{aa + 1}(:, 2);
+    end
 end
 
 wasOpened = false;
@@ -108,7 +138,7 @@ parfor xi = 1:nx
         end
 
         % Find the nearest sigma layer z values from the unstructured grid.
-        [md, mi] = min(sqrt((Mobj.lon - lon(xi, yi)).^2 + (Mobj.lat - lat(xi, yi)).^2));
+        [md, mi] = min(sqrt((ulon - lon(xi, yi)).^2 + (ulat - lat(xi, yi)).^2));
 
         % Skip data point if the closest FVCOM node is more than 10 minutes
         % away.
@@ -118,14 +148,18 @@ parfor xi = 1:nx
 %             end
             continue
         else
-            % Use the FVCOM node's sigma depths to interpolate this POLCOMS
-            % position's temperature and salinity data.
+            % Use the FVCOM node's sigma depths to interpolate this regular
+            % grid position's temperature and salinity data.
             
-            % Get the FVCOM depths closest to this POLCOMS grid position.
-            tfz = Mobj.siglayz(mi, :);
-            % Now get the POLCOMS depths at this node for all the vertical
-            % layers and linearly interpolate through the water column onto
-            % the FVCOM vertical profile.
+            % Get the FVCOM depths closest to this regular grid position.
+            try
+                tfz = Mobj.siglayz(mi, :);
+            catch
+                tfz = Mobj.siglayzc(mi, :);
+            end
+            % Now get the regular grid depths at this node for all the
+            % vertical layers and linearly interpolate through the water
+            % column onto the FVCOM vertical profile.
             tpz = xdepth(yi, :);
 
             % Remove any NaN values in the vertical depths (as is the case
