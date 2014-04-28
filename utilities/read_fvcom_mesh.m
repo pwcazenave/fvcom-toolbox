@@ -19,14 +19,18 @@ function [Mobj] = read_fvcom_mesh(gridfile)
 %
 % Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
+%    2014-04-23 Minor formatting fixes and add the global ftbverbose flag.
 %
 %==============================================================================
 
 subname = 'read_fvcom_mesh';
-fprintf('\n')
-fprintf(['begin : ' subname '\n'])
+global ftbverbose;
+if ftbverbose
+    fprintf('\nbegin : %s \n', subname)
+end
 
 
 %------------------------------------------------------------------------------
@@ -62,9 +66,11 @@ lon = zeros(nVerts,1);
 lat = zeros(nVerts,1);
 ts  = zeros(nVerts,1);
 
-fprintf('reading mesh file\n');
-fprintf('# nodes %d\n',nVerts);
-fprintf('# elems %d\n',nElems);
+if ftbverbose
+    fprintf('reading mesh file\n');
+    fprintf('# nodes %d\n',nVerts);
+    fprintf('# elems %d\n',nElems);
+end
 for i=1:nElems
   C = textscan(fid,' %d %d %d %d %d\n',1);
   tri(i,1) = C{2};  tri(i,2) = C{3}; tri(i,3) = C{4};
@@ -74,7 +80,7 @@ for i=1:nVerts
   x(i) = C{2};
   y(i) = C{3};
 end;
-fprintf('mesh read in\n');
+if ftbverbose; fprintf('mesh read in\n'); end
 fclose(fid);
 
 %------------------------------------------------------------------------------
@@ -103,6 +109,8 @@ Mobj.h            = h;
 Mobj.tri          = tri;
 
 
-fprintf(['end   : ' subname '\n'])
+if ftbverbose
+    fprintf('end   : %s \n', subname)
+end
 
 
