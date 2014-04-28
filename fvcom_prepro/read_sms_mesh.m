@@ -344,6 +344,9 @@ Mobj.lat          = lat;
 Mobj.h            = h;
 Mobj.tri          = tri;
 
+% Make a depth array for the element centres.
+Mobj.hc = nodes2elems(h, Mobj);
+
 if ftbverbose
   fprintf('end   : %s\n', subname)
 end
