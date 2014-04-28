@@ -41,6 +41,8 @@ function [Mobj] = read_sms_mesh(varargin)
 %   2013-10-01 Further improved ability to read files with variable length
 %   headers (ROM).
 %   2013-12-11 Closed the sms_2dm file using fclose (ROM).
+%   2014-04-10 Fix bugs when not using bathymetry (i.e. only reading the
+%   grid data in).
 %
 %==============================================================================
 
@@ -250,35 +252,39 @@ fclose(fid);
 %--------------------------------------------------------------------------
 
 bath_range = max(h) - min(h);
-if have_bath || bath_range == 0
-    fid = fopen(sms_bath, 'rt');
-    if fid < 0
-        error('file: %s does not exist', sms_bath);
-    else
-        if ftbverbose; fprintf('reading sms bathymetry from: %s\n', sms_bath); end
-    end
-    lin = fgetl(fid);
-    lin = fgetl(fid);
-    lin = fgetl(fid);
-    C = textscan(fid, '%s %d', 1);
-    nVerts_tmp = C{2};
-    C = textscan(fid, '%s %d', 1);
-    nElems_tmp = C{2};
-    if (nVerts - nVerts_tmp) * (nElems - nElems_tmp) ~= 0
-        fprintf('dimensions of bathymetry file do not match 2dm file\n')
-        fprintf('bathymetry nVerts: %d\n',nVerts_tmp)
-        fprintf('bathymetry nElems: %d\n',nElems_tmp)
-        error('stopping...')
-    end
-    lin = fgetl(fid);
-    lin = fgetl(fid);
-    lin = fgetl(fid);
-    lin = fgetl(fid); % extra one for the new format from SMS 10.1, I think
-    C2 = textscan(fid, '%f', nVerts);
-    h = C2{1};
-    have_bath = true;
+if have_bath
+    if bath_range == 0
+        fid = fopen(sms_bath, 'rt');
+        if fid < 0
+            error('file: %s does not exist', sms_bath);
+        else
+            if ftbverbose; fprintf('reading sms bathymetry from: %s\n', sms_bath); end
+        end
+        lin = fgetl(fid);
+        lin = fgetl(fid);
+        lin = fgetl(fid);
+        C = textscan(fid, '%s %d', 1);
+        nVerts_tmp = C{2};
+        C = textscan(fid, '%s %d', 1);
+        nElems_tmp = C{2};
+        if (nVerts - nVerts_tmp) * (nElems - nElems_tmp) ~= 0
+            fprintf('dimensions of bathymetry file do not match 2dm file\n')
+            fprintf('bathymetry nVerts: %d\n',nVerts_tmp)
+            fprintf('bathymetry nElems: %d\n',nElems_tmp)
+            error('stopping...')
+        end
+        lin = fgetl(fid);
+        lin = fgetl(fid);
+        lin = fgetl(fid);
+        lin = fgetl(fid); % extra one for the new format from SMS 10.1, I think
+        C2 = textscan(fid, '%f', nVerts);
+        h = C2{1};
+        have_bath = true;
 
-    clear C2
+        clear C2
+
+        fclose(fid);
+    end
 elseif bath_range ~= 0
     have_bath = true;
 end
@@ -341,5 +347,3 @@ Mobj.tri          = tri;
 if ftbverbose
   fprintf('end   : %s\n', subname)
 end
-
-fclose(fid);
