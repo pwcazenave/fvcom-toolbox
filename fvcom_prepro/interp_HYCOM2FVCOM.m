@@ -16,10 +16,12 @@ function Mobj = interp_HYCOM2FVCOM(Mobj, hycom, start_date, varlist)
 %
 % INPUT:
 %   Mobj        = MATLAB mesh structure which must contain:
+%                   - Mobj.lon, Mobj.lat and/or Mobj.lonc, Mobj.latc - node
+%                   or element centre coordinates (long/lat). Dependent on
+%                   the variable being interpolated (u and v need lonc,
+%                   latc whilst temperature and salinity need lat and lon).
 %                   - Mobj.siglayz - sigma layer depths for all model
 %                   nodes.
-%                   - Mobj.lon, Mobj.lat - node coordinates (long/lat)
-%                   - Mobj.lonc, Mobj.latc - element coordinates (long/lat)
 %                   - Mobj.ts_times - Modified Julian Day times for the
 %                   model run.
 %   hycom       = Struct output by get_HYCOM_forcing. Must include fields:
@@ -45,6 +47,14 @@ function Mobj = interp_HYCOM2FVCOM(Mobj, hycom, start_date, varlist)
 %   2013-12-10 Fix the identification of the time index in the HYCOM data
 %   (use hycom.time instead of Mobj.ts_times). Also ignore a field name of
 %   'MT' if supplied in varlist.
+%   2014-04-28 Fix bug when interpolating velocity data due to incorrectly
+%   sized preallocated array. Make the way the data to be interpolated onto
+%   the element centres (i.e. the velocity data), as opposed to the element
+%   nodes, more understandable. This is done by having a single block which
+%   deals with setting up the variables dependent on the number of points
+%   onto which to interpolate. Also update the parallel pool code to use
+%   the new parpool function instead of matlabpool in anticipation of the
+%   latter's eventual removal from MATLAB.
 %
 %==========================================================================
 
@@ -76,10 +86,6 @@ if license('test', 'Distrib_Computing_Toolbox')
     end
 end
 
-% Number of sigma layers, grid nodes and elements.
-[fn, fz] = size(Mobj.siglayz);
-fe = numel(Mobj.lonc);
-
 % Given our input time (in start_date), find the nearest time index for
 % the HYCOM data.
 stime = greg2mjulian(start_date(1), start_date(2), ...
@@ -101,6 +107,25 @@ for vv = 1:length(varlist);
             % Interpolate the regularly gridded data onto the FVCOM grid
             % (vertical grid first).
             %--------------------------------------------------------------
+
+            % Set up all the constants which are based on the model and
+            % data grids.
+            [~, fz] = size(Mobj.siglayz);
+            if strcmpi(currvar, 'u') || strcmpi(currvar, 'v')
+                plon = hycom.lon(:);
+                plat = hycom.lat(:);
+                flon = Mobj.lonc;
+                flat = Mobj.latc;
+                fn = numel(flon);
+                fvtemp = nan(fn, fz);
+            else
+                plon = hycom.lon(:);
+                plat = hycom.lat(:);
+                flon = Mobj.lon;
+                flat = Mobj.lat;
+                fn = numel(flon);
+                fvtemp = nan(fn, fz);
+            end
 
             if ftbverbose
                 fprintf('%s : interpolate %s vertically... ', subname, currvar)
@@ -124,7 +149,7 @@ for vv = 1:length(varlist);
             hyinterp.(currvar) = grid_vert_interp(Mobj, ...
                 hycom.lon, hycom.lat, ...
                 squeeze(hycom.(currvar).data(:, :, :, tidx)), ...
-                hdepth, landmask);
+                hdepth, landmask, 'extrapolate', [flon, flat]);
             ftbverbose = true;
 
             %--------------------------------------------------------------
@@ -139,16 +164,6 @@ for vv = 1:length(varlist);
                 fprintf('horizontally... ')
             end
 
-            fvtemp = nan(fn, fz);
-            if strcmpi(currvar, 'u') || strcmpi(currvar, 'v')
-                fvtemp = nan(fe, fz);
-            end
-            plon = hycom.lon(:);
-            plat = hycom.lat(:);
-            flon = Mobj.lon;
-            flat = Mobj.lat;
-            flonc = Mobj.lonc;
-            flatc = Mobj.latc;
             hytempz = hyinterp.(currvar);
 
             tic
@@ -156,11 +171,7 @@ for vv = 1:length(varlist);
                 % Set up the interpolation object and interpolate the
                 % current variable to the FVCOM unstructured grid.
                 ft = TriScatteredInterp(plon, plat, reshape(hytempz(:, :, zi), [], 1), 'natural');
-                if strcmpi(currvar, 'u') || strcmpi(currvar, 'v')
-                    fvtemp(:, zi) = ft(flonc, flatc);
-                else
-                    fvtemp(:, zi) = ft(flon, flat);
-                end
+                fvtemp(:, zi) = ft(flon, flat);
             end
 
             % Unfortunately, TriScatteredInterp won't extrapolate,
@@ -179,16 +190,15 @@ for vv = 1:length(varlist);
             fvfinidx = fvidx(~isnan(fvtemp(:, 1)));
 
             for ni = 1:length(fvnanidx)
-                xx = Mobj.lon(fvnanidx(ni));
-                yy = Mobj.lat(fvnanidx(ni));
-                % Find the nearest non-nan temperature and salinity value.
-                [~, di] = min(sqrt((Mobj.lon(fvfinidx) - xx).^2 + (Mobj.lat(fvfinidx) - yy).^2));
-
+                % Find the nearest non-nan data (temp, salinity, u or v)
+                % value.
+                xx = flon(fvnanidx(ni));
+                yy = flat(fvnanidx(ni));
+                [~, di] = min(sqrt((flon(fvfinidx) - xx).^2 + (flat(fvfinidx) - yy).^2));
                 fvtemp(fvnanidx(ni), :) = fvtemp(fvfinidx(di), :);
-
             end
 
-            clear plon plat flon flat flonc flatc ptempz
+            clear plon plat flon flat ptempz
 
             Mobj.restart.(currvar) = fvtemp;
 
