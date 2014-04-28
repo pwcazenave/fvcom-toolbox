@@ -1,28 +1,30 @@
 function Mobj = read_sigma(Mobj, sigmafile)
 % Read an FVCOM sigma layers file and output z values into Mobj.
-% 
+%
 % Mobj = read_sigma(Mobj, sigmafile)
-% 
+%
 % DESCRIPTION:
 %   Read a sigma file and calculate the sigma layer depths
-% 
+%
 % INPUT:
 %   Mobj:       Mesh object which must contain Mobj.h (depths).
 %   sigmafile : Full path to an FVCOM sigma.dat file.
-% 
+%
 % OUTPUT:
 %   Mobj:       Mesh object with four new fields:
 %               - siglayz and siglevz: contain depths of the sigma layers
 %               and levels at each grid node.
+%               - siglayzc and siglevzc: contain depths of the sigma layers
+%               and levels at each element centre.
 %               - siglay and siglev: the sigma layer and levels in the
 %               range 0 to -1.
-% 
+%
 % EXAMPLE USAGE:
 %   Mobj = read_sigma(Mobj, 'sigma.dat')
-% 
+%
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
-% 
+%
 % Revision history
 %   2013-01-08 Based on the code in show_sigma.m but instead of calculating
 %   sigma layers along a user-defined line, the depths are calculated for
@@ -34,12 +36,14 @@ function Mobj = read_sigma(Mobj, sigmafile)
 %   input file. Also changed the way the uniform distribution is calculated
 %   (by using a P_SIGMA value of 1 and the sigma_geo.m function rather than
 %   fiddling around with ranges, although the output is the same).
+%   2014-04-28 Add the sigma levels for the element centres in additions to
+%   the element nodes.
 
 subname = 'read_sigma';
 
 global ftbverbose;
 if ftbverbose
-    fprintf(['\nbegin : ' subname '\n'])
+    fprintf('\nbegin : %s\n', subname)
 end
 
 fid = fopen(sigmafile,'r');
@@ -139,13 +143,18 @@ end
 % Create a siglay variable (i.e. midpoint in the sigma levels).
 zlay = z(1:end-1) + (diff(z)/2);
 
+% Create a depth array for the element centres.
+hc = nodes2elems(Mobj.h, Mobj);
+
 Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* repmat(z, Mobj.nVerts, 1);
 Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* repmat(zlay, Mobj.nVerts, 1);
+Mobj.siglevzc = repmat(hc, 1, nlev) .* repmat(z, Mobj.nElems, 1);
+Mobj.siglayzc = repmat(hc, 1, nlev-1) .* repmat(zlay, Mobj.nElems, 1);
 
 % Add the sigma levels and layers to the Mobj.
 Mobj.siglev = z;
 Mobj.siglay = zlay;
 
 if ftbverbose;
-    fprintf(['end   : ' subname '\n'])
+    fprintf('end   : %s\n', subname)
 end
