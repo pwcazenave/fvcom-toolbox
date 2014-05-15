@@ -28,7 +28,7 @@ function [instant_rad, rad] = calc_rad(cloud, lat, jul, secs)
 %
 % Revision history:
 %   2014-01-14 Added to the FVCOM toolbox.
-%
+%   What units!!!?
 
 subname = 'calc_rad';
 
