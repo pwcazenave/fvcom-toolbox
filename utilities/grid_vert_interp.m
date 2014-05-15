@@ -99,7 +99,7 @@ if license('test', 'Distrib_Computing_Toolbox')
     % We have the Parallel Computing Toolbox, so launch a bunch of workers.
     try
         % New version for MATLAB 2014a (I think) onwards.
-        if isempty(gcp('nocreate')) == 0
+        if isempty(gcp('nocreate'))
             pool = parpool('local');
             wasOpened = true;
         end

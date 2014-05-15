@@ -242,9 +242,9 @@ for ii = 1:numvars
     ns = currDimsLengths(sIdx);
     nd = currDimsLengths(nIdx);
     if isempty(nd)
-       % We've got data on the elements (i.e. u and v)
-       nIdx = strncmp('nele', currDimsNames, length(dimnames{unlimdimID + 1}));
-       nd = currDimsLengths(nIdx);
+        % We've got data on the elements (i.e. u and v)
+        nIdx = strncmp('nele', currDimsNames, length(dimnames{unlimdimID + 1}));
+        nd = currDimsLengths(nIdx);
     end
     
     % Iterate through the field names to see if we're on one of the
