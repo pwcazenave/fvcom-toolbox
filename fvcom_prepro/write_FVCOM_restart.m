@@ -57,7 +57,7 @@ function write_FVCOM_restart(fv_restart, out_restart, indata, varargin)
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
-%   Karen Amoudtry (National Oceanography Centre, Liverpool)
+%   Karen Amoudry (National Oceanography Centre, Liverpool)
 %
 % Revision history:
 %   2013-02-08 First version.
