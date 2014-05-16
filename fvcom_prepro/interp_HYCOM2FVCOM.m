@@ -70,19 +70,10 @@ end
 wasOpened = false;
 if license('test', 'Distrib_Computing_Toolbox')
     % We have the Parallel Computing Toolbox, so launch a bunch of workers.
-    try
-        % New version for MATLAB 2014a (I think) onwards.
-        if isempty(gcp('nocreate'))
-            pool = parpool('local');
-            wasOpened = true;
-        end
-    catch
-        % Version for pre-2014a MATLAB.
-        if matlabpool('size') == 0
-            % Force pool to be local in case we have remote pools available.
-            matlabpool open local
-            wasOpened = true;
-        end
+    % New version for MATLAB 2014a (I think) onwards.
+    if isempty(gcp('nocreate'))
+        pool = parpool('local');
+        wasOpened = true;
     end
 end
 
@@ -213,11 +204,7 @@ end
 
 % Close the MATLAB pool if we opened it.
 if wasOpened
-    try
-        pool.delete
-    catch
-        matlabpool close
-    end
+    pool.delete
 end
 
 if ftbverbose
