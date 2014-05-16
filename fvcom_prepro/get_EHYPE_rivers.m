@@ -29,6 +29,10 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %       specified so that the time series can be anchored in time. The
 %       returned time series will be 3 years long centred on the specified
 %       year. Discharges will be repeated for the two additional years.
+%   exclude - [optional] give an array of river numbers to exclude (for
+%       example if they are particularly bad quality data or are within the
+%       threshold but otherwise should be excluded from the model). Note,
+%       these must be numbers (not strings).
 %
 % OUTPUT:
 %   Mobj.river_flux - volume flux at the nodes within the model domain.
@@ -59,6 +63,7 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %   of the rivers rather than summing their fluxes. Also eliminate having
 %   two adjacent river nodes (instead use the average of their flux and
 %   assign the position to the first river node).
+%   2014-05-15 - Add option to exclude rivers by name.
 %
 %==========================================================================
 
@@ -74,14 +79,27 @@ if ~Mobj.have_lonlat
     error('Require unstructured grid positions in lon/lat format to compare against supplied river positions.')
 end
 
-if nargin == 3
-    yr = varargin{1};
+if nargin > 2
+    for aa = 1:2:length(varargin)
+        switch varargin{aa}
+            case 'model_year'
+                yr = varargin{aa + 1};
+            case 'exclude'
+                ignore_list = varargin{aa + 1};
+        end
+    end
 end
 
 % Separate the inputs into separate arrays.
 ehype_name = Mobj.rivers.names;
 ehype_xy = Mobj.rivers.positions;
 ehype_flow = Mobj.rivers.river_flux;
+
+% If we've been given rivers to ignore, remove them now.
+ignore_mask = ehype_name ~= ignore_list;
+
+ehype_name = ehype_name(ignore_mask);
+ehype_xy = ehype_xy(ignore_mask, :);
 
 fv_nr = length(ehype_name);
 
