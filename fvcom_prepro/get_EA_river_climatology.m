@@ -101,10 +101,17 @@ startday = (datenum(yyyy(1), mm(1), dd(1), HH(1), MM(1), SS(1)) - ...
 warning('Don''t know what''s going on with this here. Check the code to find the end day for the river climatology.')
 
 %%% FIXME!!! %%%
-% endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
-%     datenum(max(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
-endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
-    datenum(max(yyyy), 1, 1, 0, 0, 0));
+%%% HORRIBLE HACK ALERT %%%
+%%% SOMETHING TO DO WITH LEAP YEARS. ERROR MIGHT BE IN ANOTHER FUNCTION
+%%% (E.G. get_EHYPE_rivers).
+if mod(mean(yyyy), 4) == 0
+    endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
+        datenum(max(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
+else
+    endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
+        datenum(max(yyyy), 1, 1, 0, 0, 0));
+end
+%%% END OF HORRIBLE HACK ALERT %%%
 %%% FIXME!!! %%%
 
 years = unique(yyyy);
