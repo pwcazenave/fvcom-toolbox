@@ -33,6 +33,7 @@ function [Mobj] = add_river_nodes_list(Mobj,Nlist,RiverName,plotFig)
 %    versions of MATLAB whilst giving the same result.
 %    2013-10-22 KJA: added capability to turn off figures (copied from
 %    Pierre's adaptation to add_obc_nodes_list.m)
+%    2014-05-20 Set boolean flag to true to indicate rivers.
 %   
 %==========================================================================
 subname = 'add_river_nodes_list';
@@ -89,6 +90,7 @@ Mobj.nRivNodes(Mobj.nRivers) = npts;
 Mobj.riv_nodes(Mobj.nRivers, 1:npts) = Nlist;
 Mobj.riv_name{Mobj.nRivers} = RiverName;
 
+Mobj.have_rivers = true;
 
 if ftbverbose
     fprintf(['end   : ' subname '\n'])

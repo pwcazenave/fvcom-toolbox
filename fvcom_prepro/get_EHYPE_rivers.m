@@ -69,6 +69,8 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %   2014-05-15 - Add option to exclude rivers by name.
 %   2014-05-19 - Add new option to use an alternatively formatted input
 %   climatology (two columns instead of the number in the EHYPE data).
+%   2014-05-20 Set boolean flag to true to indicate rivers and add number
+%   of rivers to the relevant field.
 %
 %==========================================================================
 
@@ -416,7 +418,8 @@ fv_uniq_names = [fv_uniq_names; fv_dups_names'];
 % dealing with either climatology or time series data.
 Mobj.river_nodes = fv_uniq_obc;
 Mobj.river_names = fv_uniq_names;
-
+Mobj.have_rivers = true;
+Mobj.nRivers = length(fv_uniq_obc);
 
 % Create a Modified Julian Day time series of the EHYPE river data. Assume
 % all the EHYPE model outputs are for the same period and have the same

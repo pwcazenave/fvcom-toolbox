@@ -24,6 +24,8 @@ function Mobj = get_POLCOMS_river_discharge(Mobj, polcoms_flow)
 %
 % Revision history:
 %   2013-04-15 - First version from the original get_POLCOMS_rivers.m.
+%   2014-05-20 Set boolean flag to true to indicate rivers and add number
+%   of rivers.
 %
 %==========================================================================
 
@@ -58,6 +60,9 @@ end
 Mobj.rivers.num = pc_nr;
 Mobj.rivers.num_time = pc_nt;
 Mobj.rivers.discharge = pc_riv;
+
+Mobj.have_rivers = true;
+Mobj.nRivers = pc_nr;
 
 if ftbverbose
     fprintf(['end   : ' subname '\n'])
