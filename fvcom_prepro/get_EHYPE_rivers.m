@@ -69,8 +69,10 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %   2014-05-15 - Add option to exclude rivers by name.
 %   2014-05-19 - Add new option to use an alternatively formatted input
 %   climatology (two columns instead of the number in the EHYPE data).
-%   2014-05-20 Set boolean flag to true to indicate rivers and add number
+%   2014-05-20 - Set boolean flag to true to indicate rivers and add number
 %   of rivers to the relevant field.
+%   2014-05-29 - Fix issues with the climatology vs. timeseries allocation
+%   of the output arrays.
 %
 %==========================================================================
 
@@ -151,7 +153,10 @@ fvcom_names = cell(0);
 
 % Initialise the flow array with a 366 day long time series of nans. This
 % array will be appended to (unless all rivers are outside the domain).
-fv_flow = nan(366, 1);
+% Only do this if we're doing climatology (signified by a non-empty year).
+if ~isempty(yr)
+    fv_flow = nan(366, 1);
+end
 for ff = 1:fv_nr
     % Find the coastline node closest to this river.
     fv_dist = sqrt( ...
@@ -253,7 +258,16 @@ for ff = 1:fv_nr
     % new data to fit the existing array or wrap the start of the time
     % series back to the end.
     new_t = length(eflow{2});
-    old_t = length(fv_flow(:, 1));
+    % Check if we're doing climatology in which case we can have different
+    % length time series (for CEH vs. EHYPE derived climatologies, for
+    % example). If we're not doing climatology, we have to assume the
+    % modelled time series are all the same length, in which case just use
+    % the values in new_t.
+    if ~isempty(yr)
+        old_t = length(fv_flow(:, 1));
+    else
+        old_t = new_t;
+    end
     diff_t = old_t - new_t;
     if new_t > old_t
         fv_flow(:, vc) = eflow{2}(1:old_t);
