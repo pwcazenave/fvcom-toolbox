@@ -33,6 +33,8 @@ function Mobj = get_EA_river_climatology(Mobj, ea, dist_thresh)
 %
 % Reivision history
 %   2013-11-05 First version.
+%   2014-07-08 Think I've fixed the issue with leap years and incorrectly
+%   sized output temperature arrays with multiple years.
 
 subname = 'get_EA_river_climatology';
 
@@ -100,23 +102,18 @@ startday = (datenum(yyyy(1), mm(1), dd(1), HH(1), MM(1), SS(1)) - ...
     datenum(min(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
 warning('Don''t know what''s going on with this here. Check the code to find the end day for the river climatology.')
 
-%%% FIXME!!! %%%
-%%% HORRIBLE HACK ALERT %%%
-%%% SOMETHING TO DO WITH LEAP YEARS. ERROR MIGHT BE IN ANOTHER FUNCTION
-%%% (E.G. get_EHYPE_rivers).
-if mod(mean(yyyy), 4) == 0
-    endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
-        datenum(max(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
-else
-    endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
-        datenum(max(yyyy), 1, 1, 0, 0, 0));
-end
-%%% END OF HORRIBLE HACK ALERT %%%
-%%% FIXME!!! %%%
-
 years = unique(yyyy);
 ny = length(years);
 if ny == 1
+
+    if mod(years, 4) == 0
+        endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
+            datenum(max(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
+    else
+        endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
+            datenum(max(yyyy), 1, 1, 0, 0, 0));
+    end
+
     % Subset the river climatology for the right days.
     repclim = clim(startday:endday, :);
 else
@@ -125,6 +122,16 @@ else
     for y = 1:ny
         % Find the number of days in this year and only extract that number
         % from the climatology.
+        tidx = 1:length(yyyy);
+        tidx(yyyy ~= years(y)) = [];
+        if mod(years(y), 4) == 0
+            endday = (datenum(yyyy(tidx(end)), mm(tidx(end)), dd(tidx(end)), HH(tidx(end)), MM(tidx(end)), SS(tidx(end))) - ...
+                datenum(max(yyyy(tidx)), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
+        else
+            endday = (datenum(yyyy(tidx(end)), mm(tidx(end)), dd(tidx(end)), HH(tidx(end)), MM(tidx(end)), SS(tidx(end))) - ...
+                datenum(max(yyyy(tidx)), 1, 1, 0, 0, 0));
+        end
+
         nd = sum(eomday(years(y), 1:12));
         if y == 1
             % This is the part year for the first year. Prepend the
@@ -138,10 +145,10 @@ else
             repclim = [repclim; clim];
         end
 
-        % We need to add an extra day's data to the end of the array for
-        % this year.
+        % We need to add an extra couple of day's data to the end of the
+        % array for this (leap) year.
         if nd == 366
-            repclim = [repclim; repclim(end, :)];
+            repclim = [repclim; repclim(end - 1:end, :)];
         end
     end
 end
