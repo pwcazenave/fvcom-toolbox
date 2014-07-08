@@ -16,12 +16,13 @@ function write_FVCOM_restart(fv_restart, out_restart, indata, varargin)
 %   replaced.
 % OPTIONAL INPUT (keyword-value pairs):
 %   'out_date'  = [optional] reset the restart file times to this date
-%   ([YYYY, MM, DD, HH, MM, SS]). This must be a single date only. If new
-%   data are being provided, they must be a single time step only; existing
-%   data will use the last time step in the restart file. The output file
-%   will include three time steps to bracket the specified time by 30
-%   minutes each way (to allow FVCOM some wiggle room when loading the
-%   data). The data will be replicated over the three time steps.
+%   ([YYYY, MM, DD, HH, MM, SS]). This can be a single date only or a time
+%   series whose length matches the provided restart data in indata. If new
+%   data are being provided, the data time series length must match the
+%   out_date series. If a only a single time is given, the output file will
+%   include three time steps to bracket the specified time by 30 minutes
+%   each way (to allow FVCOM some wiggle room when loading the data). The
+%   data will be replicated over the three time steps.
 %
 % OUTPUT:
 %   FVCOM restart file.
@@ -76,6 +77,9 @@ function write_FVCOM_restart(fv_restart, out_restart, indata, varargin)
 %   indata put in the time step (previously the ramping from model to
 %   indata values meant that the output contained only the model data,
 %   which makes no sense.
+%   2014-07-08 Fix the creation of the Itime2 variable (milliseconds since
+%   midnight). Also update the help to better describe how the optional
+%   'out_date' argument works.
 %
 % KJA Revision history:
 %   2014-01-23 Add functionality to specify length of time series in output
@@ -383,6 +387,16 @@ for ii = 1:numvars
                 fprintf('NEW DATA... ')
             end
             tmp_time = greg2mjulian(out_date(:, 1), out_date(:, 2), out_date(:, 3), out_date(:, 4), out_date(:, 5), out_date(:, 6));
+            netcdf.putVar(ncout, varid, floor(tmp_time))
+
+            writtenAlready = 1;
+
+        elseif strcmpi(varname, 'Itime2') && writtenAlready == 0 && exist('out_date', 'var')
+            if ftbverbose
+                fprintf('NEW DATA... ')
+            end
+            tmp_time_mjd = greg2mjulian(out_date(:, 1), out_date(:, 2), out_date(:, 3), out_date(:, 4), out_date(:, 5), out_date(:, 6));
+            tmp_time = round((mod(tmp_time_mjd, 1) * 24 * 3600 * 1000) / (3600 * 1000)) * (3600 * 1000);
             netcdf.putVar(ncout, varid, floor(tmp_time))
 
             writtenAlready = 1;
