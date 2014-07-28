@@ -1,5 +1,45 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20140728
+--------
+
+Minor update to fix a number of niggling bugs.
+
+fvcom_prepro:
+    add_river_nodes_graphic.m
+        * Set the river flag in the Mobj when loading river data.
+    add_river_nodes_list.m
+        * Set the river flag in the Mobj when loading river data.
+    get_EA_river_climatology.m
+        * Fix (I think) bug with leap years and climatology across multiple
+        years.
+    get_EHYPE_rivers.m
+        * Add optional arguments to exclude specific rivers (by name). Also add
+        new flag to change the assumed format of the input data to be
+        "time,flux" rather than the EHYPE-specific raw data format.
+    get_FVCOM_rivers.m
+        * Set the river flag in the Mobj when loading river data.
+    get_HYCOM_tsobc.m
+        * Use more stable interpolation (pchip instead of csaps) for the depth
+        interpolation of the data for each open boundary node.
+    get_POLCOMS_river_discharge.m
+        * Set the river flat in the Mobj when loading river data.
+    interp_HYCOM2FVCOM.m
+        * Add support for the latest syntax for the parallel processing tools
+        in MATLAB.
+    make_blank_mesh.m
+        * Add new flag to the Mobj to indicate whether we have rivers in the
+        model.
+    write_FVCOM_restart.m
+        * Fix the calculation of Itime2 in the restart file (previously always
+        set to 0).
+
+utilities:
+    grid_vert_interp.m
+        * Fix bug in interpolating in the vertical when HYCOM data has only
+        a single depth bin.
+
+
 20140423
 --------
 
