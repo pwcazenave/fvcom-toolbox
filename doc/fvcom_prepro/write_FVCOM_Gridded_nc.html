@@ -1,0 +1,339 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_FVCOM_Gridded_nc</title>
+  <meta name="keywords" content="write_FVCOM_Gridded_nc">
+  <meta name="description" content="Write data out to FVCOM NetCDF heating file (for HEATING_CALCULATED).">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_FVCOM_Gridded_nc.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_FVCOM_Gridded_nc
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Write data out to FVCOM NetCDF heating file (for HEATING_CALCULATED).</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_FVCOM_Gridded_nc(Mobj, fileprefix, data) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Write data out to FVCOM NetCDF heating file (for HEATING_CALCULATED).
+
+ write_FVCOM_Gridded_nc(Mobj, fileprefix, data)
+
+ DESCRIPTION:
+   Takes the given interpolated data (e.g. from grid2fvcom) and writes out
+   to a NetCDF file.
+
+ INPUT:
+   Mobj - MATLAB mesh object containing fields:
+       tri - triangulation table for the unstructured grid
+       nVerts - number of grid vertices (nodes)
+       nElems - number of grid elements
+       nativeCoords - model coordinate type ('cartesian' or 'spherical')
+       x, y or lon, lat - node positions (depending on nativeCoords value)
+   fileprefix - Output NetCDF file prefix (plus path) will be
+       fileprefix_{wnd,hfx,evap}.nc if fver is '3.1.0', otherwise output
+       files will be fileprefix_wnd.nc.
+   data - Struct of the data to be written out.
+
+ The fields in data may be called any of:
+     - 'slp' or 'pres'     - sea level pressure
+     - 'rhum'              - relative humidity
+     - 'dlwrf'             - downward longwave radiation
+     - 'dswrf'             - downward shortwave radiation
+     - 'air'               - air temperature
+     - 'lon'               - longitude (vector)
+     - 'lat'               - latitude (vector)
+     - 'x'                 - eastings (vector)
+     - 'y'                 - northings (vector)
+
+ OUTPUT:
+   FVCOM heating NetCDF file.
+
+ EXAMPLE USAGE:
+   heatBase = '/path/to/output/casename_wnd.nc';
+   write_FVCOM_heating(Mobj, heatBase, data);
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+   2013-07-18 - First version based on write_FVCOM_heating and PML
+   python's code XXXXXX
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>	Transfer a field from vertices to elements</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_Gridded_nc(Mobj, fileprefix, data)</a>
+0002 <span class="comment">% Write data out to FVCOM NetCDF heating file (for HEATING_CALCULATED).</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% write_FVCOM_Gridded_nc(Mobj, fileprefix, data)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Takes the given interpolated data (e.g. from grid2fvcom) and writes out</span>
+0008 <span class="comment">%   to a NetCDF file.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   Mobj - MATLAB mesh object containing fields:</span>
+0012 <span class="comment">%       tri - triangulation table for the unstructured grid</span>
+0013 <span class="comment">%       nVerts - number of grid vertices (nodes)</span>
+0014 <span class="comment">%       nElems - number of grid elements</span>
+0015 <span class="comment">%       nativeCoords - model coordinate type ('cartesian' or 'spherical')</span>
+0016 <span class="comment">%       x, y or lon, lat - node positions (depending on nativeCoords value)</span>
+0017 <span class="comment">%   fileprefix - Output NetCDF file prefix (plus path) will be</span>
+0018 <span class="comment">%       fileprefix_{wnd,hfx,evap}.nc if fver is '3.1.0', otherwise output</span>
+0019 <span class="comment">%       files will be fileprefix_wnd.nc.</span>
+0020 <span class="comment">%   data - Struct of the data to be written out.</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% The fields in data may be called any of:</span>
+0023 <span class="comment">%     - 'slp' or 'pres'     - sea level pressure</span>
+0024 <span class="comment">%     - 'rhum'              - relative humidity</span>
+0025 <span class="comment">%     - 'dlwrf'             - downward longwave radiation</span>
+0026 <span class="comment">%     - 'dswrf'             - downward shortwave radiation</span>
+0027 <span class="comment">%     - 'air'               - air temperature</span>
+0028 <span class="comment">%     - 'lon'               - longitude (vector)</span>
+0029 <span class="comment">%     - 'lat'               - latitude (vector)</span>
+0030 <span class="comment">%     - 'x'                 - eastings (vector)</span>
+0031 <span class="comment">%     - 'y'                 - northings (vector)</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">% OUTPUT:</span>
+0034 <span class="comment">%   FVCOM heating NetCDF file.</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% EXAMPLE USAGE:</span>
+0037 <span class="comment">%   heatBase = '/path/to/output/casename_wnd.nc';</span>
+0038 <span class="comment">%   write_FVCOM_heating(Mobj, heatBase, data);</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% Author(s):</span>
+0041 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">%   2013-07-18 - First version based on write_FVCOM_heating and PML</span>
+0044 <span class="comment">%   python's code XXXXXX</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">%==========================================================================</span>
+0047 
+0048 assert(nargin == 3, <span class="string">'Incorrect number of arguments'</span>)
+0049 
+0050 subname = <span class="string">'write_FVCOM_heating'</span>;
+0051 
+0052 <span class="keyword">global</span> ftbverbose
+0053 <span class="keyword">if</span> ftbverbose
+0054     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0055 <span class="keyword">end</span>
+0056 
+0057 tri = Mobj.tri;
+0058 nNodes = Mobj.nVerts;
+0059 nElems = Mobj.nElems;
+0060 ntimes = numel(data.time);
+0061 
+0062 <span class="keyword">if</span> strcmpi(Mobj.nativeCoords, <span class="string">'cartesian'</span>)
+0063     x = Mobj.x;
+0064     y = Mobj.y;
+0065 <span class="keyword">else</span>
+0066     x = Mobj.lon;
+0067     y = Mobj.lat;
+0068     <span class="comment">% Make the range of lon 0-360</span>
+0069     x(x &lt; 0) = x(x &lt; 0) + 360;
+0070 <span class="keyword">end</span>
+0071 <span class="comment">% Create a string for each variable's coordinate attribute</span>
+0072 coordString = sprintf(<span class="string">'FVCOM %s coordinates'</span>, Mobj.nativeCoords);
+0073 
+0074 <span class="comment">% Create element vertices positions</span>
+0075 xc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(x, Mobj);
+0076 yc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(y, Mobj);
+0077 
+0078 <span class="comment">%--------------------------------------------------------------------------</span>
+0079 <span class="comment">% Create the NetCDF header for the FVCOM forcing file</span>
+0080 <span class="comment">%--------------------------------------------------------------------------</span>
+0081 
+0082 nc = netcdf.create([fileprefix, <span class="string">'_hfx.nc'</span>], <span class="string">'clobber'</span>);
+0083 
+0084 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'title'</span>, <span class="string">'FVCOM Forcing File'</span>)
+0085 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'institution'</span>, <span class="string">'Plymouth Marine Laboratory'</span>)
+0086 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'source'</span>, <span class="string">'FVCOM grid (unstructured) surface forcing'</span>)
+0087 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, [<span class="string">'File created on '</span>, datestr(now, <span class="string">'yyyy-mm-dd HH:MM:SS'</span>), <span class="string">' with write_FVCOM_forcing.m from the MATLAB fvcom-toolbox (https://github.com/pwcazenave/fvcom-toolbox)'</span>])
+0088 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'references'</span>, <span class="string">'http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu'</span>)
+0089 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'Conventions'</span>, <span class="string">'CF-1.0'</span>)
+0090 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'CoordinateSystem'</span>, Mobj.nativeCoords)
+0091 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'CoordinateProjection'</span>, <span class="string">'init=epsg:4326'</span>) <span class="comment">% WGS84?</span>
+0092 
+0093 <span class="comment">% Dimensions</span>
+0094 nele_dimid=netcdf.defDim(nc, <span class="string">'nele'</span>, nElems);
+0095 node_dimid=netcdf.defDim(nc, <span class="string">'node'</span>, nNodes);
+0096 three_dimid=netcdf.defDim(nc, <span class="string">'three'</span>, 3);
+0097 time_dimid=netcdf.defDim(nc, <span class="string">'time'</span>, netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0098 datestrlen_dimid=netcdf.defDim(nc, <span class="string">'DateStrLen'</span>, 26);
+0099 
+0100 <span class="comment">% Space variables</span>
+0101 <span class="keyword">if</span> strcmpi(Mobj.nativeCoords, <span class="string">'cartesian'</span>)
+0102     x_varid=netcdf.defVar(nc, <span class="string">'x'</span>, <span class="string">'NC_FLOAT'</span>, node_dimid);
+0103     netcdf.putAtt(nc, x_varid, <span class="string">'long_name'</span>, <span class="string">'nodal x-coordinate'</span>);
+0104     netcdf.putAtt(nc, x_varid, <span class="string">'units'</span>, <span class="string">'meters'</span>);
+0105 
+0106     y_varid=netcdf.defVar(nc, <span class="string">'y'</span>, <span class="string">'NC_FLOAT'</span>, node_dimid);
+0107     netcdf.putAtt(nc, y_varid, <span class="string">'long_name'</span>, <span class="string">'nodal y-coordinate'</span>);
+0108     netcdf.putAtt(nc, y_varid, <span class="string">'units'</span>, <span class="string">'meters'</span>);
+0109 
+0110     xc_varid=netcdf.defVar(nc, <span class="string">'xc'</span>,<span class="string">'NC_FLOAT'</span>, nele_dimid);
+0111     netcdf.putAtt(nc, xc_varid, <span class="string">'long_name'</span>, <span class="string">'zonal x-coordinate'</span>);
+0112     netcdf.putAtt(nc, xc_varid, <span class="string">'units'</span>, <span class="string">'meters'</span>);
+0113 
+0114     yc_varid=netcdf.defVar(nc, <span class="string">'yc'</span>,<span class="string">'NC_FLOAT'</span>, nele_dimid);
+0115     netcdf.putAtt(nc, yc_varid, <span class="string">'long_name'</span>, <span class="string">'zonal y-coordinate'</span>);
+0116     netcdf.putAtt(nc, yc_varid, <span class="string">'units'</span>, <span class="string">'meters'</span>);
+0117 
+0118 <span class="keyword">elseif</span> strcmpi(Mobj.nativeCoords, <span class="string">'spherical'</span>)
+0119     x_varid=netcdf.defVar(nc, <span class="string">'lon'</span>,<span class="string">'NC_FLOAT'</span>, node_dimid);
+0120     netcdf.putAtt(nc, x_varid, <span class="string">'long_name'</span>, <span class="string">'nodal longitude'</span>);
+0121     netcdf.putAtt(nc, x_varid, <span class="string">'units'</span>, <span class="string">'degrees_east'</span>);
+0122 
+0123     y_varid = netcdf.defVar(nc, <span class="string">'lat'</span>, <span class="string">'NC_FLOAT'</span>, node_dimid);
+0124     netcdf.putAtt(nc, y_varid, <span class="string">'long_name'</span>, <span class="string">'nodal latitude'</span>);
+0125     netcdf.putAtt(nc, y_varid, <span class="string">'units'</span>, <span class="string">'degrees_north'</span>);
+0126 
+0127     xc_varid = netcdf.defVar(nc, <span class="string">'lonc'</span>, <span class="string">'NC_FLOAT'</span>, nele_dimid);
+0128     netcdf.putAtt(nc, xc_varid, <span class="string">'long_name'</span>, <span class="string">'zonal longitude'</span>);
+0129     netcdf.putAtt(nc, xc_varid, <span class="string">'units'</span>, <span class="string">'degrees_east'</span>);
+0130 
+0131     yc_varid = netcdf.defVar(nc, <span class="string">'latc'</span>, <span class="string">'NC_FLOAT'</span>, nele_dimid);
+0132     netcdf.putAtt(nc, yc_varid, <span class="string">'long_name'</span>, <span class="string">'zonal latitude'</span>);
+0133     netcdf.putAtt(nc, yc_varid, <span class="string">'units'</span>, <span class="string">'degrees_north'</span>);   
+0134 <span class="keyword">else</span>
+0135     error(<span class="string">'Unknown coordinate type (%s)'</span>, Mobj.nativeCoords)
+0136 <span class="keyword">end</span>
+0137 
+0138 nv_varid=netcdf.defVar(nc, <span class="string">'nv'</span>, <span class="string">'NC_INT'</span>, [nele_dimid, three_dimid]);
+0139 netcdf.putAtt(nc, nv_varid, <span class="string">'long_name'</span>, <span class="string">'nodes surrounding element'</span>);
+0140 
+0141 <span class="comment">% Time variables</span>
+0142 time_varid=netcdf.defVar(nc, <span class="string">'time'</span>, <span class="string">'NC_FLOAT'</span>, time_dimid);
+0143 netcdf.putAtt(nc, time_varid, <span class="string">'long_name'</span>, <span class="string">'time'</span>);
+0144 netcdf.putAtt(nc, time_varid, <span class="string">'units'</span>, <span class="string">'days since 1858-11-17 00:00:00'</span>);
+0145 netcdf.putAtt(nc, time_varid, <span class="string">'format'</span>, <span class="string">'modified julian day (MJD)'</span>);
+0146 netcdf.putAtt(nc, time_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
+0147 
+0148 itime_varid=netcdf.defVar(nc, <span class="string">'Itime'</span>, <span class="string">'NC_INT'</span>, time_dimid);
+0149 netcdf.putAtt(nc, itime_varid, <span class="string">'units'</span>, <span class="string">'days since 1858-11-17 00:00:00'</span>);
+0150 netcdf.putAtt(nc, itime_varid, <span class="string">'format'</span>, <span class="string">'modified julian day (MJD)'</span>);
+0151 netcdf.putAtt(nc, itime_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
+0152 
+0153 itime2_varid=netcdf.defVar(nc, <span class="string">'Itime2'</span>, <span class="string">'NC_INT'</span>, time_dimid);
+0154 netcdf.putAtt(nc, itime2_varid, <span class="string">'units'</span>, <span class="string">'msec since 00:00:00'</span>);
+0155 netcdf.putAtt(nc, itime2_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
+0156 netcdf.putAtt(nc, itime2_varid, <span class="string">'long_name'</span>, <span class="string">'time'</span>);
+0157 
+0158 times_varid=netcdf.defVar(nc, <span class="string">'Times'</span>, <span class="string">'NC_CHAR'</span>, [datestrlen_dimid, time_dimid]);
+0159 netcdf.putAtt(nc, times_varid, <span class="string">'long_name'</span>, <span class="string">'Calendar Date'</span>);
+0160 netcdf.putAtt(nc, times_varid, <span class="string">'format'</span>, <span class="string">'String: Calendar Time'</span>);
+0161 netcdf.putAtt(nc, times_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
+0162 
+0163 airt_varid = netcdf.defVar(nc, <span class="string">'air_temperature'</span>, <span class="string">'NC_FLOAT'</span>, [node_dimid, time_dimid]);
+0164 netcdf.putAtt(nc, airt_varid, <span class="string">'long_name'</span>, <span class="string">'Surface air temperature'</span>);
+0165 netcdf.putAtt(nc, airt_varid, <span class="string">'units'</span>, <span class="string">'Celsius Degree'</span>);
+0166 netcdf.putAtt(nc, airt_varid, <span class="string">'grid'</span>, <span class="string">'fvcom_grid'</span>);
+0167 netcdf.putAtt(nc, airt_varid, <span class="string">'coordinates'</span>, coordString);
+0168 netcdf.putAtt(nc, airt_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0169 
+0170 rhum_varid = netcdf.defVar(nc, <span class="string">'relative_humidity'</span>, <span class="string">'NC_FLOAT'</span>, [node_dimid, time_dimid]);
+0171 netcdf.putAtt(nc, rhum_varid, <span class="string">'long_name'</span>, <span class="string">'surface air relative humidity'</span>);
+0172 netcdf.putAtt(nc, rhum_varid, <span class="string">'units'</span>, <span class="string">'percentage'</span>);
+0173 netcdf.putAtt(nc, rhum_varid, <span class="string">'grid'</span>, <span class="string">'fvcom_grid'</span>);
+0174 netcdf.putAtt(nc, rhum_varid, <span class="string">'coordinates'</span>, coordString);
+0175 netcdf.putAtt(nc, rhum_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0176 
+0177 dlwrf_varid = netcdf.defVar(nc, <span class="string">'long_wave'</span>, <span class="string">'NC_FLOAT'</span>, [node_dimid, time_dimid]);
+0178 netcdf.putAtt(nc, dlwrf_varid, <span class="string">'long_name'</span>, <span class="string">'Downward solar longwave radiation flux'</span>);
+0179 netcdf.putAtt(nc, dlwrf_varid, <span class="string">'units'</span>, <span class="string">'Watts meter-2'</span>);
+0180 netcdf.putAtt(nc, dlwrf_varid, <span class="string">'grid'</span>, <span class="string">'fvcom_grid'</span>);
+0181 netcdf.putAtt(nc, dlwrf_varid, <span class="string">'coordinates'</span>, coordString);
+0182 netcdf.putAtt(nc, dlwrf_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0183 
+0184 dswrf_varid = netcdf.defVar(nc, <span class="string">'short_wave'</span>, <span class="string">'NC_FLOAT'</span>, [node_dimid, time_dimid]);
+0185 netcdf.putAtt(nc, dswrf_varid, <span class="string">'long_name'</span>, <span class="string">'Downward solar shortwave radiation flux'</span>);
+0186 netcdf.putAtt(nc, dswrf_varid, <span class="string">'units'</span>, <span class="string">'Watts meter-2'</span>);
+0187 netcdf.putAtt(nc, dswrf_varid, <span class="string">'grid'</span>, <span class="string">'fvcom_grid'</span>);
+0188 netcdf.putAtt(nc, dswrf_varid, <span class="string">'coordinates'</span>, coordString);
+0189 netcdf.putAtt(nc, dswrf_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0190 
+0191 slp_varid = netcdf.defVar(nc, <span class="string">'air_pressure'</span>, <span class="string">'NC_FLOAT'</span>, [node_dimid, time_dimid]);
+0192 netcdf.putAtt(nc, slp_varid, <span class="string">'long_name'</span>, <span class="string">'Surface air pressure'</span>);
+0193 netcdf.putAtt(nc, slp_varid, <span class="string">'units'</span>, <span class="string">'Pa'</span>);
+0194 netcdf.putAtt(nc, slp_varid, <span class="string">'grid'</span>, <span class="string">'fvcom_grid'</span>);
+0195 netcdf.putAtt(nc, slp_varid, <span class="string">'coordinates'</span>, coordString);
+0196 netcdf.putAtt(nc, slp_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0197 
+0198 <span class="comment">% End definitions</span>
+0199 netcdf.endDef(nc);
+0200 
+0201 <span class="comment">%--------------------------------------------------------------------------</span>
+0202 <span class="comment">% Put the data in the NetCDF file.</span>
+0203 <span class="comment">%--------------------------------------------------------------------------</span>
+0204 netcdf.putVar(nc, nv_varid, tri');
+0205 netcdf.putVar(nc, time_varid, 0, ntimes, data.time);
+0206 netcdf.putVar(nc, itime_varid, 0, ntimes, floor(data.time));
+0207 netcdf.putVar(nc, itime2_varid, 0, ntimes, mod(data.time, 1) * 24 * 3600 * 1000);
+0208 netcdf.putVar(nc, x_varid, x);
+0209 netcdf.putVar(nc, y_varid, y);
+0210 netcdf.putVar(nc, xc_varid, xc);
+0211 netcdf.putVar(nc, yc_varid, yc);
+0212 netcdf.putVar(nc, airt_varid, data.air.node);
+0213 netcdf.putVar(nc, rhum_varid, data.rhum.node);
+0214 <span class="keyword">try</span>
+0215     <span class="comment">% NCEP</span>
+0216     netcdf.putVar(nc, dlwrf_varid, data.dlwrf.node);
+0217 <span class="keyword">catch</span>
+0218     <span class="comment">% Met Office Unified Model</span>
+0219     netcdf.putVar(nc, dlwrf_varid, data.nlwrf.node);
+0220 <span class="keyword">end</span>
+0221 <span class="keyword">try</span>
+0222     <span class="comment">% NCEP</span>
+0223     netcdf.putVar(nc, dswrf_varid, data.dswrf.node);
+0224 <span class="keyword">catch</span>
+0225     <span class="comment">% Met Office Unified Model</span>
+0226     netcdf.putVar(nc, dswrf_varid, data.nswrf.node);
+0227 <span class="keyword">end</span>
+0228 <span class="keyword">try</span> <span class="comment">% work with both slp and pres data.</span>
+0229     netcdf.putVar(nc, slp_varid, data.slp.node);
+0230 <span class="keyword">catch</span>
+0231     netcdf.putVar(nc, slp_varid, data.pres.node);
+0232 <span class="keyword">end</span>
+0233 
+0234 <span class="comment">% Build the Times string and output to NetCDF.</span>
+0235 nStringOut = char();
+0236 [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(data.time);
+0237 <span class="keyword">for</span> tt=1:ntimes
+0238     nDate = [nYr(tt), nMon(tt), nDay(tt), nHour(tt), nMin(tt), nSec(tt)];
+0239     nStringOut = [nStringOut, sprintf(<span class="string">'%04i/%02i/%02i %02i:%02i:%02i       '</span>, nDate)];
+0240 <span class="keyword">end</span>
+0241 netcdf.putVar(nc, times_varid, nStringOut);
+0242 
+0243 <span class="comment">% Close the NetCDF file(s)</span>
+0244 netcdf.close(nc);
+0245 
+0246 <span class="keyword">if</span> ftbverbose
+0247     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0248 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

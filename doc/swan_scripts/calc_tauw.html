@@ -130,99 +130,107 @@ This function is called by:
 0049 <span class="comment">%------------------------------------------------------------------------------</span>
 0050 nc = netcdf(ncfile,<span class="string">'w'</span>);
 0051 
-0052 Ubot = nc{<span class="string">'Ubot'</span>}(:,:);
-0053 TmBot = nc{<span class="string">'TmBot'</span>}(:,:);
-0054 
-0055 
-0056 
-0057 <span class="comment">%------------------------------------------------------------------------------</span>
-0058 <span class="comment">% Set Generic Values to Salinity and Temperature</span>
-0059 <span class="comment">% This is temporary, it would be better to use actual salinity and</span>
-0060 <span class="comment">% temperature data.</span>
-0061 <span class="comment">%------------------------------------------------------------------------------</span>
-0062 vectorsize=size(Ubot);
-0063 T=zeros(vectorsize);
-0064 S=zeros(vectorsize);
-0065 
-0066 T(:,:)=15;
-0067 S(:,:)=30;
-0068 
+0052 nctime=ncdim(<span class="string">'time'</span>,nc);
+0053 nctime = size(nctime);
+0054 nctime=nctime(1,1);
+0055 ncnode=ncdim(<span class="string">'node'</span>,nc);
+0056 node = size(ncnode);
+0057 node = node(1,1);
+0058 Ubot = ncvar(<span class="string">'Ubot'</span>,nc);
+0059 Ubot = Ubot.*ones(nctime,node);
+0060 TmBot = ncvar(<span class="string">'TmBot'</span>,nc);
+0061 TmBot = TmBot.*ones(nctime,node);
+0062 
+0063 
+0064 
+0065 <span class="comment">%------------------------------------------------------------------------------</span>
+0066 <span class="comment">% Set Generic Values to Salinity and Temperature</span>
+0067 <span class="comment">% This is temporary, it would be better to use actual salinity and</span>
+0068 <span class="comment">% temperature data.</span>
 0069 <span class="comment">%------------------------------------------------------------------------------</span>
-0070 <span class="comment">% Call Kinematic Viscosity Routine and Density Routine</span>
-0071 <span class="comment">%------------------------------------------------------------------------------</span>
-0072 nu = SW_Kviscosity(T,S); <span class="comment">%</span>
-0073 rho = SW_Density(T,S); <span class="comment">%</span>
-0074 
-0075 
-0076 <span class="comment">%------------------------------------------------------------------------------</span>
-0077 <span class="comment">% Calculate fwr &amp; fws according to Soulsby pg. 77-79</span>
-0078 <span class="comment">%------------------------------------------------------------------------------</span>
-0079 
-0080 <span class="comment">%----CONSTANTS-----------------------------------------------------------------</span>
-0081 <span class="comment">%ks = z0*30.;                    % Nikuradse roughness</span>
-0082 A = Ubot.*TmBot/(2.*pi);        <span class="comment">% semi-orbital excursion</span>
-0083 <span class="comment">% r = A/ks;                     % relative roughness</span>
-0084 Rw = Ubot.*A./nu;                 <span class="comment">% wave Reynolds</span>
-0085 <span class="comment">%------------------------------------------------------------------------------</span>
-0086 fwr = 1.39*(A/z0).^(-0.52);     <span class="comment">% case in which flow is rough turbulent</span>
-0087                                 <span class="comment">% Soulsby (62a)</span>
-0088 
-0089                                 <span class="comment">% Smooth Cases</span>
-0090 <span class="keyword">for</span> i = 1:vectorsize(1,1)
-0091     <span class="keyword">for</span> j = 1:vectorsize(1,2)
-0092         <span class="keyword">if</span>(Rw(i,j) &gt; 5e5)
-0093             B=0.0521; N=0.187;  <span class="comment">% case in which flow is smooth turbulent</span>
-0094         <span class="keyword">else</span>
-0095             B=2; N=0.5;         <span class="comment">% case in which flow is laminar</span>
-0096         <span class="keyword">end</span>;
-0097     <span class="keyword">end</span>
-0098 <span class="keyword">end</span>
-0099                                 
-0100 fws = B*Rw.^(-N);               <span class="comment">% smooth bed friction factor Soulsby (63)</span>
-0101 
-0102 <span class="comment">%------------------------------------------------------------------------------</span>
-0103 <span class="comment">% Choose wave friction factor for current conditions</span>
-0104 <span class="comment">%------------------------------------------------------------------------------</span>
-0105 fw = zeros(vectorsize);
-0106 
-0107 <span class="keyword">for</span> i = 1:vectorsize(1,1)
-0108     <span class="keyword">for</span> j = 1:vectorsize(1,2)
-0109         fw(i,j) = max(fwr(i,j),fws(i,j));   
-0110                                 <span class="comment">% wave friction factor</span>
-0111     <span class="keyword">end</span>;
-0112 <span class="keyword">end</span>;
-0113 
-0114 tauw = 0.5*rho.*fw.*Ubot.*Ubot;    <span class="comment">% wave shear stress</span>
-0115 <span class="comment">%tauw(isnan(tauw)) = 0;</span>
-0116 
-0117 <span class="comment">%------------------------------------------------------------------------------</span>
-0118 <span class="comment">% Write Values of tauw to ncfile</span>
-0119 <span class="comment">%------------------------------------------------------------------------------</span>
-0120 <span class="keyword">if</span> (writenetcdf == true)
-0121         
-0122     nc = netcdf(ncfile,<span class="string">'w'</span>);
-0123     
-0124     nc{<span class="string">'tauw'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
-0125     nc{<span class="string">'tauw'</span>}.long_name = <span class="string">'Bed Shear Stress'</span>;
-0126     nc{<span class="string">'tauw'</span>}.units     = <span class="string">'N/m^2'</span>;
-0127     
-0128     <span class="keyword">for</span> i=1:vectorsize(1,1)
-0129         nc{<span class="string">'tauw'</span>}(i,1:vectorsize(1,2)) = tauw(i,1:vectorsize(1,2));
-0130     <span class="keyword">end</span>
+0070 vectorsize=size(Ubot);
+0071 T=zeros(vectorsize);
+0072 S=zeros(vectorsize);
+0073 
+0074 T(:,:)=15;
+0075 S(:,:)=30;
+0076 
+0077 <span class="comment">%------------------------------------------------------------------------------</span>
+0078 <span class="comment">% Call Kinematic Viscosity Routine and Density Routine</span>
+0079 <span class="comment">%------------------------------------------------------------------------------</span>
+0080 nu = SW_Kviscosity(T,S); <span class="comment">%</span>
+0081 rho = SW_Density(T,S); <span class="comment">%</span>
+0082 
+0083 
+0084 <span class="comment">%------------------------------------------------------------------------------</span>
+0085 <span class="comment">% Calculate fwr &amp; fws according to Soulsby pg. 77-79</span>
+0086 <span class="comment">%------------------------------------------------------------------------------</span>
+0087 
+0088 <span class="comment">%----CONSTANTS-----------------------------------------------------------------</span>
+0089 <span class="comment">%ks = z0*30.;                    % Nikuradse roughness</span>
+0090 A = Ubot.*TmBot/(2.*pi);        <span class="comment">% semi-orbital excursion</span>
+0091 <span class="comment">% r = A/ks;                     % relative roughness</span>
+0092 Rw = Ubot.*A./nu;                 <span class="comment">% wave Reynolds</span>
+0093 <span class="comment">%------------------------------------------------------------------------------</span>
+0094 fwr = 1.39*(A/z0).^(-0.52);     <span class="comment">% case in which flow is rough turbulent</span>
+0095                                 <span class="comment">% Soulsby (62a)</span>
+0096 
+0097                                 <span class="comment">% Smooth Cases</span>
+0098 <span class="keyword">for</span> i = 1:vectorsize(1,1)
+0099     <span class="keyword">for</span> j = 1:vectorsize(1,2)
+0100         <span class="keyword">if</span>(Rw(i,j) &gt; 5e5)
+0101             B=0.0521; N=0.187;  <span class="comment">% case in which flow is smooth turbulent</span>
+0102         <span class="keyword">else</span>
+0103             B=2; N=0.5;         <span class="comment">% case in which flow is laminar</span>
+0104         <span class="keyword">end</span>;
+0105     <span class="keyword">end</span>
+0106 <span class="keyword">end</span>
+0107                                 
+0108 fws = B*Rw.^(-N);               <span class="comment">% smooth bed friction factor Soulsby (63)</span>
+0109 
+0110 <span class="comment">%------------------------------------------------------------------------------</span>
+0111 <span class="comment">% Choose wave friction factor for current conditions</span>
+0112 <span class="comment">%------------------------------------------------------------------------------</span>
+0113 fw = zeros(vectorsize);
+0114 
+0115 <span class="keyword">for</span> i = 1:vectorsize(1,1)
+0116     <span class="keyword">for</span> j = 1:vectorsize(1,2)
+0117         fw(i,j) = max(fwr(i,j),fws(i,j));   
+0118                                 <span class="comment">% wave friction factor</span>
+0119     <span class="keyword">end</span>;
+0120 <span class="keyword">end</span>;
+0121 
+0122 tauw = 0.5*rho.*fw.*Ubot.*Ubot;    <span class="comment">% wave shear stress</span>
+0123 <span class="comment">%tauw(isnan(tauw)) = 0;</span>
+0124 
+0125 <span class="comment">%------------------------------------------------------------------------------</span>
+0126 <span class="comment">% Write Values of tauw to ncfile</span>
+0127 <span class="comment">%------------------------------------------------------------------------------</span>
+0128 <span class="keyword">if</span> (writenetcdf == true)
+0129         
+0130     nc = netcdf(ncfile,<span class="string">'w'</span>);
 0131     
-0132     close(nc);
-0133     
-0134 <span class="keyword">end</span>;
-0135 
-0136 
-0137 
-0138 
-0139 
-0140 
-0141 
-0142 
+0132     nc{<span class="string">'tauw'</span>} = ncfloat(<span class="string">'time'</span>,<span class="string">'node'</span>);
+0133     nc{<span class="string">'tauw'</span>}.long_name = <span class="string">'Bed Shear Stress'</span>;
+0134     nc{<span class="string">'tauw'</span>}.units     = <span class="string">'N/m^2'</span>;
+0135     
+0136     <span class="keyword">for</span> i=1:vectorsize(1,1)
+0137         nc{<span class="string">'tauw'</span>}(i,1:vectorsize(1,2)) = tauw(i,1:vectorsize(1,2));
+0138     <span class="keyword">end</span>
+0139     
+0140     close(nc);
+0141     
+0142 <span class="keyword">end</span>;
 0143 
-0144 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0144 
+0145 
+0146 
+0147 
+0148 
+0149 
+0150 
+0151 
+0152 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

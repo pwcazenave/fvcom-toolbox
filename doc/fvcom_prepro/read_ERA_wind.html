@@ -24,28 +24,63 @@
 <div class="box"><strong>Reads in ERA Interim files and outputs a struct containing the requested</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function era = read_ERA_wind(year, datadir, varlist) </strong></div>
+<div class="box"><strong>function era = read_ERA_wind(Mobj, startDate, endDate, datadir, varlist) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Reads in ERA Interim files and outputs a struct containing the requested
- variables for a given year. 
+ variables for a given spatial domain and time period. 
  
- ERA = read_ERA_wind(YEAR, DATADIR, VARLIST)
+ ERA = read_ERA_wind(Mobj, startDate, endDate, datadir, varlist)
  
  DESCRIPTION:
-   For the given YEAR, find all the ERA Interim NetCDF files and aggregate
-   them into a single MATLAB struct, which contains the variables
-   specified in VARLIST. In addition to the specified variables, time and
-   longitude and latitude will also be extracted. 
+   Find all the ERA Interim NetCDF files in datadir and aggregate them
+   into a single MATLAB struct containing the variables specified in
+   varlist. In addition to the specified variables, time, longitude and
+   latitude will be extracted.
+ 
+   The ERA data consist of two files types, gafs*.nc and ggas*.nc. The
+   former contain:
+       - SSTK: sea surface temperature
+       - SP:   surface pressure
+       - MSL:  mean sea level pressure
+       - U10:  u wind (10m)
+       - V10:  v wind (10m)
+       - T2:   2m temperature
+       - SKT:  skin temperature
+   the latter:
+       - UVB:  downward UV radiation at the surface
+       - E:    evaporation
+       - FISR: top of atmosphere incident solar radiation
+       - LSP:  stratiform precipitation (large scale precipitation)
+       - CP:   convective preciptation
+       - SSHF: surface sensible heat flux
+       - SLHF: surface latent heat flux
+       - SSRD: surface solar radiation downwards
+       - SSR:  surface solar radiation
+       - TSR:  top solar radiation
+       - TTR:  top thermal radiation
+       - TP:   total precipitation
+       - TSRC: top net solar radiation, clear sky
+       - TTRC: top upward thermal radiation, clear sky
+       - SSRC: surface net solar radiation, clear sky
+       - STRC: surface net thermal radiation, clear sky
+ 
+   Not all of these are necessarily useful with FVCOM, but they're the
+   ones that stood out as potentially useful.
  
  INPUT:
-   YEAR - year to extract
-   DATADIR - path to the directory which contains the ERA NetCDF files
-   VARLIST - list of the particular variables to extract from the NetCDF
-   files.
+   Mobj - Mesh object containing the following fields:
+       * nativeCoords - 'spherical' or 'cartesian'
+       * lon, lat or x, y - node coordinates (depending on nativeCoords)
+   startDate - model start date ([YYYY, MM, DD, hh, mm, ss])
+   endDate -  model end date ([YYYY, MM, DD, hh, mm, ss]). Start and end
+       dates must fall within the same year.
+   datadir - path to the directory which contains the ERA NetCDF files
+   varlist - list of the particular variables to extract from the NetCDF
+       files.
  
  OUTPUT:
-   era - struct containing the variables specified in VARLIST.
+   era - struct containing the variables specified in varlist.
  
  Author(s)
    Pierre Cazenave (Plymouth Marine Laboratory)
@@ -53,6 +88,8 @@
  Revision history:
    2012-10-19 First version based loosely on read_NCEP_wind.m in the
    fvcom-toolbox.
+   2013-07-08 Modified to automatically find the necessary files and
+   extract the data to cover the time period in question.
  
 ==========================================================================</pre></div>
 
@@ -69,125 +106,252 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function era = read_ERA_wind(year, datadir, varlist)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function era = read_ERA_wind(Mobj, startDate, endDate, datadir, varlist)</a>
 0002 <span class="comment">% Reads in ERA Interim files and outputs a struct containing the requested</span>
-0003 <span class="comment">% variables for a given year.</span>
+0003 <span class="comment">% variables for a given spatial domain and time period.</span>
 0004 <span class="comment">%</span>
-0005 <span class="comment">% ERA = read_ERA_wind(YEAR, DATADIR, VARLIST)</span>
+0005 <span class="comment">% ERA = read_ERA_wind(Mobj, startDate, endDate, datadir, varlist)</span>
 0006 <span class="comment">%</span>
 0007 <span class="comment">% DESCRIPTION:</span>
-0008 <span class="comment">%   For the given YEAR, find all the ERA Interim NetCDF files and aggregate</span>
-0009 <span class="comment">%   them into a single MATLAB struct, which contains the variables</span>
-0010 <span class="comment">%   specified in VARLIST. In addition to the specified variables, time and</span>
-0011 <span class="comment">%   longitude and latitude will also be extracted.</span>
+0008 <span class="comment">%   Find all the ERA Interim NetCDF files in datadir and aggregate them</span>
+0009 <span class="comment">%   into a single MATLAB struct containing the variables specified in</span>
+0010 <span class="comment">%   varlist. In addition to the specified variables, time, longitude and</span>
+0011 <span class="comment">%   latitude will be extracted.</span>
 0012 <span class="comment">%</span>
-0013 <span class="comment">% INPUT:</span>
-0014 <span class="comment">%   YEAR - year to extract</span>
-0015 <span class="comment">%   DATADIR - path to the directory which contains the ERA NetCDF files</span>
-0016 <span class="comment">%   VARLIST - list of the particular variables to extract from the NetCDF</span>
-0017 <span class="comment">%   files.</span>
-0018 <span class="comment">%</span>
-0019 <span class="comment">% OUTPUT:</span>
-0020 <span class="comment">%   era - struct containing the variables specified in VARLIST.</span>
-0021 <span class="comment">%</span>
-0022 <span class="comment">% Author(s)</span>
-0023 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
-0024 <span class="comment">%</span>
-0025 <span class="comment">% Revision history:</span>
-0026 <span class="comment">%   2012-10-19 First version based loosely on read_NCEP_wind.m in the</span>
-0027 <span class="comment">%   fvcom-toolbox.</span>
-0028 <span class="comment">%</span>
-0029 <span class="comment">%==========================================================================</span>
-0030 
-0031 <span class="comment">% year = 2006;</span>
-0032 <span class="comment">% % datadir = '/data/modellers/to_archive/momm-ERA40-interim/';</span>
-0033 <span class="comment">% datadir = '/users/modellers/pica/Data/ECMWF/2006';</span>
-0034 <span class="comment">% varlist = {'u10', 'v10'};</span>
-0035 
-0036 <span class="comment">%warning off</span>
-0037 
-0038 <span class="keyword">if</span> nargin ~= 3
-0039     error(<span class="string">'Incorrect number of arguments'</span>)
-0040 <span class="keyword">end</span>
-0041 
-0042 subname = <span class="string">'read_ERA_wind'</span>;
-0043 
-0044 <span class="keyword">global</span> ftbverbose;
-0045 <span class="keyword">if</span>(ftbverbose);
-0046   fprintf(<span class="string">'\n'</span>)
-0047   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
-0048 <span class="keyword">end</span>;
-0049 
-0050 <span class="keyword">if</span> exist(datadir, <span class="string">'dir'</span>) ~= 7
-0051    error([<span class="string">'file: '</span> datadir <span class="string">' does not exist'</span>]);
-0052 <span class="keyword">end</span>
-0053 
-0054 <span class="comment">%--------------------------------------------------------------------------</span>
-0055 <span class="comment">% Open ERA Interim data and check for time range</span>
-0056 <span class="comment">%--------------------------------------------------------------------------</span>
-0057 
-0058 <span class="comment">% Get the time.</span>
-0059 ncERA = netcdf.open(fullfile(datadir, [num2str(year), <span class="string">'_U10V10.nc'</span>]), <span class="string">'NOWRITE'</span>);
-0060 time_varid = netcdf.inqVarID(ncERA, <span class="string">'time'</span>);
-0061 eratimehours = netcdf.getVar(ncERA, time_varid);
-0062 
-0063 <span class="comment">% ERA Interim times are stored as hours since 1900-01-01 00:00:0.0.</span>
-0064 <span class="comment">% MATLAB's dates days since 0000/00/00 00:00:00.</span>
-0065 eratimehours = datevec((double(eratimehours)/24) + datenum(<span class="string">'1900-01-01 00:00:0.0'</span>));
-0066 <span class="comment">% Convert the ERA times to Modified Julian Date.</span>
-0067 era.time = greg2mjulian(eratimehours(:,1), eratimehours(:,2),<span class="keyword">...</span>
-0068     eratimehours(:,3), eratimehours(:,4), eratimehours(:,5),<span class="keyword">...</span>
-0069     eratimehours(:,6));
-0070 
-0071 <span class="keyword">if</span>(ftbverbose);
-0072     fprintf(<span class="string">'beg time of ERA Interim data %04i/%02i/%02i %02i:%02i:%02i\n'</span>, eratimehours(1,:));
-0073     fprintf(<span class="string">'end time of ERA Interim data %04i/%02i/%02i %02i:%02i:%02i\n'</span>, eratimehours(<span class="keyword">end</span>,:));
-0074 <span class="keyword">end</span>
-0075 
-0076 <span class="comment">% Get the geographical information from the ERA Interim data. Again, use</span>
-0077 <span class="comment">% the U10 file only (we're assuming they're both global).</span>
-0078 lat_varid = netcdf.inqVarID(ncERA, <span class="string">'latitude'</span>);
-0079 lon_varid = netcdf.inqVarID(ncERA, <span class="string">'longitude'</span>);
-0080 eralatvector = netcdf.getVar(ncERA, lat_varid);
-0081 eralonvector = netcdf.getVar(ncERA, lon_varid);
-0082 [era.lon, era.lat] = meshgrid(eralonvector, eralatvector);
-0083 
-0084 <span class="comment">% Find the necessary variables</span>
-0085 <span class="keyword">for</span> var=1:numel(varlist)
-0086 
-0087     getVar = varlist{var};
-0088     varid_ERA = netcdf.inqVarID(ncERA, getVar);
+0013 <span class="comment">%   The ERA data consist of two files types, gafs*.nc and ggas*.nc. The</span>
+0014 <span class="comment">%   former contain:</span>
+0015 <span class="comment">%       - SSTK: sea surface temperature</span>
+0016 <span class="comment">%       - SP:   surface pressure</span>
+0017 <span class="comment">%       - MSL:  mean sea level pressure</span>
+0018 <span class="comment">%       - U10:  u wind (10m)</span>
+0019 <span class="comment">%       - V10:  v wind (10m)</span>
+0020 <span class="comment">%       - T2:   2m temperature</span>
+0021 <span class="comment">%       - SKT:  skin temperature</span>
+0022 <span class="comment">%   the latter:</span>
+0023 <span class="comment">%       - UVB:  downward UV radiation at the surface</span>
+0024 <span class="comment">%       - E:    evaporation</span>
+0025 <span class="comment">%       - FISR: top of atmosphere incident solar radiation</span>
+0026 <span class="comment">%       - LSP:  stratiform precipitation (large scale precipitation)</span>
+0027 <span class="comment">%       - CP:   convective preciptation</span>
+0028 <span class="comment">%       - SSHF: surface sensible heat flux</span>
+0029 <span class="comment">%       - SLHF: surface latent heat flux</span>
+0030 <span class="comment">%       - SSRD: surface solar radiation downwards</span>
+0031 <span class="comment">%       - SSR:  surface solar radiation</span>
+0032 <span class="comment">%       - TSR:  top solar radiation</span>
+0033 <span class="comment">%       - TTR:  top thermal radiation</span>
+0034 <span class="comment">%       - TP:   total precipitation</span>
+0035 <span class="comment">%       - TSRC: top net solar radiation, clear sky</span>
+0036 <span class="comment">%       - TTRC: top upward thermal radiation, clear sky</span>
+0037 <span class="comment">%       - SSRC: surface net solar radiation, clear sky</span>
+0038 <span class="comment">%       - STRC: surface net thermal radiation, clear sky</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">%   Not all of these are necessarily useful with FVCOM, but they're the</span>
+0041 <span class="comment">%   ones that stood out as potentially useful.</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">% INPUT:</span>
+0044 <span class="comment">%   Mobj - Mesh object containing the following fields:</span>
+0045 <span class="comment">%       * nativeCoords - 'spherical' or 'cartesian'</span>
+0046 <span class="comment">%       * lon, lat or x, y - node coordinates (depending on nativeCoords)</span>
+0047 <span class="comment">%   startDate - model start date ([YYYY, MM, DD, hh, mm, ss])</span>
+0048 <span class="comment">%   endDate -  model end date ([YYYY, MM, DD, hh, mm, ss]). Start and end</span>
+0049 <span class="comment">%       dates must fall within the same year.</span>
+0050 <span class="comment">%   datadir - path to the directory which contains the ERA NetCDF files</span>
+0051 <span class="comment">%   varlist - list of the particular variables to extract from the NetCDF</span>
+0052 <span class="comment">%       files.</span>
+0053 <span class="comment">%</span>
+0054 <span class="comment">% OUTPUT:</span>
+0055 <span class="comment">%   era - struct containing the variables specified in varlist.</span>
+0056 <span class="comment">%</span>
+0057 <span class="comment">% Author(s)</span>
+0058 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0059 <span class="comment">%</span>
+0060 <span class="comment">% Revision history:</span>
+0061 <span class="comment">%   2012-10-19 First version based loosely on read_NCEP_wind.m in the</span>
+0062 <span class="comment">%   fvcom-toolbox.</span>
+0063 <span class="comment">%   2013-07-08 Modified to automatically find the necessary files and</span>
+0064 <span class="comment">%   extract the data to cover the time period in question.</span>
+0065 <span class="comment">%</span>
+0066 <span class="comment">%==========================================================================</span>
+0067 
+0068 <span class="comment">% datadir = '/data/modellers/to_archive/momm-ERA40-interim/';</span>
+0069 <span class="comment">% datadir = '/users/modellers/pica/Data/ECMWF/2006';</span>
+0070 <span class="comment">% varlist = {'U10', 'V10', 'SKT', 'E', 'TP', 'SSRC', 'STRC'};</span>
+0071 
+0072 <span class="comment">%warning off</span>
+0073 
+0074 <span class="keyword">if</span> nargin ~= 5
+0075     error(<span class="string">'Incorrect number of input arguments'</span>)
+0076 <span class="keyword">end</span>
+0077 
+0078 subname = <span class="string">'read_ERA_wind'</span>;
+0079 
+0080 <span class="keyword">global</span> ftbverbose
+0081 <span class="keyword">if</span> ftbverbose
+0082     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0083     c = 0; <span class="comment">% set a counter for the file load loop</span>
+0084 <span class="keyword">end</span>
+0085 
+0086 <span class="keyword">if</span> exist(datadir, <span class="string">'dir'</span>) ~= 7
+0087     error(<span class="string">'file: %s does not exist'</span>, datadir)
+0088 <span class="keyword">end</span>
 0089 
-0090     <span class="comment">% Get the data</span>
-0091     data = netcdf.getVar(ncERA, varid_ERA, <span class="string">'single'</span>);
-0092     
-0093     <span class="keyword">if</span> strcmpi(getVar, <span class="string">'u10'</span>) || strcmpi(getVar, <span class="string">'v10'</span>)
-0094         <span class="comment">% The ERA Interim wind component data are packed as integers. The</span>
-0095         <span class="comment">% following equation describes how to unpack them:</span>
-0096         <span class="comment">%     unpacked value = add_offset + ((packed value)*scale_factor)</span>
-0097         <span class="comment">% (from</span>
-0098         <span class="comment">% http://www.ecmwf.int/products/data/archive/data_faq.html#netcdfintegers).</span>
-0099         <span class="comment">% ERA wind scale_factor and add_offset are doubles (the NCEP ones</span>
-0100         <span class="comment">% are singles).</span>
-0101         scale_factor = netcdf.getAtt(ncERA,varid_ERA,<span class="string">'scale_factor'</span>,<span class="string">'double'</span>);
-0102         add_offset = netcdf.getAtt(ncERA,varid_ERA,<span class="string">'add_offset'</span>,<span class="string">'double'</span>);
-0103 
-0104         <span class="comment">% Unpack the values. In general, the data for U10 and V10 should be</span>
-0105         <span class="comment">% doubles for griddata to work. Fix the order of the dimensions to</span>
-0106         <span class="comment">% match the coordinates in eralon and eralat.</span>
-0107         era.(getVar) = permute(double(add_offset + (data.*scale_factor)), [2,1,3]);
-0108     <span class="keyword">else</span>
-0109         <span class="comment">% We're assuming they're not packed and so we just return the data</span>
-0110         <span class="comment">% as is (but as doubles).</span>
-0111         era.(getVar) = double(data);
-0112     <span class="keyword">end</span>
-0113 <span class="keyword">end</span>
-0114 
-0115 netcdf.close(ncERA)
+0090 <span class="comment">%--------------------------------------------------------------------------</span>
+0091 <span class="comment">% Open ERA Interim data and check for time range</span>
+0092 <span class="comment">%--------------------------------------------------------------------------</span>
+0093 
+0094 [start_year, start_month, start_day] = deal(startDate(1), startDate(2), startDate(3));
+0095 [end_year, end_month, end_day] = deal(endDate(1), endDate(2), endDate(3));
+0096 
+0097 <span class="keyword">if</span> start_year ~= end_year
+0098     error(<span class="string">'Cannot (yet?) process more than a single year at a time'</span>)
+0099 <span class="keyword">end</span>
+0100 
+0101 <span class="comment">% Get a list of files to use. This is not pretty, but seems to work OK.</span>
+0102 files = cell(0);
+0103 months = start_month:end_month;
+0104 <span class="keyword">for</span> mm = 1:length(months)
+0105     tfiles = dir(fullfile(datadir, num2str(start_year), sprintf(<span class="string">'%02d'</span>, months(mm)), <span class="string">'*.nc'</span>));
+0106     
+0107     <span class="comment">% Add the files to the overall list.</span>
+0108     <span class="keyword">for</span> f = 1:length(tfiles)
+0109         <span class="keyword">if</span> strcmpi(tfiles(f).name, <span class="string">'.'</span>) || strcmpi(tfiles(f).name, <span class="string">'..'</span>)
+0110             <span class="keyword">continue</span>
+0111         <span class="keyword">else</span>
+0112             files{length(files) + 1} = fullfile(datadir, num2str(start_year), sprintf(<span class="string">'%02d'</span>, months(mm)), tfiles(f).name);
+0113         <span class="keyword">end</span>
+0114     <span class="keyword">end</span>
+0115 <span class="keyword">end</span>
 0116 
-0117 <span class="keyword">if</span> ftbverbose;
-0118     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0119 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0117 nf = length(files);
+0118 
+0119 <span class="comment">% Start with a clean slate</span>
+0120 tggas = [];
+0121 tgafs = [];
+0122 gg = 0;
+0123 ga = 0;
+0124 clear era
+0125 
+0126 <span class="keyword">for</span> f = 1:nf
+0127     
+0128     <span class="comment">% Get the filename only for prefix comparison</span>
+0129     [~, ff, ext] = fileparts(files{f});
+0130 
+0131     <span class="keyword">if</span> ftbverbose
+0132         c = c + 1;
+0133         fprintf(<span class="string">'File %s (%i of %i)... '</span>, [ff, ext], c, nf)
+0134     <span class="keyword">end</span>
+0135 
+0136     <span class="comment">% File name is ????YYYYMMDDOOFF or ????YYYYMMDDHHFF (with no apparent</span>
+0137     <span class="comment">% rhyme or reason...). OO is the time origin (midday/midnight) and FF</span>
+0138     <span class="comment">% is the number of hours since the time origin (3, 6, 9 or 12). Why the</span>
+0139     <span class="comment">% files couldn't consistently use 24 hour times...</span>
+0140     ymd = greg2mjulian(str2double(ff(5:8)), <span class="keyword">...</span>
+0141         str2double(ff(9:10)), <span class="keyword">...</span>
+0142         str2double(ff(11:12)), <span class="keyword">...</span>
+0143         str2double(ff(13:14)) + str2double(ff(15:16)), <span class="keyword">...</span>
+0144         0, 0); <span class="comment">% don't have minutes and seconds in the file name</span>
+0145 
+0146     <span class="keyword">if</span> strcmpi(ff(1:4), <span class="string">'ggas'</span>)
+0147         gg = gg + 1;
+0148         tggas(gg) = ymd;
+0149     <span class="keyword">elseif</span> strcmpi(ff(1:4), <span class="string">'gafs'</span>)
+0150         ga = ga + 1;
+0151         tgafs(ga) = ymd;
+0152     <span class="keyword">else</span>
+0153         warning(<span class="string">'Unrecognised ERA Interim file prefix (%s)'</span>, ff(1:4))
+0154     <span class="keyword">end</span>
+0155     
+0156     <span class="comment">% Now load in the variables in varlist for all the relevant files into two</span>
+0157     <span class="comment">% structs, ggas and gafs. We're assuming that the files are listed</span>
+0158     <span class="comment">% increasing with time (i.e. ????YYYYMMDDhhmm.nc).</span>
+0159     nc = netcdf.open(files{f}, <span class="string">'NOWRITE'</span>);
+0160 
+0161     <span class="comment">% Only do the spatial data on the first file (the data are global).</span>
+0162     <span class="keyword">if</span> f == 1
+0163         lat_varid = netcdf.inqVarID(nc, <span class="string">'latitude'</span>);
+0164         lon_varid = netcdf.inqVarID(nc, <span class="string">'longitude'</span>);
+0165         eralatvector = netcdf.getVar(nc, lat_varid, <span class="string">'double'</span>);
+0166         eralonvector = netcdf.getVar(nc, lon_varid, <span class="string">'double'</span>);
+0167         dx = unique(diff(eralonvector));    <span class="comment">% should be all the same value</span>
+0168         dy = mean(abs(diff(eralatvector))); <span class="comment">% varies, hence mean</span>
+0169 
+0170         <span class="comment">% To save on memory, cull the data which doesn't come from the</span>
+0171         <span class="comment">% domain we've specified (with a 2 element buffer).</span>
+0172         <span class="keyword">if</span> min(Mobj.lon) &lt; 0 &amp;&amp; max(Mobj.lon) &lt; 0
+0173             <span class="comment">% Easy, just shift by 360.</span>
+0174             idx_lon = find(eralonvector &gt; (min(Mobj.lon) - (2 * dx)) + 360 <span class="keyword">...</span>
+0175                 &amp; eralonvector &lt; (max(Mobj.lon) + (2 * dx)) + 360);
+0176         <span class="keyword">elseif</span> min(Mobj.lon) &lt; 0 &amp;&amp; max(Mobj.lon) &gt; 0
+0177             <span class="comment">% This is the tricky one. We'll do two passes to extract</span>
+0178             <span class="comment">% the western chunk first (min(Mobj.lon) + 360 to 360),</span>
+0179             <span class="comment">% then the eastern chunk (0 - max(Mobj.lon))</span>
+0180             idx_lon{1} = find(eralonvector &gt;= (min(Mobj.lon) - (2 * dx)) + 360);
+0181             idx_lon{2} = find(eralonvector &lt; (max(Mobj.lon) + (2 * dx)));
+0182         <span class="keyword">else</span>
+0183             <span class="comment">% Dead easy, we're in the eastern hemisphere, so nothing</span>
+0184             <span class="comment">% too strenuous here.</span>
+0185             idx_lon = find(eralonvector &gt; (min(Mobj.lon) - (2 * dx)) <span class="keyword">...</span>
+0186                 &amp; eralonvector &lt; (max(Mobj.lon) + (2 * dx)));
+0187         <span class="keyword">end</span>
+0188         <span class="comment">% Latitudes are easy because there's only one system.</span>
+0189         idx_lat = find(eralatvector &gt; (min(Mobj.lat) - (2 * dy)) &amp; eralatvector &lt; (max(Mobj.lat) + (2 * dy)));
+0190         
+0191         <span class="comment">% Make a grid of the domain</span>
+0192         [era.lon, era.lat] = meshgrid(eralonvector(idx_lon), eralatvector(idx_lat));
+0193 
+0194     <span class="keyword">end</span>
+0195 
+0196     <span class="keyword">for</span> v = 1:length(varlist)
+0197         <span class="comment">% Use a try catch to pass on the files which don't contain the</span>
+0198         <span class="comment">% variable we're currently looping over.</span>
+0199         <span class="keyword">try</span>
+0200             <span class="comment">% Get the data</span>
+0201             varid_era = netcdf.inqVarID(nc, varlist{v});
+0202             data = netcdf.getVar(nc, varid_era, <span class="string">'single'</span>);
+0203         <span class="keyword">catch</span>
+0204             <span class="comment">% Skip this variable and try the next one</span>
+0205             <span class="keyword">continue</span>
+0206         <span class="keyword">end</span>
+0207 
+0208         <span class="keyword">try</span>
+0209             <span class="comment">% Try to apply the scale factor and offset (only if using the</span>
+0210             <span class="comment">% data from the website - the PML data are already converted).</span>
+0211             sf = netcdf.getAtt(nc, varid_era, <span class="string">'scale_factor'</span>, <span class="string">'double'</span>);
+0212             ao = netcdf.getAtt(nc, varid_era, <span class="string">'add_offset'</span>, <span class="string">'double'</span>);
+0213             <span class="keyword">if</span> isfield(era, varlist{v}) == 0
+0214                 era.(varlist{v}).data = permute(double(ao + (data(idx_lon, idx_lat) .* sf)), [2, 1, 3]);
+0215             <span class="keyword">else</span>
+0216                 era.(varlist{v}).data = cat(3, era.(varlist{v}).data, permute(double(ao + (data(idx_lon, idx_lat) .* sf)), [2, 1, 3]));
+0217             <span class="keyword">end</span>
+0218         <span class="keyword">catch</span>
+0219             <span class="comment">% Otherwise just dump the data as is.</span>
+0220             <span class="keyword">if</span> isfield(era, varlist{v}) == 0
+0221                 era.(varlist{v}).data = permute(double(data(idx_lon, idx_lat)), [2, 1, 3]);
+0222             <span class="keyword">else</span>
+0223                 era.(varlist{v}).data = cat(3, era.(varlist{v}).data, permute(double(data(idx_lon, idx_lat)), [2, 1, 3]));
+0224             <span class="keyword">end</span>
+0225         <span class="keyword">end</span>
+0226 
+0227         <span class="comment">% Put the lon/lat into the field too.</span>
+0228         era.(varlist{v}).lat = eralatvector(idx_lat);
+0229         era.(varlist{v}).lon = eralonvector(idx_lon);
+0230 
+0231     <span class="keyword">end</span>
+0232     
+0233     <span class="keyword">if</span> ftbverbose
+0234         fprintf(<span class="string">'done.\n'</span>)
+0235     <span class="keyword">end</span>
+0236 <span class="keyword">end</span>
+0237 
+0238 <span class="comment">% Dump the time variables to the struct</span>
+0239 era.time_gafs = tgafs;
+0240 era.time_ggas = tggas;
+0241 
+0242 netcdf.close(nc)
+0243 
+0244 <span class="keyword">if</span> ftbverbose
+0245     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0246 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

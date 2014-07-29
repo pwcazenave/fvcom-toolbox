@@ -1,0 +1,324 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_WRF_forcing</title>
+  <meta name="keywords" content="write_WRF_forcing">
+  <meta name="description" content="Write data out to WRF format netCDF forcing file.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_WRF_forcing.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_WRF_forcing
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Write data out to WRF format netCDF forcing file.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_WRF_forcing(WRF, filename) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Write data out to WRF format netCDF forcing file.
+
+ write_WRF_forcing(WRF, filename)
+
+ DESCRIPTION:
+   Takes the given regularly gridded forcing data and writes out to a WRF
+   format netCDF file.
+
+ INPUT:
+   WRF - struct with the following fields:
+       lon   : longitude, rectangular array (see MESHGRID).
+       lat   : latitude, rectangular array (see MESHGRID).
+       time  : Modified Julian Day times.
+       pres  : surface pressure [mb]
+       nswrs : shortwave radiation (upward = negative) [W/m^{2}]
+       nlwrs : longwave radiation (upward = negative) [W/m^{2}]
+       nshf  : net surface heat flux (ocean losing = negative) [W/m^{2}]
+       u10   : eastward wind velocity [m/s]
+       v10   : northward wind velocity [m/s]
+       P_E   : precipitation (ocean losing = negative) [m/s]
+       evap  : evaporation (ocean losing = negative) [m/s]
+       rhum  : relative humidity [%]
+       air   : temperature [Celsius]
+       Net surface heat flux is defined as the sum of shortwave, longwave,
+       sensible and latent heat fluxes (ocean losing heat = negative).
+   filename - Output netCDF file name.
+
+ OUTPUT:
+   WRF format heating netCDF file.
+
+ EXAMPLE USAGE:
+   wrf_file = '/path/to/output/casename_wnd.nc';
+   write_WRF_forcing(WRF, wrf_file);
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history:
+   2013-08-29 - First version based on write_FVCOM_heating.m.
+   2013-09-09 - FVCOM version 3.1.6 (official) appears to require a
+   net_heat_flux variable (rather than Net_heat). Adjusted accordingly.
+   2013-10-24 - Add full suite of variables so that HEATING_CALCULATED can
+   be used instead.
+   2013-12-05 - Fix names of the fields for long and shortwave radiation
+   to match the NCEP ones (from n{l,s}wrf to n{l,s}wrs i.e. change last
+   letter from f to s).
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_WRF_forcing(WRF, filename)</a>
+0002 <span class="comment">% Write data out to WRF format netCDF forcing file.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% write_WRF_forcing(WRF, filename)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Takes the given regularly gridded forcing data and writes out to a WRF</span>
+0008 <span class="comment">%   format netCDF file.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   WRF - struct with the following fields:</span>
+0012 <span class="comment">%       lon   : longitude, rectangular array (see MESHGRID).</span>
+0013 <span class="comment">%       lat   : latitude, rectangular array (see MESHGRID).</span>
+0014 <span class="comment">%       time  : Modified Julian Day times.</span>
+0015 <span class="comment">%       pres  : surface pressure [mb]</span>
+0016 <span class="comment">%       nswrs : shortwave radiation (upward = negative) [W/m^{2}]</span>
+0017 <span class="comment">%       nlwrs : longwave radiation (upward = negative) [W/m^{2}]</span>
+0018 <span class="comment">%       nshf  : net surface heat flux (ocean losing = negative) [W/m^{2}]</span>
+0019 <span class="comment">%       u10   : eastward wind velocity [m/s]</span>
+0020 <span class="comment">%       v10   : northward wind velocity [m/s]</span>
+0021 <span class="comment">%       P_E   : precipitation (ocean losing = negative) [m/s]</span>
+0022 <span class="comment">%       evap  : evaporation (ocean losing = negative) [m/s]</span>
+0023 <span class="comment">%       rhum  : relative humidity [%]</span>
+0024 <span class="comment">%       air   : temperature [Celsius]</span>
+0025 <span class="comment">%       Net surface heat flux is defined as the sum of shortwave, longwave,</span>
+0026 <span class="comment">%       sensible and latent heat fluxes (ocean losing heat = negative).</span>
+0027 <span class="comment">%   filename - Output netCDF file name.</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% OUTPUT:</span>
+0030 <span class="comment">%   WRF format heating netCDF file.</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% EXAMPLE USAGE:</span>
+0033 <span class="comment">%   wrf_file = '/path/to/output/casename_wnd.nc';</span>
+0034 <span class="comment">%   write_WRF_forcing(WRF, wrf_file);</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% Author(s):</span>
+0037 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">% Revision history:</span>
+0040 <span class="comment">%   2013-08-29 - First version based on write_FVCOM_heating.m.</span>
+0041 <span class="comment">%   2013-09-09 - FVCOM version 3.1.6 (official) appears to require a</span>
+0042 <span class="comment">%   net_heat_flux variable (rather than Net_heat). Adjusted accordingly.</span>
+0043 <span class="comment">%   2013-10-24 - Add full suite of variables so that HEATING_CALCULATED can</span>
+0044 <span class="comment">%   be used instead.</span>
+0045 <span class="comment">%   2013-12-05 - Fix names of the fields for long and shortwave radiation</span>
+0046 <span class="comment">%   to match the NCEP ones (from n{l,s}wrf to n{l,s}wrs i.e. change last</span>
+0047 <span class="comment">%   letter from f to s).</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">%==========================================================================</span>
+0050 
+0051 assert(nargin == 2, <span class="string">'Incorrect number of arguments'</span>)
+0052 
+0053 subname = <span class="string">'write_WRF_heating'</span>;
+0054 
+0055 <span class="keyword">global</span> ftbverbose
+0056 <span class="keyword">if</span> ftbverbose
+0057     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0058 <span class="keyword">end</span>
+0059 
+0060 ntimes = numel(WRF.time);
+0061 [sgYr, sgMon, sgDay, sgHr, sgMin, sgSec] = mjulian2greg(WRF.time(1));
+0062 [egYr, egMon, egDay, egHr, egMin, egSec] = mjulian2greg(WRF.time(end));
+0063 
+0064 [x, y] = meshgrid(WRF.lon, WRF.lat);
+0065 <span class="comment">% Make the range of lon -180 - 180.</span>
+0066 <span class="keyword">if</span> max(x) &gt; 180
+0067     x(x &gt; 180) = x(x &gt; 180) - 360;
+0068 <span class="keyword">end</span>
+0069 <span class="comment">% I've yet to come across a latitude range that isn't -90 - 90, but just in</span>
+0070 <span class="comment">% case.</span>
+0071 <span class="keyword">if</span> max(y) &gt; 90
+0072     y(y &gt; 90) = y(y &gt; 90) - 180;
+0073 <span class="keyword">end</span>
+0074 [nsouth_north, nwest_east] = size(x);
+0075 
+0076 <span class="comment">%--------------------------------------------------------------------------</span>
+0077 <span class="comment">% Create the netCDF header for the FVCOM forcing file</span>
+0078 <span class="comment">%--------------------------------------------------------------------------</span>
+0079 
+0080 nc = netcdf.create(filename, <span class="string">'clobber'</span>);
+0081 
+0082 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'type'</span>, <span class="string">'FVCOM METEO FORCING FILE'</span>)
+0083 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'title'</span>, [filename, <span class="string">' forcing'</span>])
+0084 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'gauge'</span>, <span class="string">'Met Office Unified Model forcing'</span>)
+0085 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, [<span class="string">'File created on '</span>, datestr(now, <span class="string">'yyyy-mm-dd HH:MM:SS'</span>), <span class="string">' with write_WRF_forcing.m from the MATLAB fvcom-toolbox (https://github.com/pwcazenave/fvcom-toolbox)'</span>])
+0086 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'source'</span>, <span class="string">'wrf grid (structured) surface forcing'</span>)
+0087 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'START_DATE'</span>, datestr(datenum(sgYr, sgMon, sgDay, sgHr, sgMin, sgSec), <span class="string">'yyyy-mm-dd HH:MM:SS'</span>))
+0088 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'END_DATE'</span>, datestr(datenum(egYr, egMon, egDay, egHr, egMin, egSec), <span class="string">'yyyy-mm-dd HH:MM:SS'</span>))
+0089 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'file'</span>, filename)
+0090 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'institution'</span>, <span class="string">'Plymouth Marine Laboratory'</span>)
+0091 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'Conventions'</span>, <span class="string">'CF-1.0'</span>)
+0092 
+0093 <span class="comment">% Dimensions</span>
+0094 sn_dimid=netcdf.defDim(nc, <span class="string">'south_north'</span>, nsouth_north);
+0095 we_dimid=netcdf.defDim(nc, <span class="string">'west_east'</span>, nwest_east);
+0096 bu_dimid=netcdf.defDim(nc, <span class="string">'bottom_up'</span>, 1); <span class="comment">% not sure if this is necessary...</span>
+0097 datestrlen_dimid=netcdf.defDim(nc, <span class="string">'DateStrLen'</span>, 19);
+0098 time_dimid=netcdf.defDim(nc, <span class="string">'time'</span>, netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0099 
+0100 <span class="comment">% Space variables</span>
+0101 y_varid = netcdf.defVar(nc, <span class="string">'XLAT'</span>, <span class="string">'NC_FLOAT'</span>, [we_dimid, sn_dimid]);
+0102 netcdf.putAtt(nc, y_varid, <span class="string">'long_name'</span>, <span class="string">'latitude'</span>);
+0103 netcdf.putAtt(nc, y_varid, <span class="string">'description'</span>, <span class="string">'LATITUDE, SOUTH IS NEGATIVE'</span>);
+0104 netcdf.putAtt(nc, y_varid, <span class="string">'units'</span>, <span class="string">'degrees_north'</span>);
+0105 netcdf.putAtt(nc, y_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0106 
+0107 x_varid=netcdf.defVar(nc, <span class="string">'XLONG'</span>, <span class="string">'NC_FLOAT'</span>, [we_dimid, sn_dimid]);
+0108 netcdf.putAtt(nc, x_varid, <span class="string">'long_name'</span>, <span class="string">'longitude'</span>);
+0109 netcdf.putAtt(nc, x_varid, <span class="string">'description'</span>, <span class="string">'LONGITUDE, WEST IS NEGATIVE'</span>);
+0110 netcdf.putAtt(nc, x_varid, <span class="string">'units'</span>, <span class="string">'degrees_east'</span>);
+0111 netcdf.putAtt(nc, x_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0112 
+0113 <span class="comment">% Time variables</span>
+0114 times_varid=netcdf.defVar(nc, <span class="string">'Times'</span>, <span class="string">'NC_CHAR'</span>, [datestrlen_dimid, time_dimid]);
+0115 netcdf.putAtt(nc, times_varid, <span class="string">'description'</span>, <span class="string">'GMT time'</span>);
+0116 <span class="comment">% netcdf.putAtt(nc, times_varid, 'format', 'String: Calendar Time');</span>
+0117 <span class="comment">% netcdf.putAtt(nc, times_varid, 'time_zone', 'UTC');</span>
+0118 
+0119 nswrs_varid = netcdf.defVar(nc, <span class="string">'Shortwave'</span>, <span class="string">'NC_FLOAT'</span>, [we_dimid, sn_dimid, time_dimid]);
+0120 netcdf.putAtt(nc, nswrs_varid, <span class="string">'long_name'</span>, <span class="string">'Shortwave, upward is negative'</span>);
+0121 netcdf.putAtt(nc, nswrs_varid, <span class="string">'units'</span>, <span class="string">'W m-2'</span>);
+0122 netcdf.putAtt(nc, nswrs_varid, <span class="string">'grid'</span>, <span class="string">'wrf_grid'</span>);
+0123 netcdf.putAtt(nc, nswrs_varid, <span class="string">'coordinates'</span>, <span class="string">'lat lon'</span>);
+0124 netcdf.putAtt(nc, nswrs_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0125 
+0126 nlwrs_varid = netcdf.defVar(nc, <span class="string">'long_wave'</span>, <span class="string">'NC_FLOAT'</span>, [we_dimid, sn_dimid, time_dimid]);
+0127 netcdf.putAtt(nc, nlwrs_varid, <span class="string">'long_name'</span>, <span class="string">'Longwave, upward is negative'</span>);
+0128 netcdf.putAtt(nc, nlwrs_varid, <span class="string">'units'</span>, <span class="string">'W m-2'</span>);
+0129 netcdf.putAtt(nc, nlwrs_varid, <span class="string">'grid'</span>, <span class="string">'wrf_grid'</span>);
+0130 netcdf.putAtt(nc, nlwrs_varid, <span class="string">'coordinates'</span>, <span class="string">'lat lon'</span>);
+0131 netcdf.putAtt(nc, nlwrs_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0132 
+0133 nshf_varid = netcdf.defVar(nc, <span class="string">'net_heat_flux'</span>, <span class="string">'NC_FLOAT'</span>, [we_dimid, sn_dimid, time_dimid]);
+0134 netcdf.putAtt(nc, nshf_varid, <span class="string">'long_name'</span>, <span class="string">'Sum of shortwave, longwave, sensible and latent heat fluxes, ocean lose heat is negative'</span>);
+0135 netcdf.putAtt(nc, nshf_varid, <span class="string">'units'</span>, <span class="string">'W m-2'</span>);
+0136 netcdf.putAtt(nc, nshf_varid, <span class="string">'grid'</span>, <span class="string">'wrf_grid'</span>);
+0137 netcdf.putAtt(nc, nshf_varid, <span class="string">'coordinates'</span>, <span class="string">'lat lon'</span>);
+0138 netcdf.putAtt(nc, nshf_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0139 
+0140 u10_varid = netcdf.defVar(nc, <span class="string">'U10'</span>, <span class="string">'NC_FLOAT'</span>, [we_dimid, sn_dimid, time_dimid]);
+0141 netcdf.putAtt(nc, u10_varid, <span class="string">'long_name'</span>, <span class="string">'Eastward Wind Velocity'</span>);
+0142 netcdf.putAtt(nc, u10_varid, <span class="string">'description'</span>, <span class="string">'U at 10 M'</span>);
+0143 netcdf.putAtt(nc, u10_varid, <span class="string">'units'</span>, <span class="string">'m s-1'</span>);
+0144 netcdf.putAtt(nc, u10_varid, <span class="string">'grid'</span>, <span class="string">'wrf_grid'</span>);
+0145 netcdf.putAtt(nc, u10_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0146 
+0147 v10_varid = netcdf.defVar(nc, <span class="string">'V10'</span>, <span class="string">'NC_FLOAT'</span>, [we_dimid, sn_dimid, time_dimid]);
+0148 netcdf.putAtt(nc, v10_varid, <span class="string">'long_name'</span>, <span class="string">'Northward Wind Velocity'</span>);
+0149 netcdf.putAtt(nc, v10_varid, <span class="string">'description'</span>, <span class="string">'V at 10 M'</span>);
+0150 netcdf.putAtt(nc, v10_varid, <span class="string">'units'</span>, <span class="string">'m s-1'</span>);
+0151 netcdf.putAtt(nc, v10_varid, <span class="string">'grid'</span>, <span class="string">'wrf_grid'</span>);
+0152 netcdf.putAtt(nc, v10_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0153 
+0154 prate_varid = netcdf.defVar(nc, <span class="string">'Precipitation'</span>, <span class="string">'NC_FLOAT'</span>, [we_dimid, sn_dimid, time_dimid]);
+0155 netcdf.putAtt(nc, prate_varid, <span class="string">'long_name'</span>, <span class="string">'Precipitation'</span>);
+0156 netcdf.putAtt(nc, prate_varid, <span class="string">'description'</span>, <span class="string">'Precipitation, ocean lose water is negative'</span>);
+0157 netcdf.putAtt(nc, prate_varid, <span class="string">'units'</span>, <span class="string">'m s-1'</span>);
+0158 netcdf.putAtt(nc, prate_varid, <span class="string">'grid'</span>, <span class="string">'wrf_grid'</span>);
+0159 netcdf.putAtt(nc, prate_varid, <span class="string">'coordinates'</span>, <span class="string">'lat lon'</span>);
+0160 netcdf.putAtt(nc, prate_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0161 
+0162 evap_varid = netcdf.defVar(nc, <span class="string">'Evaporation'</span>, <span class="string">'NC_FLOAT'</span>, [we_dimid, sn_dimid, time_dimid]);
+0163 netcdf.putAtt(nc, evap_varid, <span class="string">'long_name'</span>, <span class="string">'Evaporation'</span>);
+0164 netcdf.putAtt(nc, evap_varid, <span class="string">'description'</span>, <span class="string">'Evaporation, ocean lose water is negative'</span>);
+0165 netcdf.putAtt(nc, evap_varid, <span class="string">'units'</span>, <span class="string">'m s-1'</span>);
+0166 netcdf.putAtt(nc, evap_varid, <span class="string">'grid'</span>, <span class="string">'wrf_grid'</span>);
+0167 netcdf.putAtt(nc, evap_varid, <span class="string">'coordinates'</span>, <span class="string">'lat lon'</span>);
+0168 netcdf.putAtt(nc, evap_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0169 
+0170 pres_varid = netcdf.defVar(nc, <span class="string">'air_pressure'</span>, <span class="string">'NC_FLOAT'</span>, [we_dimid, sn_dimid, time_dimid]);
+0171 netcdf.putAtt(nc, pres_varid, <span class="string">'long_name'</span>, <span class="string">'Air Pressure'</span>);
+0172 netcdf.putAtt(nc, pres_varid, <span class="string">'description'</span>, <span class="string">'Sea surface airpressure'</span>);
+0173 netcdf.putAtt(nc, pres_varid, <span class="string">'units'</span>, <span class="string">'Pa'</span>);
+0174 netcdf.putAtt(nc, pres_varid, <span class="string">'grid'</span>, <span class="string">'wrf_grid'</span>);
+0175 netcdf.putAtt(nc, pres_varid, <span class="string">'coordinates'</span>, <span class="string">'lat lon'</span>);
+0176 netcdf.putAtt(nc, pres_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0177 
+0178 rh_varid = netcdf.defVar(nc, <span class="string">'relative_humidity'</span>, <span class="string">'NC_FLOAT'</span>, [we_dimid, sn_dimid, time_dimid]);
+0179 netcdf.putAtt(nc, rh_varid, <span class="string">'long_name'</span>, <span class="string">'Relative humidity'</span>);
+0180 netcdf.putAtt(nc, rh_varid, <span class="string">'description'</span>, <span class="string">'Relative humidity'</span>);
+0181 netcdf.putAtt(nc, rh_varid, <span class="string">'units'</span>, <span class="string">'%'</span>);
+0182 netcdf.putAtt(nc, rh_varid, <span class="string">'grid'</span>, <span class="string">'wrf_grid'</span>);
+0183 netcdf.putAtt(nc, rh_varid, <span class="string">'coordinates'</span>, <span class="string">'lat lon'</span>);
+0184 netcdf.putAtt(nc, rh_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0185 
+0186 air_varid = netcdf.defVar(nc, <span class="string">'air_temperature'</span>, <span class="string">'NC_FLOAT'</span>, [we_dimid, sn_dimid, time_dimid]);
+0187 netcdf.putAtt(nc, air_varid, <span class="string">'long_name'</span>, <span class="string">'Air Temperature'</span>);
+0188 netcdf.putAtt(nc, air_varid, <span class="string">'description'</span>, <span class="string">'Bulk air temperature'</span>);
+0189 netcdf.putAtt(nc, air_varid, <span class="string">'units'</span>, <span class="string">'Celsius'</span>);
+0190 netcdf.putAtt(nc, air_varid, <span class="string">'grid'</span>, <span class="string">'wrf_grid'</span>);
+0191 netcdf.putAtt(nc, air_varid, <span class="string">'coordinates'</span>, <span class="string">'lat lon'</span>);
+0192 netcdf.putAtt(nc, air_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0193 
+0194 
+0195 <span class="comment">% End definitions</span>
+0196 netcdf.endDef(nc);
+0197 
+0198 <span class="comment">%--------------------------------------------------------------------------</span>
+0199 <span class="comment">% Put the data in the netCDF file.</span>
+0200 <span class="comment">%--------------------------------------------------------------------------</span>
+0201 
+0202 <span class="comment">% Build the Times string and output to netCDF.</span>
+0203 nStringOut = char();
+0204 [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(WRF.time);
+0205 <span class="keyword">for</span> tt = 1:ntimes
+0206     nDate = [nYr(tt), nMon(tt), nDay(tt), nHour(tt), nMin(tt), nSec(tt)];
+0207     nStringOut = [nStringOut, sprintf(<span class="string">'%04i/%02i/%02i %02i:%02i:%02i'</span>, nDate)];
+0208 <span class="keyword">end</span>
+0209 netcdf.putVar(nc, times_varid, [0, 0], [19, ntimes], nStringOut);
+0210 <span class="comment">% And the rest...</span>
+0211 netcdf.putVar(nc, x_varid, x');
+0212 netcdf.putVar(nc, y_varid, flipdim(y', 2));
+0213 netcdf.putVar(nc, nswrs_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nswrs, 2));
+0214 netcdf.putVar(nc, nlwrs_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nlwrs, 2));
+0215 netcdf.putVar(nc, nshf_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.nshf, 2));
+0216 netcdf.putVar(nc, u10_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.u10, 2));
+0217 netcdf.putVar(nc, v10_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.v10, 2));
+0218 netcdf.putVar(nc, prate_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.P_E, 2));
+0219 netcdf.putVar(nc, evap_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.evap, 2));
+0220 netcdf.putVar(nc, pres_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.pres, 2));
+0221 netcdf.putVar(nc, rh_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.rhum, 2));
+0222 netcdf.putVar(nc, air_varid, [0, 0, 0], [nwest_east, nsouth_north, ntimes], flipdim(WRF.air, 2));
+0223 
+0224 
+0225 <span class="comment">% Close the netCDF file</span>
+0226 netcdf.close(nc);
+0227 
+0228 <span class="keyword">if</span> ftbverbose
+0229     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0230 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

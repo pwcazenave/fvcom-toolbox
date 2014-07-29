@@ -49,7 +49,15 @@
     spongeRadius = calc_sponge_radius(Mobj,Nlist)
 
  Author(s)
-    Karen Thurston (National Oceanography Centre, Liverpool)
+    Karen Amoudry (National Oceanography Centre, Liverpool)
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history:
+    2013-01-02 KJA bug fix: amended usage of 'unique' to prevent it from
+    sorting the values it returns. Amended by Pierre to support pre-2012
+    versions of MATLAB whilst giving the same result.
+    2013-07-16 KJA: adapted function to remove dependency on the Matlab
+    Mapping Toolbox.
 
 ==========================================================================</pre></div>
 
@@ -90,51 +98,78 @@ This function is called by:
 0022 <span class="comment">%    spongeRadius = calc_sponge_radius(Mobj,Nlist)</span>
 0023 <span class="comment">%</span>
 0024 <span class="comment">% Author(s)</span>
-0025 <span class="comment">%    Karen Thurston (National Oceanography Centre, Liverpool)</span>
-0026 <span class="comment">%</span>
-0027 <span class="comment">%==========================================================================</span>
-0028 subname = <span class="string">'calc_sponge_radius'</span>;
-0029 <span class="keyword">global</span> ftbverbose
-0030 <span class="keyword">if</span>(ftbverbose)
-0031   fprintf(<span class="string">'\n'</span>)
-0032   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
-0033 <span class="keyword">end</span>
-0034 
-0035 <span class="comment">%--------------------------------------------------------------------------</span>
-0036 <span class="comment">% Get a unique list and make sure they are in the range of node numbers</span>
-0037 <span class="comment">%--------------------------------------------------------------------------</span>
-0038 Nlist = unique(Nlist);
-0039 
-0040 spongeRadius = 100000+zeros(size(Nlist));
-0041 
-0042 <span class="comment">% For each node on the open boundary</span>
-0043 <span class="keyword">for</span> i =1:length(Nlist)
-0044     <span class="comment">% Find the neighbouring nodes</span>
-0045     [r,c]=find(Mobj.tri==Nlist(i));
-0046     neighbours = unique(Mobj.tri(r,:));
-0047     
-0048     <span class="comment">% Remove the node of interest from the neighbours list</span>
-0049     n = find(neighbours~=Nlist(i));
-0050     neighbours = neighbours(n);
-0051     
-0052     <span class="comment">% Calculate the arc length (in degrees) between the node and its</span>
-0053     <span class="comment">% neighbours</span>
-0054     arclen = distance(Mobj.lat(Nlist(i)),Mobj.lon(Nlist(i)),<span class="keyword">...</span>
-0055         Mobj.lat(neighbours),Mobj.lon(neighbours));
-0056     
-0057     <span class="comment">% Convert from degrees to whole metres</span>
-0058     arclen = ceil(1000*deg2km(arclen));
-0059     
-0060     <span class="comment">% If the smallest distance is less than 100km, keep it</span>
-0061     <span class="keyword">if</span> min(arclen)&lt;spongeRadius(i)
-0062         spongeRadius(i)=min(arclen);
-0063     <span class="keyword">end</span>
-0064 <span class="keyword">end</span>
-0065 
-0066 <span class="keyword">if</span>(ftbverbose)
-0067   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0068 <span class="keyword">end</span>
-0069</pre></div>
-<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0025 <span class="comment">%    Karen Amoudry (National Oceanography Centre, Liverpool)</span>
+0026 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Revision history:</span>
+0029 <span class="comment">%    2013-01-02 KJA bug fix: amended usage of 'unique' to prevent it from</span>
+0030 <span class="comment">%    sorting the values it returns. Amended by Pierre to support pre-2012</span>
+0031 <span class="comment">%    versions of MATLAB whilst giving the same result.</span>
+0032 <span class="comment">%    2013-07-16 KJA: adapted function to remove dependency on the Matlab</span>
+0033 <span class="comment">%    Mapping Toolbox.</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">%==========================================================================</span>
+0036 subname = <span class="string">'calc_sponge_radius'</span>;
+0037 <span class="keyword">global</span> ftbverbose
+0038 <span class="keyword">if</span>(ftbverbose)
+0039   fprintf(<span class="string">'\n'</span>)
+0040   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0041 <span class="keyword">end</span>
+0042 
+0043 <span class="comment">%--------------------------------------------------------------------------</span>
+0044 <span class="comment">% Get a unique list and make sure they are in the range of node numbers</span>
+0045 <span class="comment">%--------------------------------------------------------------------------</span>
+0046 <span class="comment">% Make this work in versions of MATLAB older than 2012a (newer versions</span>
+0047 <span class="comment">% can just use unique(A, 'stable'), but checking versions is a pain).</span>
+0048 [~, Nidx] = unique(Nlist);
+0049 Nlist = Nlist(sort(Nidx));
+0050 
+0051 spongeRadius = 100000+zeros(size(Nlist));
+0052 
+0053 <span class="comment">% For each node on the open boundary</span>
+0054 <span class="keyword">for</span> i =1:length(Nlist)
+0055     <span class="comment">% Find the neighbouring nodes</span>
+0056     [r,c]=find(Mobj.tri==Nlist(i));
+0057     neighbours = Mobj.tri(r,:);
+0058     [~,neighidx] = unique(Mobj.tri(r,:));
+0059     neighbours = neighbours(sort(neighidx));
+0060     
+0061     <span class="comment">% Remove the node of interest from the neighbours list</span>
+0062     n = find(neighbours~=Nlist(i));
+0063     neighbours = neighbours(n);
+0064     
+0065     <span class="comment">% Calculate the arc length (in degrees) between the node and its</span>
+0066     <span class="comment">% neighbours</span>
+0067 <span class="comment">%     arclen = distance(Mobj.lat(Nlist(i)),Mobj.lon(Nlist(i)),...</span>
+0068 <span class="comment">%         Mobj.lat(neighbours),Mobj.lon(neighbours));</span>
+0069 <span class="comment">%     % Convert from degrees to whole metres</span>
+0070 <span class="comment">%     arclen = ceil(1000*deg2km(arclen));</span>
+0071     
+0072     
+0073     <span class="comment">% Adapted to avoid using Mapping toolbox</span>
+0074     <span class="comment">% Step 1: convert lat/lon to radians</span>
+0075     lat1 = Mobj.lat(Nlist(i)) .* pi./180;
+0076     lon1 = Mobj.lon(Nlist(i)) .* pi./180;
+0077     lat2 = Mobj.lat(neighbours) .* pi./180;
+0078     lon2 = Mobj.lon(neighbours) .* pi./180;
+0079     <span class="comment">% Step 2: calculate distance in radians</span>
+0080     a = sin((lat2-lat1)/2).^2 + cos(lat1) .* cos(lat2) .*<span class="keyword">...</span>
+0081         sin((lon2-lon1)/2).^2;
+0082     arclen = 2 * atan2(sqrt(a),sqrt(1 - a));
+0083 
+0084     <span class="comment">% Calculate distance in whole metres</span>
+0085     arclen = ceil(1000 .* 6371 .* arclen);
+0086     
+0087     <span class="comment">% If the smallest distance is less than 100km, keep it</span>
+0088     <span class="keyword">if</span> min(arclen)&lt;spongeRadius(i)
+0089         spongeRadius(i)=min(arclen);
+0090     <span class="keyword">end</span>
+0091 <span class="keyword">end</span>
+0092 
+0093 <span class="keyword">if</span>(ftbverbose)
+0094   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0095 <span class="keyword">end</span>
+0096</pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

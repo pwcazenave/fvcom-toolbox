@@ -44,8 +44,10 @@
 
  Author(s):  
     Geoff Cowles (University of Massachusetts Dartmouth)
+    Pierre Cazenave (Plymouth Marine Laboratory)
 
  Revision history
+    2015-05-20 Add new boolean flag for rivers.
    
 ==============================================================================</pre></div>
 
@@ -56,7 +58,7 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="gen_semistructured_mesh.html" class="code" title="function [Mobj] = gen_semistructured_mesh(lx,ly,nx,ny,cornermod)">gen_semistructured_mesh</a>	Generate a semistructured mesh</li><li><a href="gen_unstructured_mesh.html" class="code" title="function [Mobj] = gen_unstructured_mesh(lx,ly,res,cornermod)">gen_unstructured_mesh</a>	function gen_unstructured_mesh(lx,ly,res,cornermod)</li><li><a href="read_fvcom_mesh.html" class="code" title="function [Mobj] = read_fvcom_mesh(gridfile)">read_fvcom_mesh</a>	Read fvcom mesh file into Matlab mesh object</li><li><a href="read_sms_mesh.html" class="code" title="function [Mobj] = read_sms_mesh(varargin)">read_sms_mesh</a>	Read sms mesh files into Matlab mesh object</li></ul>
+<li><a href="gen_semistructured_mesh.html" class="code" title="function [Mobj] = gen_semistructured_mesh(lx,ly,nx,ny,cornermod)">gen_semistructured_mesh</a>	Generate a semistructured mesh</li><li><a href="gen_unstructured_mesh.html" class="code" title="function [Mobj] = gen_unstructured_mesh(lx,ly,res,cornermod)">gen_unstructured_mesh</a>	function gen_unstructured_mesh(lx,ly,res,cornermod)</li><li><a href="read_gmsh_mesh.html" class="code" title="function [Mobj] = read_gmsh_mesh(varargin)">read_gmsh_mesh</a>	Read gmsh mesh files (version 2.2) into MATLAB mesh object.</li><li><a href="read_grid_mesh.html" class="code" title="function [Mobj] = read_grid_mesh(varargin)">read_grid_mesh</a>	Read .grid mesh files into Matlab mesh object</li><li><a href="read_sms_mesh.html" class="code" title="function [Mobj] = read_sms_mesh(varargin)">read_sms_mesh</a>	Read sms mesh files into Matlab mesh object.</li></ul>
 <!-- crossreference -->
 
 
@@ -81,46 +83,49 @@ This function is called by:
 0017 <span class="comment">%</span>
 0018 <span class="comment">% Author(s):</span>
 0019 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0020 <span class="comment">%</span>
-0021 <span class="comment">% Revision history</span>
-0022 <span class="comment">%</span>
-0023 <span class="comment">%==============================================================================</span>
-0024 <span class="keyword">global</span> ftbverbose
-0025 subname = <span class="string">'make_blank_mesh'</span>;
-0026 <span class="keyword">if</span>(ftbverbose)
-0027   fprintf(<span class="string">'\n'</span>)
-0028   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
-0029 <span class="keyword">end</span>;
-0030 
-0031 <span class="comment">%------------------------------------------------------------------------------</span>
-0032 <span class="comment">% Set defaults</span>
+0020 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Revision history</span>
+0023 <span class="comment">%    2015-05-20 Add new boolean flag for rivers.</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%==============================================================================</span>
+0026 <span class="keyword">global</span> ftbverbose
+0027 subname = <span class="string">'make_blank_mesh'</span>;
+0028 <span class="keyword">if</span>(ftbverbose)
+0029   fprintf(<span class="string">'\n'</span>)
+0030   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0031 <span class="keyword">end</span>;
+0032 
 0033 <span class="comment">%------------------------------------------------------------------------------</span>
-0034 
-0035 
-0036 <span class="comment">% dimensions</span>
-0037 Mobj.nVerts  = 0;
-0038 Mobj.nElems  = 0;
-0039 Mobj.nRivers = 0;
-0040 Mobj.nObs    = 0;
-0041 Mobj.nSponge = 0;
-0042 Mobj.riv_nodes = zeros(50,10);
-0043 Mobj.obc_nodes = zeros(10,500);
-0044 Mobj.sponge_nodes = zeros(10,500);
-0045 
-0046 <span class="comment">% flags</span>
-0047 Mobj.nativeCoords = <span class="string">'cartesian'</span>;
-0048 Mobj.have_lonlat  = false;
-0049 Mobj.have_cor     = false;
-0050 Mobj.have_xy      = false;
-0051 Mobj.have_bath    = false;
-0052 Mobj.have_mets    = false;
-0053 
-0054 
-0055 <span class="keyword">if</span>(ftbverbose)
-0056   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0057 <span class="keyword">end</span>;
-0058 
-0059</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0034 <span class="comment">% Set defaults</span>
+0035 <span class="comment">%------------------------------------------------------------------------------</span>
+0036 
+0037 
+0038 <span class="comment">% dimensions</span>
+0039 Mobj.nVerts  = 0;
+0040 Mobj.nElems  = 0;
+0041 Mobj.nRivers = 0;
+0042 Mobj.nObs    = 0;
+0043 Mobj.nSponge = 0;
+0044 Mobj.riv_nodes = zeros(50,10);
+0045 Mobj.obc_nodes = zeros(10,500);
+0046 Mobj.sponge_nodes = zeros(10,500);
+0047 
+0048 <span class="comment">% flags</span>
+0049 Mobj.nativeCoords = <span class="string">'cartesian'</span>;
+0050 Mobj.have_lonlat  = false;
+0051 Mobj.have_cor     = false;
+0052 Mobj.have_xy      = false;
+0053 Mobj.have_bath    = false;
+0054 Mobj.have_mets    = false;
+0055 Mobj.have_rivers  = false;
+0056 
+0057 
+0058 <span class="keyword">if</span>(ftbverbose)
+0059   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0060 <span class="keyword">end</span>;
+0061 
+0062</pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

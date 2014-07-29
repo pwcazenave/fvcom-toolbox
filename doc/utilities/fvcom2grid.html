@@ -1,0 +1,421 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of fvcom2grid</title>
+  <meta name="keywords" content="fvcom2grid">
+  <meta name="description" content="Interpolate FVCOM onto regular grid">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; fvcom2grid.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>fvcom2grid
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Interpolate FVCOM onto regular grid</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function fvcom = fvcom2grid(Mobj, vars, data) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Interpolate FVCOM onto regular grid
+ grid.
+
+ fvcom2grid(Mobj,vars,data)
+
+ DESCRIPTION:
+
+ INPUT:
+   Mobj - MATLAB mesh object with the following fields:
+       x, y, lon, lat - cartesian and spherical node coordinates. These
+       are transferred to the NetCDF file only and are not used in the
+       interpolation at all.
+       nVerts - number of vertices (nodes) in the unstructured grid.
+       nElems - number of elements in the unstructured grid.
+   vars - a cell array of the variable names to be interpolated on the
+       FVCOM grid in Mobj (e.g. uwnd, U10, vwnd, V10 etc.).
+   data - a struct which contains the following arrays:
+       x - x data (probably best in cartesian for the interpolation)
+       y - y data (probably best in cartesian for the interpolation)
+       The struct must also contain all the variables defined in vars.
+       time - time vector (in Modified Julian Days). If you're using some
+       of the NCEP surface products (e.g. relative humitidy, sea level
+       pressure), you need to supply x and y coordinates for their grids
+       as .xalt and .yalt).
+
+ OUTPUT:
+
+ EXAMPLE USAGE:
+   interpfields = {'uwnd', 'vwnd', 'slp', 'nshf', 'nlwrs', 'nswrs', ...
+       'P_E', 'Et', 'time', 'lon', 'lat', 'x', 'y'};
+   forcing_interp = grid2fvcom(Mobj, interpfields, forcing);
+
+ NOTE:
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history:
+   2014-03-21 First version based on grid2fvcom.m in the
+   fvcom-toolbox.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function fvcom = fvcom2grid(Mobj, vars, data)</a>
+0002 <span class="comment">% Interpolate FVCOM onto regular grid</span>
+0003 <span class="comment">% grid.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% fvcom2grid(Mobj,vars,data)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT:</span>
+0010 <span class="comment">%   Mobj - MATLAB mesh object with the following fields:</span>
+0011 <span class="comment">%       x, y, lon, lat - cartesian and spherical node coordinates. These</span>
+0012 <span class="comment">%       are transferred to the NetCDF file only and are not used in the</span>
+0013 <span class="comment">%       interpolation at all.</span>
+0014 <span class="comment">%       nVerts - number of vertices (nodes) in the unstructured grid.</span>
+0015 <span class="comment">%       nElems - number of elements in the unstructured grid.</span>
+0016 <span class="comment">%   vars - a cell array of the variable names to be interpolated on the</span>
+0017 <span class="comment">%       FVCOM grid in Mobj (e.g. uwnd, U10, vwnd, V10 etc.).</span>
+0018 <span class="comment">%   data - a struct which contains the following arrays:</span>
+0019 <span class="comment">%       x - x data (probably best in cartesian for the interpolation)</span>
+0020 <span class="comment">%       y - y data (probably best in cartesian for the interpolation)</span>
+0021 <span class="comment">%       The struct must also contain all the variables defined in vars.</span>
+0022 <span class="comment">%       time - time vector (in Modified Julian Days). If you're using some</span>
+0023 <span class="comment">%       of the NCEP surface products (e.g. relative humitidy, sea level</span>
+0024 <span class="comment">%       pressure), you need to supply x and y coordinates for their grids</span>
+0025 <span class="comment">%       as .xalt and .yalt).</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% OUTPUT:</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% EXAMPLE USAGE:</span>
+0030 <span class="comment">%   interpfields = {'uwnd', 'vwnd', 'slp', 'nshf', 'nlwrs', 'nswrs', ...</span>
+0031 <span class="comment">%       'P_E', 'Et', 'time', 'lon', 'lat', 'x', 'y'};</span>
+0032 <span class="comment">%   forcing_interp = grid2fvcom(Mobj, interpfields, forcing);</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% NOTE:</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% Author(s):</span>
+0037 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">% Revision history:</span>
+0040 <span class="comment">%   2014-03-21 First version based on grid2fvcom.m in the</span>
+0041 <span class="comment">%   fvcom-toolbox.</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">%==========================================================================</span>
+0044 
+0045 <span class="keyword">if</span> nargin ~= 3
+0046     error(<span class="string">'Incorrect number of arguments'</span>)
+0047 <span class="keyword">end</span>
+0048 
+0049 subname = <span class="string">'grid2fvcom'</span>;
+0050 
+0051 <span class="keyword">global</span> ftbverbose;
+0052 <span class="keyword">if</span> ftbverbose
+0053     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0054 <span class="keyword">end</span>
+0055 
+0056 <span class="comment">% Before we go too far into this, check we have all the fields in the input</span>
+0057 <span class="comment">% data that are being requested.</span>
+0058 <span class="keyword">for</span> ff = 1:length(vars)
+0059     assert(isfield(data, vars{ff}), <span class="keyword">...</span>
+0060         <span class="string">'Missing field %s in the input data struct.'</span>, vars{ff})
+0061 <span class="keyword">end</span>
+0062 
+0063 <span class="comment">% Run jobs on multiple workers if we have that functionality. Not sure if</span>
+0064 <span class="comment">% it's necessary, but check we have the Parallel Toolbox first.</span>
+0065 <span class="comment">% wasOpened = false;</span>
+0066 <span class="keyword">if</span> license(<span class="string">'test'</span>, <span class="string">'Distrib_Computing_Toolbox'</span>)
+0067     <span class="comment">% We have the Parallel Computing Toolbox, so launch a bunch of workers.</span>
+0068     <span class="keyword">if</span> matlabpool(<span class="string">'size'</span>) == 0
+0069         <span class="comment">% Force pool to be local in case we have remote pools available.</span>
+0070         matlabpool open local
+0071 <span class="comment">%         wasOpened = true;</span>
+0072     <span class="keyword">end</span>
+0073 <span class="keyword">end</span>
+0074 
+0075 <span class="comment">%--------------------------------------------------------------------------</span>
+0076 <span class="comment">% Get the relevant bits from the FVCOM mesh object</span>
+0077 <span class="comment">%--------------------------------------------------------------------------</span>
+0078 x = Mobj.x;
+0079 y = Mobj.y;
+0080 nVerts = Mobj.nVerts;
+0081 nElems = Mobj.nElems;
+0082 <span class="keyword">if</span> ftbverbose
+0083     fprintf(<span class="string">'info for FVCOM domain\n'</span>);
+0084     fprintf(<span class="string">'number of nodes: %d\n'</span>, nVerts);
+0085     fprintf(<span class="string">'number of elems: %d\n'</span>, nElems);
+0086 <span class="keyword">end</span>
+0087 
+0088 xc = nodes2elems(x, Mobj);
+0089 yc = nodes2elems(y, Mobj);
+0090 
+0091 <span class="keyword">try</span>
+0092     ntimes = numel(data.time);
+0093 <span class="keyword">catch</span>
+0094     ntimes = numel(data.(vars{1}).time);
+0095 <span class="keyword">end</span>
+0096 
+0097 <span class="comment">% Interpolate supplied regularly gridded data to FVCOM mesh. Use</span>
+0098 <span class="comment">% TriScatteredInterp to do the interpolation instead of griddata (should be</span>
+0099 <span class="comment">% faster).</span>
+0100 <span class="keyword">for</span> vv = 1:length(vars)
+0101     <span class="keyword">switch</span> vars{vv}
+0102         <span class="keyword">case</span> <span class="string">'time'</span>
+0103             fprintf(<span class="string">'transferring variable %s as is\n'</span>, vars{vv})
+0104             fvcom.(vars{vv}) = data.(vars{vv});
+0105             <span class="keyword">continue</span>
+0106 
+0107         <span class="keyword">case</span> {<span class="string">'lat'</span>, <span class="string">'lon'</span>, <span class="string">'x'</span>, <span class="string">'y'</span>}
+0108             fprintf(<span class="string">'reassigning variable %s from unstructured grid\n'</span>, vars{vv})
+0109             fvcom.(vars{vv}) = Mobj.(vars{vv});
+0110 
+0111         <span class="keyword">case</span> {<span class="string">'xalt'</span>, <span class="string">'yalt'</span>}
+0112             <span class="comment">% Only exist for the interpolation of some data on an</span>
+0113             <span class="comment">% alternative grid.</span>
+0114             fprintf(<span class="string">'skipping %s\n'</span>, vars{vv})
+0115 
+0116         <span class="keyword">otherwise</span>
+0117             <span class="comment">% Preallocate the output arrays.</span>
+0118             <span class="comment">% Serial version:</span>
+0119             <span class="comment">% fvcom.(vars{vv}).data = zeros(nElems, ntimes);</span>
+0120             <span class="comment">% fvcom.(vars{vv}).node = zeros(nVerts, ntimes);</span>
+0121             <span class="comment">% Also create temporary arrays for the inner loop to be</span>
+0122             <span class="comment">% parallelisable (is that a word?):</span>
+0123             tmp_fvcom_data = zeros(nElems, ntimes);
+0124             tmp_fvcom_node = zeros(nVerts, ntimes);
+0125             <span class="keyword">try</span>
+0126                 tmp_data_data = data.(vars{vv}).data; <span class="comment">% input to the interpolation</span>
+0127             <span class="keyword">catch</span> msg
+0128                 fprintf(<span class="string">'Trying for alternative data structure. (%s) '</span>, <span class="keyword">...</span>
+0129                     msg.message)
+0130                 tmp_data_data = data.(vars{vv}); <span class="comment">% input to the interpolation</span>
+0131                 fprintf(<span class="string">'success!\n'</span>)
+0132             <span class="keyword">end</span>
+0133 
+0134             xx = data.x(:);
+0135             yy = data.y(:);
+0136             <span class="comment">% Sometimes the parfor loop will fail if xxalt and yyalt</span>
+0137             <span class="comment">% aren't defined at all. So, make them empty here. This</span>
+0138             <span class="comment">% shouldn't impact data where we need those alternative arrays</span>
+0139             <span class="comment">% because if the data.xalt and data.yalt arrays exist, then</span>
+0140             <span class="comment">% these values will be overwritten with them. It does ensure</span>
+0141             <span class="comment">% that xxalt and yyalt always exist though.</span>
+0142             xxalt = [];
+0143             yyalt = [];
+0144 
+0145             <span class="comment">% Check the shapes of the input data match those of the</span>
+0146             <span class="comment">% position arrays.</span>
+0147             [fvx, fvy] = size(data.x);
+0148             [ncx, ncy, ~] = size(tmp_data_data);
+0149 
+0150             <span class="keyword">if</span> isfield(data, <span class="string">'xalt'</span>)
+0151                 [fvxalt, fvyalt] = size(data.xalt);
+0152                 xxalt = data.xalt(:);
+0153                 yyalt = data.yalt(:);
+0154                 <span class="keyword">if</span> (ncx ~= fvx || ncy ~= fvy) || (ncx ~= fvxalt || ncy ~= fvyalt)
+0155                     <span class="comment">% Flipping the input array so it hopefully matches the</span>
+0156                     <span class="comment">% position arrays.</span>
+0157                     tmp_data_data = permute(tmp_data_data, [2, 1, 3]);
+0158                     warning(<span class="string">'Transposed ''%s'' input data to match position array dimensions'</span>, vars{vv})
+0159                 <span class="keyword">end</span>
+0160                 <span class="keyword">if</span> isfield(data, <span class="string">'lsmalt'</span>)
+0161                     <span class="comment">% If we have a land mask, mask off the coastal and land</span>
+0162                     <span class="comment">% points in the coordinates arrays with the alternative</span>
+0163                     <span class="comment">% mask.</span>
+0164                     xxalt(data.lsmalt ~= 0) = [];
+0165                     yyalt(data.lsmalt ~= 0) = [];
+0166                 <span class="keyword">end</span>
+0167             <span class="keyword">else</span>
+0168                 <span class="keyword">if</span> (ncx ~= fvx || ncy ~= fvy)
+0169                     <span class="comment">% Flipping the input array so it hopefully matches the</span>
+0170                     <span class="comment">% position arrays.</span>
+0171                     tmp_data_data = permute(tmp_data_data, [2, 1, 3]);
+0172                     warning(<span class="string">'Transposed ''%s'' input data to match position array dimensions'</span>, vars{vv})
+0173                 <span class="keyword">end</span>
+0174                 <span class="comment">% If we have a land mask, mask off the coastal and land points</span>
+0175                 <span class="comment">% in the coordinates arrays.</span>
+0176                 <span class="keyword">if</span> isfield(data, <span class="string">'lsm'</span>)
+0177                     xx(data.lsm ~= 0) = [];
+0178                     yy(data.lsm ~= 0) = [];
+0179                 <span class="keyword">end</span>
+0180             <span class="keyword">end</span>
+0181 
+0182             <span class="comment">% Use a parallel loop for the number of time steps we're</span>
+0183             <span class="comment">% interpolating.</span>
+0184             varname = vars{vv};
+0185             parfor i = 1:ntimes
+0186                 <span class="keyword">if</span> ftbverbose
+0187                     fprintf(<span class="string">'interpolating %s, frame %d of %d\n'</span>, varname, i, ntimes);
+0188                 <span class="keyword">end</span>
+0189 
+0190                 <span class="comment">% Serial version:</span>
+0191                 <span class="comment">% currvar = data.(vars{vv}).data(:, :, i);</span>
+0192                 <span class="comment">% Parallel version:</span>
+0193                 currvar = tmp_data_data(:, :, i);
+0194 
+0195                 <span class="comment">% griddata way (cubic interpolation)</span>
+0196                 <span class="comment">%fvcom.(vars{vv}).node(:,i) = griddata(wind.x,wind.y,currvar,x,y,'cubic');</span>
+0197                 <span class="comment">%fvcom.(vars{vv}).data(:,i) = griddata(wind.x,wind.y,currvar,xc,yc,'cubic');</span>
+0198 
+0199                 <span class="comment">% TriScatteredInterp way (with natural neighbour</span>
+0200                 <span class="comment">% interpolation). Instead of the quite crude try/catch that</span>
+0201                 <span class="comment">% was here, count the number of elements in the coordinate</span>
+0202                 <span class="comment">% (xx and yy) and data (currvar) arrays: if they differ,</span>
+0203                 <span class="comment">% try the same thing with the xxalt and xyalt coordinate</span>
+0204                 <span class="comment">% arrays. If they still differ, then error out. The reason</span>
+0205                 <span class="comment">% for this different approach is that the parfor sometimes</span>
+0206                 <span class="comment">% failed for me when using non-NCEP data as the source for</span>
+0207                 <span class="comment">% the interpolation.</span>
+0208                 ndata = numel(currvar(~isnan(currvar)));
+0209                 nxx = numel(xx);
+0210                 nyy = numel(yy);
+0211                 assert(nxx == nyy, <span class="string">'Inconsistent coordinate array sizes.'</span>)
+0212                 <span class="keyword">if</span> nxx == ndata
+0213                     ftsin = TriScatteredInterp(<span class="keyword">...</span>
+0214                         xx, <span class="keyword">...</span>
+0215                         yy, <span class="keyword">...</span>
+0216                         currvar(~isnan(currvar(:))), <span class="keyword">...</span>
+0217                         <span class="string">'natural'</span>);
+0218                 <span class="keyword">elseif</span> exist(<span class="string">'xxalt'</span>, <span class="string">'var'</span>) &amp;&amp; numel(xxalt) == ndata
+0219                     ftsin = TriScatteredInterp(<span class="keyword">...</span>
+0220                         xxalt, <span class="keyword">...</span>
+0221                         yyalt, <span class="keyword">...</span>
+0222                         currvar(~isnan(currvar(:))), <span class="keyword">...</span>
+0223                         <span class="string">'natural'</span>);
+0224                 <span class="keyword">else</span>
+0225                     error(<span class="string">'Can''t interpolate the data: non-matching coordinate array sizes.'</span>)
+0226                 <span class="keyword">end</span>
+0227 <span class="comment">%                 try</span>
+0228 <span class="comment">%                     ftsin = TriScatteredInterp(...</span>
+0229 <span class="comment">%                         xx, ...</span>
+0230 <span class="comment">%                         yy, ...</span>
+0231 <span class="comment">%                         currvar(~isnan(currvar(:))), ...</span>
+0232 <span class="comment">%                         'natural');</span>
+0233 <span class="comment">%                 catch err</span>
+0234 <span class="comment">%                     % In my experience, the matlabpool size - 1 is the</span>
+0235 <span class="comment">%                     % first iteration that actually gets printed to the</span>
+0236 <span class="comment">%                     % display.</span>
+0237 <span class="comment">%                     if i == matlabpool('size') - 1</span>
+0238 <span class="comment">%                         % Only print the warning on the &quot;first&quot; iteration.</span>
+0239 <span class="comment">%                         warning([err.identifier, ': Some NCEP data are projected' ...</span>
+0240 <span class="comment">%                             ' onto a different grid. Check you have specified' ...</span>
+0241 <span class="comment">%                             ' data.xalt and data.yalt arrays which are on the' ...</span>
+0242 <span class="comment">%                             ' same grid as the data to be interpolated.'])</span>
+0243 <span class="comment">%                     end</span>
+0244 <span class="comment">%                     ftsin = TriScatteredInterp(xxalt, yyalt, ...</span>
+0245 <span class="comment">%                         currvar(~isnan(currvar(:))), 'natural');</span>
+0246 <span class="comment">%                 end</span>
+0247 
+0248                 <span class="comment">% Serial version:</span>
+0249                 <span class="comment">% fvcom.(vars{vv}).node(:,i) = ftsin(x,y);</span>
+0250                 <span class="comment">% fvcom.(vars{vv}).data(:,i) = ftsin(xc,yc);</span>
+0251                 <span class="comment">% nnans(1) = sum(isnan(fvcom.(vars{vv}).node(:,i)));</span>
+0252                 <span class="comment">% nnans(2) = sum(isnan(fvcom.(vars{vv}).data(:,i)));</span>
+0253                 <span class="comment">% Parallel version:</span>
+0254                 tmp_fvcom_node(:, i) = ftsin(x, y);
+0255                 tmp_fvcom_data(:, i) = ftsin(xc, yc);
+0256                 nnans1 = sum(isnan(tmp_fvcom_node(:, i)));
+0257                 nnans2 = sum(isnan(tmp_fvcom_data(:, i)));
+0258                 <span class="keyword">if</span>  nnans1 &gt; 0
+0259                     warning(<span class="string">'%i NaNs in the interpolated node data. This won''t work with FVCOM.'</span>, nnans1)
+0260                 <span class="keyword">end</span>
+0261                 <span class="keyword">if</span> nnans2 &gt; 0
+0262                     warning(<span class="string">'%i NaNs in the interpolated element data. This won''t work with FVCOM.'</span>, nnans2)
+0263                 <span class="keyword">end</span>
+0264             <span class="keyword">end</span>
+0265             <span class="comment">% Transfer the temporary arrays back to the relevant struct and</span>
+0266             <span class="comment">% clear out the temporary arrays.</span>
+0267             fvcom.(vars{vv}).node = tmp_fvcom_node;
+0268             fvcom.(vars{vv}).data = tmp_fvcom_data;
+0269             clear nnans* tmp_*
+0270 
+0271             <span class="keyword">if</span> ftbverbose
+0272                 fprintf(<span class="string">'interpolation of %s complete\n'</span>, vars{vv});
+0273             <span class="keyword">end</span>
+0274     <span class="keyword">end</span>
+0275 <span class="keyword">end</span>
+0276 
+0277 <span class="comment">% if wasOpened</span>
+0278 <span class="comment">%     matlabpool close</span>
+0279 <span class="comment">% end</span>
+0280 
+0281 <span class="comment">% Better way of closing the pool after each invocation (though this might</span>
+0282 <span class="comment">% incur some overhead due to the time it takes to spin up/close down a</span>
+0283 <span class="comment">% MATLAB pool of workers).</span>
+0284 cleaner = onCleanup(@() matlabpool(<span class="string">'close'</span>));
+0285 
+0286 <span class="keyword">if</span> ftbverbose
+0287     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0288 <span class="keyword">end</span>
+0289 
+0290 <span class="comment">%% Debugging figure to check the interpolation makes sense.</span>
+0291 
+0292 <span class="comment">% close all</span>
+0293 <span class="comment">%</span>
+0294 <span class="comment">% figure</span>
+0295 <span class="comment">%</span>
+0296 <span class="comment">% vartoplot = 'nswrf';</span>
+0297 <span class="comment">% tidx = 12; % time index</span>
+0298 <span class="comment">%</span>
+0299 <span class="comment">% subplot(2, 1, 1)</span>
+0300 <span class="comment">% try</span>
+0301 <span class="comment">%     pcolor(data.lon, data.lat, data.(vartoplot).data(:, :, tidx)')</span>
+0302 <span class="comment">% catch</span>
+0303 <span class="comment">%     pcolor(data.lon, data.lat, data.(vartoplot)(:, :, tidx)')</span>
+0304 <span class="comment">% end</span>
+0305 <span class="comment">% shading flat</span>
+0306 <span class="comment">% axis('equal', 'tight')</span>
+0307 <span class="comment">% title([vartoplot, ' (regularly gridded)'])</span>
+0308 <span class="comment">% colorbar</span>
+0309 <span class="comment">% try</span>
+0310 <span class="comment">%     caxis([min(fvcom.(vartoplot).data(:, tidx)), max(fvcom.(vartoplot).data(:, tidx))])</span>
+0311 <span class="comment">% catch</span>
+0312 <span class="comment">%     caxis([min(fvcom.(vartoplot)(:, tidx)), max(fvcom.(vartoplot)(:, tidx))])</span>
+0313 <span class="comment">% end</span>
+0314 <span class="comment">% axis([min(Mobj.lon), max(Mobj.lon), min(Mobj.lat), max(Mobj.lat)])</span>
+0315 <span class="comment">%</span>
+0316 <span class="comment">% subplot(2, 1, 2)</span>
+0317 <span class="comment">% try</span>
+0318 <span class="comment">%     patch('Vertices', [Mobj.lon, Mobj.lat], 'Faces', Mobj.tri, 'cData', fvcom.(vartoplot).data(:, tidx));</span>
+0319 <span class="comment">% catch</span>
+0320 <span class="comment">%     patch('Vertices', [Mobj.lon, Mobj.lat], 'Faces', Mobj.tri, 'cData', fvcom.(vartoplot)(:, tidx));</span>
+0321 <span class="comment">% end</span>
+0322 <span class="comment">% shading flat</span>
+0323 <span class="comment">% axis('equal')</span>
+0324 <span class="comment">% axis([min(data.lon(:)), max(data.lon(:)), min(data.lat(:)), max(data.lat(:))])</span>
+0325 <span class="comment">% title([vartoplot, ' (interpolated)'])</span>
+0326 <span class="comment">% colorbar</span>
+0327 <span class="comment">% try</span>
+0328 <span class="comment">%     caxis([min(fvcom.(vartoplot).data(:, tidx)), max(fvcom.(vartoplot).data(:, tidx))])</span>
+0329 <span class="comment">% catch</span>
+0330 <span class="comment">%     caxis([min(fvcom.(vartoplot)(:, tidx)), max(fvcom.(vartoplot)(:, tidx))])</span>
+0331 <span class="comment">% end</span>
+0332 <span class="comment">% axis([min(Mobj.lon), max(Mobj.lon), min(Mobj.lat), max(Mobj.lat)])</span>
+0333</pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

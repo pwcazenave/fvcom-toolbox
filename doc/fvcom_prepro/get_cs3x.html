@@ -1,0 +1,240 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_cs3x</title>
+  <meta name="keywords" content="get_cs3x">
+  <meta name="description" content="Extract boundary forcing information from NOC Operational Surge Model">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_cs3x.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_cs3x
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Extract boundary forcing information from NOC Operational Surge Model</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Mobj] = get_cs3x(Mobj,inputConf,SetupFile,DataFile) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Extract boundary forcing information from NOC Operational Surge Model
+ output.
+
+ function get_cs3x(Mobj,inputConf,SetupFile,DataFile)
+
+ DESCRIPTION:
+    Extract boundary forcing information from NOC Operational Surge
+    Model output and interpolate to FVCOM open boundary nodes.
+
+ INPUT
+    Mobj          = Matlab mesh object
+    inputConf     = Structure containing start and end date and time for
+                    FVCOM run
+    SetupFile     = Location of surge model setup file
+    DataFile      = Location of surge model data file
+ 
+ OUTPUT:
+    Mobj.surfaceElevation = Addition to Matlab mesh object. Timeseries of 
+                            surface elevation at each open boundary point
+
+ EXAMPLE USAGE
+    function get_cs3x(Mobj,inputConf,SetupFile,DataFile)
+
+ Author(s):  
+    Karen Amoudry (National Oceanography Centre Liverpool)
+
+ Revision history
+    2014-01-09 First version.
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = get_cs3x(Mobj,inputConf,SetupFile,DataFile)</a>
+0002 
+0003 <span class="comment">% Extract boundary forcing information from NOC Operational Surge Model</span>
+0004 <span class="comment">% output.</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% function get_cs3x(Mobj,inputConf,SetupFile,DataFile)</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% DESCRIPTION:</span>
+0009 <span class="comment">%    Extract boundary forcing information from NOC Operational Surge</span>
+0010 <span class="comment">%    Model output and interpolate to FVCOM open boundary nodes.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% INPUT</span>
+0013 <span class="comment">%    Mobj          = Matlab mesh object</span>
+0014 <span class="comment">%    inputConf     = Structure containing start and end date and time for</span>
+0015 <span class="comment">%                    FVCOM run</span>
+0016 <span class="comment">%    SetupFile     = Location of surge model setup file</span>
+0017 <span class="comment">%    DataFile      = Location of surge model data file</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% OUTPUT:</span>
+0020 <span class="comment">%    Mobj.surfaceElevation = Addition to Matlab mesh object. Timeseries of</span>
+0021 <span class="comment">%                            surface elevation at each open boundary point</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% EXAMPLE USAGE</span>
+0024 <span class="comment">%    function get_cs3x(Mobj,inputConf,SetupFile,DataFile)</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Author(s):</span>
+0027 <span class="comment">%    Karen Amoudry (National Oceanography Centre Liverpool)</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Revision history</span>
+0030 <span class="comment">%    2014-01-09 First version.</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%==============================================================================</span>
+0033 subname = <span class="string">'get_cs3x'</span>;
+0034 <span class="keyword">global</span> ftbverbose;
+0035 <span class="keyword">if</span>(ftbverbose);
+0036   fprintf(<span class="string">'\n'</span>)
+0037   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0038 <span class="keyword">end</span>;
+0039 
+0040 <span class="comment">%% Put the open boundary nodes into a single array for convenience</span>
+0041 count = 0;
+0042 ObcNodes = nan(1,sum(Mobj.nObcNodes));
+0043 <span class="keyword">for</span> ob=1:Mobj.nObs
+0044     nObcs = Mobj.nObcNodes(ob);
+0045     <span class="keyword">for</span> j=1:nObcs
+0046         count = count + 1;
+0047         ObcNodes(count) = Mobj.obc_nodes(ob,j);  <span class="comment">% set the open boundary nodes</span>
+0048     <span class="keyword">end</span>
+0049 <span class="keyword">end</span>
+0050 
+0051 <span class="comment">% Open the compression info file</span>
+0052 fid=fopen(SetupFile,<span class="string">'r'</span>,<span class="string">'b'</span>);
+0053 temp=fread(fid,inf,<span class="string">'*int32'</span>,<span class="string">'b'</span>);
+0054 fclose(fid);
+0055 
+0056 NRR = temp(2);  <span class="comment">% Number of rows in full rectangle</span>
+0057 NCC = temp(3);  <span class="comment">% Number of columns in full rectangle</span>
+0058 ITOT = temp(4); <span class="comment">% Total number of points in compact arrays</span>
+0059 
+0060 NTRNS = temp(8:NRR+7);  <span class="comment">% Transformation matrix for compact addressing</span>
+0061 NTRNT = temp(NRR+10:2*NRR+9);   <span class="comment">% Transformation matrix for compact addressing</span>
+0062 
+0063 clear temp
+0064 
+0065 <span class="comment">% Define the parameters of the cs3x grid</span>
+0066 cs3x_lonstart = -19-(5/6); <span class="comment">% longitude of the bottom left corner</span>
+0067 cs3x_latstart = 40+(1/9);   <span class="comment">% latitude of the bottom left corner</span>
+0068 cs3x_loninc = 1/6;   <span class="comment">% grid resolution in the x direction (degrees)</span>
+0069 cs3x_latinc = 1/9;   <span class="comment">% grid resolution in the y direction (degrees)</span>
+0070 cs3x_lonfin = double(cs3x_lonstart+(cs3x_loninc*(NCC-1)));  <span class="comment">% longitude of the top right corner</span>
+0071 cs3x_latfin = double(cs3x_latstart+(cs3x_latinc*(NRR-1)));  <span class="comment">% latitude of the top right corner</span>
+0072 cs3x_lon = cs3x_lonstart:cs3x_loninc:cs3x_lonfin;   <span class="comment">% array of grid lon points</span>
+0073 cs3x_lat = cs3x_latstart:cs3x_latinc:cs3x_latfin;   <span class="comment">% array of grid lat points</span>
+0074 <span class="comment">% cs3x_area = cs3x_loninc*cs3x_latinc;  % I'll need this if I do velocity</span>
+0075 
+0076 <span class="comment">% Sanity check. Does our FVCOM grid fit within the cs3x domain?</span>
+0077 <span class="keyword">if</span> min(Mobj.lon) &lt; cs3x_lonstart || max(Mobj.lon) &gt; cs3x_lonfin || <span class="keyword">...</span>
+0078         min(Mobj.lat) &lt; cs3x_latstart || max(Mobj.lat) &gt; cs3x_latfin
+0079     error(<span class="string">'Your FVCOM grid is bigger than the available cs3x grid. Choose another met forcing option or crop your FVCOM grid.'</span>)
+0080 <span class="keyword">end</span>
+0081 
+0082 E = zeros(NCC,NRR);     <span class="comment">% Initialise the elevation array</span>
+0083 <span class="comment">% U = zeros(NCC,NRR);     % Initialise the u-velocity array</span>
+0084 <span class="comment">% V = zeros(NCC,NRR);     % Initialise the v-velocity array</span>
+0085 
+0086 <span class="comment">% How many files do we need to open? One per year</span>
+0087 timesteps = datevec(datenum(inputConf.startDate):1/24:datenum(inputConf.endDate));
+0088 
+0089 <span class="comment">% Find the number of years in the timeseries</span>
+0090 [years,~] = unique(timesteps(:,1),<span class="string">'rows'</span>);
+0091 <span class="comment">%%</span>
+0092 <span class="keyword">for</span> p = 1:size(years,1)
+0093     <span class="comment">% Construct the data filename</span>
+0094     dfile = [DataFile,num2str(years(p))];
+0095     
+0096     <span class="comment">% Open the surge model data file</span>
+0097     fid = fopen(dfile,<span class="string">'r'</span>,<span class="string">'b'</span>);
+0098     
+0099     PASTIT = false;
+0100     
+0101     <span class="keyword">while</span> PASTIT == false
+0102         
+0103         <span class="comment">% Read the data file</span>
+0104         dump=fread(fid,1,<span class="string">'*int32'</span>,<span class="string">'b'</span>);   <span class="comment">% Don't need this bit</span>
+0105         
+0106         <span class="keyword">if</span> feof(fid)
+0107             PASTIT = true;
+0108         <span class="keyword">else</span>
+0109             datem = double(fread(fid,5,<span class="string">'*int32'</span>,<span class="string">'b'</span>));  <span class="comment">% start date of data file</span>
+0110             
+0111             <span class="comment">% Start date of data file in MJD format</span>
+0112             mjd4 = greg2mjulian(datem(4),datem(3),datem(2),datem(1),0,0)+(datem(5)/24);
+0113             
+0114             <span class="keyword">if</span> p&lt;size(years,1) &amp;&amp; (mjd4 &gt;= greg2mjulian(years(p+1),1,1,0,0,0))
+0115                 PASTIT = true;
+0116                 
+0117                 <span class="comment">% If the date is in the range we want</span>
+0118             <span class="keyword">elseif</span> (mjd4 &gt;= inputConf.startDateMJD) &amp;&amp; (mjd4 &lt;= inputConf.endDateMJD)
+0119                 
+0120                 dump=fread(fid,2,<span class="string">'*int32'</span>,<span class="string">'b'</span>);   <span class="comment">% Don't need this bit</span>
+0121                 elev = fread(fid,ITOT,<span class="string">'*single'</span>,<span class="string">'b'</span>);    <span class="comment">% read in elevation</span>
+0122                 dump=fread(fid,2,<span class="string">'*int32'</span>,<span class="string">'b'</span>);   <span class="comment">% Don't need this bit</span>
+0123                 u = fread(fid,ITOT,<span class="string">'*single'</span>,<span class="string">'b'</span>);    <span class="comment">% read in u velocity</span>
+0124                 dump=fread(fid,2,<span class="string">'*int32'</span>,<span class="string">'b'</span>);   <span class="comment">% Don't need this bit</span>
+0125                 v = fread(fid,ITOT,<span class="string">'*single'</span>,<span class="string">'b'</span>);    <span class="comment">% read in v velocity</span>
+0126                 dump=fread(fid,1,<span class="string">'*int32'</span>,<span class="string">'b'</span>);   <span class="comment">% Don't need this bit</span>
+0127                 
+0128                 k = 0;
+0129                 
+0130                 <span class="comment">% Reshape data into x,y array</span>
+0131                 <span class="keyword">for</span> j = 0:NRR-1
+0132                     I1 = NTRNT(j+1);
+0133                     I2 = NTRNS(j+1);
+0134                     <span class="keyword">for</span> i = I1+1:I2
+0135                         k = k+1;
+0136                         E(i,NRR-j) = elev(k);
+0137                     <span class="keyword">end</span>
+0138                 <span class="keyword">end</span>
+0139                 
+0140                 <span class="comment">% Interpolate the elevation onto the open boundary nodes</span>
+0141                 <span class="keyword">if</span> ~exist(<span class="string">'SurfaceElevation'</span>,<span class="string">'var'</span>)
+0142                     SurfaceElevation(:,1) = interp2(cs3x_lon,cs3x_lat,E',<span class="keyword">...</span>
+0143                         Mobj.lon(ObcNodes),Mobj.lat(ObcNodes));
+0144                 <span class="keyword">else</span>
+0145                     SurfaceElevation(:,end+1) = interp2(cs3x_lon,cs3x_lat,E',<span class="keyword">...</span>
+0146                         Mobj.lon(ObcNodes),Mobj.lat(ObcNodes));
+0147                 <span class="keyword">end</span>
+0148             <span class="keyword">elseif</span> (mjd4 &lt; inputConf.startDateMJD)
+0149                 dump = fread(fid,7+(3*ITOT),<span class="string">'*int32'</span>,<span class="string">'b'</span>);
+0150             <span class="keyword">elseif</span> (mjd4 &gt; inputConf.endDateMJD)
+0151                 PASTIT = true;
+0152             <span class="keyword">end</span>
+0153         <span class="keyword">end</span>
+0154     <span class="keyword">end</span>
+0155     
+0156     fclose(fid);
+0157 <span class="keyword">end</span>
+0158 
+0159 <span class="comment">%% Output elevation to Mobj</span>
+0160 Mobj.surfaceElevation = SurfaceElevation;
+0161 
+0162 <span class="keyword">if</span>(ftbverbose);
+0163     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>]);
+0164 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

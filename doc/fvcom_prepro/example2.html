@@ -56,7 +56,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>	Plot the mesh, user defined field, open boundary nodes, and river points</li><li><a href="read_fvcom_bath.html" class="code" title="function [h] = read_fvcom_bath(bathfile)">read_fvcom_bath</a>	Read fvcom bathymetry file</li><li><a href="read_fvcom_mesh.html" class="code" title="function [Mobj] = read_fvcom_mesh(gridfile)">read_fvcom_mesh</a>	Read fvcom mesh file into Matlab mesh object</li><li><a href="setup_metrics.html" class="code" title="function [Mobj]  = setup_metrics(Mobj)">setup_metrics</a>	Setup metrics for mesh object Mesh</li><li><a href="smoothfield.html" class="code" title="function [field]  = smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts)">smoothfield</a>	Smooth a vertex-based field using averages</li><li><a href="write_FVCOM_bath.html" class="code" title="function write_FVCOM_bath(Mobj,filename)">write_FVCOM_bath</a>	Write bathymetry to FVCOM format bathymetry file</li></ul>
+<li><a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>	Plot the mesh, user defined field, open boundary nodes, and river points</li><li><a href="read_fvcom_bath.html" class="code" title="function [h] = read_fvcom_bath(bathfile)">read_fvcom_bath</a>	Read fvcom bathymetry file</li><li><a href="setup_metrics.html" class="code" title="function [Mobj]  = setup_metrics(Mobj)">setup_metrics</a>	Setup metrics for mesh object Mesh</li><li><a href="smoothfield.html" class="code" title="function field = smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts)">smoothfield</a>	Smooth a vertex-based field using averages</li><li><a href="write_FVCOM_bath.html" class="code" title="function write_FVCOM_bath(Mobj,filename)">write_FVCOM_bath</a>	Write bathymetry to FVCOM format bathymetry file</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -93,7 +93,7 @@ This function is called by:
 0026 clear all; close all;
 0027 
 0028 <span class="comment">% read the Mesh from an FVCOM grid file</span>
-0029 Mobj = <a href="read_fvcom_mesh.html" class="code" title="function [Mobj] = read_fvcom_mesh(gridfile)">read_fvcom_mesh</a>(<span class="string">'skg4.3_grd.dat'</span>);
+0029 Mobj = read_fvcom_mesh(<span class="string">'skg4.3_grd.dat'</span>);
 0030 
 0031 <span class="comment">% read the bathymetry from an FVCOM grid file</span>
 0032 Mobj.h = <a href="read_fvcom_bath.html" class="code" title="function [h] = read_fvcom_bath(bathfile)">read_fvcom_bath</a>(<span class="string">'skg4.3_dep.dat'</span>);  Mobj.have_bath = true;
@@ -101,12 +101,12 @@ This function is called by:
 0034 <span class="comment">% smooth bathymetry with 4 iterations of explicit smoother</span>
 0035 <a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>(Mobj,Mobj.h,<span class="string">'title'</span>,<span class="string">'original bathymetry'</span>)
 0036 Mobj = <a href="setup_metrics.html" class="code" title="function [Mobj]  = setup_metrics(Mobj)">setup_metrics</a>(Mobj);
-0037 [Mobj.h] = <a href="smoothfield.html" class="code" title="function [field]  = smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts)">smoothfield</a>(Mobj.h,Mobj,0.5,4);
+0037 [Mobj.h] = <a href="smoothfield.html" class="code" title="function field = smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts)">smoothfield</a>(Mobj.h,Mobj,0.5,4);
 0038 <a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>(Mobj,Mobj.h,<span class="string">'title'</span>,<span class="string">'smoothed bathymetry'</span>);
 0039 
 0040 <span class="comment">% dump bathymetry</span>
 0041 <a href="write_FVCOM_bath.html" class="code" title="function write_FVCOM_bath(Mobj,filename)">write_FVCOM_bath</a>(Mobj,<span class="string">'skg4.3_dep_smoothed.dat'</span>)
 0042</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

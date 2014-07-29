@@ -96,7 +96,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="get_POLCOMS_netCDF.html" class="code" title="function ncdata = get_POLCOMS_netCDF(files, varlist)">get_POLCOMS_netCDF</a>	Read temperature and salinity from NetCDF model output files and</li><li><a href="nodes2elems.html" class="code" title="function [fieldout] = nodes2elems(fieldin,Mobj)">nodes2elems</a>	Transfer a field from vertices to elements</li></ul>
+<li><a href="get_POLCOMS_netCDF.html" class="code" title="function ncdata = get_POLCOMS_netCDF(files, varlist)">get_POLCOMS_netCDF</a>	Read temperature and salinity from NetCDF model output files and</li><li><a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>	Transfer a field from vertices to elements</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -192,12 +192,12 @@ This function is called by:
 0085 <span class="comment">% to first calculate a number of parameters at the element centres from the</span>
 0086 <span class="comment">% nodal values we typically collect (e.g. positions, sigma layers etc.). Do</span>
 0087 <span class="comment">% all that here.</span>
-0088 lonc = <a href="nodes2elems.html" class="code" title="function [fieldout] = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.lon, Mobj);
-0089 latc = <a href="nodes2elems.html" class="code" title="function [fieldout] = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.lat, Mobj);
+0088 lonc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.lon, Mobj);
+0089 latc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.lat, Mobj);
 0090 <span class="comment">% For the sigma levels, we need to wrap the conversion in a loop.</span>
 0091 siglayzc = nan([Mobj.nElems, size(Mobj.siglayz, 2)]);
 0092 <span class="keyword">for</span> zz = 1:size(Mobj.siglayz, 2)
-0093     siglayzc(:, zz) = <a href="nodes2elems.html" class="code" title="function [fieldout] = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.siglayz(:, zz), Mobj);
+0093     siglayzc(:, zz) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.siglayz(:, zz), Mobj);
 0094 <span class="keyword">end</span>
 0095 
 0096 oElements = [Mobj.read_obc_elements{:}];
@@ -487,6 +487,6 @@ This function is called by:
 0380 <span class="comment">%     pause(0.1)</span>
 0381 <span class="comment">% end</span>
 0382</pre></div>
-<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

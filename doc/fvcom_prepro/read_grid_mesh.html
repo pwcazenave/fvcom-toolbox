@@ -1,0 +1,349 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of read_grid_mesh</title>
+  <meta name="keywords" content="read_grid_mesh">
+  <meta name="description" content="Read .grid mesh files into Matlab mesh object">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; read_grid_mesh.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>read_grid_mesh
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Read .grid mesh files into Matlab mesh object</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Mobj] = read_grid_mesh(varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Read .grid mesh files into Matlab mesh object  
+
+ [Mobj] = function read_grid_mesh(varargin)
+
+ DESCRIPTION:
+    Read NOCL .grid file 
+    Store in a matlab mesh object 
+
+ INPUT [keyword pairs]:  
+   'grid'                  = NOCL .grid file (e.g. UK_grid.grid)
+   [optional] 'coordinate' = coordinate system for output data [spherical; cartesian (default)]
+   [optional] 'input_coord' = coordinate system for input data [spherical; cartesian (default)]
+   [optional] 'project'    = generate (x,y) coordinates if input is (lon,lat) 
+                             generate (lon,lat) coordinates if input is (x,y)
+                            ['true' ; 'false' (default)], see myproject.m
+   [optional] 'zone'    = specify UTM zone for projection
+   [optional] 'addCoriolis' = calculate Coriolis param (f), requires [lon,lat]
+
+ OUTPUT:
+    Mobj = matlab structure containing mesh data
+
+ EXAMPLE USAGE
+    Mobj = read_grid_mesh('grid','UK_grid.grid','coordinate','spherical','addCoriolis','true')
+
+ Author(s):  
+    Geoff Cowles (University of Massachusetts Dartmouth)
+    Pierre Cazenave (Plymouth Marine Laboratory)
+    Karen Thurston (National Oceanography Centre Liverpool)
+
+ Revision history (KJT)
+   2012-11-13 Adapted 'read_sms_mesh.m' to read NOCL .grid files
+   2012-11-19 Added input/output coordinate functionality
+   
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="add_coriolis.html" class="code" title="function [Mobj] = add_coriolis(Mobj,cortype,fval)">add_coriolis</a>	Generate latitude used for FVCOM Coriolis file</li><li><a href="make_blank_mesh.html" class="code" title="function [Mobj] = make_blank_mesh">make_blank_mesh</a>	Make a blank mesh object with default params</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = read_grid_mesh(varargin) </a>
+0002 
+0003 <span class="comment">% Read .grid mesh files into Matlab mesh object</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% [Mobj] = function read_grid_mesh(varargin)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Read NOCL .grid file</span>
+0009 <span class="comment">%    Store in a matlab mesh object</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT [keyword pairs]:</span>
+0012 <span class="comment">%   'grid'                  = NOCL .grid file (e.g. UK_grid.grid)</span>
+0013 <span class="comment">%   [optional] 'coordinate' = coordinate system for output data [spherical; cartesian (default)]</span>
+0014 <span class="comment">%   [optional] 'input_coord' = coordinate system for input data [spherical; cartesian (default)]</span>
+0015 <span class="comment">%   [optional] 'project'    = generate (x,y) coordinates if input is (lon,lat)</span>
+0016 <span class="comment">%                             generate (lon,lat) coordinates if input is (x,y)</span>
+0017 <span class="comment">%                            ['true' ; 'false' (default)], see myproject.m</span>
+0018 <span class="comment">%   [optional] 'zone'    = specify UTM zone for projection</span>
+0019 <span class="comment">%   [optional] 'addCoriolis' = calculate Coriolis param (f), requires [lon,lat]</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% OUTPUT:</span>
+0022 <span class="comment">%    Mobj = matlab structure containing mesh data</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% EXAMPLE USAGE</span>
+0025 <span class="comment">%    Mobj = read_grid_mesh('grid','UK_grid.grid','coordinate','spherical','addCoriolis','true')</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Author(s):</span>
+0028 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0029 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0030 <span class="comment">%    Karen Thurston (National Oceanography Centre Liverpool)</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% Revision history (KJT)</span>
+0033 <span class="comment">%   2012-11-13 Adapted 'read_sms_mesh.m' to read NOCL .grid files</span>
+0034 <span class="comment">%   2012-11-19 Added input/output coordinate functionality</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">%==============================================================================</span>
+0037 
+0038 subname = <span class="string">'read_grid_mesh'</span>;
+0039 <span class="keyword">global</span> ftbverbose;
+0040 <span class="keyword">if</span>(ftbverbose);
+0041   fprintf(<span class="string">'\n'</span>)
+0042   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0043 <span class="keyword">end</span>;
+0044 
+0045 have_grid = false;
+0046 have_bath = false;
+0047 have_lonlat = false;
+0048 have_xy = false;
+0049 userproject = false;
+0050 haveUTM = false;
+0051 addCoriolis = false;
+0052 
+0053 <span class="comment">%------------------------------------------------------------------------------</span>
+0054 <span class="comment">% Create a blank mesh object</span>
+0055 <span class="comment">%------------------------------------------------------------------------------</span>
+0056 Mobj = <a href="make_blank_mesh.html" class="code" title="function [Mobj] = make_blank_mesh">make_blank_mesh</a>();
+0057 
+0058 <span class="comment">%------------------------------------------------------------------------------</span>
+0059 <span class="comment">% Parse input arguments</span>
+0060 <span class="comment">%------------------------------------------------------------------------------</span>
+0061 
+0062 <span class="keyword">if</span>(mod(length(varargin),2) ~= 0)
+0063     error([<span class="string">'incorrect usage of '</span>,subname,<span class="string">', use keyword pairs'</span>])
+0064 <span class="keyword">end</span>;
+0065 
+0066 
+0067 <span class="keyword">for</span> i=1:2:length(varargin)-1
+0068     keyword  = lower(varargin{i});
+0069     <span class="keyword">if</span>( ~ischar(keyword) )
+0070         error([<span class="string">'incorrect usage of '</span>,subname,<span class="string">', check keywords'</span>])
+0071     <span class="keyword">end</span>;
+0072     
+0073     <span class="keyword">switch</span>(keyword(1:3))
+0074     
+0075     <span class="keyword">case</span> <span class="string">'gri'</span>
+0076         grid_fname = varargin{i+1};
+0077         have_grid = true;
+0078     <span class="keyword">case</span> <span class="string">'coo'</span>
+0079         coord = varargin{i+1};
+0080         <span class="keyword">if</span>(coord(1:3)==<span class="string">'sph'</span>)
+0081             coordinate = <span class="string">'spherical'</span>;
+0082         <span class="keyword">else</span>
+0083             coordinate = <span class="string">'cartesian'</span>;
+0084         <span class="keyword">end</span>;
+0085     <span class="keyword">case</span> <span class="string">'in_'</span>
+0086         in_coord = varargin{i+1};
+0087         <span class="keyword">if</span>(in_coord(1:3)==<span class="string">'sph'</span>)
+0088             in_coordinate = <span class="string">'spherical'</span>;
+0089             have_lonlat = true;
+0090         <span class="keyword">else</span>
+0091             in_coordinate = <span class="string">'cartesian'</span>;
+0092             have_xy = true;
+0093         <span class="keyword">end</span>;
+0094     <span class="keyword">case</span> <span class="string">'pro'</span>
+0095         val = varargin{i+1};
+0096         <span class="keyword">if</span>( val )
+0097             userproject = true;
+0098         <span class="keyword">else</span>
+0099             userproject = false;
+0100         <span class="keyword">end</span>;
+0101     <span class="keyword">case</span> <span class="string">'zon'</span>
+0102         fullzone = varargin{i+1};
+0103         UTMzone = regexpi(fullzone,<span class="string">'\ '</span>,<span class="string">'split'</span>);
+0104         UTMzone=str2double(char(UTMzone{1}(1)));
+0105         haveUTM = true;
+0106     <span class="keyword">case</span> <span class="string">'add'</span>
+0107         val = varargin{i+1};
+0108         <span class="keyword">if</span>( val )
+0109             addCoriolis = true;
+0110         <span class="keyword">else</span>
+0111             addCoriolis = false;
+0112         <span class="keyword">end</span>;
+0113     <span class="keyword">otherwise</span>
+0114         error([<span class="string">'Can''t understand property:'</span> char(varargin{i+1})]);
+0115     <span class="keyword">end</span>; <span class="comment">%switch(keyword)</span>
+0116     
+0117 <span class="keyword">end</span>;
+0118         
+0119 <span class="comment">%------------------------------------------------------------------------------</span>
+0120 <span class="comment">% Read the mesh from the .grid file</span>
+0121 <span class="comment">%------------------------------------------------------------------------------</span>
+0122 
+0123 fid = fopen(grid_fname,<span class="string">'r'</span>);
+0124 <span class="keyword">if</span>(fid  &lt; 0)
+0125     error([<span class="string">'file: '</span> grid_fname <span class="string">' does not exist'</span>]);
+0126 <span class="keyword">end</span>;
+0127 
+0128 <span class="comment">% Count number of elements and vertices</span>
+0129 <span class="keyword">if</span>(ftbverbose);
+0130   fprintf([<span class="string">'reading from: '</span> grid_fname <span class="string">'\n'</span>])
+0131 <span class="keyword">end</span>;
+0132 lin = fgetl(fid);   <span class="comment">% ignore first line, it's the mesh name</span>
+0133 c=textscan(fid,<span class="string">'%u %u'</span>,1);  <span class="comment">% get nElems and nVerts</span>
+0134 nElems = c{1};
+0135 nVerts = c{2};
+0136 clear c
+0137 
+0138 <span class="keyword">if</span>(ftbverbose); 
+0139   fprintf(<span class="string">'nVerts: %d\n'</span>,nVerts); 
+0140   fprintf(<span class="string">'nElems: %d\n'</span>,nElems); 
+0141   fprintf(<span class="string">'reading in connectivity and grid points\n'</span>)
+0142 <span class="keyword">end</span>;
+0143 
+0144 <span class="comment">% allocate memory to hold mesh and connectivity</span>
+0145 tri = zeros(nElems,3);
+0146 x   = zeros(nVerts,1);
+0147 y   = zeros(nVerts,1);
+0148 h   = zeros(nVerts,1);
+0149 lon = zeros(nVerts,1);
+0150 lat = zeros(nVerts,1);
+0151 ts  = zeros(nVerts,1);
+0152 
+0153 c = textscan(fid, <span class="string">'%u %f %f %f '</span>, nVerts);
+0154 x = c{2};
+0155 y = c{3};
+0156 h = c{4};
+0157 clear c
+0158 
+0159 c = textscan(fid, <span class="string">'%u %u %u %u %u'</span>, nElems);
+0160 tri(:,1) = c{3};
+0161 tri(:,2) = c{4};
+0162 tri(:,3) = c{5};
+0163 clear c
+0164 
+0165 <span class="comment">% Make sure we have bathymetry</span>
+0166 <span class="keyword">if</span> sum(h)==0
+0167     have_bath=false;
+0168 <span class="keyword">else</span>
+0169     have_bath=true;
+0170 <span class="keyword">end</span>
+0171 
+0172 <span class="comment">% Make sure we have positive depths</span>
+0173 <span class="keyword">if</span> sum(h&gt;0) &lt; sum(h&lt;0)
+0174     h = -h;
+0175 <span class="keyword">end</span>
+0176 
+0177 <span class="comment">% Build array of all the nodes in the open boundaries</span>
+0178 c = textscan(fid, <span class="string">'%u %*[^\n]'</span>,1);
+0179 nOpenSeg = c{1};    <span class="comment">% number of open boundary segments</span>
+0180 clear c
+0181 
+0182 lin=fgetl(fid); <span class="comment">% skip the next line</span>
+0183 
+0184 c = textscan(fid, <span class="string">'%u %*[^\n]'</span>,1);
+0185 nOpenNodes = c{1};    <span class="comment">% number of open boundary nodes</span>
+0186 clear c
+0187 
+0188 <span class="comment">% Initialise SegCount variable</span>
+0189 SegCount = [0,0];
+0190 
+0191 <span class="keyword">for</span> i=1:nOpenSeg    <span class="comment">% for each open boundary segment</span>
+0192     c = textscan(fid, <span class="string">'%u %*[^\n]'</span>,1); <span class="comment">% how many nodes in this segment?</span>
+0193     SegCount(1) = 1+SegCount(2);
+0194     SegCount(2) = SegCount(1)+c{1}-1;
+0195     clear c
+0196     c = textscan(fid,<span class="string">'%u %*[^\n]'</span>,(SegCount(2)-SegCount(1)+1));    <span class="comment">% get all the nodes in this segment</span>
+0197     allNodes{i} = c{1};
+0198     clear c
+0199 <span class="keyword">end</span>
+0200 
+0201 <span class="keyword">if</span> have_lonlat == true
+0202     lon = x;
+0203     lat = y;
+0204     x = x*0.0;
+0205     y = y*0.0;
+0206     <span class="comment">% Just do a double check on the coordinates to make sure we don't</span>
+0207     <span class="comment">% actually have cartesian</span>
+0208     <span class="keyword">if</span> max(lon)&gt;360
+0209         warning(<span class="string">'You''ve specified spherical coordinates, but your upper longitude value exceeds 360 degrees. Are you sure you have spherical data?'</span>)
+0210     <span class="keyword">end</span>
+0211 <span class="keyword">else</span>
+0212     have_xy = true;
+0213 <span class="keyword">end</span>;
+0214 
+0215 <span class="comment">%------------------------------------------------------------------------------</span>
+0216 <span class="comment">% Project if desired by user</span>
+0217 <span class="comment">%------------------------------------------------------------------------------</span>
+0218 
+0219 <span class="keyword">if</span>(userproject)
+0220     <span class="keyword">if</span> (in_coordinate(1:3)==<span class="string">'car'</span>)
+0221         fprintf(<span class="string">'inverse projecting to get (lon,lat)\n'</span>)
+0222         utmZones=cellfun(@(x) repmat(x,length(x),1),fullzone,<span class="string">'uni'</span>,false);
+0223         [lon,lat] = utm2deg(x,y,utmZones{1});
+0224         Mobj.have_lonlat = true;
+0225     <span class="keyword">elseif</span> (in_coordinate(1:3)==<span class="string">'sph'</span>)
+0226         fprintf(<span class="string">'forward projecting to get (x,y)\n'</span>)
+0227         [x,y] = wgs2utm(lat,lon,UTMzone,<span class="string">'N'</span>);
+0228         have_xy = true;
+0229     <span class="keyword">end</span>
+0230 <span class="keyword">end</span>
+0231 
+0232 <span class="comment">%------------------------------------------------------------------------------</span>
+0233 <span class="comment">% Transfer to Mesh structure</span>
+0234 <span class="comment">%------------------------------------------------------------------------------</span>
+0235 
+0236 Mobj.nVerts  = nVerts;
+0237 Mobj.nElems  = nElems;
+0238 Mobj.nativeCoords = coordinate;
+0239 
+0240 <span class="keyword">if</span> have_lonlat==true
+0241     Mobj.have_lonlat    = have_lonlat;
+0242 <span class="keyword">end</span>;
+0243 <span class="keyword">if</span> have_xy==true
+0244     Mobj.have_xy        = have_xy;
+0245 <span class="keyword">end</span>;
+0246 
+0247 Mobj.have_bath      = have_bath;
+0248 
+0249 Mobj.read_obc_nodes = allNodes;
+0250 
+0251 Mobj.x            = x;
+0252 Mobj.y            = y;
+0253 Mobj.ts           = ts;
+0254 Mobj.lon          = lon;
+0255 Mobj.lat          = lat;
+0256 Mobj.h            = h;
+0257 Mobj.tri          = tri;
+0258 
+0259 <span class="keyword">if</span> addCoriolis==true
+0260     Mobj.have_cor = true;
+0261     Mobj = <a href="add_coriolis.html" class="code" title="function [Mobj] = add_coriolis(Mobj,cortype,fval)">add_coriolis</a>(Mobj,<span class="string">'uselatitude'</span>);
+0262 <span class="keyword">end</span>
+0263 
+0264 <span class="keyword">if</span>(ftbverbose);
+0265   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0266 <span class="keyword">end</span>;
+0267 fclose(fid);
+0268 
+0269</pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

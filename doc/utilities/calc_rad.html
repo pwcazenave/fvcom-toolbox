@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of calc_rad</title>
+  <meta name="keywords" content="calc_rad">
+  <meta name="description" content="Calculating instantaneous irradiance from cloud cover.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; calc_rad.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>calc_rad
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Calculating instantaneous irradiance from cloud cover.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [instant_rad, rad] = calc_rad(cloud, lat, jul, secs) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Calculating instantaneous irradiance from cloud cover.
+
+ [instant_rad, rad] = calc_rad(cloud, lat, jul, secs)
+
+ DESCRIPTION:
+   Calculate the surface irradiance (short wave) as a function of
+   latitude and date.
+
+ INPUT:
+   cloud   - cloud cover in percentage (0-1)
+   lat     - latitude of observations
+   jul     - MATLAB date (see HELP DATENUM)
+   secs    - Seconds in the day
+
+ OUTPUT:
+   instant_rad     -
+   rad             -
+ 
+ EXAMPLE USAGE:
+   [cloud, lat, jul, secs] = deal(0.8, 42, floor(datenum(T_TIME(12))), 43200)
+
+ NOTES:
+   This routine is taken from GOTM-ERSEM.
+
+ Author(s):
+   Ricard Torres (Plymouth Marine Laboratory)
+
+ Revision history:
+   2014-01-14 Added to the FVCOM toolbox.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [instant_rad, rad] = calc_rad(cloud, lat, jul, secs)</a>
+0002 <span class="comment">% Calculating instantaneous irradiance from cloud cover.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% [instant_rad, rad] = calc_rad(cloud, lat, jul, secs)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Calculate the surface irradiance (short wave) as a function of</span>
+0008 <span class="comment">%   latitude and date.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   cloud   - cloud cover in percentage (0-1)</span>
+0012 <span class="comment">%   lat     - latitude of observations</span>
+0013 <span class="comment">%   jul     - MATLAB date (see HELP DATENUM)</span>
+0014 <span class="comment">%   secs    - Seconds in the day</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%   instant_rad     -</span>
+0018 <span class="comment">%   rad             -</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% EXAMPLE USAGE:</span>
+0021 <span class="comment">%   [cloud, lat, jul, secs] = deal(0.8, 42, floor(datenum(T_TIME(12))), 43200)</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% NOTES:</span>
+0024 <span class="comment">%   This routine is taken from GOTM-ERSEM.</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Author(s):</span>
+0027 <span class="comment">%   Ricard Torres (Plymouth Marine Laboratory)</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Revision history:</span>
+0030 <span class="comment">%   2014-01-14 Added to the FVCOM toolbox.</span>
+0031 <span class="comment">%</span>
+0032 
+0033 subname = <span class="string">'calc_rad'</span>;
+0034 
+0035 <span class="keyword">global</span> ftbverbose;
+0036 <span class="keyword">if</span> ftbverbose
+0037     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0038 <span class="keyword">end</span>
+0039 
+0040 cycle = 365.0;
+0041 pi = 3.141592653589793;
+0042 rfactor = pi/180.0;
+0043 rconstant = 1368.0;
+0044 dq = 149.6;
+0045 aa = 149.499;
+0046 eps = 0.01675;
+0047 sk = 1368.0;
+0048 noon = 12.0;
+0049 
+0050 <span class="comment">% Parameter values</span>
+0051 a = [0.4, 0.517, 0.474, 0.421, 0.38, 0.35, 0.304, 0.23, 0.106, 0.134];
+0052 b = [0.386, 0.317, 0.381, 0.413, 0.468, 0.457, 0.438, 0.384, 0.285, 0.295];
+0053 nmth = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 30, 30];
+0054 lmth = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 30, 30];
+0055 cnt = -1;
+0056 rcnt = -1;
+0057 
+0058 <span class="comment">% Obtain actual day</span>
+0059 [yy, mm, dd, hh, min, ss] = datevec(jul);
+0060 
+0061 <span class="comment">% Leap year?</span>
+0062 leap_switch = 2000 - yy;
+0063 leap_switch = mod(leap_switch, 4);
+0064 
+0065 <span class="keyword">switch</span> leap_switch
+0066     <span class="keyword">case</span> 0
+0067         day = 0;
+0068         <span class="keyword">for</span> j = 1:mm
+0069             day = day + lmth(j);
+0070         <span class="keyword">end</span>
+0071         day = day + dd;
+0072     <span class="keyword">otherwise</span>
+0073         day = 0;
+0074         <span class="keyword">for</span> j = 1:mm
+0075             day = day + nmth(j);
+0076         <span class="keyword">end</span>
+0077         day = day + dd;
+0078 <span class="keyword">end</span>
+0079 atime = day - 1 + secs / (3600.0 * 24.0);
+0080 
+0081 latirad = lat * rfactor;
+0082 
+0083 corr = 0.09 * cloud * 8.0;
+0084 
+0085 declination = -0.406 * cos(2.0* pi * floor(atime) / cycle);
+0086 daylength = acos(-tan(declination) * tan(latirad));
+0087 
+0088 rad = -1.0 * ((sin(declination) * sin(latirad) * daylength / 2.0 + <span class="keyword">...</span>
+0089     cos(declination) * cos(latirad) * sin(daylength / 2.0)) * <span class="keyword">...</span>
+0090     sk / pi * (1.0 - corr));
+0091 daylength = daylength / pi * 24.0;
+0092 
+0093 t = (secs - noon * 3600.0) * pi / (12.0 * 3600.0);
+0094 t0 = (noon - 0.5 * daylength) * 3600.0;
+0095 t1 = (noon + 0.5 * daylength) * 3600.0;
+0096 instant_rad = rad * (cos(t / (2 * daylength / 24.0)) + <span class="keyword">...</span>
+0097     0.5 * (1 + cos(t / (daylength / 24.0)))) * 2 * pi / (4 + pi);
+0098 <span class="keyword">if</span> (secs &lt; t0) || (secs &gt; t1)
+0099     instant_rad = 0.0;
+0100 <span class="keyword">end</span>
+0101 
+0102 <span class="keyword">if</span> ftbverbose
+0103     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0104 <span class="keyword">end</span>
+0105 
+0106 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

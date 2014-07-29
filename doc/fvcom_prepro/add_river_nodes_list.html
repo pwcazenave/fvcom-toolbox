@@ -24,7 +24,7 @@
 <div class="box"><strong>Add a set of river nodes comprising a single river to Mesh structure</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [Mobj] = add_river_nodes_list(Mobj,Nlist,RiverName) </strong></div>
+<div class="box"><strong>function [Mobj] = add_river_nodes_list(Mobj,Nlist,RiverName,plotFig) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Add a set of river nodes comprising a single river to Mesh structure  
@@ -38,6 +38,7 @@
  INPUT
     Mobj = Matlab mesh object
     RiverName = Name of the River
+    plotFig = [optional] show a figure of the mesh (1 = yes)
 
  OUTPUT:
     Mobj = Matlab mesh object with an additional river nodelist
@@ -47,12 +48,19 @@
 
  Author(s):  
     Geoff Cowles (University of Massachusetts Dartmouth)
+    Karen Amoudry (National Oceanography Centre, Liverpool)
 
  Note:
     Uses ginput2 which allows zooming before selecting points and displays
     clicked points realtime
 
  Revision history
+    2013-01-02 KJA bug fix: amended usage of 'unique' to prevent it from
+    sorting the values it returns. Amended by Pierre to support pre-2012
+    versions of MATLAB whilst giving the same result.
+    2013-10-22 KJA: added capability to turn off figures (copied from
+    Pierre's adaptation to add_obc_nodes_list.m)
+    2014-05-20 Set boolean flag to true to indicate rivers.
    
 ==========================================================================</pre></div>
 
@@ -69,7 +77,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = add_river_nodes_list(Mobj,Nlist,RiverName)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = add_river_nodes_list(Mobj,Nlist,RiverName,plotFig)</a>
 0002 
 0003 <span class="comment">% Add a set of river nodes comprising a single river to Mesh structure</span>
 0004 <span class="comment">% Using a set of user-defined nodes</span>
@@ -82,73 +90,91 @@ This function is called by:
 0011 <span class="comment">% INPUT</span>
 0012 <span class="comment">%    Mobj = Matlab mesh object</span>
 0013 <span class="comment">%    RiverName = Name of the River</span>
-0014 <span class="comment">%</span>
-0015 <span class="comment">% OUTPUT:</span>
-0016 <span class="comment">%    Mobj = Matlab mesh object with an additional river nodelist</span>
-0017 <span class="comment">%</span>
-0018 <span class="comment">% EXAMPLE USAGE</span>
-0019 <span class="comment">%    Mobj = add_river_nodes(Mobj, [146, 3004], 'Potomac')</span>
-0020 <span class="comment">%</span>
-0021 <span class="comment">% Author(s):</span>
-0022 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0023 <span class="comment">%</span>
-0024 <span class="comment">% Note:</span>
-0025 <span class="comment">%    Uses ginput2 which allows zooming before selecting points and displays</span>
-0026 <span class="comment">%    clicked points realtime</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">% Revision history</span>
+0014 <span class="comment">%    plotFig = [optional] show a figure of the mesh (1 = yes)</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%    Mobj = Matlab mesh object with an additional river nodelist</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% EXAMPLE USAGE</span>
+0020 <span class="comment">%    Mobj = add_river_nodes(Mobj, [146, 3004], 'Potomac')</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Author(s):</span>
+0023 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0024 <span class="comment">%    Karen Amoudry (National Oceanography Centre, Liverpool)</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Note:</span>
+0027 <span class="comment">%    Uses ginput2 which allows zooming before selecting points and displays</span>
+0028 <span class="comment">%    clicked points realtime</span>
 0029 <span class="comment">%</span>
-0030 <span class="comment">%==========================================================================</span>
-0031 subname = <span class="string">'add_river_nodes_list'</span>;
-0032 <span class="keyword">global</span> ftbverbose
-0033 <span class="keyword">if</span> ftbverbose
-0034     fprintf(<span class="string">'\n'</span>)
-0035     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
-0036 <span class="keyword">end</span>
-0037 
-0038 <span class="comment">%--------------------------------------------------------------------------</span>
-0039 <span class="comment">% Get a unique list and make sure they are in the range of node numbers</span>
-0040 <span class="comment">%--------------------------------------------------------------------------</span>
-0041 Nlist = unique(Nlist);
-0042 
-0043 <span class="keyword">if</span> max(Nlist) &gt; Mobj.nVerts
-0044     fprintf(<span class="string">'your river node number(s) exceed the total number of nodes in the domain\n'</span>);
-0045     fprintf(<span class="string">'stop screwing around\n'</span>);
-0046     error(<span class="string">'stopping...\n'</span>)
-0047 <span class="keyword">end</span>
-0048 
-0049 <span class="comment">%--------------------------------------------------------------------------</span>
-0050 <span class="comment">% Plot the mesh</span>
+0030 <span class="comment">% Revision history</span>
+0031 <span class="comment">%    2013-01-02 KJA bug fix: amended usage of 'unique' to prevent it from</span>
+0032 <span class="comment">%    sorting the values it returns. Amended by Pierre to support pre-2012</span>
+0033 <span class="comment">%    versions of MATLAB whilst giving the same result.</span>
+0034 <span class="comment">%    2013-10-22 KJA: added capability to turn off figures (copied from</span>
+0035 <span class="comment">%    Pierre's adaptation to add_obc_nodes_list.m)</span>
+0036 <span class="comment">%    2014-05-20 Set boolean flag to true to indicate rivers.</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">%==========================================================================</span>
+0039 subname = <span class="string">'add_river_nodes_list'</span>;
+0040 <span class="keyword">global</span> ftbverbose
+0041 <span class="keyword">if</span> ftbverbose
+0042     fprintf(<span class="string">'\n'</span>)
+0043     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0044 <span class="keyword">end</span>
+0045 
+0046 <span class="comment">% Do we want a figure showing how we're getting along?</span>
+0047 <span class="keyword">if</span> nargin == 3
+0048     plotFig = 0;
+0049 <span class="keyword">end</span>
+0050 
 0051 <span class="comment">%--------------------------------------------------------------------------</span>
-0052 
-0053 <span class="keyword">if</span> strcmpi(Mobj.nativeCoords(1:3), <span class="string">'car'</span>)
-0054     x = Mobj.x;
-0055     y = Mobj.y;
-0056 <span class="keyword">else</span>
-0057     x = Mobj.lon;
-0058     y = Mobj.lat;
-0059 <span class="keyword">end</span>
-0060 
-0061 figure
-0062 patch(<span class="string">'Vertices'</span>, [x,y], <span class="string">'Faces'</span>, Mobj.tri,<span class="keyword">...</span>
-0063         <span class="string">'Cdata'</span>, Mobj.h, <span class="string">'edgecolor'</span>, <span class="string">'k'</span>, <span class="string">'facecolor'</span>, <span class="string">'interp'</span>);
-0064 hold on
-0065 
-0066 plot(x(Nlist), y(Nlist), <span class="string">'ro'</span>)
-0067 title(<span class="string">'river nodes'</span>)
-0068 
-0069 <span class="comment">% add to mesh object</span>
-0070 npts = numel(Nlist);
-0071 Mobj.nRivers = Mobj.nRivers + 1;
-0072 Mobj.nRivNodes(Mobj.nRivers) = npts;
-0073 Mobj.riv_nodes(Mobj.nRivers, 1:npts) = Nlist;
-0074 Mobj.riv_name{Mobj.nRivers} = RiverName;
-0075 
-0076 
-0077 <span class="keyword">if</span> ftbverbose
-0078     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0079 <span class="keyword">end</span>
-0080</pre></div>
-<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0052 <span class="comment">% Get a unique list and make sure they are in the range of node numbers</span>
+0053 <span class="comment">%--------------------------------------------------------------------------</span>
+0054 <span class="comment">% Make this works in versions of MATLAB older than 2012a (newer versions</span>
+0055 <span class="comment">% can just use unique(A, 'stable'), but checking versions is a pain).</span>
+0056 [~, Nidx] = unique(Nlist);
+0057 Nlist = Nlist(sort(Nidx));
+0058 
+0059 <span class="keyword">if</span> max(Nlist) &gt; Mobj.nVerts
+0060     fprintf(<span class="string">'your river node number(s) exceed the total number of nodes in the domain\n'</span>);
+0061     fprintf(<span class="string">'stop screwing around\n'</span>);
+0062     error(<span class="string">'stopping...\n'</span>)
+0063 <span class="keyword">end</span>
+0064 
+0065 <span class="comment">%--------------------------------------------------------------------------</span>
+0066 <span class="comment">% Plot the mesh</span>
+0067 <span class="comment">%--------------------------------------------------------------------------</span>
+0068 <span class="keyword">if</span> plotFig == 1
+0069     <span class="keyword">if</span> strcmpi(Mobj.nativeCoords(1:3), <span class="string">'car'</span>)
+0070         x = Mobj.x;
+0071         y = Mobj.y;
+0072     <span class="keyword">else</span>
+0073         x = Mobj.lon;
+0074         y = Mobj.lat;
+0075     <span class="keyword">end</span>
+0076     
+0077     figure
+0078     patch(<span class="string">'Vertices'</span>, [x,y], <span class="string">'Faces'</span>, Mobj.tri,<span class="keyword">...</span>
+0079         <span class="string">'Cdata'</span>, Mobj.h, <span class="string">'edgecolor'</span>, <span class="string">'k'</span>, <span class="string">'facecolor'</span>, <span class="string">'interp'</span>);
+0080     hold on
+0081     
+0082     plot(x(Nlist), y(Nlist), <span class="string">'ro'</span>)
+0083     title(<span class="string">'river nodes'</span>)
+0084 <span class="keyword">end</span>
+0085 
+0086 <span class="comment">% add to mesh object</span>
+0087 npts = numel(Nlist);
+0088 Mobj.nRivers = Mobj.nRivers + 1;
+0089 Mobj.nRivNodes(Mobj.nRivers) = npts;
+0090 Mobj.riv_nodes(Mobj.nRivers, 1:npts) = Nlist;
+0091 Mobj.riv_name{Mobj.nRivers} = RiverName;
+0092 
+0093 Mobj.have_rivers = true;
+0094 
+0095 <span class="keyword">if</span> ftbverbose
+0096     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0097 <span class="keyword">end</span>
+0098</pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

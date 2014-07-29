@@ -52,6 +52,8 @@
 
  Revision history:
    2013-04-15 - First version from the original get_POLCOMS_rivers.m.
+   2014-05-20 Set boolean flag to true to indicate rivers and add number
+   of rivers.
 
 ==========================================================================</pre></div>
 
@@ -94,44 +96,49 @@ This function is called by:
 0024 <span class="comment">%</span>
 0025 <span class="comment">% Revision history:</span>
 0026 <span class="comment">%   2013-04-15 - First version from the original get_POLCOMS_rivers.m.</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">%==========================================================================</span>
-0029 
-0030 subname = <span class="string">'get_POLCOMS_river_discharge'</span>;
+0027 <span class="comment">%   2014-05-20 Set boolean flag to true to indicate rivers and add number</span>
+0028 <span class="comment">%   of rivers.</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">%==========================================================================</span>
 0031 
-0032 <span class="keyword">global</span> ftbverbose;
-0033 <span class="keyword">if</span> ftbverbose
-0034     fprintf([<span class="string">'\nbegin : '</span> subname <span class="string">'\n'</span>])
-0035 <span class="keyword">end</span>
-0036 
-0037 <span class="comment">% Check inputs</span>
-0038 <span class="keyword">if</span> exist(polcoms_flow, <span class="string">'file'</span>) ~= 2
-0039     error(<span class="string">'file: %s does not exist or is not readable.'</span>, polcoms_grid)
-0040 <span class="keyword">end</span>
-0041 
-0042 <span class="comment">% The POLCOMS river file has a pretty straightforward format of a 2D array</span>
-0043 <span class="comment">% of river along x and time along y. Since it's a simple text file with no</span>
-0044 <span class="comment">% weird format, we'll just read it in with load.</span>
-0045 <span class="keyword">if</span> iscell(polcoms_flow)
-0046     pc_riv = [];
-0047     <span class="keyword">for</span> rr = 1:length(polcoms_flow)
-0048         pc_riv = [pc_riv; load(polcoms_flow{rr})];
-0049     <span class="keyword">end</span>
-0050     clear rr
-0051 <span class="keyword">else</span>
-0052     pc_riv = load(polcoms_flow);
-0053 <span class="keyword">end</span>
-0054 [pc_nt, pc_nr] = size(pc_riv);
-0055 
-0056 <span class="comment">% Return the number of river and the number of times along with the actual</span>
-0057 <span class="comment">% discharge data.</span>
-0058 Mobj.rivers.num = pc_nr;
-0059 Mobj.rivers.num_time = pc_nt;
-0060 Mobj.rivers.discharge = pc_riv;
-0061 
-0062 <span class="keyword">if</span> ftbverbose
-0063     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0064 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0032 subname = <span class="string">'get_POLCOMS_river_discharge'</span>;
+0033 
+0034 <span class="keyword">global</span> ftbverbose;
+0035 <span class="keyword">if</span> ftbverbose
+0036     fprintf([<span class="string">'\nbegin : '</span> subname <span class="string">'\n'</span>])
+0037 <span class="keyword">end</span>
+0038 
+0039 <span class="comment">% Check inputs</span>
+0040 <span class="keyword">if</span> exist(polcoms_flow, <span class="string">'file'</span>) ~= 2
+0041     error(<span class="string">'file: %s does not exist or is not readable.'</span>, polcoms_grid)
+0042 <span class="keyword">end</span>
+0043 
+0044 <span class="comment">% The POLCOMS river file has a pretty straightforward format of a 2D array</span>
+0045 <span class="comment">% of river along x and time along y. Since it's a simple text file with no</span>
+0046 <span class="comment">% weird format, we'll just read it in with load.</span>
+0047 <span class="keyword">if</span> iscell(polcoms_flow)
+0048     pc_riv = [];
+0049     <span class="keyword">for</span> rr = 1:length(polcoms_flow)
+0050         pc_riv = [pc_riv; load(polcoms_flow{rr})];
+0051     <span class="keyword">end</span>
+0052     clear rr
+0053 <span class="keyword">else</span>
+0054     pc_riv = load(polcoms_flow);
+0055 <span class="keyword">end</span>
+0056 [pc_nt, pc_nr] = size(pc_riv);
+0057 
+0058 <span class="comment">% Return the number of river and the number of times along with the actual</span>
+0059 <span class="comment">% discharge data.</span>
+0060 Mobj.rivers.num = pc_nr;
+0061 Mobj.rivers.num_time = pc_nt;
+0062 Mobj.rivers.discharge = pc_riv;
+0063 
+0064 Mobj.have_rivers = true;
+0065 Mobj.nRivers = pc_nr;
+0066 
+0067 <span class="keyword">if</span> ftbverbose
+0068     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0069 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
