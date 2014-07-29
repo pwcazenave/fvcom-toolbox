@@ -14,13 +14,13 @@ function [JD,julianday] =greg2julian(year,month,day,hour,min,sec)
 %
 % 3. Example:
 %  >> [a,b] = greg2julian(2006,5,30,2,30,28)
-%  a = 
+%  a =
 %
 %           2453885.60449074
 %  b =
 %
 %  Tuesday
-% 
+%
 %  4. Notes:
 %     - For all common era (CE) dates in the Gregorian calendar, and for more
 %     information, check the referents.
@@ -33,19 +33,21 @@ function [JD,julianday] =greg2julian(year,month,day,hour,min,sec)
 %               http://aa.usno.navy.mil/data/docs/JulianDate.html
 %     Duffett-Smith, P. (1992).  Practical Astronomy with Your Calculator.
 %               Cambridge University Press, England:  pp. 9.
-%     Seidelmann, P. K. (1992). Explanatory Supplement to the Astronomical Almanac. 
+%     Seidelmann, P. K. (1992). Explanatory Supplement to the Astronomical Almanac.
 %               University Science Books, USA.  pp. 55-56.
-%      Weisstein, Eric W.  "Julian Date".  From World of Astronomy--A Wolfram Web Resource. 
+%      Weisstein, Eric W.  "Julian Date".  From World of Astronomy--A Wolfram Web Resource.
 %               http://scienceworld.wolfram.com/astronomy/JulianDate.html
 %
 % Gabriel Ruiz Mtz.
 % May-2006
 %
 % Modifications:
-% 04/06/06: To find the days, it was only changed the loop to a cell array. Thanks to Jérôme.
+% 04/06/06: To find the days, it was only changed the loop to a cell array. Thanks to Jerome.
+% 2014-07-29 Fix input arguments check (Pierre Cazenave, Plymouth Marine
+%   Laboratory).
 % ------------------------------------------------------------------------------------------------------------
-   
-   error(nargchk(6,6,nargin))
+
+   narginchk(6,6)
    timeut = hour + ( min / 60 ) + ( sec / 3600 );
 
    %For common era (CE), anno domini (AD)
