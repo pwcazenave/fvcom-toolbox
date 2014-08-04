@@ -191,7 +191,7 @@ try
     end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       %hkj missing 1000 inserted
 catch me
     if ftbverbose
-        fprintf('No ''Itime'' and/or ''Itime2'' variables, using ''time'' instead.\n(%s)\n', me.message)
+        warning('No ''Itime'' and/or ''Itime2'' variables, using less precise ''time'' instead.\n(%s)\n', me.message)
     end
     Itime.idx=find(strcmpi(vars,'time'));
     Itime.ID=netcdf.inqVarID(nc,'time');
