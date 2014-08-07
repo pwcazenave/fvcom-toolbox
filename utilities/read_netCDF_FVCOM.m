@@ -1,4 +1,4 @@
-function data =read_netCDF_FVCOM(varargin)
+function [data,selection] =read_netCDF_FVCOM(varargin)
 % Function to extract data from a Netcdf file output from FVCOM.
 %
 % data = read_netCDF_FVCOM(varargin)
@@ -120,7 +120,7 @@ time_idx=-1;
 varnames={};
 for aa=1:2:nargin
     res=strcmp(varargin(aa),params_opts);
-    if ~isempty(res)
+    if sum(res)
         eval([var_in_list{res},' = varargin{aa+1};'])
         if ftbverbose
             fprintf(' %s\n', params_opts{res})
@@ -182,10 +182,10 @@ try
     Itime.ID=netcdf.inqVarID(nc,'Itime');
     Itime.Data  = netcdf.getVar(nc,Itime.ID,'int32');
     Itime2.Data  = netcdf.getVar(nc,Itime.ID+1,'int32');
-
+    
     [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);
     [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
-
+    
     var_time = double(Itime.Data)+time_offset+double(Itime2.Data)./(24*600*6000);
     start_date=sum(start_d.*[1 1/(24*60*60*1000)]);     %hkj missing 1000 inserted
     end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       %hkj missing 1000 inserted
@@ -196,7 +196,7 @@ catch me
     Itime.idx=find(strcmpi(vars,'time'));
     Itime.ID=netcdf.inqVarID(nc,'time');
     Itime.Data  = netcdf.getVar(nc,Itime.ID,'double');
-
+    
     var_time = (Itime.Data)+time_offset;
     [start_date,end_date] = deal(var_time(1),var_time(end));
 end
@@ -258,10 +258,10 @@ for aa=1:length(varnames)
     %----------------------------------------------------------------------
     % Extract number of dimensions, lengths and names of all variables
     %----------------------------------------------------------------------
-
+    
     % Tidy up the previous iteration's variables so we don't get confused.
     clear dimName dimLength
-
+    
     TF = strcmpi(varnames{aa},vars);
     if ~isempty(find(TF));
         varidx(aa) = find(TF);
@@ -276,10 +276,10 @@ for aa=1:length(varnames)
         error('Variable %s NOT found in file. Stopping. Check input variable names.\n', varnames{aa})
     end
     varID=netcdf.inqVarID(nc,vars{varidx(aa)});
-
+    
     [name,xtype,dimids,natts] = netcdf.inqVar(nc,varID);
     dimens=length(dimids);
-
+    
     for dd=1:length(dimids)
         [dimName{dd}, dimLength(dd)] = netcdf.inqDim(nc,dimids(dd));
         if ftbverbose
@@ -295,13 +295,11 @@ for aa=1:length(varnames)
         end
     end
     if ftbverbose; fprintf('\n'); end
-
+    
     %----------------------------------------------------------------------
     % Get the data!
     %----------------------------------------------------------------------
-
-    start=zeros(size(dimLength));
-    count=dimLength;
+    
     switch dimens
         case 1
             % only one dimension present in variable
@@ -309,7 +307,7 @@ for aa=1:length(varnames)
                 case 'time'
                     if time_idx>=0
                         % Only restrict data on access if dimension is TIME
-
+                        
                         % hkj it appears the first value in matlab netcdf
                         % interface is 0.
                         % hkj time_idx(1) CORRECTED TO time_idx(1)-1.
@@ -334,26 +332,38 @@ for aa=1:length(varnames)
             % identified dimensions to restrict
             do_restrict=zeros(size(dimName));
             dimidx=nan*ones(size(dimName));
+            clear start count
             for dd=1:length(dimName)
+                start.(dimName{dd})=[];
+                count.(dimName{dd})=[];
+                
                 test=find(strcmpi(RestrictDims.Name,dimName{dd}));
                 if ~isempty(test); dimidx(dd)=test; end
             end
             % create start index for dimensions of the variable to
             % access
             if (sum(isfinite(dimidx))==length(dimidx))
-                % we have two valid dimension indices, proceed
+                % we have at least two valid dimension indices, proceed
                 for dd=1:length(dimidx)
+                    % restrict time as range but node and nele dims are
+                    % considered as stations rather than ranges.
                     % if restriction is not -1 then select specified
                     % indices otherwise read all
                     if RestrictDims.idx{dimidx(dd)}(1)>=0
                         if (strcmpi(dimName(dd),'time'))
-                            start(dd)=RestrictDims.idx{dimidx(dd)}(1)-1;
-                            count(dd)=length(start(dd)+1:RestrictDims.idx{dimidx(dd)}(end));
+                            start.(dimName{dd})=RestrictDims.idx{dimidx(dd)}(1)-1;
+                            count.(dimName{dd})=length(start.(dimName{dd})+1:RestrictDims.idx{dimidx(dd)}(end));
                         else
-                            start(dd)=RestrictDims.idx{dimidx(dd)}(1);
-                            count(dd)=length(start(dd):RestrictDims.idx{dimidx(dd)}(end));
+                            for ss=1:length(RestrictDims.idx{dimidx(dd)})
+                                start.(dimName{dd})(ss)=RestrictDims.idx{dimidx(dd)}(ss)-1;
+                                count.(dimName{dd})(ss)=1;
+                            end
                         end
                         do_restrict(dd)=1;
+                    else
+                        start.(dimName{dd})=0;
+                        count.(dimName{dd})=dimLength(dd);
+                        
                     end
                 end
             else
@@ -361,31 +371,209 @@ for aa=1:length(varnames)
                     fprintf('Wrong selection of dimensions to extract.\nExtracting all values in current variable.\n');
                 end
             end
-
-            eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count,''double'');'])
-
-            % only restrict if required...
-            if sum(do_restrict)
-                for dd=1:length(do_restrict)
-                    sd=dd-1;
-                    % calculate indices to extract (might not have been
-                    % consecutive numbers)
-                    idx=RestrictDims.idx{dimidx(dd)}-start(dd)+1;
-                    if (do_restrict(dd) && ~(count(dd)==length(idx)))
-                        [~,idx]=setdiff(start(dd):RestrictDims.idx{dimidx(dd)}(end),RestrictDims.idx{dimidx(dd)});
-                        eval([varnames{aa},' = shiftdim(',varnames{aa},',sd);'])
-                        switch  dimens
-                            case 2
-                                eval([varnames{aa},'(idx, :) = [];'])
-                            case 3
-                                eval([varnames{aa},'(idx, :,:) = [];'])
-                            case 4
-                                eval([varnames{aa},'(idx, :,:,:) = [];'])
-                        end
-                        eval([varnames{aa},' = shiftdim(',varnames{aa},',dimens-sd);'])
+            %
+            %             eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count,''double'');'])
+            cc_names=fieldnames(count)
+            switch sum(do_restrict) % there are dimensions to restrict
+                case 1 % only one dimension to restrict
+                    switch find(do_restrict) % find position of restrictive variable
+                        case 1 % restrict the first variable
+                            % but the variable can have more than 2 dimensions
+                            switch dimens
+                                % initialise variable
+                                case 2
+                                    rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))]
+                                case 3
+                                    rr=[min(sum(count.(cc_names{1})),dimLength(1)),...
+                                        min(sum(count.(cc_names{2})),dimLength(2)),...
+                                        min(sum(count.(cc_names{3})),dimLength(3))]
+                            end
+                            
+                            eval([varnames{aa},'=nan*ones(rr);'])
+                            % reorganize start and count arrays
+                            read_start(find(~do_restrict))=start.(cc_names{find(~do_restrict)});
+                            read_count(find(~do_restrict))=count.(cc_names{find(~do_restrict)});
+                            
+                            for cc=1:length(start.(cc_names{find(do_restrict)}))
+                                read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
+                                read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
+                                
+                                var_dump=netcdf.getVar(nc,varID,read_start,read_count,'double');
+                                
+                                eval([varnames{aa},'(cc,:)=var_dump;'])
+                                clear var_dump
+                            end
+                        case 2 % restrict the second variable (ie depth)
+                            % but the variable can have more than 2 dimensions
+                            switch dimens
+                                % initialise variable
+                                case 2
+                                    rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))]
+                                case 3
+                                    rr=[min(sum(count.(cc_names{1})),dimLength(1)),...
+                                        min(sum(count.(cc_names{2})),dimLength(2)),...
+                                        min(sum(count.(cc_names{3})),dimLength(3))]
+                            end
+                            
+                            eval([varnames{aa},'=nan*ones(rr);'])
+                            % reorganize start and count arrays
+                            read_start(find(~do_restrict))=start.(cc_names{find(~do_restrict)});
+                            read_count(find(~do_restrict))=count.(cc_names{find(~do_restrict)});
+                            
+                            for cc=1:length(start.(cc_names{(do_restrict)}))
+                                read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
+                                read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
+                                
+                                var_dump=netcdf.getVar(nc,varID,read_start,read_count,'double');
+                                
+                                eval([varnames{aa},'(:,cc)=var_dump;'])
+                                clear var_dump
+                            end
+                        case 3 % restrict the second variable (ie depth)
+                            % but the variable needs to have at least 3 dimensions
+                            rr=[min(sum(count.(cc_names{1})),dimLength(1)),...
+                                min(sum(count.(cc_names{2})),dimLength(2)),...
+                                min(sum(count.(cc_names{3})),dimLength(3))]
+                            
+                            eval([varnames{aa},'=nan*ones(rr);'])
+                            % reorganize start and count arrays
+                            % There are now 2 unrestricted dimensions
+                            for tt=find(~do_restrict)
+                                read_start(tt)=start.(cc_names{tt});
+                                read_count(tt)=count.(cc_names{tt});
+                            end
+                            
+                            % check if time is one of them
+                            if ~isempty(find(dimidx==5))
+                                do_time = find(dimidx==5); % 5 is the index for time
+                                % reorganize start and count arrays
+                                read_start(do_time)=start.(cc_names{do_time});
+                                read_count(do_time)=count.(cc_names{do_time});
+                                eval([varnames{aa},'=netcdf.getVar(nc,varID,read_start,read_count,''double'');'])
+                            else % we are looking at stations or depth layers
+                                for cc=1:length(start.(cc_names{(do_restrict)}))
+                                    read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
+                                    read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
+                                    var_dump=netcdf.getVar(nc,varID,read_start,read_count,'double');
+                                    
+                                    switch dimName(find(do_restrict))
+                                        case 'node' | 'nele'
+                                            eval([varnames{aa},'(cc,:,:)=var_dump;'])
+                                        case 'siglay' | 'siglev'
+                                            eval([varnames{aa},'(:,cc,:)=var_dump;'])
+                                    end
+                                    clear var_dump
+                                end
+                                
+                            end
                     end
-                end
+                    eval(['selection.',varnames{aa},'.start=start;'])
+                    eval(['selection.',varnames{aa},'.count=count;'])
+                    
+                case 2 % Two dimension to restrict!
+                    % but the variable can have more than 2 dimensions
+                    switch dimens
+                        % initialise variable
+                        case 2
+                            rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))]
+                        case 3
+                            rr=[min(sum(count.(cc_names{1})),dimLength(1)),...
+                                min(sum(count.(cc_names{2})),dimLength(2)),...
+                                min(sum(count.(cc_names{3})),dimLength(3))]
+                    end
+                    
+                    eval([varnames{aa},'=nan*ones(rr);'])
+                    % check if time is one of them
+                    if ~isempty(find(dimidx==5))
+                        do_time = find(dimidx==5); % 5 is the index for time
+                        % reorganize start and count arrays
+                        read_start(do_time)=start.(cc_names{do_time});
+                        read_count(do_time)=count.(cc_names{do_time});
+                        
+                        % search for the non_restrictive variable
+                        cc=1
+                        while ~(length( start.(cc_names{cc}))==1);cc=cc+1;end
+                        
+                        read_start(cc)=start.(cc_names{cc});
+                        read_count(cc)=count.(cc_names{cc});
+                        do_other = setdiff(dimidx,[dimidx(cc),5]) ; % one of these is also restrictive...
+                        do_other=find(dimidx==do_other);
+                        
+                        for cc=1:length(start.(cc_names{do_other}))
+                            read_start(do_other)=start.(cc_names{do_other})(cc);
+                            read_count(do_other)=count.(cc_names{do_other})(cc);
+                            
+                            var_dump=netcdf.getVar(nc,varID,read_start,read_count,'double');
+                            switch do_other
+                                case 1
+                                    eval([varnames{aa},'(cc,:,:)=var_dump;'])
+                                case 2
+                                    eval([varnames{aa},'(:,cc,:)=var_dump;'])
+                                case 3
+                                    eval([varnames{aa},'(:,:,cc)=var_dump;'])
+                            end
+                            clear var_dump
+                        end
+                    else % time is not one of them so we need to restrict both variables...
+                        % in this case it doesn't really matter
+                        % which one we restrict firts...
+                        
+                        for kk=1:length(start.(cc_names{1}))
+                            % reorganize start and count arrays
+                            read_start(1)=start.(cc_names{1})(kk);
+                            read_count(1)=count.(cc_names{1})(kk);
+                            
+                            for cc=1:length(start.(cc_names{2}))
+                                read_start(2)=start.(cc_names{2})(cc);
+                                read_count(2)=count.(cc_names{2})(cc);
+                                
+                                var_dump=netcdf.getVar(nc,varID,read_start,read_count,'double');
+                                
+                                eval([varnames{aa},'(kk,cc)=var_dump;'])
+                                clear var_dump
+                            end
+                            
+                        end
+                        
+                    end
+                    
+                    eval(['selection.',varnames{aa},'.start=start;'])
+                    eval(['selection.',varnames{aa},'.count=count;'])
+                    
+                case 0 % there are NO dimensions to restrict
+                    
+                    for nn=1:length(cc_names)
+                        read_start(nn)=start.(cc_names{nn});
+                        read_count(nn)=count.(cc_names{nn});
+                    end
+                    eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count,''double'');'])
+                    eval(['selection.',varnames{aa},'.start=start]};'])
+                    eval(['selection.',varnames{aa},'.count=count]};'])
+                    
             end
+            
+            % only restrict if required...
+            %             if sum(do_restrict)
+            %                 for dd=1:length(do_restrict)
+            %                     sd=dd-1;
+            %                     % calculate indices to extract (might not have been
+            %                     % consecutive numbers)
+            %                     idx=RestrictDims.idx{dimidx(dd)}-start(dd)+1;
+            %                     if (do_restrict(dd) && ~(count(dd)==length(idx)))
+            %                         [~,idx]=setdiff(start(dd):RestrictDims.idx{dimidx(dd)}(end),RestrictDims.idx{dimidx(dd)});
+            %                         eval([varnames{aa},' = shiftdim(',varnames{aa},',sd);'])
+            %                         switch  dimens
+            %                             case 2
+            %                                 eval([varnames{aa},'(idx, :) = [];'])
+            %                             case 3
+            %                                 eval([varnames{aa},'(idx, :,:) = [];'])
+            %                             case 4
+            %                                 eval([varnames{aa},'(idx, :,:,:) = [];'])
+            %                         end
+            %                         eval([varnames{aa},' = shiftdim(',varnames{aa},',dimens-sd);'])
+            %                     end
+            %                 end
+            %             end
     end
     eval(['data(aa) = {[data{aa};',varnames{aa},']};'])
     eval(['clear ',varnames{aa}])
