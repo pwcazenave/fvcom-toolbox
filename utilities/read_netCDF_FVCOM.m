@@ -362,7 +362,12 @@ for aa=1:length(varnames)
                 end
             end
 
-            eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count,''double'');'])
+            if strcmpi(varnames{aa}, 'Times')
+                % A string variable, so don't convert to double.
+                eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count);'])
+            else
+                eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count,''double'');'])
+            end
 
             % only restrict if required...
             if sum(do_restrict)
