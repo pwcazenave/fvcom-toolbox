@@ -4,7 +4,7 @@ function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle,varargin)
 % write_FVCOM_elevtide(Mobj, MJD, ElevationFile, MyTitle)
 %
 % DESCRIPTION:
-%    Write an FVCOM NetCDF surface elevation forcing file
+%   Write an FVCOM netCDF surface elevation forcing file
 %
 % INPUT:
 %   Mobj = Matlab mesh object with fields:
@@ -29,7 +29,7 @@ function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle,varargin)
 %   'floattime' = set to true to output the 'time' variable
 %
 % OUTPUT:
-%    ElevationFile, A NetCDF FVCOM surface elevations tide forcing file
+%   ElevationFile, A netCDF FVCOM surface elevations tide forcing file
 %
 % EXAMPLE USAGE
 %   With default settings:
@@ -39,8 +39,8 @@ function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle,varargin)
 %           'Shelf tides', 'floattime', true)
 %
 % Author(s):  
-%    Pierre Cazenave (Plymouth Marine Laboratory)
-%    Karen Amoudry (National Oceanography Centre Liverpool)
+%   Pierre Cazenave (Plymouth Marine Laboratory)
+%   Karen Amoudry (National Oceanography Centre Liverpool)
 % 
 % Revision history
 %   2012-08-08 (PWC) First version.
