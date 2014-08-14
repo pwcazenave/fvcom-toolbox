@@ -1,4 +1,4 @@
-function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj)
+function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj,varargin)
 % Export temperature and salinity forcing at the open boundary.
 %
 % function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
@@ -15,6 +15,18 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj)
 %    Boundary temperature (Celcius)
 %    Boundary salinity (psu)
 %    Mobj (optional)
+%    Optional keyword-argument pairs. These control the time variables.
+%    This script defaults to writing 'Times' only.
+%    FVCOM needs only one of:
+%        1. Times: character string of times
+%        2. Itime and Itime2: integer days and milliseconds since midnight
+%        3. time: float days.
+%    FVCOM checks for these in the order above and this script defaults to
+%    writing Times only. Adjust the keyword-argument pairs to your liking:
+%
+%    'strtime' = set to true to output the 'Times' variable
+%    'inttime' = set to true to output the 'Itime' and 'Itime2' variables
+%    'floattime' = set to true to output the 'time' variable
 %
 % OUTPUT:
 %    FVCOM hydrographic open boundary file
@@ -37,8 +49,8 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj)
 %    might be generated with get_POLCOMS_tsobc.m.
 %
 % KJA Revision history
-%    Undated - Add better check for the size of the input arrays (works with 
-%    scalars).
+%    Undated - Add better check for the size of the input arrays (works
+%    with scalars).
 %    2013-08-16 - Updated output of Itime2 to avoid rounding errors
 %    when converting from double to single format.
 %
@@ -56,6 +68,21 @@ if(ftbverbose);
   fprintf('\n')
   fprintf(['begin : ' subname '\n'])
 end;
+
+% Default to string times as FVCOM looks for these first.
+strtime = true;
+inttime = false;
+floattime = false;
+for vv = 1:2:length(varargin)
+    switch varargin{vv}
+        case 'strtime'
+            strtime = true;
+        case 'inttime'
+            inttime = true;
+        case 'floattime'
+            floattime = true;
+    end
+end
 
 fvcom_bathy = [basename, '_dep.dat'];
 fvcom_obc   = [basename, '_obc.dat'];
@@ -175,15 +202,14 @@ end
 nc = netcdf.create(tsOBCFile, 'clobber');
 
 % define global attributes
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM RIVER FORCING FILE')
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','simple open boundary hydrography test')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','Open boundary temperature and salinity nudging')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM TIME SERIES OBC TS FILE')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','File generated using write_FVCOM_tsobc.m from the MATLAB fvcom-toolbox')
 
 
 % define dimensions
 nobc_dimid=netcdf.defDim(nc,'nobc',nObc);
-datestrlen_dimid=netcdf.defDim(nc,'Datestrln',26);
+datestrlen_dimid=netcdf.defDim(nc,'DateStrLen',26);
 time_dimid=netcdf.defDim(nc,'time',netcdf.getConstant('NC_UNLIMITED'));
 siglay_dimid=netcdf.defDim(nc,'siglay',nSiglay);
 siglev_dimid=netcdf.defDim(nc,'siglev',nSiglev);
@@ -191,19 +217,28 @@ siglev_dimid=netcdf.defDim(nc,'siglev',nSiglev);
 % variables
 % nc{'river_names'} = ncchar('rivers', 'namelen');
 
-time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
-netcdf.putAtt(nc,time_varid,'long_name','time');
-netcdf.putAtt(nc,time_varid,'units','days since 1858-11-17 00:00:00');
-netcdf.putAtt(nc,time_varid,'time_zone','UTC');
+if strtime
+    Times_varid=netcdf.defVar(nc,'Times','NC_CHAR',[datestrlen_dimid, time_dimid]);
+    netcdf.putAtt(nc,Times_varid,'time_zone','UTC');
+end
 
-itime_varid=netcdf.defVar(nc,'Itime','NC_INT',time_dimid);
-netcdf.putAtt(nc,itime_varid,'units','days since 1858-11-17 00:00:00');
-netcdf.putAtt(nc,itime_varid,'format','modified julian day (MJD)');
-netcdf.putAtt(nc,itime_varid,'time_zone','UTC');
+if floattime
+    time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
+    netcdf.putAtt(nc,time_varid,'long_name','time');
+    netcdf.putAtt(nc,time_varid,'units','days since 1858-11-17 00:00:00');
+    netcdf.putAtt(nc,time_varid,'time_zone','UTC');
+end
 
-itime2_varid=netcdf.defVar(nc,'Itime2','NC_INT',time_dimid);
-netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
-netcdf.putAtt(nc,itime2_varid,'time_zone','UTC');
+if inttime
+    itime_varid=netcdf.defVar(nc,'Itime','NC_INT',time_dimid);
+    netcdf.putAtt(nc,itime_varid,'units','days since 1858-11-17 00:00:00');
+    netcdf.putAtt(nc,itime_varid,'format','modified julian day (MJD)');
+    netcdf.putAtt(nc,itime_varid,'time_zone','UTC');
+
+    itime2_varid=netcdf.defVar(nc,'Itime2','NC_INT',time_dimid);
+    netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
+    netcdf.putAtt(nc,itime2_varid,'time_zone','UTC');
+end
 
 nobc_varid=netcdf.defVar(nc,'obc_nodes','NC_INT',nobc_dimid);
 netcdf.putAtt(nc,nobc_varid,'long_name','Open Boundary Node Number');
@@ -242,12 +277,25 @@ netcdf.putVar(nc,nobc_varid,obc_nodes);
 netcdf.putVar(nc,obc_h_varid,obc_h);
 netcdf.putVar(nc,obc_siglev_varid,siglev);
 netcdf.putVar(nc,obc_siglay_varid,siglay);
-netcdf.putVar(nc,time_varid,0,numel(time),time);
-netcdf.putVar(nc,itime_varid,floor(time));
-%netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000); % PWC original
-% KJA edit: avoids rounding errors when converting from double to single
-% Rounds to nearest multiple of the number of msecs in an hour
-netcdf.putVar(nc,itime2_varid,0,numel(time),round((mod(time,1)*24*3600*1000)/(3600*1000))*(3600*1000));
+if strtime
+    nStringOut = char();
+    [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(time);
+    for i=1:nTimes
+        nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
+        nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%09.6f', nDate)];
+    end
+    netcdf.putVar(nc,Times_varid,[0, 0], [26, nTimes],nStringOut);
+end
+if floattime
+    netcdf.putVar(nc,time_varid,0,numel(time),time);
+end
+if inttime
+    netcdf.putVar(nc,itime_varid,floor(time));
+    %netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000); % PWC original
+    % KJA edit: avoids rounding errors when converting from double to single
+    % Rounds to nearest multiple of the number of msecs in an hour
+    netcdf.putVar(nc,itime2_varid,0,numel(time),round((mod(time,1)*24*3600*1000)/(3600*1000))*(3600*1000));
+end
 netcdf.putVar(nc,obc_temp_varid,temp);
 netcdf.putVar(nc,obc_salinity_varid,salt);
 
