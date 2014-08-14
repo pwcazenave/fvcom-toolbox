@@ -105,7 +105,6 @@ warning('Don''t know what''s going on with this here. Check the code to find the
 years = unique(yyyy);
 ny = length(years);
 if ny == 1
-
     if mod(years, 4) == 0
         endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
             datenum(max(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
@@ -148,7 +147,8 @@ else
         % We need to add an extra couple of day's data to the end of the
         % array for this (leap) year.
         if nd == 366
-            repclim = [repclim; repclim(end - 1:end, :)];
+            backidx = 366 - nd;
+            repclim = [repclim; repclim(end - backidx:end, :)];
         end
     end
 end
