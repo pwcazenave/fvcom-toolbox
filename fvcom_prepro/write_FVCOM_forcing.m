@@ -1,4 +1,4 @@
-function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
+function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver, varargin)
 % Write data out to FVCOM netCDF forcing file.
 %
 % write_FVCOM_forcing(Mobj, fvcom_forcing_file, data, infos, fver)
@@ -22,6 +22,18 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   fver - Output for version 3.1.0 or 3.1.6. The latter means all the
 %       forcing can go in a single file, the former needs separate files
 %       for specific forcing data (wind, heating and precipitation).
+%   Optional keyword-argument pairs. These control the time variables. This
+%   script defaults to writing 'Times' only.
+%   FVCOM needs only one of:
+%       1. Times: character string of times
+%       2. Itime and Itime2: integer days and milliseconds since midnight
+%       3. time: float days.
+%   FVCOM checks for these in the order above and this script defaults to
+%   writing Times only. Adjust the keyword-argument pairs to your liking:
+%
+%   'strtime' = set to true to output the 'Times' variable
+%   'inttime' = set to true to output the 'Itime' and 'Itime2' variables
+%   'floattime' = set to true to output the 'time' variable
 %
 % The fields in data may be called any of:
 %     - 'u10', 'v10' or 'uwnd', 'vwnd' - wind components
@@ -97,6 +109,9 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %   2014-01-08 - Fix the way the wind variables are handled so that both
 %   the U10/V10 and uwind_speed/vwind_speed netCDF variables are written if
 %   only one of data.u10/data.v10 or data.uwnd/data.vwnd is given.
+%   2014-08-11 - (PWC) Add new flags to control which time variables to
+%   use. FVCOM reads the 'Times' variable first if present, then falls back
+%   to 'Itime' and 'Itime2' and finally 'time'.
 %
 % KJA Revision history:
 %   2013-01-16 - Added support for output of sea level pressure.
@@ -114,7 +129,7 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver)
 %==========================================================================
 
 multi_out = false; % default to 3.1.6, single output file
-if nargin < 4 || nargin > 5
+if (nargin < 4 || nargin > 5) && isempty(varargin)
     error('Incorrect number of arguments')
 elseif nargin == 5
     if strcmpi(fver, '3.1.0')
@@ -127,6 +142,21 @@ subname = 'write_FVCOM_forcing';
 global ftbverbose;
 if ftbverbose
 	fprintf('\nbegin : %s \n', subname)
+end
+
+% Default to string times as FVCOM looks for these first.
+strtime = true;
+inttime = false;
+floattime = false;
+for vv = 1:2:length(varargin)
+    switch varargin{vv}
+        case 'strtime'
+            strtime = true;
+        case 'inttime'
+            inttime = true;
+        case 'floattime'
+            floattime = true;
+    end
 end
 
 tri = Mobj.tri;
@@ -204,26 +234,32 @@ for i=1:length(suffixes)
     netcdf.putAtt(nc,nv_varid,'long_name','nodes surrounding element');
 
     % Time variables
-    time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
-    netcdf.putAtt(nc,time_varid,'long_name','time');
-    netcdf.putAtt(nc,time_varid,'units','days since 1858-11-17 00:00:00');
-    netcdf.putAtt(nc,time_varid,'format','modified julian day (MJD)');
-    netcdf.putAtt(nc,time_varid,'time_zone','UTC');
+    if floattime
+        time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
+        netcdf.putAtt(nc,time_varid,'long_name','time');
+        netcdf.putAtt(nc,time_varid,'units','days since 1858-11-17 00:00:00');
+        netcdf.putAtt(nc,time_varid,'format','modified julian day (MJD)');
+        netcdf.putAtt(nc,time_varid,'time_zone','UTC');
+    end
 
-    itime_varid=netcdf.defVar(nc,'Itime','NC_INT',time_dimid);
-    netcdf.putAtt(nc,itime_varid,'units','days since 1858-11-17 00:00:00');
-    netcdf.putAtt(nc,itime_varid,'format','modified julian day (MJD)');
-    netcdf.putAtt(nc,itime_varid,'time_zone','UTC');
+    if inttime
+        itime_varid=netcdf.defVar(nc,'Itime','NC_INT',time_dimid);
+        netcdf.putAtt(nc,itime_varid,'units','days since 1858-11-17 00:00:00');
+        netcdf.putAtt(nc,itime_varid,'format','modified julian day (MJD)');
+        netcdf.putAtt(nc,itime_varid,'time_zone','UTC');
 
-    itime2_varid=netcdf.defVar(nc,'Itime2','NC_INT',time_dimid);
-    netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
-    netcdf.putAtt(nc,itime2_varid,'time_zone','UTC');
-    netcdf.putAtt(nc,itime2_varid,'long_name','time');
+        itime2_varid=netcdf.defVar(nc,'Itime2','NC_INT',time_dimid);
+        netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
+        netcdf.putAtt(nc,itime2_varid,'time_zone','UTC');
+        netcdf.putAtt(nc,itime2_varid,'long_name','time');
+    end
 
-    times_varid=netcdf.defVar(nc,'Times','NC_CHAR',[datestrlen_dimid,time_dimid]);
-	netcdf.putAtt(nc,times_varid,'long_name','Calendar Date');
-    netcdf.putAtt(nc,times_varid,'format','String: Calendar Time');
-    netcdf.putAtt(nc,times_varid,'time_zone','UTC');
+    if strtime
+        times_varid=netcdf.defVar(nc,'Times','NC_CHAR',[datestrlen_dimid,time_dimid]);
+        netcdf.putAtt(nc,times_varid,'long_name','Calendar Date');
+        netcdf.putAtt(nc,times_varid,'format','String: Calendar Time');
+        netcdf.putAtt(nc,times_varid,'time_zone','UTC');
+    end
 
     % Since we have a dynamic number of variables in the struct, try to be
     % a bit clever about how to create the output variables.
@@ -516,25 +552,31 @@ for i=1:length(suffixes)
 
     % Put the easy ones in first.
     netcdf.putVar(nc, nv_varid, tri);
-    netcdf.putVar(nc,time_varid,0,ntimes,data.time);
-    netcdf.putVar(nc,itime_varid,0,ntimes,floor(data.time));
-%     netcdf.putVar(nc,itime2_varid,0,ntimes,mod(data.time,1)*24*3600*1000); % PWC original
-    % KJA edit: avoids rounding errors when converting from double to single
-    % Rounds to nearest multiple of the number of msecs in an hour
-    netcdf.putVar(nc,itime2_varid,0,ntimes,round((mod(data.time,1)*24*3600*1000)/(3600*1000))*(3600*1000));
     netcdf.putVar(nc,x_varid,x);
     netcdf.putVar(nc,y_varid,y);
     netcdf.putVar(nc,xc_varid,xc);
     netcdf.putVar(nc,yc_varid,yc);
-
-    % Build the time string and output to netCDF.
-    nStringOut = char();
-    [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(data.time);
-    for tt=1:ntimes
-        nDate = [nYr(tt), nMon(tt), nDay(tt), nHour(tt), nMin(tt), nSec(tt)];
-        nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ',nDate)];
+    % Do the times.
+    if floattime
+        netcdf.putVar(nc,time_varid,0,ntimes,data.time);
     end
-    netcdf.putVar(nc,times_varid,nStringOut);
+    if inttime
+        netcdf.putVar(nc,itime_varid,0,ntimes,floor(data.time));
+    %     netcdf.putVar(nc,itime2_varid,0,ntimes,mod(data.time,1)*24*3600*1000); % PWC original
+        % KJA edit: avoids rounding errors when converting from double to single
+        % Rounds to nearest multiple of the number of msecs in an hour
+        netcdf.putVar(nc,itime2_varid,0,ntimes,round((mod(data.time,1)*24*3600*1000)/(3600*1000))*(3600*1000));
+    end
+
+    if strtime
+        nStringOut = char();
+        [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(data.time);
+        for i=1:ntimes
+            nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
+            nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%09.6f', nDate)];
+        end
+        netcdf.putVar(nc,times_varid,[0, 0], [26, ntimes], nStringOut);
+    end
 
     % Now do the dynamic ones. Set the heat flux to not done (hf_done = 0)
     % until we hit one of the holy quad (shtfl, lhtfl, nlwrs and nswrs).
