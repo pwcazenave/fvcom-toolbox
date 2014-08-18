@@ -64,6 +64,8 @@ function Mobj = get_FVCOM_rivers(Mobj, dist_thresh)
 %   2013-12-10 - Change the unique call to preserve the order by replacing
 %   'first' with 'stable'. This requires a relatively modern MATLAB
 %   (post-2011b).
+%   2014-05-20 Set boolean flag to true to indicate rivers and add number
+%   of fields to the Mobj.
 %
 %==========================================================================
 
@@ -257,6 +259,8 @@ end
 Mobj.river_nodes = fv_uniq_obc;
 Mobj.river_flux = fv_uniq_flow;
 Mobj.river_names = fv_uniq_names;
+Mobj.have_rivers = true;
+Mobj.nRivers = length(fv_uniq_obc);
 
 % Create a Modified Julian Day time series starting at January 1st for the
 % year in Mobj.rivers.year.

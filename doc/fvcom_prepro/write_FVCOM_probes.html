@@ -1,0 +1,239 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_FVCOM_probes</title>
+  <meta name="keywords" content="write_FVCOM_probes">
+  <meta name="description" content="Write a namelist for the timeseries extraction at specifc nodes.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_FVCOM_probes.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_FVCOM_probes
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Write a namelist for the timeseries extraction at specifc nodes.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_FVCOM_probes(nml_file, interval, probes) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Write a namelist for the timeseries extraction at specifc nodes.
+
+ write_FVCOM_probes(Mobj, nml_file, interval, varlist, locations)
+
+ DESCRIPTION:
+   Write a namelist of variables to extract at given positions with the
+   interval specified.
+
+ INPUT:
+   nml_file - full path to the output namelist file.
+   interval - output interval (in seconds)
+   probe - struct of structs with fields whose names are the probe title.
+   Each probe struct must have the following fields:
+       node        - unstructured grid node number.
+       file        - file name for the current probe's output. If the
+           'variable' field is a cell array of multiple variables, each
+           output file name will have the variable name appended (e.g.
+           'Newlyn.dat' becomes 'Newlyn_el.dat' for elevation time
+           series).
+       description - description of this output. If multiple variable are
+           specified in variable, the length of the description must match
+           the number of variables.
+       variable    - variable name to extract from FVCOM. Define as a cell
+           array for multiple variables. Output file names in the namelist
+           will be appended with the variable name. Variable names are the
+           internal FVCOM variable names (which is not always the same as
+           the output file variable name). Check mod_probe.F in subroutine
+           PROBE_STORE for the full list of supported variables. I've
+           reproduced that list in the NOTES below.
+       longname    - long name for the current variable. Must also match
+           the number of variables.
+       levels      - start and end level for 3D variables (u, v, w, ww,
+           t1, s1, q2, l, q2l, km, kh, kq, rho1).
+
+ OUTPUT:
+   Namelist for inclusion in the main FVCOM namelist (PROBES_FILE).
+
+ EXAMPLE USAGE:
+   probes.newlyn.file = 'newlyn_elev.dat';
+   probes.newlyn.node = 1045;
+   probes.newlyn.description = 'Elevation at Newlyn';
+   probes.newlyn.variable = 'el';
+   probes.newlyn.longname = 'Surface elevation (m)';
+   probes.newlyn.levels = [1, length(Mobj.siglay)];
+   write_FVCOM_river_nml(Mobj, 'casename_probes.nml', 600, probes)
+
+ NOTES:
+   Available output variables are currently (FVCOM v3.1.6) limited to:
+       - el - surface elevation
+       - t1, s1 - temperature and salinity
+       - rho1 - density
+       - u, v, ua, va - velocity and depth-averaged velocities
+       - ww - vertical water velocity
+       - w - vertical velocity in sigma system
+       - q2, l, q2l - turbulent kinetic energy (TKE), TKE lengthscale and
+           TKE times TKE lengthscale
+       - km, kh, kq - turbulent eddy viscosity for momentum, scalars and
+           q2/q2l
+       - aice, vice, uice2, vice2 - ice parameters
+       - csed - suspended sediment concentration
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history:
+   2014-02-10 - First version.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_probes(nml_file, interval, probes)</a>
+0002 <span class="comment">% Write a namelist for the timeseries extraction at specifc nodes.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% write_FVCOM_probes(Mobj, nml_file, interval, varlist, locations)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Write a namelist of variables to extract at given positions with the</span>
+0008 <span class="comment">%   interval specified.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   nml_file - full path to the output namelist file.</span>
+0012 <span class="comment">%   interval - output interval (in seconds)</span>
+0013 <span class="comment">%   probe - struct of structs with fields whose names are the probe title.</span>
+0014 <span class="comment">%   Each probe struct must have the following fields:</span>
+0015 <span class="comment">%       node        - unstructured grid node number.</span>
+0016 <span class="comment">%       file        - file name for the current probe's output. If the</span>
+0017 <span class="comment">%           'variable' field is a cell array of multiple variables, each</span>
+0018 <span class="comment">%           output file name will have the variable name appended (e.g.</span>
+0019 <span class="comment">%           'Newlyn.dat' becomes 'Newlyn_el.dat' for elevation time</span>
+0020 <span class="comment">%           series).</span>
+0021 <span class="comment">%       description - description of this output. If multiple variable are</span>
+0022 <span class="comment">%           specified in variable, the length of the description must match</span>
+0023 <span class="comment">%           the number of variables.</span>
+0024 <span class="comment">%       variable    - variable name to extract from FVCOM. Define as a cell</span>
+0025 <span class="comment">%           array for multiple variables. Output file names in the namelist</span>
+0026 <span class="comment">%           will be appended with the variable name. Variable names are the</span>
+0027 <span class="comment">%           internal FVCOM variable names (which is not always the same as</span>
+0028 <span class="comment">%           the output file variable name). Check mod_probe.F in subroutine</span>
+0029 <span class="comment">%           PROBE_STORE for the full list of supported variables. I've</span>
+0030 <span class="comment">%           reproduced that list in the NOTES below.</span>
+0031 <span class="comment">%       longname    - long name for the current variable. Must also match</span>
+0032 <span class="comment">%           the number of variables.</span>
+0033 <span class="comment">%       levels      - start and end level for 3D variables (u, v, w, ww,</span>
+0034 <span class="comment">%           t1, s1, q2, l, q2l, km, kh, kq, rho1).</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% OUTPUT:</span>
+0037 <span class="comment">%   Namelist for inclusion in the main FVCOM namelist (PROBES_FILE).</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">% EXAMPLE USAGE:</span>
+0040 <span class="comment">%   probes.newlyn.file = 'newlyn_elev.dat';</span>
+0041 <span class="comment">%   probes.newlyn.node = 1045;</span>
+0042 <span class="comment">%   probes.newlyn.description = 'Elevation at Newlyn';</span>
+0043 <span class="comment">%   probes.newlyn.variable = 'el';</span>
+0044 <span class="comment">%   probes.newlyn.longname = 'Surface elevation (m)';</span>
+0045 <span class="comment">%   probes.newlyn.levels = [1, length(Mobj.siglay)];</span>
+0046 <span class="comment">%   write_FVCOM_river_nml(Mobj, 'casename_probes.nml', 600, probes)</span>
+0047 <span class="comment">%</span>
+0048 <span class="comment">% NOTES:</span>
+0049 <span class="comment">%   Available output variables are currently (FVCOM v3.1.6) limited to:</span>
+0050 <span class="comment">%       - el - surface elevation</span>
+0051 <span class="comment">%       - t1, s1 - temperature and salinity</span>
+0052 <span class="comment">%       - rho1 - density</span>
+0053 <span class="comment">%       - u, v, ua, va - velocity and depth-averaged velocities</span>
+0054 <span class="comment">%       - ww - vertical water velocity</span>
+0055 <span class="comment">%       - w - vertical velocity in sigma system</span>
+0056 <span class="comment">%       - q2, l, q2l - turbulent kinetic energy (TKE), TKE lengthscale and</span>
+0057 <span class="comment">%           TKE times TKE lengthscale</span>
+0058 <span class="comment">%       - km, kh, kq - turbulent eddy viscosity for momentum, scalars and</span>
+0059 <span class="comment">%           q2/q2l</span>
+0060 <span class="comment">%       - aice, vice, uice2, vice2 - ice parameters</span>
+0061 <span class="comment">%       - csed - suspended sediment concentration</span>
+0062 <span class="comment">%</span>
+0063 <span class="comment">% Author(s):</span>
+0064 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0065 <span class="comment">%</span>
+0066 <span class="comment">% Revision history:</span>
+0067 <span class="comment">%   2014-02-10 - First version.</span>
+0068 <span class="comment">%</span>
+0069 <span class="comment">%==========================================================================</span>
+0070 
+0071 subname = <span class="string">'write_FVCOM_probes'</span>;
+0072 
+0073 <span class="keyword">global</span> ftbverbose;
+0074 <span class="keyword">if</span> ftbverbose
+0075     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0076 <span class="keyword">end</span>
+0077 
+0078 fnames = fieldnames(probes);
+0079 np = length(fnames);
+0080 
+0081 f = fopen(nml_file, <span class="string">'w'</span>);
+0082 assert(f &gt;= 0, <span class="string">'Error writing to %s. Check permissions and try again.'</span>, nml_file)
+0083 
+0084 <span class="keyword">for</span> p = 1:np
+0085     <span class="keyword">if</span> iscell(probes.(fnames{p}).variable)
+0086         nv = length(probes.(fnames{p}).variable);
+0087         assert(length(probes.(fnames{p}).description) == nv, <span class="string">'Specify one description per output variable.'</span>)
+0088         assert(length(probes.(fnames{p}).description) == nv, <span class="string">'Specify one longname per output variable.'</span>)
+0089     <span class="keyword">else</span>
+0090         nv = 1;
+0091         vname = probes.(fnames{p}).variable;
+0092         lname = probes.(fnames{p}).longname;
+0093         desc = probes.(fnames{p}).description;
+0094     <span class="keyword">end</span>
+0095     <span class="keyword">for</span> v = 1:nv
+0096         <span class="keyword">if</span> nv &gt; 1
+0097             vname = probes.(fnames{p}).variable{v};
+0098             lname = probes.(fnames{p}).longname{v};
+0099             desc = probes.(fnames{p}).description{v};
+0100         <span class="keyword">end</span>
+0101         [pathstr, name, ext] = fileparts(probes.(fnames{p}).file);
+0102         name = sprintf(<span class="string">'%s_%s%s'</span>, name, vname, ext);
+0103         file = fullfile(pathstr, name);
+0104         fprintf(f, <span class="string">'&amp;NML_PROBE\n'</span>);
+0105         fprintf(f, <span class="string">' PROBE_INTERVAL = &quot;seconds=%.1f&quot;,\n'</span>, interval);
+0106         fprintf(f, <span class="string">' PROBE_LOCATION = %i,\n'</span>, probes.(fnames{p}).node);
+0107         fprintf(f, <span class="string">' PROBE_TITLE = &quot;%s&quot;,\n'</span>, file);
+0108         <span class="comment">% If we've got something which is vertically resolved, output the</span>
+0109         <span class="comment">% vertical levels.</span>
+0110         <span class="keyword">switch</span> vname
+0111             <span class="keyword">case</span> {<span class="string">'u'</span>, <span class="string">'v'</span>, <span class="string">'w'</span>, <span class="string">'ww'</span>, <span class="string">'t1'</span>, <span class="string">'s1'</span>, <span class="string">'km'</span>, <span class="string">'kh'</span>, <span class="string">'q2'</span>, <span class="string">'l'</span>, <span class="string">'q2l'</span>, <span class="string">'kq'</span>, <span class="string">'rho1'</span>}
+0112                 fprintf(f, <span class="string">' PROBE_LEVELS = %i %i,\n'</span>, probes.(fnames{p}).levels);
+0113         <span class="keyword">end</span>
+0114         fprintf(f, <span class="string">' PROBE_DESCRIPTION = &quot;%s&quot;,\n'</span>, desc);
+0115         fprintf(f, <span class="string">' PROBE_VARIABLE = &quot;%s&quot;,\n'</span>, vname);
+0116         fprintf(f, <span class="string">' PROBE_VAR_NAME = &quot;%s&quot;\n'</span>, lname);
+0117         fprintf(f, <span class="string">'/\n'</span>);
+0118     <span class="keyword">end</span>
+0119 <span class="keyword">end</span>
+0120 
+0121 fclose(f);
+0122 
+0123 <span class="keyword">if</span> ftbverbose
+0124     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0125 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

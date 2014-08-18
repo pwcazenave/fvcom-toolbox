@@ -29,6 +29,13 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %       specified so that the time series can be anchored in time. The
 %       returned time series will be 3 years long centred on the specified
 %       year. Discharges will be repeated for the two additional years.
+%   exclude - [optional] give an array of river numbers to exclude (for
+%       example if they are particularly bad quality data or are within the
+%       threshold but otherwise should be excluded from the model). Note,
+%       these must be numbers (not strings).
+%   ceh - [optional] if set as true, then the format of the discharge data
+%       is assumed to be "time,flux" which is valid if using non-EHYPE
+%       derived flux data (e.g. CEH-derived climatology).
 %
 % OUTPUT:
 %   Mobj.river_flux - volume flux at the nodes within the model domain.
@@ -59,6 +66,13 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %   of the rivers rather than summing their fluxes. Also eliminate having
 %   two adjacent river nodes (instead use the average of their flux and
 %   assign the position to the first river node).
+%   2014-05-15 - Add option to exclude rivers by name.
+%   2014-05-19 - Add new option to use an alternatively formatted input
+%   climatology (two columns instead of the number in the EHYPE data).
+%   2014-05-20 - Set boolean flag to true to indicate rivers and add number
+%   of rivers to the relevant field.
+%   2014-05-29 - Fix issues with the climatology vs. timeseries allocation
+%   of the output arrays.
 %
 %==========================================================================
 
@@ -74,14 +88,47 @@ if ~Mobj.have_lonlat
     error('Require unstructured grid positions in lon/lat format to compare against supplied river positions.')
 end
 
+% Default to standard EHYPE formatted data and no ignored rivers.
+yr = [];
+ignore_list = [];
+ceh = false;
+
+% If we have only three arguments, we have to assume we've been given a
+% year for the climatology. Otherwise, we need to read the arguments based
+% on keyword-value pairs. Really, we want keyword-value pairs all the time,
+% so silently work when given three arguments and don't mention it in the
+% help. This is going to bite me at some point in the future, I'm sure.
 if nargin == 3
     yr = varargin{1};
+elseif nargin > 3
+    for aa = 1:2:length(varargin)
+        switch varargin{aa}
+            case 'model_year'
+                yr = varargin{aa + 1};
+            case 'exclude'
+                ignore_list = varargin{aa + 1};
+            case 'ceh'
+                ceh = varargin{aa + 1};
+        end
+    end
+end
+
+if (isempty(yr) && ceh) || (~isempty(yr) && ~isnumeric(yr))
+    error('Trying to do climatology, but don''t have an anchor year. Supply one via the ''model_year'' keyword-value pair.')
 end
 
 % Separate the inputs into separate arrays.
 ehype_name = Mobj.rivers.names;
 ehype_xy = Mobj.rivers.positions;
 ehype_flow = Mobj.rivers.river_flux;
+
+% If we've been given rivers to ignore, remove them now.
+if ~isempty(ignore_list)
+    ignore_mask = ehype_name ~= ignore_list;
+
+    ehype_name = ehype_name(ignore_mask);
+    ehype_xy = ehype_xy(ignore_mask, :);
+end
 
 fv_nr = length(ehype_name);
 
@@ -104,6 +151,12 @@ tlat = Mobj.lat(coast_nodes);
 fv_obc = nan;
 fvcom_names = cell(0);
 
+% Initialise the flow array with a 366 day long time series of nans. This
+% array will be appended to (unless all rivers are outside the domain).
+% Only do this if we're doing climatology (signified by a non-empty year).
+if ~isempty(yr)
+    fv_flow = nan(366, 1);
+end
 for ff = 1:fv_nr
     % Find the coastline node closest to this river.
     fv_dist = sqrt( ...
@@ -188,15 +241,42 @@ for ff = 1:fv_nr
     fvcom_names{vc} = sprintf('%07d', ehype_name(ff));
     fid = fopen(fullfile(ehype_flow, [fvcom_names{vc}, '.txt']));
     assert(fid >= 0, 'Failed to open E-HYPE river flow data.')
-    if nargin ~= 3
+    if isempty(yr) && ~ceh
         % Time series have a 2 line header.
         eflow = textscan(fid, '%s %f %f %f %f %f %f %f %f %f', 'delimiter', '\t', 'HeaderLines', 2, 'MultipleDelimsAsOne', 1);
-    else
-        % Climatology, so we have no header.
+    elseif ~isempty(yr) && ceh
+        eflow = textscan(fid, '%s %f', 'delimiter', ' ', 'MultipleDelimsAsOne', 1);
+    elseif ~isempty(yr)
+        % Climatology, so we have no header. Are we using the original
+        % EHYPE data or some other "time,flux" data?
         eflow = textscan(fid, '%s %f %f %f %f %f %f %f %f %f', 'delimiter', '\t', 'MultipleDelimsAsOne', 1);
+    else
+        error('Incorrect time set up. Check the ''ceh'' or ''model_time'' keyword-value pairs.')
     end
     fclose(fid);
-    fv_flow(:, vc) = eflow{2};
+    % Make sure we always have the right number of time steps. Truncate the
+    % new data to fit the existing array or wrap the start of the time
+    % series back to the end.
+    new_t = length(eflow{2});
+    % Check if we're doing climatology in which case we can have different
+    % length time series (for CEH vs. EHYPE derived climatologies, for
+    % example). If we're not doing climatology, we have to assume the
+    % modelled time series are all the same length, in which case just use
+    % the values in new_t.
+    if ~isempty(yr)
+        old_t = length(fv_flow(:, 1));
+    else
+        old_t = new_t;
+    end
+    diff_t = old_t - new_t;
+    if new_t > old_t
+        fv_flow(:, vc) = eflow{2}(1:old_t);
+    elseif new_t < old_t
+        fv_flow((1:new_t), vc) = eflow{2};
+        fv_flow(end - diff_t + 1:end, vc) = eflow{2}(1:diff_t);
+    else
+        fv_flow(:, vc) = eflow{2};
+    end
     if ftbverbose
         fprintf('added (%f, %f)\n', Mobj.lon(fv_obc(vc)), Mobj.lat(fv_obc(vc)))
     end
@@ -352,7 +432,8 @@ fv_uniq_names = [fv_uniq_names; fv_dups_names'];
 % dealing with either climatology or time series data.
 Mobj.river_nodes = fv_uniq_obc;
 Mobj.river_names = fv_uniq_names;
-
+Mobj.have_rivers = true;
+Mobj.nRivers = length(fv_uniq_obc);
 
 % Create a Modified Julian Day time series of the EHYPE river data. Assume
 % all the EHYPE model outputs are for the same period and have the same
@@ -360,13 +441,13 @@ Mobj.river_names = fv_uniq_names;
 % we've been given a climatology. In that case, find the model year we're
 % using and generate the time string for a year each side of that year (to
 % cover the period at each end of a year). For that to work, we need to be
-% given the model year as an optional third argument to the function.
+% given the model year as an optional argument to the function.
 checkdate = cellfun(@str2num, eflow{1});
 if max(checkdate) < 367
     % Climatology.
-    if nargin ~= 3
+    if isempty(yr) && ~isnumeric(yr)
         error('For climatology, a year must be specified for the time series to be generated.')
-    else
+    elseif ~isempty(yr) && isnumeric(yr)
         % Get to Gregorian first.
 
         % Make three years of data starting from the year before the
@@ -388,6 +469,8 @@ if max(checkdate) < 367
             fv_uniq_flow(1:daysinyr(1), :); ...
             fv_uniq_flow(1:daysinyr(2), :); ...
             fv_uniq_flow(1:daysinyr(3), :)];
+    else
+        error('Non-numeric format for the climatology anchor year.')
     end
 else
     % Time series.

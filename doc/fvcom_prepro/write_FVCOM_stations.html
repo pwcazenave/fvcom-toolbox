@@ -4,7 +4,7 @@
 <head>
   <title>Description of write_FVCOM_stations</title>
   <meta name="keywords" content="write_FVCOM_stations">
-  <meta name="description" content="Add a set of stations at which FVCOM will output time series.">
+  <meta name="description" content="Add a set of stations at which FVCOM will output wave data.">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
   <meta name="robots" content="index, follow">
@@ -21,13 +21,13 @@
 </h1>
 
 <h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>Add a set of stations at which FVCOM will output time series.</strong></div>
+<div class="box"><strong>Add a set of stations at which FVCOM will output wave data.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="box"><strong>function [Mobj]  = write_FVCOM_stations(Mobj,filename) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"> Add a set of stations at which FVCOM will output time series. 
+<div class="fragment"><pre class="comment"> Add a set of stations at which FVCOM will output wave data.
 
  function write_FVCOM_stations(Mobj,filename)
 
@@ -46,12 +46,12 @@
  EXAMPLE USAGE
     write_FVCOM_stations(Mobj, 'tst_stations.dat')
 
- Author(s):  
+ Author(s):
     Pierre Cazenave (Plymouth Marine Laboratory)
 
  Revision history
     2012-11-30 First version.
-   
+
 ==========================================================================</pre></div>
 
 <!-- crossreference -->
@@ -68,76 +68,75 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj]  = write_FVCOM_stations(Mobj,filename)</a>
-0002 
-0003 <span class="comment">% Add a set of stations at which FVCOM will output time series.</span>
-0004 <span class="comment">%</span>
-0005 <span class="comment">% function write_FVCOM_stations(Mobj,filename)</span>
-0006 <span class="comment">%</span>
-0007 <span class="comment">% DESCRIPTION:</span>
-0008 <span class="comment">%    Given a mesh object with time series positions and names</span>
-0009 <span class="comment">%    (Mobj.Position and Mobj.Names from add_stations_list.m), write out to</span>
-0010 <span class="comment">%    ASCII file filename.</span>
-0011 <span class="comment">%</span>
-0012 <span class="comment">% INPUT</span>
-0013 <span class="comment">%    Mobj = Matlab mesh object</span>
-0014 <span class="comment">%    filename = FVCOM stations file name</span>
-0015 <span class="comment">%</span>
-0016 <span class="comment">% OUTPUT:</span>
-0017 <span class="comment">%    FVCOM stations file: filename</span>
-0018 <span class="comment">%</span>
-0019 <span class="comment">% EXAMPLE USAGE</span>
-0020 <span class="comment">%    write_FVCOM_stations(Mobj, 'tst_stations.dat')</span>
-0021 <span class="comment">%</span>
-0022 <span class="comment">% Author(s):</span>
-0023 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
-0024 <span class="comment">%</span>
-0025 <span class="comment">% Revision history</span>
-0026 <span class="comment">%    2012-11-30 First version.</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">%==========================================================================</span>
-0029 subname = <span class="string">'write_FVCOM_stations'</span>;
-0030 <span class="keyword">global</span> ftbverbose
-0031 <span class="keyword">if</span>(ftbverbose)
-0032   fprintf(<span class="string">'\n'</span>); fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>]);
-0033 <span class="keyword">end</span>
-0034 
-0035 <span class="comment">%--------------------------------------------------------------------------</span>
-0036 <span class="comment">% Parse input arguments</span>
-0037 <span class="comment">%--------------------------------------------------------------------------</span>
-0038 <span class="keyword">if</span> exist(<span class="string">'Mobj'</span>, <span class="string">'var'</span>) ~= 1 || exist(<span class="string">'filename'</span>, <span class="string">'var'</span>) ~= 1
-0039     error(<span class="string">'arguments to %s are incorrect'</span>, subname)
-0040 <span class="keyword">end</span>
-0041 
-0042 <span class="comment">%--------------------------------------------------------------------------</span>
-0043 <span class="comment">% Dump the file</span>
-0044 <span class="comment">%--------------------------------------------------------------------------</span>
-0045 <span class="keyword">if</span> strcmpi(Mobj.nativeCoords, <span class="string">'cartesian'</span>)
-0046     x = Mobj.Positions(:,3);
-0047     y = Mobj.Positions(:,4);
-0048 <span class="keyword">elseif</span> strcmpi(Mobj.nativeCoords, <span class="string">'spherical'</span>)
-0049     x = Mobj.Positions(:,1);
-0050     y = Mobj.Positions(:,2);
-0051 <span class="keyword">else</span>
-0052     error(<span class="string">'Unknown native coordinate system string: %s'</span>, Mobj.nativeCoords)
-0053 <span class="keyword">end</span>
-0054 
-0055 <span class="keyword">if</span>(ftbverbose)
-0056     fprintf(<span class="string">'writing FVCOM gridfile %s\n'</span>,filename);
-0057 <span class="keyword">end</span>
-0058 
-0059 fid = fopen(filename,<span class="string">'w'</span>);
-0060 fprintf(fid, <span class="string">' No           X        Y      Node (Cell)        Station Name\n'</span>);
-0061 
-0062 <span class="keyword">for</span> s=1:length(Mobj.stations)
-0063     fprintf(fid, <span class="string">'%i %f %f %i %f %s\n'</span>, cell2mat(Mobj.stations{s}(1:5)), char(Mobj.stations{s}(6)));
-0064 <span class="keyword">end</span>   
-0065 
-0066 fclose(fid);
-0067 
-0068 <span class="keyword">if</span>(ftbverbose)
-0069   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0070 <span class="keyword">end</span>
-0071</pre></div>
-<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0002 <span class="comment">% Add a set of stations at which FVCOM will output wave data.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function write_FVCOM_stations(Mobj,filename)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Given a mesh object with time series positions and names</span>
+0008 <span class="comment">%    (Mobj.Position and Mobj.Names from add_stations_list.m), write out to</span>
+0009 <span class="comment">%    ASCII file filename.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT</span>
+0012 <span class="comment">%    Mobj = Matlab mesh object</span>
+0013 <span class="comment">%    filename = FVCOM stations file name</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% OUTPUT:</span>
+0016 <span class="comment">%    FVCOM stations file: filename</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% EXAMPLE USAGE</span>
+0019 <span class="comment">%    write_FVCOM_stations(Mobj, 'tst_stations.dat')</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% Author(s):</span>
+0022 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Revision history</span>
+0025 <span class="comment">%    2012-11-30 First version.</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">%==========================================================================</span>
+0028 subname = <span class="string">'write_FVCOM_stations'</span>;
+0029 <span class="keyword">global</span> ftbverbose
+0030 <span class="keyword">if</span>(ftbverbose)
+0031   fprintf(<span class="string">'\n'</span>); fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>]);
+0032 <span class="keyword">end</span>
+0033 
+0034 <span class="comment">%--------------------------------------------------------------------------</span>
+0035 <span class="comment">% Parse input arguments</span>
+0036 <span class="comment">%--------------------------------------------------------------------------</span>
+0037 <span class="keyword">if</span> exist(<span class="string">'Mobj'</span>, <span class="string">'var'</span>) ~= 1 || exist(<span class="string">'filename'</span>, <span class="string">'var'</span>) ~= 1
+0038     error(<span class="string">'arguments to %s are incorrect'</span>, subname)
+0039 <span class="keyword">end</span>
+0040 
+0041 <span class="comment">%--------------------------------------------------------------------------</span>
+0042 <span class="comment">% Dump the file</span>
+0043 <span class="comment">%--------------------------------------------------------------------------</span>
+0044 <span class="keyword">if</span> strcmpi(Mobj.nativeCoords, <span class="string">'cartesian'</span>)
+0045     x = Mobj.Positions(:,3);
+0046     y = Mobj.Positions(:,4);
+0047 <span class="keyword">elseif</span> strcmpi(Mobj.nativeCoords, <span class="string">'spherical'</span>)
+0048     x = Mobj.Positions(:,1);
+0049     y = Mobj.Positions(:,2);
+0050 <span class="keyword">else</span>
+0051     error(<span class="string">'Unknown native coordinate system string: %s'</span>, Mobj.nativeCoords)
+0052 <span class="keyword">end</span>
+0053 
+0054 <span class="keyword">if</span>(ftbverbose)
+0055     fprintf(<span class="string">'writing FVCOM gridfile %s\n'</span>,filename);
+0056 <span class="keyword">end</span>
+0057 
+0058 fid = fopen(filename,<span class="string">'w'</span>);
+0059 fprintf(fid, <span class="string">' No           X        Y      Node (Cell)        Station Name\n'</span>);
+0060 
+0061 <span class="keyword">for</span> s=1:length(Mobj.stations)
+0062     fprintf(fid, <span class="string">'%i %f %f %i %f %s\n'</span>, cell2mat(Mobj.stations{s}(1:5)), char(Mobj.stations{s}(6)));
+0063 <span class="keyword">end</span>
+0064 
+0065 fclose(fid);
+0066 
+0067 <span class="keyword">if</span>(ftbverbose)
+0068   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0069 <span class="keyword">end</span>
+0070</pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

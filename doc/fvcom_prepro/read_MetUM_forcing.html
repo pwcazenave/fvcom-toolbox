@@ -1,0 +1,391 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of read_MetUM_forcing</title>
+  <meta name="keywords" content="read_MetUM_forcing">
+  <meta name="description" content="Read Met Office Unified Model (TM) (hereafter MetUM) netCDF files and">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; read_MetUM_forcing.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>read_MetUM_forcing
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Read Met Office Unified Model (TM) (hereafter MetUM) netCDF files and</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function MetUM = read_MetUM_forcing(files, varlist) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Read Met Office Unified Model (TM) (hereafter MetUM) netCDF files and
+ extact the variables in varlist.
+
+ MetUM = read_MetUM_forcing(files, varlist)
+
+ DESCRIPTION:
+   Given a cell array of file names, extract the variables in varlist into
+   a struct. Field names are the variable names gives.
+
+ INPUT:
+   files - cell array of file names (full paths to the files)
+   varlist [optional] - list of variable names to extract. If omitted, all
+   variables are extracted.
+
+ OUTPUT:
+   MetUM - MATLAB struct with the data from the variables specified in
+   varlist.
+
+ EXAMPLE USAGE:
+   varlist = {'x', 'y', 't_1', 'sh', 'x-wind', 'y-wind', 'rh', 'sh', ...
+       'lh', 'solar', 'longwave'};
+   files = {'/tmp/sn_2011010100_s00.nc', '/tmp/sn_201101016_s00.nc'};
+   MetUM = read_MetUM_forcing(files, varlist);
+
+ NOTE:
+   The last 4 times are dropped from each file because the Met Office
+   Unified Model is a forecast model with four hours of forecast in these
+   PP files.
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history:
+   2013-08-29 First version.
+   2013-09-02 Amend the way the 3 and 4D variables are appended to one
+   another. The assumption now is time is the last dimension and arrays
+   are appended with time.
+   2013-09-06 Trim the last 4 time samples from all variables (these are
+   the forecast results which we don't want/need for forcing the model. I
+   suppose at some point, given the patchy temporal coverage of the data
+   (i.e. the Met Office FTP server doesn't have all files in a usable
+   state), it might be better to use the forecast data to partially fill
+   in gaps from missing files. However, given this forcing is hourly and I
+   was previously using four times daily forcing, I'm not that fussed.
+   2013-09-12 Add support for extracting the surface pressure level from
+   the 4D temperature variable (temp_2).
+   2013-10-23 Fix the way time is handled. Previously a time variable had
+   to be specified in varlist. Now, each data variable's time is returned
+   as an array within the MetUM.(variable) struct, giving
+   MetUM.(variable).time and MetUM.(variable).data. This means if each
+   data variable uses a different time sampling, that can be accounted for
+   later (by interpolating to a common time series with interp3, for
+   example). Currently the code extracts the first 6 hour's worth of data.
+   The assumption there is that the Met Office do 4 runs per day, so 6
+   hours of data from each run gives you a day's worth.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function fixedtime = fix_time(nc, varid)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function MetUM = read_MetUM_forcing(files, varlist)</a>
+0002 <span class="comment">% Read Met Office Unified Model (TM) (hereafter MetUM) netCDF files and</span>
+0003 <span class="comment">% extact the variables in varlist.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% MetUM = read_MetUM_forcing(files, varlist)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%   Given a cell array of file names, extract the variables in varlist into</span>
+0009 <span class="comment">%   a struct. Field names are the variable names gives.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT:</span>
+0012 <span class="comment">%   files - cell array of file names (full paths to the files)</span>
+0013 <span class="comment">%   varlist [optional] - list of variable names to extract. If omitted, all</span>
+0014 <span class="comment">%   variables are extracted.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%   MetUM - MATLAB struct with the data from the variables specified in</span>
+0018 <span class="comment">%   varlist.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% EXAMPLE USAGE:</span>
+0021 <span class="comment">%   varlist = {'x', 'y', 't_1', 'sh', 'x-wind', 'y-wind', 'rh', 'sh', ...</span>
+0022 <span class="comment">%       'lh', 'solar', 'longwave'};</span>
+0023 <span class="comment">%   files = {'/tmp/sn_2011010100_s00.nc', '/tmp/sn_201101016_s00.nc'};</span>
+0024 <span class="comment">%   MetUM = read_MetUM_forcing(files, varlist);</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% NOTE:</span>
+0027 <span class="comment">%   The last 4 times are dropped from each file because the Met Office</span>
+0028 <span class="comment">%   Unified Model is a forecast model with four hours of forecast in these</span>
+0029 <span class="comment">%   PP files.</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Author(s):</span>
+0032 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% Revision history:</span>
+0035 <span class="comment">%   2013-08-29 First version.</span>
+0036 <span class="comment">%   2013-09-02 Amend the way the 3 and 4D variables are appended to one</span>
+0037 <span class="comment">%   another. The assumption now is time is the last dimension and arrays</span>
+0038 <span class="comment">%   are appended with time.</span>
+0039 <span class="comment">%   2013-09-06 Trim the last 4 time samples from all variables (these are</span>
+0040 <span class="comment">%   the forecast results which we don't want/need for forcing the model. I</span>
+0041 <span class="comment">%   suppose at some point, given the patchy temporal coverage of the data</span>
+0042 <span class="comment">%   (i.e. the Met Office FTP server doesn't have all files in a usable</span>
+0043 <span class="comment">%   state), it might be better to use the forecast data to partially fill</span>
+0044 <span class="comment">%   in gaps from missing files. However, given this forcing is hourly and I</span>
+0045 <span class="comment">%   was previously using four times daily forcing, I'm not that fussed.</span>
+0046 <span class="comment">%   2013-09-12 Add support for extracting the surface pressure level from</span>
+0047 <span class="comment">%   the 4D temperature variable (temp_2).</span>
+0048 <span class="comment">%   2013-10-23 Fix the way time is handled. Previously a time variable had</span>
+0049 <span class="comment">%   to be specified in varlist. Now, each data variable's time is returned</span>
+0050 <span class="comment">%   as an array within the MetUM.(variable) struct, giving</span>
+0051 <span class="comment">%   MetUM.(variable).time and MetUM.(variable).data. This means if each</span>
+0052 <span class="comment">%   data variable uses a different time sampling, that can be accounted for</span>
+0053 <span class="comment">%   later (by interpolating to a common time series with interp3, for</span>
+0054 <span class="comment">%   example). Currently the code extracts the first 6 hour's worth of data.</span>
+0055 <span class="comment">%   The assumption there is that the Met Office do 4 runs per day, so 6</span>
+0056 <span class="comment">%   hours of data from each run gives you a day's worth.</span>
+0057 <span class="comment">%</span>
+0058 <span class="comment">%==========================================================================</span>
+0059 
+0060 subname = <span class="string">'read_MetUM_forcing'</span>;
+0061 
+0062 <span class="keyword">global</span> ftbverbose
+0063 <span class="keyword">if</span> ftbverbose
+0064     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0065 <span class="keyword">end</span>
+0066 
+0067 assert(iscell(files), <span class="string">'List of files provided must be a cell array.'</span>)
+0068 
+0069 <span class="comment">% Find the approximate surface pressure level (1013.25mbar) for the 4D</span>
+0070 <span class="comment">% temperature data.</span>
+0071 nc = netcdf.open(files{1}, <span class="string">'NOWRITE'</span>);
+0072 [~, numvars, ~, ~] = netcdf.inq(nc);
+0073 levelidx = [];
+0074 <span class="keyword">for</span> f = 1:numvars
+0075     [varname, ~, ~, ~] = netcdf.inqVar(nc, f - 1);
+0076     <span class="keyword">if</span> strcmp(varname, <span class="string">'p'</span>) <span class="comment">% p = pressure levels in the temp_2 variable.</span>
+0077         varid = netcdf.inqVarID(nc, varname);
+0078         tmpdata = netcdf.getVar(nc, varid, <span class="string">'double'</span>);
+0079         <span class="comment">% Find the index for the level closest to the surface. The</span>
+0080         <span class="comment">% documentation at:</span>
+0081         <span class="comment">%   http://badc.nerc.ac.uk/data/um/Met_Office_NAE_Output.pdf</span>
+0082         <span class="comment">% suggests 980hPa is the surface.</span>
+0083         [~, levelidx] = min(abs(tmpdata - 980));
+0084     <span class="keyword">end</span>
+0085 <span class="keyword">end</span>
+0086 
+0087 <span class="comment">% If that failed, use a best guess of the 5th index (based on my checking a</span>
+0088 <span class="comment">% bunch of random files where the 1000mbar value falls in the p index).</span>
+0089 <span class="keyword">if</span> isempty(levelidx)
+0090     levelidx = 5;
+0091 <span class="keyword">end</span>
+0092 
+0093 MetUM = struct();
+0094 
+0095 <span class="keyword">for</span> f = 1:length(files)
+0096 
+0097     <span class="comment">% Set the number of time steps to extract to default to 6. It should be</span>
+0098     <span class="comment">% checked for each file anyway (assuming there's a time variable being</span>
+0099     <span class="comment">% requested).</span>
+0100     nh = 6;
+0101 
+0102     <span class="keyword">if</span> ftbverbose
+0103         <span class="comment">% Don't display the full path if it's really long.</span>
+0104         <span class="keyword">if</span> length(files{f}) &gt; 80
+0105             [~, fname, fext] = fileparts(files{f});
+0106             dispname = [fname, fext];
+0107         <span class="keyword">else</span>
+0108             dispname = files{f};
+0109         <span class="keyword">end</span>
+0110         fprintf(<span class="string">'File %i of %i (%s)... '</span>, f, length(files), dispname)
+0111     <span class="keyword">end</span>
+0112 
+0113     nc = netcdf.open(files{f}, <span class="string">'NOWRITE'</span>);
+0114 
+0115     <span class="comment">% Query the netCDF file to file the variable names. If the name matches</span>
+0116     <span class="comment">% one in the list we've been given (or if we haven't been given any</span>
+0117     <span class="comment">% particular variables), save it in the output struct.</span>
+0118     [~, numvars, ~, ~] = netcdf.inq(nc);
+0119 
+0120     <span class="keyword">for</span> ii = 1:numvars
+0121         <span class="comment">% Find the name of the current variable</span>
+0122         [varname, ~, ~, varAtts] = netcdf.inqVar(nc, ii - 1);
+0123 
+0124         <span class="keyword">if</span> ismember(varname, varlist) || nargin == 1
+0125             varid = netcdf.inqVarID(nc, varname);
+0126 
+0127             <span class="comment">% Some variables contain illegal (in MATLAB) characters. Remove</span>
+0128             <span class="comment">% them here.</span>
+0129             safename = regexprep(varname, <span class="string">'-'</span>, <span class="string">''</span>);
+0130 
+0131             <span class="comment">% Append the data on the assumption the last dimension is time.</span>
+0132             <span class="comment">% Don't append data with only 2 dimensions as it's probably</span>
+0133             <span class="comment">% longitude or latitude data. The time variable ('t') is</span>
+0134             <span class="comment">% turned into a list of time stamps.</span>
+0135             tmpdata = squeeze(netcdf.getVar(nc, varid, <span class="string">'double'</span>));
+0136             nn = ndims(tmpdata);
+0137 
+0138             <span class="keyword">if</span> isfield(MetUM, safename)
+0139                 <span class="keyword">switch</span> varname
+0140                     <span class="keyword">case</span> {<span class="string">'x'</span>, <span class="string">'y'</span>, <span class="string">'x_1'</span>, <span class="string">'y_1'</span>, <span class="string">'longitude'</span>, <span class="string">'latitude'</span>, <span class="string">'lsm'</span>}
+0141                         <span class="keyword">continue</span>
+0142                     <span class="keyword">case</span> {<span class="string">'t'</span>, <span class="string">'t_1'</span>, <span class="string">'t_2'</span>, <span class="string">'t_3'</span>, <span class="string">'t_4'</span>, <span class="string">'t_5'</span>, <span class="string">'t_6'</span>, <span class="string">'t_7'</span>, <span class="string">'t_8'</span>}
+0143                         <span class="comment">% Ignore time variables.</span>
+0144                         <span class="keyword">continue</span>
+0145                     <span class="keyword">otherwise</span>
+0146                         <span class="keyword">try</span>
+0147                             <span class="comment">% Extract the time for this variable.</span>
+0148                             temptime = <a href="#_sub1" class="code" title="subfunction fixedtime = fix_time(nc, varid)">fix_time</a>(nc, varid);
+0149 
+0150                             <span class="comment">% Find how many indices to extract to at least</span>
+0151                             <span class="comment">% 6 hours of data.</span>
+0152                             interval = mean(roundn(diff(datenum(temptime)) * 24 * 60, 0));
+0153                             <span class="keyword">if</span> abs(60 - interval) &lt; abs(30 - interval)
+0154                                 <span class="comment">% Hourly</span>
+0155                                 nh = 6;
+0156                             <span class="keyword">elseif</span> abs(30 - interval) &lt; abs(60 - interval)
+0157                                 <span class="comment">% Half-hourly</span>
+0158                                 nh = 12;
+0159                             <span class="keyword">else</span>
+0160                                 error(<span class="string">'Unsupported time sampling interval (support hourly and half-hourly sampling).'</span>)
+0161                             <span class="keyword">end</span>
+0162                             <span class="comment">% Check we don't try and get more data than we</span>
+0163                             <span class="comment">% have.</span>
+0164                             <span class="keyword">if</span> nh &gt; size(temptime, 1);
+0165                                 nh = size(temptime, 1);
+0166                             <span class="keyword">end</span>
+0167 
+0168                             MetUM.(safename).time = [MetUM.(safename).time; temptime(1:nh, :)];
+0169 
+0170                             <span class="comment">% Append along last dimension.</span>
+0171                             <span class="keyword">if</span> nn == 3
+0172                                 MetUM.(safename).data = cat(nn, MetUM.(safename).data, tmpdata(:, :, 1:nh));
+0173                             <span class="keyword">else</span>
+0174                                 <span class="comment">% We're flattening from 4D to 3D here, so</span>
+0175                                 <span class="comment">% nn - 1.</span>
+0176                                 MetUM.(safename).data = cat(nn - 1, MetUM.(safename).data, squeeze(tmpdata(:, :, levelidx, 1:nh)));
+0177                             <span class="keyword">end</span>
+0178                         <span class="keyword">catch</span> err
+0179                             fprintf(<span class="string">'\n'</span>)
+0180                             warning(<span class="string">'Couldn''t append %s to the existing field from file %s.'</span>, safename, files{f})
+0181                             warning(<span class="string">'%s\n'</span>, err.message)
+0182                         <span class="keyword">end</span>
+0183 
+0184                 <span class="keyword">end</span>
+0185             <span class="keyword">else</span> <span class="comment">% first time around</span>
+0186                 <span class="keyword">switch</span> varname
+0187                     <span class="keyword">case</span> {<span class="string">'x'</span>, <span class="string">'y'</span>, <span class="string">'x_1'</span>, <span class="string">'y_1'</span>, <span class="string">'longitude'</span>, <span class="string">'latitude'</span>, <span class="string">'lsm'</span>}
+0188                         MetUM.(safename).data = tmpdata;
+0189                     <span class="keyword">case</span> {<span class="string">'t'</span>, <span class="string">'t_1'</span>, <span class="string">'t_2'</span>, <span class="string">'t_3'</span>, <span class="string">'t_4'</span>, <span class="string">'t_5'</span>, <span class="string">'t_6'</span>, <span class="string">'t_7'</span>, <span class="string">'t_8'</span>}
+0190                         <span class="comment">% Ignore time variables.</span>
+0191                         <span class="keyword">continue</span>
+0192                     <span class="keyword">otherwise</span>
+0193                         <span class="comment">% This is data.</span>
+0194 
+0195                         <span class="comment">% Extract the time for this variable.</span>
+0196                         temptime = <a href="#_sub1" class="code" title="subfunction fixedtime = fix_time(nc, varid)">fix_time</a>(nc, varid);
+0197 
+0198                         <span class="comment">% Find how many indices to extract to at least</span>
+0199                         <span class="comment">% 6 hours of data.</span>
+0200                         interval = mean(roundn(diff(datenum(temptime)) * 24 * 60, 0));
+0201                         <span class="keyword">if</span> abs(60 - interval) &lt; abs(30 - interval)
+0202                             <span class="comment">% Hourly</span>
+0203                             nh = 6;
+0204                         <span class="keyword">elseif</span> abs(30 - interval) &lt; abs(60 - interval)
+0205                             <span class="comment">% Half-hourly</span>
+0206                             nh = 12;
+0207                         <span class="keyword">else</span>
+0208                             error(<span class="string">'Unsupported time sampling interval (support hourly and half-hourly sampling).'</span>)
+0209                         <span class="keyword">end</span>
+0210                         <span class="comment">% Check we don't try and get more data than we</span>
+0211                         <span class="comment">% have.</span>
+0212                         <span class="keyword">if</span> nh &gt; size(temptime, 1);
+0213                             nh = size(temptime, 1);
+0214                         <span class="keyword">end</span>
+0215 
+0216                         MetUM.(safename).time = temptime(1:nh, :);
+0217 
+0218                         <span class="keyword">if</span> nn == 3
+0219                             MetUM.(safename).data = tmpdata(:, :, 1:nh);
+0220                         <span class="keyword">else</span>
+0221                             <span class="comment">% Assume temperature at pressure levels.</span>
+0222                             <span class="comment">% Extract the 1000mb pressure level</span>
+0223                             <span class="comment">% (approximately the surface).</span>
+0224                             MetUM.(safename).data = squeeze(tmpdata(:, :, levelidx, 1:nh));
+0225                         <span class="keyword">end</span>
+0226                 <span class="keyword">end</span>
+0227             <span class="keyword">end</span>
+0228         <span class="keyword">end</span>
+0229     <span class="keyword">end</span>
+0230 
+0231     <span class="keyword">if</span> ftbverbose
+0232         fprintf(<span class="string">'done.\n'</span>)
+0233     <span class="keyword">end</span>
+0234 
+0235 <span class="keyword">end</span>
+0236 
+0237 <span class="comment">% Squeeze out singleton dimensions.</span>
+0238 fields = fieldnames(MetUM);
+0239 <span class="keyword">for</span> i = 1:length(MetUM)
+0240     MetUM.(fields{i}) = squeeze(MetUM.(fields{i}));
+0241 <span class="keyword">end</span>
+0242 
+0243 <span class="keyword">if</span> ftbverbose
+0244     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0245 <span class="keyword">end</span>
+0246 
+0247 <a name="_sub1" href="#_subfunctions" class="code">function fixedtime = fix_time(nc, varid)</a>
+0248 <span class="comment">% Little helper function to get the time data for the current variable.</span>
+0249 <span class="comment">%</span>
+0250 <span class="comment">% INPUT:</span>
+0251 <span class="comment">%   nc : netCDF file handle</span>
+0252 <span class="comment">%   varid : current variable ID</span>
+0253 <span class="comment">%</span>
+0254 <span class="comment">% OUTPUT:</span>
+0255 <span class="comment">%   tt : date string for the current file (Gregorian date)</span>
+0256 
+0257 <span class="comment">% Extract the time array for this variable's time dimension.</span>
+0258 [numdims, ~, ~, ~] = netcdf.inq(nc);
+0259 dimnames = cell(numdims, 1);
+0260 <span class="keyword">for</span> jj = 1:numdims
+0261     [dimname, ~] = netcdf.inqDim(nc, jj - 1);
+0262     dimnames{jj} = dimname;
+0263 <span class="keyword">end</span>
+0264 
+0265 <span class="comment">% Find the dimensions of this variable.</span>
+0266 [~, ~, dimids, ~] = netcdf.inqVar(nc, varid);
+0267 <span class="comment">% We presume the time variable starts with a t.</span>
+0268 ttidx = strncmpi(dimnames(dimids + 1), <span class="string">'t'</span>, length(<span class="string">'t'</span>));
+0269 ttvarid = netcdf.inqVarID(nc, dimnames{dimids(ttidx) + 1});
+0270 <span class="comment">% There are issues around precision here, so</span>
+0271 <span class="comment">% convert tt to minutes and then back to fractions</span>
+0272 <span class="comment">% of a day.</span>
+0273 tt = netcdf.getVar(nc, ttvarid, <span class="string">'double'</span>);
+0274 tt = roundn(tt * 24 * 60, -1) / 24 / 60;
+0275 
+0276 [~, ~, ~, tVarAtts] = netcdf.inqVar(nc, ttvarid);
+0277 
+0278 <span class="keyword">for</span> j = 1:tVarAtts
+0279     timeatt = netcdf.inqAttName(nc, ttvarid, j - 1);
+0280     <span class="keyword">if</span> strcmpi(timeatt, <span class="string">'time_origin'</span>)
+0281         timeval = netcdf.getAtt(nc, ttvarid, timeatt);
+0282     <span class="keyword">end</span>
+0283 <span class="keyword">end</span>
+0284 mt = datenum(timeval, <span class="string">'dd-mmm-yyyy:HH:MM:SS'</span>);
+0285 
+0286 fixedtime = datestr(mt + tt, <span class="string">'yyyy-mm-dd HH:MM:SS'</span>);</pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

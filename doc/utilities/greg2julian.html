@@ -42,13 +42,13 @@
 
  3. Example:
   &gt;&gt; [a,b] = greg2julian(2006,5,30,2,30,28)
-  a = 
+  a =
 
            2453885.60449074
   b =
 
   Tuesday
- 
+
   4. Notes:
      - For all common era (CE) dates in the Gregorian calendar, and for more
      information, check the referents.
@@ -61,16 +61,18 @@
                http://aa.usno.navy.mil/data/docs/JulianDate.html
      Duffett-Smith, P. (1992).  Practical Astronomy with Your Calculator.
                Cambridge University Press, England:  pp. 9.
-     Seidelmann, P. K. (1992). Explanatory Supplement to the Astronomical Almanac. 
+     Seidelmann, P. K. (1992). Explanatory Supplement to the Astronomical Almanac.
                University Science Books, USA.  pp. 55-56.
-      Weisstein, Eric W.  &quot;Julian Date&quot;.  From World of Astronomy--A Wolfram Web Resource. 
+      Weisstein, Eric W.  &quot;Julian Date&quot;.  From World of Astronomy--A Wolfram Web Resource.
                http://scienceworld.wolfram.com/astronomy/JulianDate.html
 
  Gabriel Ruiz Mtz.
  May-2006
 
  Modifications:
- 04/06/06: To find the days, it was only changed the loop to a cell array. Thanks to Jérôme.
+ 04/06/06: To find the days, it was only changed the loop to a cell array. Thanks to Jerome.
+ 2014-07-29 Fix input arguments check (Pierre Cazenave, Plymouth Marine
+   Laboratory).
  ------------------------------------------------------------------------------------------------------------</pre></div>
 
 <!-- crossreference -->
@@ -130,23 +132,25 @@ This function is called by:
 0042 <span class="comment">% May-2006</span>
 0043 <span class="comment">%</span>
 0044 <span class="comment">% Modifications:</span>
-0045 <span class="comment">% 04/06/06: To find the days, it was only changed the loop to a cell array. Thanks to Jérôme.</span>
-0046 <span class="comment">% ------------------------------------------------------------------------------------------------------------</span>
-0047    
-0048    error(nargchk(6,6,nargin))
-0049    timeut = hour + ( min / 60 ) + ( sec / 3600 );
-0050 
-0051    <span class="comment">%For common era (CE), anno domini (AD)</span>
-0052    JD = ( 367 * year ) - floor ( 7 * ( year + floor( ( month + 9 ) / 12 ) ) / 4 ) - <span class="keyword">...</span>
-0053                      floor( 3 * ( floor( ( year + ( month - 9 ) / 7 ) / 100 ) + 1 ) / 4 ) + <span class="keyword">...</span>
-0054                      floor( ( 275 * month ) / 9 ) + day + 1721028.5 + ( timeut / 24 );
-0055    a = ( JD + 1.5 ) / 7;
-0056    frac = a - floor(a);
-0057    n = floor(frac * 7) ;
-0058    julianday ={ <span class="string">'Sunday'</span> <span class="string">'Monday'</span> <span class="string">'Tuesday'</span> <span class="string">'Wednesday'</span> <span class="string">'Thursday'</span> <span class="string">'Friday'</span> <span class="string">'Saturday'</span>};
-0059    julianday = julianday{n+1};
-0060 
-0061</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0045 <span class="comment">% 04/06/06: To find the days, it was only changed the loop to a cell array. Thanks to Jerome.</span>
+0046 <span class="comment">% 2014-07-29 Fix input arguments check (Pierre Cazenave, Plymouth Marine</span>
+0047 <span class="comment">%   Laboratory).</span>
+0048 <span class="comment">% ------------------------------------------------------------------------------------------------------------</span>
+0049 
+0050    narginchk(6,6)
+0051    timeut = hour + ( min / 60 ) + ( sec / 3600 );
+0052 
+0053    <span class="comment">%For common era (CE), anno domini (AD)</span>
+0054    JD = ( 367 * year ) - floor ( 7 * ( year + floor( ( month + 9 ) / 12 ) ) / 4 ) - <span class="keyword">...</span>
+0055                      floor( 3 * ( floor( ( year + ( month - 9 ) / 7 ) / 100 ) + 1 ) / 4 ) + <span class="keyword">...</span>
+0056                      floor( ( 275 * month ) / 9 ) + day + 1721028.5 + ( timeut / 24 );
+0057    a = ( JD + 1.5 ) / 7;
+0058    frac = a - floor(a);
+0059    n = floor(frac * 7) ;
+0060    julianday ={ <span class="string">'Sunday'</span> <span class="string">'Monday'</span> <span class="string">'Tuesday'</span> <span class="string">'Wednesday'</span> <span class="string">'Thursday'</span> <span class="string">'Friday'</span> <span class="string">'Saturday'</span>};
+0061    julianday = julianday{n+1};
+0062 
+0063</pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

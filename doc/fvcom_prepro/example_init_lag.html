@@ -33,7 +33,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>	Plot the mesh, user defined field, open boundary nodes, and river points</li><li><a href="read_fvcom_bath.html" class="code" title="function [h] = read_fvcom_bath(bathfile)">read_fvcom_bath</a>	Read fvcom bathymetry file</li><li><a href="read_fvcom_mesh.html" class="code" title="function [Mobj] = read_fvcom_mesh(gridfile)">read_fvcom_mesh</a>	Read fvcom mesh file into Matlab mesh object</li><li><a href="setup_metrics.html" class="code" title="function [Mobj]  = setup_metrics(Mobj)">setup_metrics</a>	Setup metrics for mesh object Mesh</li></ul>
+<li><a href="plot_field.html" class="code" title="function plot_field(Mobj,PlotField,varargin)">plot_field</a>	Plot the mesh, user defined field, open boundary nodes, and river points</li><li><a href="read_fvcom_bath.html" class="code" title="function [h] = read_fvcom_bath(bathfile)">read_fvcom_bath</a>	Read fvcom bathymetry file</li><li><a href="setup_metrics.html" class="code" title="function [Mobj]  = setup_metrics(Mobj)">setup_metrics</a>	Setup metrics for mesh object Mesh</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -66,7 +66,7 @@ This function is called by:
 0022 tend = greg2mjulian(2008,02,01,0,0,0); 
 0023 
 0024 <span class="comment">% read in mesh and bathymetry</span>
-0025 Mobj = <a href="read_fvcom_mesh.html" class="code" title="function [Mobj] = read_fvcom_mesh(gridfile)">read_fvcom_mesh</a>(meshfile);
+0025 Mobj = read_fvcom_mesh(meshfile);
 0026 Mobj.h = <a href="read_fvcom_bath.html" class="code" title="function [h] = read_fvcom_bath(bathfile)">read_fvcom_bath</a>(bathfile); Mobj.have_bath = true;
 0027 Mobj = <a href="setup_metrics.html" class="code" title="function [Mobj]  = setup_metrics(Mobj)">setup_metrics</a>(Mobj);
 0028 
@@ -154,6 +154,6 @@ This function is called by:
 0110 nc{<span class="string">'mark'</span>}(:) = 0;
 0111 nc{<span class="string">'pathlength'</span>}(:) = 0.0;
 0112 close(nc);</pre></div>
-<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -59,6 +59,8 @@ function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask, varargin)
 %   the parallel pool code to use the new parpool function instead of
 %   matlabpool in anticipation of the latter's eventual removal from
 %   MATLAB. Also update the help.
+%   2014-06-12 Fix bug in interpolating in the vertical when HYCOM data has
+%   only a single depth bin.
 %
 %==========================================================================
 
@@ -166,7 +168,14 @@ parfor xi = 1:nx
             % with the HYCOM data, and interpolate only the data we have
             % that are finite).
             nidx = isnan(tpz);
-            ydata(yi, :) = interp1(tpz(~nidx), xdata(yi, ~nidx), tfz, 'linear', 'extrap');
+            % If we have only a single value, repeat it down the entire
+            % water column, otherwise, interpolate linearly (with
+            % extrapolation).
+            if length(tpz(~nidx)) == 1
+                ydata(yi, :) = tpz(~nidx);
+            else
+                ydata(yi, :) = interp1(tpz(~nidx), xdata(yi, ~nidx), tfz, 'linear', 'extrap');
+            end
         end
     end
     dataz(xi, :, :) = ydata;

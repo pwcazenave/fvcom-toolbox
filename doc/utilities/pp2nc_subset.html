@@ -1,0 +1,190 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of pp2nc_subset</title>
+  <meta name="keywords" content="pp2nc_subset">
+  <meta name="description" content="Child function to call the convsh program to convert the PP format to a">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; pp2nc_subset.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>pp2nc_subset
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Child function to call the convsh program to convert the PP format to a</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function met_files = pp2nc_subset(file, convsh, pp2nc_tcl, xextents, yextents) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Child function to call the convsh program to convert the PP format to a
+ sensible NetCDF which we can more easily read.
+
+ This requires the convsh and xconv functions available from:
+
+   http://badc.nerc.ac.uk/help/software/xconv/index.html
+
+ Follow the installation instructions for your platform (Linux, Windows,
+ Mac etc.) prior to running this function.
+
+ This requires the subset.tcl script in the utilities subdirectory of the
+ MATLAB fvcom-toolbox.
+
+ INPUT:
+   file - cell array of PP file(s) to convert to NetCDF. Include
+       sub-directory in path, can include full path name or path relative
+       to working directory.
+   convsh - the path to the convsh binary (NB this can't contain spaces).
+   pp2nc_tcl - the path to the TCL script (in the utilities fvcom-toolbox
+       file).
+   xextents - [startx, endx, xinc] = start longitude coordinate, end
+       coordinate and grid increment (&gt; 0.1degrees).
+   yextents - [starty, endy, yinc] = start longitude coordinate, end
+       coordinate and grid increment (&gt; 0.1degrees).
+
+ OUTPUT:
+   NetCDF files in the same directory as the input PP files but with a .nc
+   file extension.
+
+ USAGE (PWC): Convert the PP files to NetCDF.
+   files = {'/path/to/file1.pp', '/path/to/file2.pp', '/path/to/file3.pp'};
+   convsh = '/users/modellers/pica/bin/convsh';
+   tcl = '/users/modellers/pica/MATLAB/fvcom-toolbox/utilities/pp2nc.tcl';
+   pp2nc(files, convsh, tcl);
+
+ Author(s):
+    Pierre Cazenave (Plymouth Marine Laboratory)
+    Karen Amoudry (National Oceanography Centre, Liverpool)
+    Judith Wolf (National Oceanography Centre, Liverpool)
+
+ PWC Revision history:
+   2013-06-24 Extracted version from the get_MetUM_forcing.m script and
+   set as standalone version.
+   2013-09-06 Modified pp2nc.m to use the subset.tcl script (which has
+   more options). Also returns a list of the converted netCDF files.
+
+ KJA Revision history:
+   2013-06-25 Added support for paths with spaces in. Also added support
+   for creation of NetCDF files in Windows (convsh will only take a .nc
+   filename, not a whole path).
+
+ JW Revision history:
+   2013-08-13 Problem for paths with spaces in, especially using Windows
+   Add backslash after pwd to define directory
+   Make sure convsh is pointing to right path (cannot use paths with
+   spaces in command, use relative paths from starting directory,
+   put output file in same working directory</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function met_files = pp2nc_subset(file, convsh, pp2nc_tcl, xextents, yextents)</a>
+0002 <span class="comment">% Child function to call the convsh program to convert the PP format to a</span>
+0003 <span class="comment">% sensible NetCDF which we can more easily read.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% This requires the convsh and xconv functions available from:</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">%   http://badc.nerc.ac.uk/help/software/xconv/index.html</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% Follow the installation instructions for your platform (Linux, Windows,</span>
+0010 <span class="comment">% Mac etc.) prior to running this function.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% This requires the subset.tcl script in the utilities subdirectory of the</span>
+0013 <span class="comment">% MATLAB fvcom-toolbox.</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% INPUT:</span>
+0016 <span class="comment">%   file - cell array of PP file(s) to convert to NetCDF. Include</span>
+0017 <span class="comment">%       sub-directory in path, can include full path name or path relative</span>
+0018 <span class="comment">%       to working directory.</span>
+0019 <span class="comment">%   convsh - the path to the convsh binary (NB this can't contain spaces).</span>
+0020 <span class="comment">%   pp2nc_tcl - the path to the TCL script (in the utilities fvcom-toolbox</span>
+0021 <span class="comment">%       file).</span>
+0022 <span class="comment">%   xextents - [startx, endx, xinc] = start longitude coordinate, end</span>
+0023 <span class="comment">%       coordinate and grid increment (&gt; 0.1degrees).</span>
+0024 <span class="comment">%   yextents - [starty, endy, yinc] = start longitude coordinate, end</span>
+0025 <span class="comment">%       coordinate and grid increment (&gt; 0.1degrees).</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% OUTPUT:</span>
+0028 <span class="comment">%   NetCDF files in the same directory as the input PP files but with a .nc</span>
+0029 <span class="comment">%   file extension.</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% USAGE (PWC): Convert the PP files to NetCDF.</span>
+0032 <span class="comment">%   files = {'/path/to/file1.pp', '/path/to/file2.pp', '/path/to/file3.pp'};</span>
+0033 <span class="comment">%   convsh = '/users/modellers/pica/bin/convsh';</span>
+0034 <span class="comment">%   tcl = '/users/modellers/pica/MATLAB/fvcom-toolbox/utilities/pp2nc.tcl';</span>
+0035 <span class="comment">%   pp2nc(files, convsh, tcl);</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">% Author(s):</span>
+0038 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0039 <span class="comment">%    Karen Amoudry (National Oceanography Centre, Liverpool)</span>
+0040 <span class="comment">%    Judith Wolf (National Oceanography Centre, Liverpool)</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">% PWC Revision history:</span>
+0043 <span class="comment">%   2013-06-24 Extracted version from the get_MetUM_forcing.m script and</span>
+0044 <span class="comment">%   set as standalone version.</span>
+0045 <span class="comment">%   2013-09-06 Modified pp2nc.m to use the subset.tcl script (which has</span>
+0046 <span class="comment">%   more options). Also returns a list of the converted netCDF files.</span>
+0047 <span class="comment">%</span>
+0048 <span class="comment">% KJA Revision history:</span>
+0049 <span class="comment">%   2013-06-25 Added support for paths with spaces in. Also added support</span>
+0050 <span class="comment">%   for creation of NetCDF files in Windows (convsh will only take a .nc</span>
+0051 <span class="comment">%   filename, not a whole path).</span>
+0052 <span class="comment">%</span>
+0053 <span class="comment">% JW Revision history:</span>
+0054 <span class="comment">%   2013-08-13 Problem for paths with spaces in, especially using Windows</span>
+0055 <span class="comment">%   Add backslash after pwd to define directory</span>
+0056 <span class="comment">%   Make sure convsh is pointing to right path (cannot use paths with</span>
+0057 <span class="comment">%   spaces in command, use relative paths from starting directory,</span>
+0058 <span class="comment">%   put output file in same working directory</span>
+0059 
+0060 nf = length(file);
+0061 
+0062 <span class="keyword">for</span> ff = 1:nf
+0063     <span class="keyword">if</span> ~isnan(file{ff})
+0064         <span class="keyword">if</span> exist(file{ff}, <span class="string">'file'</span>) ~= 2
+0065             error(<span class="string">'File %s not found'</span>, file)
+0066         <span class="keyword">end</span>
+0067 
+0068         [pathname, filename, ~] = fileparts(file{ff});
+0069         met_files{ff} = [filename, <span class="string">'.nc'</span>];
+0070         cd(pathname)
+0071         <span class="comment">% Warn if it failed for some reason</span>
+0072         [res, msg] = system([<span class="keyword">...</span>
+0073             convsh, <span class="string">' &quot;'</span>, pp2nc_tcl, <span class="string">'&quot; -i &quot;'</span>, file{ff}, <span class="string">'&quot; -o &quot;'</span>, met_files{ff}, <span class="keyword">...</span>
+0074             <span class="string">'&quot; -xs '</span>, num2str(xextents(1)), <span class="keyword">...</span>
+0075             <span class="string">' -xe '</span>, num2str(xextents(2)), <span class="keyword">...</span>
+0076             <span class="string">' -xi '</span>, num2str(xextents(3)), <span class="keyword">...</span>
+0077             <span class="string">' -ys '</span>, num2str(yextents(1)), <span class="keyword">...</span>
+0078             <span class="string">' -ye '</span>, num2str(yextents(2)), <span class="keyword">...</span>
+0079             <span class="string">' -yi '</span>,num2str( yextents(3))<span class="keyword">...</span>
+0080             ]);
+0081         <span class="comment">%        [res, msg] = system([convsh, ' &quot;', pp2nc_tcl, '&quot; -i &quot;', infile, '&quot; -o &quot;', out, '&quot;']);</span>
+0082         cd(goback)
+0083         <span class="keyword">if</span> res ~= 0
+0084             warning(<span class="string">'Conversion of %s to NetCDF failed. Conversion output:\n%s'</span>, file{ff}, msg)
+0085         <span class="keyword">end</span>
+0086     <span class="keyword">end</span>
+0087 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

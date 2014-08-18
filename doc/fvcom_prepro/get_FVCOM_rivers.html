@@ -30,15 +30,16 @@
 <div class="fragment"><pre class="comment"> Extract river discharges from the supplied river positions for the FVCOM
  grid in Mobj.
 
- get_FVCOM_rivers(Mobj, rivers, dist_thresh)
+ get_FVCOM_rivers(Mobj, dist_thresh)
 
  DESCRIPTION:
-   For the positioins in fvcom_xy, find the nearest unstructured grid node
-   and extract the river discharge from polcoms_flow. If dist_thresh is
-   specified, the river positions must fall within the specified distance.
-   If multiple rivers are assigned to the same node, their discharges are
-   summed. The resulting river name is generated from the contributing
-   rives, separated by a hyphen.
+   For the positions in Mobj.rivers.positions, find the nearest
+   unstructured grid node and extract the river discharge from
+   Mobj.rivers.discharge. If dist_thresh is specified, the river positions
+   must fall within the specified distance. If multiple rivers are
+   assigned to the same node, their discharges are summed. The resulting
+   river name is generated from the contributing rives, separated by a
+   hyphen.
 
  INPUT:
    Mobj - MATLAB mesh object containing:
@@ -68,10 +69,11 @@
    Mobj.river_time - time series for the river discharge data
 
  EXAMPLE USAGE:
-   Mobj = get_FVCOM_rivers(Mobj, Mobj.rivers, 0.025)
+   Mobj = get_FVCOM_rivers(Mobj, 0.025)
 
  Author(s):
    Pierre Cazenave (Plymouth Marine Laboratory)
+   Karen Amoudry (National Oceanography Centre, Liverpool)
 
  Revision history:
    2013-03-27 - First version.
@@ -87,6 +89,11 @@
    searches for another node in the element which is part of at least two
    elements, thereby avoiding the &quot;element filling&quot; issue. Also updated
    the help to list all the required fields in the Mobj.
+   2013-12-10 - Change the unique call to preserve the order by replacing
+   'first' with 'stable'. This requires a relatively modern MATLAB
+   (post-2011b).
+   2014-05-20 Set boolean flag to true to indicate rivers and add number
+   of fields to the Mobj.
 
 ==========================================================================</pre></div>
 
@@ -107,288 +114,297 @@ This function is called by:
 0002 <span class="comment">% Extract river discharges from the supplied river positions for the FVCOM</span>
 0003 <span class="comment">% grid in Mobj.</span>
 0004 <span class="comment">%</span>
-0005 <span class="comment">% get_FVCOM_rivers(Mobj, rivers, dist_thresh)</span>
+0005 <span class="comment">% get_FVCOM_rivers(Mobj, dist_thresh)</span>
 0006 <span class="comment">%</span>
 0007 <span class="comment">% DESCRIPTION:</span>
-0008 <span class="comment">%   For the positioins in fvcom_xy, find the nearest unstructured grid node</span>
-0009 <span class="comment">%   and extract the river discharge from polcoms_flow. If dist_thresh is</span>
-0010 <span class="comment">%   specified, the river positions must fall within the specified distance.</span>
-0011 <span class="comment">%   If multiple rivers are assigned to the same node, their discharges are</span>
-0012 <span class="comment">%   summed. The resulting river name is generated from the contributing</span>
-0013 <span class="comment">%   rives, separated by a hyphen.</span>
-0014 <span class="comment">%</span>
-0015 <span class="comment">% INPUT:</span>
-0016 <span class="comment">%   Mobj - MATLAB mesh object containing:</span>
-0017 <span class="comment">%       * have_lonlat - boolean to check for spherical coordinates.</span>
-0018 <span class="comment">%       * lon, lat - positions for the unstructured grid.</span>
-0019 <span class="comment">%       * tri - triangulation table for the unstructured grid.</span>
-0020 <span class="comment">%       * nVerts - number of nodes in the grid.</span>
-0021 <span class="comment">%       * read_obc_nodes - open boundary node IDs.</span>
-0022 <span class="comment">%       * rivers - river data struct with the following fields:</span>
-0023 <span class="comment">%           - year - start year of the river data time series.</span>
-0024 <span class="comment">%           - positions - river positions in lon, lat.</span>
-0025 <span class="comment">%           - names - list of river names (whose order must match the</span>
-0026 <span class="comment">%               positions in xy).</span>
-0027 <span class="comment">%           - discharge - river discharge data (again, order of columns</span>
-0028 <span class="comment">%               must match the positions in Mobj.rivers.positions).</span>
-0029 <span class="comment">%   dist_thresh - [optional] maximum distance away from a river node beyond</span>
-0030 <span class="comment">%       which the search for an FVCOM node is abandoned. Units in degrees.</span>
-0031 <span class="comment">%</span>
-0032 <span class="comment">% OUTPUT:</span>
-0033 <span class="comment">%   Mobj.river_flux - volume flux at the nodes within the model domain.</span>
-0034 <span class="comment">%   Mobj.river_nodes - node IDs for the rivers. At the moment, these are</span>
-0035 <span class="comment">%       point sources only. Eventually, some rivers may have to be split</span>
-0036 <span class="comment">%       over several nodes.</span>
-0037 <span class="comment">%   Mobj.river_names - river names which fall within the model domain. For</span>
-0038 <span class="comment">%       rivers where the discharge has been summed, the name is compoud,</span>
-0039 <span class="comment">%       with each contributing name separated by a hyphen (-).</span>
-0040 <span class="comment">%   Mobj.river_time - time series for the river discharge data</span>
-0041 <span class="comment">%</span>
-0042 <span class="comment">% EXAMPLE USAGE:</span>
-0043 <span class="comment">%   Mobj = get_FVCOM_rivers(Mobj, Mobj.rivers, 0.025)</span>
-0044 <span class="comment">%</span>
-0045 <span class="comment">% Author(s):</span>
-0046 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
-0047 <span class="comment">%</span>
-0048 <span class="comment">% Revision history:</span>
-0049 <span class="comment">%   2013-03-27 - First version.</span>
-0050 <span class="comment">%   2013-04-15 - Removed the code to load the positions and discharge data</span>
-0051 <span class="comment">%   into separate functions so that this function can be purely about</span>
-0052 <span class="comment">%   finding the closest locations and the summing of discharges (if</span>
-0053 <span class="comment">%   necessary). The downside is the order of the discharges (columns) must</span>
-0054 <span class="comment">%   match the position arrays.</span>
-0055 <span class="comment">%   2013-05-21 - Add check to avoid setting nodes as river nodes when that</span>
-0056 <span class="comment">%   node is part of only one element. If this is not added, then the model</span>
-0057 <span class="comment">%   fills up the element without moving the water out of that element,</span>
-0058 <span class="comment">%   eventually leading to a crash, which is obviously not ideal. The fix</span>
-0059 <span class="comment">%   searches for another node in the element which is part of at least two</span>
-0060 <span class="comment">%   elements, thereby avoiding the &quot;element filling&quot; issue. Also updated</span>
-0061 <span class="comment">%   the help to list all the required fields in the Mobj.</span>
-0062 <span class="comment">%</span>
-0063 <span class="comment">%==========================================================================</span>
-0064 
-0065 subname = <span class="string">'get_FVCOM_rivers'</span>;
-0066 
-0067 <span class="keyword">global</span> ftbverbose;
-0068 <span class="keyword">if</span> ftbverbose
-0069     fprintf([<span class="string">'\nbegin : '</span> subname <span class="string">'\n'</span>])
-0070 <span class="keyword">end</span>
+0008 <span class="comment">%   For the positions in Mobj.rivers.positions, find the nearest</span>
+0009 <span class="comment">%   unstructured grid node and extract the river discharge from</span>
+0010 <span class="comment">%   Mobj.rivers.discharge. If dist_thresh is specified, the river positions</span>
+0011 <span class="comment">%   must fall within the specified distance. If multiple rivers are</span>
+0012 <span class="comment">%   assigned to the same node, their discharges are summed. The resulting</span>
+0013 <span class="comment">%   river name is generated from the contributing rives, separated by a</span>
+0014 <span class="comment">%   hyphen.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% INPUT:</span>
+0017 <span class="comment">%   Mobj - MATLAB mesh object containing:</span>
+0018 <span class="comment">%       * have_lonlat - boolean to check for spherical coordinates.</span>
+0019 <span class="comment">%       * lon, lat - positions for the unstructured grid.</span>
+0020 <span class="comment">%       * tri - triangulation table for the unstructured grid.</span>
+0021 <span class="comment">%       * nVerts - number of nodes in the grid.</span>
+0022 <span class="comment">%       * read_obc_nodes - open boundary node IDs.</span>
+0023 <span class="comment">%       * rivers - river data struct with the following fields:</span>
+0024 <span class="comment">%           - year - start year of the river data time series.</span>
+0025 <span class="comment">%           - positions - river positions in lon, lat.</span>
+0026 <span class="comment">%           - names - list of river names (whose order must match the</span>
+0027 <span class="comment">%               positions in xy).</span>
+0028 <span class="comment">%           - discharge - river discharge data (again, order of columns</span>
+0029 <span class="comment">%               must match the positions in Mobj.rivers.positions).</span>
+0030 <span class="comment">%   dist_thresh - [optional] maximum distance away from a river node beyond</span>
+0031 <span class="comment">%       which the search for an FVCOM node is abandoned. Units in degrees.</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">% OUTPUT:</span>
+0034 <span class="comment">%   Mobj.river_flux - volume flux at the nodes within the model domain.</span>
+0035 <span class="comment">%   Mobj.river_nodes - node IDs for the rivers. At the moment, these are</span>
+0036 <span class="comment">%       point sources only. Eventually, some rivers may have to be split</span>
+0037 <span class="comment">%       over several nodes.</span>
+0038 <span class="comment">%   Mobj.river_names - river names which fall within the model domain. For</span>
+0039 <span class="comment">%       rivers where the discharge has been summed, the name is compoud,</span>
+0040 <span class="comment">%       with each contributing name separated by a hyphen (-).</span>
+0041 <span class="comment">%   Mobj.river_time - time series for the river discharge data</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">% EXAMPLE USAGE:</span>
+0044 <span class="comment">%   Mobj = get_FVCOM_rivers(Mobj, 0.025)</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">% Author(s):</span>
+0047 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0048 <span class="comment">%   Karen Amoudry (National Oceanography Centre, Liverpool)</span>
+0049 <span class="comment">%</span>
+0050 <span class="comment">% Revision history:</span>
+0051 <span class="comment">%   2013-03-27 - First version.</span>
+0052 <span class="comment">%   2013-04-15 - Removed the code to load the positions and discharge data</span>
+0053 <span class="comment">%   into separate functions so that this function can be purely about</span>
+0054 <span class="comment">%   finding the closest locations and the summing of discharges (if</span>
+0055 <span class="comment">%   necessary). The downside is the order of the discharges (columns) must</span>
+0056 <span class="comment">%   match the position arrays.</span>
+0057 <span class="comment">%   2013-05-21 - Add check to avoid setting nodes as river nodes when that</span>
+0058 <span class="comment">%   node is part of only one element. If this is not added, then the model</span>
+0059 <span class="comment">%   fills up the element without moving the water out of that element,</span>
+0060 <span class="comment">%   eventually leading to a crash, which is obviously not ideal. The fix</span>
+0061 <span class="comment">%   searches for another node in the element which is part of at least two</span>
+0062 <span class="comment">%   elements, thereby avoiding the &quot;element filling&quot; issue. Also updated</span>
+0063 <span class="comment">%   the help to list all the required fields in the Mobj.</span>
+0064 <span class="comment">%   2013-12-10 - Change the unique call to preserve the order by replacing</span>
+0065 <span class="comment">%   'first' with 'stable'. This requires a relatively modern MATLAB</span>
+0066 <span class="comment">%   (post-2011b).</span>
+0067 <span class="comment">%   2014-05-20 Set boolean flag to true to indicate rivers and add number</span>
+0068 <span class="comment">%   of fields to the Mobj.</span>
+0069 <span class="comment">%</span>
+0070 <span class="comment">%==========================================================================</span>
 0071 
-0072 <span class="comment">% Check inputs</span>
-0073 <span class="keyword">if</span> ~Mobj.have_lonlat
-0074     error(<span class="string">'Require unstructured grid positions in lon/lat format to compare against supplied river positions.'</span>)
-0075 <span class="keyword">end</span>
-0076 
-0077 <span class="comment">% Separate the inputs into separate arrays.</span>
-0078 fvcom_name = Mobj.rivers.names;
-0079 fvcom_xy = Mobj.rivers.positions;
-0080 polcoms_flow = Mobj.rivers.discharge;
-0081 
-0082 <span class="comment">% We have to be careful because POLCOMS has duplicate river names.</span>
-0083 <span class="comment">%</span>
-0084 <span class="comment">%   &quot;This has made a lot of people very angry and has been widely regarded</span>
-0085 <span class="comment">%   as a bad move.&quot;</span>
-0086 <span class="comment">%</span>
-0087 <span class="comment">% For duplicates, we need, therefore, to work out a way to handle them</span>
-0088 <span class="comment">% elegantly. We will assume that rivers with the same name are close to one</span>
-0089 <span class="comment">% another. As such, we'll sum their discharges.</span>
-0090 [~, di] = unique(fvcom_name, <span class="string">'first'</span>);
-0091 fv_dupes = 1:length(fvcom_name);
-0092 fv_dupes(di) = []; <span class="comment">% index of duplicates (does this work with more than two?)</span>
-0093 
-0094 <span class="comment">% Iterate through the list of duplicates and clear them out in the names,</span>
-0095 <span class="comment">% positions and discharge. We have to ensure that the order of the</span>
-0096 <span class="comment">% deduplicated positions and discharge are the same, otherwise we'll end up</span>
-0097 <span class="comment">% with the wrong discharge for a given river position, which would be bad.</span>
-0098 <span class="keyword">for</span> i = 1:length(fv_dupes)
-0099     dup_name = fvcom_name(fv_dupes(i));
-0100     didx = strmatch(dup_name, fvcom_name, <span class="string">'exact'</span>);
-0101     
-0102     <span class="comment">% Sum the duplicate rivers' data.</span>
-0103     dup_discharge = sum(polcoms_flow(:, didx), 2);
-0104     
-0105     <span class="comment">% Remove the original values and put the summed data at the end.</span>
-0106     polcoms_flow(:, didx) = [];
-0107     polcoms_flow = [polcoms_flow, dup_discharge];
+0072 subname = <span class="string">'get_FVCOM_rivers'</span>;
+0073 
+0074 <span class="keyword">global</span> ftbverbose
+0075 <span class="keyword">if</span> ftbverbose
+0076     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0077 <span class="keyword">end</span>
+0078 
+0079 <span class="comment">% Check inputs</span>
+0080 <span class="keyword">if</span> ~Mobj.have_lonlat
+0081     error(<span class="string">'Require unstructured grid positions in lon/lat format to compare against supplied river positions.'</span>)
+0082 <span class="keyword">end</span>
+0083 
+0084 <span class="comment">% Separate the inputs into separate arrays.</span>
+0085 fvcom_name = Mobj.rivers.names;
+0086 fvcom_xy = Mobj.rivers.positions;
+0087 polcoms_flow = Mobj.rivers.discharge;
+0088 
+0089 <span class="comment">% We have to be careful because POLCOMS has duplicate river names.</span>
+0090 <span class="comment">%</span>
+0091 <span class="comment">%   &quot;This has made a lot of people very angry and has been widely regarded</span>
+0092 <span class="comment">%   as a bad move.&quot;</span>
+0093 <span class="comment">%</span>
+0094 <span class="comment">% For duplicates, we need, therefore, to work out a way to handle them</span>
+0095 <span class="comment">% elegantly. We will assume that rivers with the same name are close to one</span>
+0096 <span class="comment">% another. As such, we'll sum their discharges.</span>
+0097 [~, di] = unique(fvcom_name, <span class="string">'stable'</span>); <span class="comment">% stable preserves order.</span>
+0098 fv_dupes = 1:length(fvcom_name);
+0099 fv_dupes(di) = []; <span class="comment">% index of duplicates (does this work with more than two?)</span>
+0100 
+0101 <span class="comment">% Iterate through the list of duplicates and clear them out in the names,</span>
+0102 <span class="comment">% positions and discharge. We have to ensure that the order of the</span>
+0103 <span class="comment">% deduplicated positions and discharge are the same, otherwise we'll end up</span>
+0104 <span class="comment">% with the wrong discharge for a given river position, which would be bad.</span>
+0105 <span class="keyword">for</span> i = 1:length(fv_dupes)
+0106     dup_name = fvcom_name(fv_dupes(i));
+0107     didx = strmatch(dup_name, fvcom_name, <span class="string">'exact'</span>);
 0108     
-0109     <span class="comment">% Now remove the duplicates from the FVCOM data.</span>
-0110     fvcom_name{length(fvcom_name) + 1} = fvcom_name{fv_dupes(i)};
-0111     fvcom_name(didx) = [];
-0112     fvcom_xy = [fvcom_xy; fvcom_xy(fv_dupes(i), :)];
-0113     fvcom_xy(didx, :) = [];
-0114 <span class="keyword">end</span>
-0115 
-0116 <span class="comment">% Get number of times and rivers from the deduplicated data.</span>
-0117 fv_nr = length(fvcom_name);
-0118 [pc_nt, ~] = size(polcoms_flow);
-0119 
-0120 clear didx dup_discharge
-0121 
+0109     <span class="comment">% Sum the duplicate rivers' data.</span>
+0110     dup_discharge = sum(polcoms_flow(:, didx), 2);
+0111     
+0112     <span class="comment">% Remove the original values and put the summed data at the end.</span>
+0113     polcoms_flow(:, didx) = [];
+0114     polcoms_flow = [polcoms_flow, dup_discharge];
+0115     
+0116     <span class="comment">% Now remove the duplicates from the FVCOM data.</span>
+0117     fvcom_name{length(fvcom_name) + 1} = fvcom_name{fv_dupes(i)};
+0118     fvcom_name(didx) = [];
+0119     fvcom_xy = [fvcom_xy; fvcom_xy(fv_dupes(i), :)];
+0120     fvcom_xy(didx, :) = [];
+0121 <span class="keyword">end</span>
 0122 
-0123 <span class="comment">% Check each location in the FVCOM rivers file against the grid in Mobj and</span>
-0124 <span class="comment">% for the indices within the dist_thresh, extract the relevant time series</span>
-0125 <span class="comment">% data.</span>
+0123 <span class="comment">% Get number of times and rivers from the deduplicated data.</span>
+0124 fv_nr = length(fvcom_name);
+0125 [pc_nt, ~] = size(polcoms_flow);
 0126 
-0127 vc = 0; <span class="comment">% valid FVCOM boundary node counter</span>
+0127 clear didx dup_discharge
 0128 
-0129 <span class="comment">% We need to find the unstructured grid boundary nodes and exclude the open</span>
-0130 <span class="comment">% boundary nodes from them. This will be our list of potential candidates</span>
-0131 <span class="comment">% for the river nodes (i.e. the land coastline).</span>
-0132 [~, ~, ~, bnd] = connectivity([Mobj.lon, Mobj.lat], Mobj.tri);
-0133 boundary_nodes = 1:Mobj.nVerts;
-0134 boundary_nodes = boundary_nodes(bnd);
-0135 coast_nodes = boundary_nodes(~ismember(boundary_nodes, [Mobj.read_obc_nodes{:}]));
-0136 tlon = Mobj.lon(coast_nodes);
-0137 tlat = Mobj.lat(coast_nodes);
-0138 
-0139 fv_obc = nan;
-0140 fvcom_names = cell(0);
-0141 fv_riv_idx = nan;
-0142 
-0143 <span class="keyword">for</span> ff = 1:fv_nr
-0144     <span class="comment">% Find the open boundary node closest to this river.</span>
-0145     fv_dist = sqrt( <span class="keyword">...</span>
-0146         (fvcom_xy(ff, 1) - Mobj.lon(coast_nodes)).^2 + <span class="keyword">...</span>
-0147         (fvcom_xy(ff, 2) - Mobj.lat(coast_nodes)).^2);
-0148     [c, idx] = min(fv_dist);
-0149     <span class="keyword">if</span> c &gt; dist_thresh &amp;&amp; dist_thresh ~= -1 <span class="comment">% -1 is for no distance check</span>
-0150         <span class="keyword">if</span> ftbverbose
-0151             fprintf(<span class="string">'\tskipping river %s (%f, %f)\n'</span>, fvcom_name{ff}, fvcom_xy(ff, 1), fvcom_xy(ff, 2))
-0152         <span class="keyword">end</span>
-0153         <span class="keyword">continue</span>
-0154     <span class="keyword">else</span>
-0155         <span class="keyword">if</span> ftbverbose
-0156             fprintf(<span class="string">'candidate river %s found (%f, %f)... '</span>, fvcom_name{ff}, fvcom_xy(ff, 1), fvcom_xy(ff, 2))
-0157         <span class="keyword">end</span>
-0158     <span class="keyword">end</span>
-0159 
-0160     vc = vc + 1;
-0161 
-0162     <span class="comment">% We need to make sure the element in which this node occurs does not</span>
-0163     <span class="comment">% have two land boundaries (otherwise the model sometimes just fills up</span>
-0164     <span class="comment">% that element without releasing the water into the adjacent element).</span>
-0165     
-0166     <span class="comment">% Find the other nodes which are joined to the node we've just found.</span>
-0167     <span class="comment">% We don't need the column to get the other nodes in the element, only</span>
-0168     <span class="comment">% the row is required.</span>
-0169     [row, ~] = find(Mobj.tri == coast_nodes(idx));
-0170     
-0171     <span class="keyword">if</span> length(row) == 1
-0172         <span class="comment">% This is a bad node because it is a part of only one element. The</span>
-0173         <span class="comment">% rivers need two adjacent elements to work reliably (?). So, we</span>
-0174         <span class="comment">% need to repeat the process above until we find a node that's</span>
-0175         <span class="comment">% connected to two elements. We'll try the other nodes in the</span>
-0176         <span class="comment">% current element before searching the rest of the coastline (which</span>
-0177         <span class="comment">% is computationally expensive).</span>
-0178         
-0179         <span class="comment">% Remove the current node index from the list of candidates (i.e.</span>
-0180         <span class="comment">% leave only the two other nodes in the element).</span>
-0181         mask = Mobj.tri(row, :) ~= coast_nodes(idx);
-0182         n_tri = Mobj.tri(row, mask);
-0183         
-0184         <span class="comment">% Remove values which aren't coastline values (we don't want to set</span>
-0185         <span class="comment">% the river node to an open water node).</span>
-0186         n_tri = intersect(n_tri, coast_nodes);
-0187 
-0188         <span class="comment">% Of the remaining nodes in the element, find the closest one to</span>
-0189         <span class="comment">% the original river location (in fvcom_xy).</span>
-0190         [~, n_idx] = sort(sqrt( <span class="keyword">...</span>
-0191             (fvcom_xy(ff, 1) - tlon(n_tri)).^2 <span class="keyword">...</span>
-0192             + (fvcom_xy(ff, 2) - tlat(n_tri)).^2));
-0193 
-0194         [row_2, ~] = find(Mobj.tri == n_tri(n_idx(1)));
-0195         <span class="keyword">if</span> length(n_idx) &gt; 1
-0196             [row_3, ~] = find(Mobj.tri == n_tri(n_idx(2)));
-0197         <span class="keyword">end</span>
-0198         <span class="comment">% Closest first</span>
-0199         <span class="keyword">if</span> length(row_2) &gt; 1
-0200             idx = find(coast_nodes == n_tri(n_idx(1)));
-0201         <span class="comment">% The other one (only if we have more than one node to consider).</span>
-0202         <span class="keyword">elseif</span> length(n_idx) &gt; 1 &amp;&amp; length(row_3) &gt; 1
-0203             idx = find(coast_nodes == n_tri(n_idx(2)));
-0204         <span class="comment">% OK, we need to search across all the other coastline nodes.</span>
-0205         <span class="keyword">else</span>
-0206             <span class="comment">% TODO: Implement a search of all the other coastline nodes.</span>
-0207             <span class="comment">% My testing indicates that we never get here (at least for the</span>
-0208             <span class="comment">% grids I've tested). I'd be interested to see the mesh which</span>
-0209             <span class="comment">% does get here...</span>
-0210             <span class="keyword">continue</span>
-0211         <span class="keyword">end</span>
-0212         
-0213     <span class="keyword">end</span>
-0214 
-0215     <span class="comment">% Add it to the list of valid rivers</span>
-0216     fv_obc(vc) = coast_nodes(idx);
-0217 
-0218     <span class="comment">% We are assuming that the river discharge data array y-dimension is</span>
-0219     <span class="comment">% ordered the same as the positions in fvcom_xy. If they are not, then</span>
-0220     <span class="comment">% the discharges for the rivers will be incorrect (i.e. you might put</span>
-0221     <span class="comment">% the Severn discharge somewhere in the Baltic).</span>
-0222     fvcom_names{vc} = fvcom_name{ff};
-0223     fv_riv_idx(vc) = ff;
-0224     fv_flow(:, vc) = polcoms_flow(:, ff);
-0225     <span class="keyword">if</span> ftbverbose
-0226         fprintf(<span class="string">'added (%f, %f).\n'</span>, Mobj.lon(fv_obc(vc)), Mobj.lat(fv_obc(vc)))
-0227     <span class="keyword">end</span>
-0228 <span class="keyword">end</span>
-0229 
-0230 <span class="comment">% Now we've got a list and some of the nodes will be duplicates. Sum the</span>
-0231 <span class="comment">% discharge values assigned to those nodes.</span>
-0232 fv_uniq_obc = unique(fv_obc);
-0233 
-0234 fv_uniq_flow = nan(pc_nt, length(fv_uniq_obc));
-0235 fv_uniq_names = cell(length(fv_uniq_obc), 1);
+0129 
+0130 <span class="comment">% Check each location in the FVCOM rivers file against the grid in Mobj and</span>
+0131 <span class="comment">% for the indices within the dist_thresh, extract the relevant time series</span>
+0132 <span class="comment">% data.</span>
+0133 
+0134 vc = 0; <span class="comment">% valid FVCOM boundary node counter</span>
+0135 
+0136 <span class="comment">% We need to find the unstructured grid boundary nodes and exclude the open</span>
+0137 <span class="comment">% boundary nodes from them. This will be our list of potential candidates</span>
+0138 <span class="comment">% for the river nodes (i.e. the land coastline).</span>
+0139 [~, ~, ~, bnd] = connectivity([Mobj.lon, Mobj.lat], Mobj.tri);
+0140 boundary_nodes = 1:Mobj.nVerts;
+0141 boundary_nodes = boundary_nodes(bnd);
+0142 coast_nodes = boundary_nodes(~ismember(boundary_nodes, [Mobj.read_obc_nodes{:}]));
+0143 tlon = Mobj.lon(coast_nodes);
+0144 tlat = Mobj.lat(coast_nodes);
+0145 
+0146 fv_obc = nan;
+0147 fvcom_names = cell(0);
+0148 fv_riv_idx = nan;
+0149 
+0150 <span class="keyword">for</span> ff = 1:fv_nr
+0151     <span class="comment">% Find the open boundary node closest to this river.</span>
+0152     fv_dist = sqrt( <span class="keyword">...</span>
+0153         (fvcom_xy(ff, 1) - Mobj.lon(coast_nodes)).^2 + <span class="keyword">...</span>
+0154         (fvcom_xy(ff, 2) - Mobj.lat(coast_nodes)).^2);
+0155     [c, idx] = min(fv_dist);
+0156     <span class="keyword">if</span> c &gt; dist_thresh &amp;&amp; dist_thresh ~= -1 <span class="comment">% -1 is for no distance check</span>
+0157         <span class="keyword">if</span> ftbverbose
+0158             fprintf(<span class="string">'\tskipping river %s (%f, %f)\n'</span>, fvcom_name{ff}, fvcom_xy(ff, 1), fvcom_xy(ff, 2))
+0159         <span class="keyword">end</span>
+0160         <span class="keyword">continue</span>
+0161     <span class="keyword">else</span>
+0162         <span class="keyword">if</span> ftbverbose
+0163             fprintf(<span class="string">'candidate river %s found (%f, %f)... '</span>, fvcom_name{ff}, fvcom_xy(ff, 1), fvcom_xy(ff, 2))
+0164         <span class="keyword">end</span>
+0165     <span class="keyword">end</span>
+0166 
+0167     vc = vc + 1;
+0168 
+0169     <span class="comment">% We need to make sure the element in which this node occurs does not</span>
+0170     <span class="comment">% have two land boundaries (otherwise the model sometimes just fills up</span>
+0171     <span class="comment">% that element without releasing the water into the adjacent element).</span>
+0172     
+0173     <span class="comment">% Find the other nodes which are joined to the node we've just found.</span>
+0174     <span class="comment">% We don't need the column to get the other nodes in the element, only</span>
+0175     <span class="comment">% the row is required.</span>
+0176     [row, ~] = find(Mobj.tri == coast_nodes(idx));
+0177     
+0178     <span class="keyword">if</span> length(row) == 1
+0179         <span class="comment">% This is a bad node because it is a part of only one element. The</span>
+0180         <span class="comment">% rivers need two adjacent elements to work reliably (?). So, we</span>
+0181         <span class="comment">% need to repeat the process above until we find a node that's</span>
+0182         <span class="comment">% connected to two elements. We'll try the other nodes in the</span>
+0183         <span class="comment">% current element before searching the rest of the coastline (which</span>
+0184         <span class="comment">% is computationally expensive).</span>
+0185         
+0186         <span class="comment">% Remove the current node index from the list of candidates (i.e.</span>
+0187         <span class="comment">% leave only the two other nodes in the element).</span>
+0188         mask = Mobj.tri(row, :) ~= coast_nodes(idx);
+0189         n_tri = Mobj.tri(row, mask);
+0190         
+0191         <span class="comment">% Remove values which aren't coastline values (we don't want to set</span>
+0192         <span class="comment">% the river node to an open water node).</span>
+0193         n_tri = intersect(n_tri, coast_nodes);
+0194 
+0195         <span class="comment">% Of the remaining nodes in the element, find the closest one to</span>
+0196         <span class="comment">% the original river location (in fvcom_xy).</span>
+0197         [~, n_idx] = sort(sqrt( <span class="keyword">...</span>
+0198             (fvcom_xy(ff, 1) - Mobj.lon(n_tri)).^2 <span class="keyword">...</span>
+0199             + (fvcom_xy(ff, 2) - Mobj.lon(n_tri)).^2));
+0200 
+0201         [row_2, ~] = find(Mobj.tri == n_tri(n_idx(1)));
+0202         <span class="keyword">if</span> length(n_idx) &gt; 1
+0203             [row_3, ~] = find(Mobj.tri == n_tri(n_idx(2)));
+0204         <span class="keyword">end</span>
+0205         <span class="comment">% Closest first</span>
+0206         <span class="keyword">if</span> length(row_2) &gt; 1
+0207             idx = find(coast_nodes == n_tri(n_idx(1)));
+0208         <span class="comment">% The other one (only if we have more than one node to consider).</span>
+0209         <span class="keyword">elseif</span> length(n_idx) &gt; 1 &amp;&amp; length(row_3) &gt; 1
+0210             idx = find(coast_nodes == n_tri(n_idx(2)));
+0211         <span class="comment">% OK, we need to search across all the other coastline nodes.</span>
+0212         <span class="keyword">else</span>
+0213             <span class="comment">% TODO: Implement a search of all the other coastline nodes.</span>
+0214             <span class="comment">% My testing indicates that we never get here (at least for the</span>
+0215             <span class="comment">% grids I've tested). I'd be interested to see the mesh which</span>
+0216             <span class="comment">% does get here...</span>
+0217             <span class="keyword">continue</span>
+0218         <span class="keyword">end</span>
+0219         
+0220     <span class="keyword">end</span>
+0221 
+0222     <span class="comment">% Add it to the list of valid rivers</span>
+0223     fv_obc(vc) = coast_nodes(idx);
+0224 
+0225     <span class="comment">% We are assuming that the river discharge data array y-dimension is</span>
+0226     <span class="comment">% ordered the same as the positions in fvcom_xy. If they are not, then</span>
+0227     <span class="comment">% the discharges for the rivers will be incorrect (i.e. you might put</span>
+0228     <span class="comment">% the Severn discharge somewhere in the Baltic).</span>
+0229     fvcom_names{vc} = fvcom_name{ff};
+0230     fv_riv_idx(vc) = ff;
+0231     fv_flow(:, vc) = polcoms_flow(:, ff);
+0232     <span class="keyword">if</span> ftbverbose
+0233         fprintf(<span class="string">'added (%f, %f).\n'</span>, Mobj.lon(fv_obc(vc)), Mobj.lat(fv_obc(vc)))
+0234     <span class="keyword">end</span>
+0235 <span class="keyword">end</span>
 0236 
-0237 fv_idx = 1:length(fvcom_names);
-0238 <span class="keyword">for</span> nn = 1:length(fv_uniq_obc)
-0239     
-0240     dn = fv_idx(fv_obc == fv_uniq_obc(nn));
-0241     
-0242     fv_uniq_flow(:, nn) = sum(fv_flow(:, dn), 2);
-0243     <span class="comment">% Concatenate the river names so we know at least which rivers'</span>
-0244     <span class="comment">% discharges have been summed.</span>
-0245     s = fvcom_names(dn);
-0246     s = [sprintf(<span class="string">'%s-'</span>, s{1:end-1}, s{end})];
-0247     fv_uniq_names{nn} = s(1:end-1); <span class="comment">% lose the trailing -.</span>
-0248 
-0249 <span class="keyword">end</span>
-0250 
-0251 <span class="comment">% Assign the relevant arrays to the Mobj.</span>
-0252 Mobj.river_nodes = fv_uniq_obc;
-0253 Mobj.river_flux = fv_uniq_flow;
-0254 Mobj.river_names = fv_uniq_names;
+0237 <span class="comment">% Now we've got a list and some of the nodes will be duplicates. Sum the</span>
+0238 <span class="comment">% discharge values assigned to those nodes.</span>
+0239 fv_uniq_obc = unique(fv_obc);
+0240 
+0241 fv_uniq_flow = nan(pc_nt, length(fv_uniq_obc));
+0242 fv_uniq_names = cell(length(fv_uniq_obc), 1);
+0243 
+0244 fv_idx = 1:length(fvcom_names);
+0245 <span class="keyword">for</span> nn = 1:length(fv_uniq_obc)
+0246     
+0247     dn = fv_idx(fv_obc == fv_uniq_obc(nn));
+0248     
+0249     fv_uniq_flow(:, nn) = sum(fv_flow(:, dn), 2);
+0250     <span class="comment">% Concatenate the river names so we know at least which rivers'</span>
+0251     <span class="comment">% discharges have been summed.</span>
+0252     s = fvcom_names(dn);
+0253     s = [sprintf(<span class="string">'%s-'</span>, s{1:end-1}, s{end})];
+0254     fv_uniq_names{nn} = s(1:end-1); <span class="comment">% lose the trailing -.</span>
 0255 
-0256 <span class="comment">% Create a Modified Julian Day time series starting at January 1st for the</span>
-0257 <span class="comment">% year in Mobj.rivers.year.</span>
-0258 rtimes = datevec( <span class="keyword">...</span>
-0259     datenum([Mobj.rivers.year, 1, 1, 0, 0, 0]): <span class="keyword">...</span>
-0260     datenum([Mobj.rivers.year, 1, 1, 0, 0, 0]) + pc_nt - 1 <span class="keyword">...</span>
-0261     );
-0262 Mobj.river_time = nan(pc_nt, 1);
-0263 <span class="keyword">for</span> tt = 1:pc_nt
-0264     Mobj.river_time(tt) = greg2mjulian( <span class="keyword">...</span>
-0265         rtimes(tt, 1), rtimes(tt, 2), rtimes(tt, 3), <span class="keyword">...</span>
-0266         rtimes(tt, 4), rtimes(tt, 5), rtimes(tt, 6) <span class="keyword">...</span>
-0267         );
-0268 <span class="keyword">end</span>
-0269 
-0270 <span class="comment">% Figure to check what's going on with identifying river nodes</span>
-0271 <span class="comment">% figure</span>
-0272 <span class="comment">% plot(fvcom_xy(:, 1), fvcom_xy(:, 2), 'o', 'MarkerFaceColor', 'b')</span>
-0273 <span class="comment">% hold on</span>
-0274 <span class="comment">% plot(Mobj.lon(bnd), Mobj.lat(bnd), 'go', 'MarkerFaceColor', 'g')</span>
-0275 <span class="comment">% axis('equal', 'tight')</span>
-0276 <span class="comment">% plot(Mobj.lon(coast_nodes), Mobj.lat(coast_nodes), 'ro')</span>
-0277 <span class="comment">% plot(Mobj.lon(Mobj.river_nodes), Mobj.lat(Mobj.river_nodes), 'ko', 'MarkerFaceColor', 'k')</span>
-0278 <span class="comment">% text(Mobj.lon(Mobj.river_nodes) + 0.025, Mobj.lat(Mobj.river_nodes) + 0.025, Mobj.river_names)</span>
-0279 <span class="comment">% axis([min(Mobj.lon), max(Mobj.lon), min(Mobj.lat), max(Mobj.lat)])</span>
-0280 <span class="comment">% legend('POLCOMS nodes', 'Grid boundary', 'Land nodes', 'Selected nodes', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')</span>
-0281 <span class="comment">% legend('BoxOff')</span>
-0282 
-0283 
-0284 <span class="keyword">if</span> ftbverbose
-0285     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0286 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0256 <span class="keyword">end</span>
+0257 
+0258 <span class="comment">% Assign the relevant arrays to the Mobj.</span>
+0259 Mobj.river_nodes = fv_uniq_obc;
+0260 Mobj.river_flux = fv_uniq_flow;
+0261 Mobj.river_names = fv_uniq_names;
+0262 Mobj.have_rivers = true;
+0263 Mobj.nRivers = length(fv_uniq_obc);
+0264 
+0265 <span class="comment">% Create a Modified Julian Day time series starting at January 1st for the</span>
+0266 <span class="comment">% year in Mobj.rivers.year.</span>
+0267 rtimes = datevec( <span class="keyword">...</span>
+0268     datenum([Mobj.rivers.year, 1, 1, 0, 0, 0]): <span class="keyword">...</span>
+0269     datenum([Mobj.rivers.year, 1, 1, 0, 0, 0]) + pc_nt - 1 <span class="keyword">...</span>
+0270     );
+0271 Mobj.river_time = nan(pc_nt, 1);
+0272 <span class="keyword">for</span> tt = 1:pc_nt
+0273     Mobj.river_time(tt) = greg2mjulian( <span class="keyword">...</span>
+0274         rtimes(tt, 1), rtimes(tt, 2), rtimes(tt, 3), <span class="keyword">...</span>
+0275         rtimes(tt, 4), rtimes(tt, 5), rtimes(tt, 6) <span class="keyword">...</span>
+0276         );
+0277 <span class="keyword">end</span>
+0278 
+0279 <span class="comment">% Figure to check what's going on with identifying river nodes</span>
+0280 <span class="comment">% figure</span>
+0281 <span class="comment">% plot(fvcom_xy(:, 1), fvcom_xy(:, 2), 'o', 'MarkerFaceColor', 'b')</span>
+0282 <span class="comment">% hold on</span>
+0283 <span class="comment">% plot(Mobj.lon(bnd), Mobj.lat(bnd), 'go', 'MarkerFaceColor', 'g')</span>
+0284 <span class="comment">% axis('equal', 'tight')</span>
+0285 <span class="comment">% plot(Mobj.lon(coast_nodes), Mobj.lat(coast_nodes), 'ro')</span>
+0286 <span class="comment">% plot(Mobj.lon(Mobj.river_nodes), Mobj.lat(Mobj.river_nodes), 'ko', 'MarkerFaceColor', 'k')</span>
+0287 <span class="comment">% text(Mobj.lon(Mobj.river_nodes) + 0.025, Mobj.lat(Mobj.river_nodes) + 0.025, Mobj.river_names)</span>
+0288 <span class="comment">% axis([min(Mobj.lon), max(Mobj.lon), min(Mobj.lat), max(Mobj.lat)])</span>
+0289 <span class="comment">% legend('POLCOMS nodes', 'Grid boundary', 'Land nodes', 'Selected nodes', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')</span>
+0290 <span class="comment">% legend('BoxOff')</span>
+0291 
+0292 
+0293 <span class="keyword">if</span> ftbverbose
+0294     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0295 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

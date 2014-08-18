@@ -1,0 +1,554 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_HYCOM_tsobc</title>
+  <meta name="keywords" content="get_HYCOM_tsobc">
+  <meta name="description" content="Read temperature, salinity, u and v data from the HYCOM model output">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_HYCOM_tsobc.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_HYCOM_tsobc
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Read temperature, salinity, u and v data from the HYCOM model output</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Read temperature, salinity, u and v data from the HYCOM model output
+ structure and interpolate onto the open boundaries in Mobj.
+
+ function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)
+
+ DESCRIPTION:
+    Interpolate temperature and salinity values onto the FVCOM open
+    boundaries at all sigma levels.
+
+ INPUT:
+   Mobj    = MATLAB mesh structure which must contain:
+               - Mobj.siglayz - sigma layer depths for all model nodes.
+               - Mobj.lon, Mobj.lat - node coordinates (lat/long).
+               - Mobj.obc_nodes - list of open boundary node inidices.
+               - Mobj.nObcNodes - number of nodes in each open boundary.
+   hycom   = Struct with HYCOM data covering the model domain. Unless
+             varlist is specified (see below), all 4D fields will be
+             interpolated onto the open boundaries (1-3D data will be
+             ignored).
+   varlist = [optional] cell array of variable (field) names to use from
+             hycom.
+
+ OUTPUT:
+    Mobj = MATLAB structure with new fields whose names match those given
+    in hycom. The fields have sizes (sum(Mobj.nObcNodes), sigma, time).
+    The time dimension is determined based on the number of time steps in
+    hycom. The ts_time variable is just the input file times in Modified
+    Julian Day.
+
+ EXAMPLE USAGE
+    hycom = get_HYCOM_forcing(Mobj, [51500, 51531]);
+    Mobj = get_HYCOM_tsobc(Mobj, hycom, {'u', 'v', 'temperature', 'salinity'})
+
+ Author(s):
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+    2013-09-03 First version based on get_POLCOMS_tsobc.m.
+    2014-04-28 Update interp1 function to use pchip instead of csap as the
+    latter will be removed in a future version of MATLAB and the
+    innumerable warnings were doing my nut in. I checked the output using
+    the new interp1 call and it's identical to the old version. Also
+    update the parallel toolbox stuff for the same reason (future
+    removal).
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)</a>
+0002 <span class="comment">% Read temperature, salinity, u and v data from the HYCOM model output</span>
+0003 <span class="comment">% structure and interpolate onto the open boundaries in Mobj.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Interpolate temperature and salinity values onto the FVCOM open</span>
+0009 <span class="comment">%    boundaries at all sigma levels.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT:</span>
+0012 <span class="comment">%   Mobj    = MATLAB mesh structure which must contain:</span>
+0013 <span class="comment">%               - Mobj.siglayz - sigma layer depths for all model nodes.</span>
+0014 <span class="comment">%               - Mobj.lon, Mobj.lat - node coordinates (lat/long).</span>
+0015 <span class="comment">%               - Mobj.obc_nodes - list of open boundary node inidices.</span>
+0016 <span class="comment">%               - Mobj.nObcNodes - number of nodes in each open boundary.</span>
+0017 <span class="comment">%   hycom   = Struct with HYCOM data covering the model domain. Unless</span>
+0018 <span class="comment">%             varlist is specified (see below), all 4D fields will be</span>
+0019 <span class="comment">%             interpolated onto the open boundaries (1-3D data will be</span>
+0020 <span class="comment">%             ignored).</span>
+0021 <span class="comment">%   varlist = [optional] cell array of variable (field) names to use from</span>
+0022 <span class="comment">%             hycom.</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% OUTPUT:</span>
+0025 <span class="comment">%    Mobj = MATLAB structure with new fields whose names match those given</span>
+0026 <span class="comment">%    in hycom. The fields have sizes (sum(Mobj.nObcNodes), sigma, time).</span>
+0027 <span class="comment">%    The time dimension is determined based on the number of time steps in</span>
+0028 <span class="comment">%    hycom. The ts_time variable is just the input file times in Modified</span>
+0029 <span class="comment">%    Julian Day.</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% EXAMPLE USAGE</span>
+0032 <span class="comment">%    hycom = get_HYCOM_forcing(Mobj, [51500, 51531]);</span>
+0033 <span class="comment">%    Mobj = get_HYCOM_tsobc(Mobj, hycom, {'u', 'v', 'temperature', 'salinity'})</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">% Author(s):</span>
+0036 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">% Revision history</span>
+0039 <span class="comment">%    2013-09-03 First version based on get_POLCOMS_tsobc.m.</span>
+0040 <span class="comment">%    2014-04-28 Update interp1 function to use pchip instead of csap as the</span>
+0041 <span class="comment">%    latter will be removed in a future version of MATLAB and the</span>
+0042 <span class="comment">%    innumerable warnings were doing my nut in. I checked the output using</span>
+0043 <span class="comment">%    the new interp1 call and it's identical to the old version. Also</span>
+0044 <span class="comment">%    update the parallel toolbox stuff for the same reason (future</span>
+0045 <span class="comment">%    removal).</span>
+0046 <span class="comment">%</span>
+0047 <span class="comment">%==========================================================================</span>
+0048 
+0049 subname = <span class="string">'get_HYCOM_tsobc'</span>;
+0050 
+0051 <span class="keyword">global</span> ftbverbose;
+0052 <span class="keyword">if</span> ftbverbose
+0053     fprintf(<span class="string">'\n'</span>)
+0054     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0055 <span class="keyword">end</span>
+0056 
+0057 wasOpened = false;
+0058 <span class="keyword">if</span> license(<span class="string">'test'</span>, <span class="string">'Distrib_Computing_Toolbox'</span>)
+0059     <span class="comment">% We have the Parallel Computing Toolbox, so launch a bunch of workers.</span>
+0060     <span class="keyword">try</span>
+0061         <span class="comment">% New version for MATLAB 2014a (I think) onwards.</span>
+0062         <span class="keyword">if</span> isempty(gcp(<span class="string">'nocreate'</span>))
+0063             pool = parpool(<span class="string">'local'</span>);
+0064             wasOpened = true;
+0065         <span class="keyword">end</span>
+0066     <span class="keyword">catch</span>
+0067         <span class="comment">% Version for pre-2014a MATLAB.</span>
+0068         <span class="keyword">if</span> matlabpool(<span class="string">'size'</span>) == 0
+0069             <span class="comment">% Force pool to be local in case we have remote pools available.</span>
+0070             matlabpool open local
+0071             wasOpened = true;
+0072         <span class="keyword">end</span>
+0073     <span class="keyword">end</span>
+0074 <span class="keyword">end</span>
+0075 
+0076 <span class="keyword">if</span> nargin == 2
+0077     fields = fieldnames(hycom);
+0078 <span class="keyword">else</span>
+0079     <span class="comment">% We always want Depth because we need it to interpolate the vertical</span>
+0080     <span class="comment">% component.</span>
+0081     fields = unique([<span class="string">'Depth'</span>, varlist]);
+0082 <span class="keyword">end</span>
+0083 
+0084 assert(isfield(hycom, <span class="string">'Depth'</span>), <span class="string">'Require a depth vector to interpolate vertically.'</span>)
+0085 
+0086 <span class="comment">% Find the first 4D array and use it to get the number of vertical levels</span>
+0087 <span class="comment">% and time steps.</span>
+0088 <span class="keyword">for</span> ff = 1:length(fields)
+0089     <span class="keyword">if</span> isfield(hycom.(fields{ff}), <span class="string">'data'</span>) &amp;&amp; ndims(hycom.(fields{ff}).data) &gt; 3
+0090         [nx, ny, nz, nt] = size(hycom.(fields{ff}).data);
+0091         <span class="keyword">break</span>
+0092     <span class="keyword">end</span>
+0093 <span class="keyword">end</span>
+0094 
+0095 <span class="comment">% Use the existing rectangular arrays for the nearest point lookup.</span>
+0096 [lon, lat] = deal(hycom.lon, hycom.lat);
+0097 
+0098 <span class="comment">%oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);</span>
+0099 <span class="comment">% Change the way the nodes are listed to match the order in the</span>
+0100 <span class="comment">% Casename_obc.dat file.</span>
+0101 tmpObcNodes = Mobj.obc_nodes';
+0102 oNodes = tmpObcNodes(tmpObcNodes ~= 0)';
+0103 
+0104 fvlon = Mobj.lon(oNodes);
+0105 fvlat = Mobj.lat(oNodes);
+0106 
+0107 <span class="comment">% Number of boundary nodes</span>
+0108 nf = sum(Mobj.nObcNodes);
+0109 <span class="comment">% Number of sigma layers.</span>
+0110 fz = size(Mobj.siglayz, 2);
+0111 
+0112 
+0113 <span class="comment">% Make a 3D array of the HYCOM depths and mask where we don't have data.</span>
+0114 <span class="comment">% This can then be used in the interpolation instead of trying to deal with</span>
+0115 <span class="comment">% this on the fly.</span>
+0116 hdepth = permute(repmat(hycom.Depth.data, [1, nx, ny]), [2, 3, 1]);
+0117 mask = hycom.(fields{ff}).data(:, :, :, 1) &gt; 1.26e29;
+0118 <span class="comment">% Used to use the landmask to check whether to extrapolate data onto land.</span>
+0119 <span class="comment">% Realised this is no longer necessary, so comment this out for future</span>
+0120 <span class="comment">% removal.</span>
+0121 <span class="comment">% hdepth(mask) = nan;</span>
+0122 <span class="comment">% landmask = hycom.(fields{ff}).data(:, :, 1, 1) &gt; 1.26e29;</span>
+0123 
+0124 <span class="keyword">if</span> ftbverbose
+0125     tic
+0126 <span class="keyword">end</span>
+0127 <span class="keyword">for</span> v = 1:length(fields)
+0128 
+0129     <span class="keyword">if</span> ~(isfield(hycom.(fields{v}), <span class="string">'data'</span>) &amp;&amp; ndims(hycom.(fields{v}).data) &gt; 3)
+0130         <span class="keyword">continue</span>
+0131     <span class="keyword">end</span>
+0132 
+0133     fvtemp = nan(nf, fz, nt); <span class="comment">% FVCOM interpolated data</span>
+0134 
+0135     <span class="keyword">for</span> t = 1:nt
+0136 
+0137         <span class="keyword">if</span> ftbverbose
+0138             fprintf(<span class="string">'%s : %i of %i %s timesteps... '</span>, subname, t, nt, fields{v})
+0139         <span class="keyword">end</span>
+0140         <span class="comment">% Get the current 3D array of HYCOM results.</span>
+0141         pctemp3 = hycom.(fields{v}).data(:, :, :, t);
+0142 
+0143         <span class="comment">% Preallocate the intermediate results array.</span>
+0144         itempz = nan(nf, nz);
+0145 
+0146         <span class="keyword">for</span> j = 1:nz
+0147             <span class="comment">% Now extract the relevant layer from the 3D subsets.</span>
+0148             pctemp2 = pctemp3(:, :, j);
+0149 
+0150             <span class="comment">% Create new arrays which will be flattened when masking (below).</span>
+0151             tpctemp2 = pctemp2(:);
+0152             tlon = lon(:);
+0153             tlat = lat(:);
+0154 
+0155             <span class="comment">% Create and apply a mask to remove values outside the domain. This</span>
+0156             <span class="comment">% inevitably flattens the arrays, but it shouldn't be a problem</span>
+0157             <span class="comment">% since we'll be searching for the closest values in such a manner</span>
+0158             <span class="comment">% as is appropriate for an unstructured grid (i.e. we're assuming</span>
+0159             <span class="comment">% the HYCOM data is irregularly sampled and interpolation with a</span>
+0160             <span class="comment">% triangulation).</span>
+0161             mask = tpctemp2 &gt; 1.26e29;
+0162             tpctemp2(mask) = [];
+0163 
+0164             <span class="comment">% Also apply the masks to the position arrays so we can't even find</span>
+0165             <span class="comment">% positions outside the domain, effectively meaning if a value is</span>
+0166             <span class="comment">% outside the domain, the nearest value to the boundary node will</span>
+0167             <span class="comment">% be used.</span>
+0168             tlon(mask) = [];
+0169             tlat(mask) = [];
+0170 
+0171             <span class="comment">% If the HYCOM depths are now below the maximum depth in the</span>
+0172             <span class="comment">% model domain, we'll have no valid data, so skip the</span>
+0173             <span class="comment">% interpolation and just leave the NaNs in the itempz array.</span>
+0174             <span class="keyword">if</span> isempty(tlon) &amp;&amp; isempty(tlat)
+0175                 <span class="keyword">continue</span>
+0176             <span class="keyword">end</span>
+0177 
+0178             <span class="comment">% Preallocate the intermediate results array.</span>
+0179             itempobc = nan(nf, 1);
+0180 
+0181             <span class="comment">% Speed up the tightest loop with a parallelized loop.</span>
+0182             parfor i = 1:nf
+0183                 fx = fvlon(i);
+0184                 fy = fvlat(i);
+0185 
+0186                 [~, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
+0187                 <span class="comment">% Get the n nearest nodes from HYCOM data (more? fewer?).</span>
+0188                 np = 16;
+0189                 <span class="keyword">if</span> length(ii) &lt; np;
+0190                     <span class="comment">% Reset np to the number of points we actually have.</span>
+0191                     np = length(ii);
+0192                 <span class="keyword">end</span>
+0193                 ixy = ii(1:np);
+0194 
+0195                 <span class="comment">% If the minimum distance away is greater than three times</span>
+0196                 <span class="comment">% the HYCOM grid resolution, skip this point at this</span>
+0197                 <span class="comment">% vertical level.</span>
+0198                 <span class="comment">%if min(dist) &gt; 3 * hdx</span>
+0199                 <span class="comment">%    continue</span>
+0200                 <span class="comment">%end</span>
+0201 
+0202                 <span class="comment">% Get the variables into static variables for the</span>
+0203                 <span class="comment">% parallelisation.</span>
+0204                 plon = tlon(ixy);
+0205                 plat = tlat(ixy);
+0206                 ptemp = tpctemp2(ixy);
+0207 
+0208                 <span class="comment">% Use a triangulation to do the horizontal interpolation if</span>
+0209                 <span class="comment">% we have enough points, otherwise take the mean of the two</span>
+0210                 <span class="comment">% values.</span>
+0211                 <span class="keyword">if</span> length(plon) &lt; 3
+0212                     itempobc(i) = mean(ptemp);
+0213                 <span class="keyword">else</span>
+0214                     tritemp = TriScatteredInterp(plon, plat, ptemp, <span class="string">'natural'</span>);
+0215                     itempobc(i) = tritemp(fx, fy);
+0216                 <span class="keyword">end</span>
+0217 
+0218                 <span class="keyword">if</span> isnan(itempobc(i))
+0219                     <span class="comment">% Use the surface layer as the canonical land mask and</span>
+0220                     <span class="comment">% check that the issue here is not just that the open</span>
+0221                     <span class="comment">% boundary node is shallower than this layer's depth.</span>
+0222                     <span class="comment">% In the case where we're at the surface, we always</span>
+0223                     <span class="comment">% want a value, so use the closest value, otherwise we</span>
+0224                     <span class="comment">% can skip this data and leave it as NaN. The vertical</span>
+0225                     <span class="comment">% interpolation will strip out the NaN depths so we</span>
+0226                     <span class="comment">% shouldn't have any problems from that perspective.</span>
+0227 
+0228                     <span class="comment">% I used to check we were on land, but really,</span>
+0229                     <span class="comment">% itempobc(i) will only equal NaN if we're on land for</span>
+0230                     <span class="comment">% this layer. This is only a problem when we're at the</span>
+0231                     <span class="comment">% surface as we always need at least one value to do</span>
+0232                     <span class="comment">% the vertical interpolation. So, check if we're at the</span>
+0233                     <span class="comment">% surface and if so, grab the nearest point. Otherwise,</span>
+0234                     <span class="comment">% leave the NaN in place.</span>
+0235                     <span class="comment">%[~, jj] = min(sqrt((lon(:) - fx).^2 + (lat(:) - fy).^2));</span>
+0236                     <span class="comment">%[ir, ic] = ind2sub(size(lon), jj);</span>
+0237                     <span class="comment">%if landmask(ir, ic) == 1 &amp;&amp; j == 1</span>
+0238                     <span class="keyword">if</span> j == 1
+0239                         <span class="comment">%fprintf('Sea surface or on land (j = %i, lon: %.5f, lat: %.5f)\n', j, lon(ir, ic), lat(ir, ic))</span>
+0240                         itempobc(i) = tpctemp2(ii(1));
+0241 
+0242                         <span class="comment">%clf</span>
+0243                         <span class="comment">%pcolor(hycom.lon, hycom.lat, landmask * 1); colorbar; hold on</span>
+0244                         <span class="comment">%plot(lon(ir, ic), lat(ir, ic), 'ko')</span>
+0245                         <span class="comment">%plot(fx, fy, 'rx')</span>
+0246                         <span class="comment">%plot(tlon(ii(1)), tlat(ii(1)), 'gs')</span>
+0247                         <span class="comment">%axis('square')</span>
+0248                         <span class="comment">%axis([fx - 1.5, fx + 1.5, fy - 1.5, fy + 1.5])</span>
+0249                         <span class="comment">%legend('Land mask', 'Mask test', 'FVCOM node', 'Nearest valid', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')</span>
+0250                         <span class="comment">%legend('BoxOff')</span>
+0251                     <span class="keyword">end</span>
+0252                 <span class="keyword">end</span>
+0253             <span class="keyword">end</span>
+0254 
+0255             <span class="comment">% Put the results in the intermediate array.</span>
+0256             itempz(:, j) = itempobc;
+0257 
+0258         <span class="keyword">end</span>
+0259 
+0260         <span class="comment">% If you want to check the interpolation has worked properly:</span>
+0261         <span class="comment">% xx = repmat(fvlon, [1, nz]);</span>
+0262         <span class="comment">% yy = repmat(fvlat, [1, nz]);</span>
+0263         <span class="comment">% zz = repmat(-hycom.Depth.data, [1, nf])';</span>
+0264         <span class="comment">% dd = nanmax(hdepth, [], 3);</span>
+0265         <span class="comment">% cc = itempz;</span>
+0266         <span class="comment">% mm = ~isnan(cc);</span>
+0267         <span class="comment">% ffx = repmat(fvlon, [1, fz]);</span>
+0268         <span class="comment">% ffy = repmat(fvlat, [1, fz]);</span>
+0269         <span class="comment">% ff = Mobj.siglayz(oNodes, :);</span>
+0270         <span class="comment">% figure(10)</span>
+0271         <span class="comment">% clf</span>
+0272         <span class="comment">% scatter3(xx(mm), yy(mm), zz(mm), 40, cc(mm), 'filled')</span>
+0273         <span class="comment">% hold on</span>
+0274         <span class="comment">% scatter3(hycom.lon(:), hycom.lat(:), -dd(:), 40, 'c.')</span>
+0275         <span class="comment">% scatter3(ffx(:), ffy(:), ff(:), 'k.')</span>
+0276         <span class="comment">% colorbar</span>
+0277         <span class="comment">% zlim([-300, 0])</span>
+0278 
+0279         <span class="comment">% Now we've interpolated in space, we can interpolate the z-values</span>
+0280         <span class="comment">% to the sigma depths.</span>
+0281 
+0282         <span class="comment">% Preallocate the output arrays</span>
+0283         fvtempz = nan(nf, fz);
+0284 
+0285         <span class="keyword">for</span> pp = 1:nf
+0286             <span class="comment">% Get the FVCOM depths at this node</span>
+0287             tfz = Mobj.siglayz(oNodes(pp), :);
+0288 
+0289             <span class="comment">% The HYCOM data is unusual in that the depths are fixed and</span>
+0290             <span class="comment">% data are only saved at the depths shallower than the</span>
+0291             <span class="comment">% bathymetry. As such, we get NaN values below the water depth</span>
+0292             <span class="comment">% and we need to filter those out here.</span>
+0293 
+0294             <span class="comment">% Find the HYCOM depths which cover the modelled depth range.</span>
+0295             tpz = -hycom.Depth.data;
+0296             <span class="comment">% Mask the HYCOM depths with the data array at this node.</span>
+0297             mm = isnan(itempz(pp, :));
+0298             tpz(mm) = [];
+0299 
+0300             <span class="comment">% If HYCOM has a single value, just repeat it across all depth</span>
+0301             <span class="comment">% values.</span>
+0302             <span class="keyword">if</span> length(tpz) == 1;
+0303                 fvtempz(pp, :) = repmat(itempz(pp, ~mm), [1, length(tfz)]);
+0304             <span class="keyword">else</span>
+0305                 <span class="comment">% To ensure we get the full vertical expression of the</span>
+0306                 <span class="comment">% vertical profiles, we need to normalise the HYCOM and</span>
+0307                 <span class="comment">% FVCOM depths to the same range. This is because in</span>
+0308                 <span class="comment">% instances where FVCOM depths are shallower (e.g. in</span>
+0309                 <span class="comment">% coastal regions), if we don't normalise the depths, we</span>
+0310                 <span class="comment">% end up truncating the vertical profile. This approach</span>
+0311                 <span class="comment">% ensures we always use the full vertical profile, but</span>
+0312                 <span class="comment">% we're potentially squeezing it into a smaller depth.</span>
+0313                 A = max(tpz);
+0314                 B = min(tpz);
+0315                 C = max(tfz);
+0316                 D = min(tfz);
+0317                 norm_tpz = (((D - C) * (tpz - A)) / (B - A)) + C;
+0318 
+0319                 <span class="comment">% Get the temperature and salinity values for this node and</span>
+0320                 <span class="comment">% interpolate down the water column (from HYCOM to FVCOM).</span>
+0321                 <span class="keyword">if</span> ~isnan(norm_tpz)
+0322                     fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, ~mm), tfz, <span class="string">'pchip'</span>, <span class="string">'extrap'</span>);
+0323 
+0324                     <span class="comment">%figure(800);</span>
+0325                     <span class="comment">%clf</span>
+0326                     <span class="comment">%plot(itempz(pp, ~mm), tpz, 'r-o')</span>
+0327                     <span class="comment">%hold on</span>
+0328                     <span class="comment">%plot(fvtempz(pp, :), tfz, 'k-x')</span>
+0329                     <span class="comment">%legend('HYCOM', 'FVCOM')</span>
+0330                 <span class="keyword">else</span>
+0331                     warning(<span class="string">'Should never see this... '</span>) <span class="comment">% because we test for NaNs when fetching the values.</span>
+0332                     warning(<span class="string">'FVCOM boundary node at %f, %f is outside the HYCOM domain. Skipping.'</span>, fvlon(pp), fvlat(pp))
+0333                     <span class="keyword">continue</span>
+0334                 <span class="keyword">end</span>
+0335             <span class="keyword">end</span>
+0336         <span class="keyword">end</span>
+0337 
+0338         <span class="comment">% The horizontally- and vertically-interpolated values in the final</span>
+0339         <span class="comment">% FVCOM results array.</span>
+0340         fvtemp(:, :, t) = fvtempz;
+0341 
+0342         <span class="keyword">if</span> ftbverbose
+0343             fprintf(<span class="string">'done.\n'</span>)
+0344         <span class="keyword">end</span>
+0345     <span class="keyword">end</span>
+0346     <span class="comment">% Dump the data into a temporary structure.</span>
+0347     fvcom.(fields{v}) = fvtemp;
+0348 <span class="keyword">end</span>
+0349 <span class="keyword">if</span> ftbverbose
+0350     toc
+0351 <span class="keyword">end</span>
+0352 
+0353 fvfields = fieldnames(fvcom);
+0354 <span class="keyword">for</span> s = 1:length(fvfields)
+0355     <span class="keyword">switch</span> fvfields{s}
+0356         <span class="keyword">case</span> <span class="string">'temperature'</span>
+0357             Mobj.temperature = fvcom.temperature;
+0358         <span class="keyword">case</span> <span class="string">'salinity'</span>
+0359             Mobj.salt = fvcom.salinity;
+0360         <span class="keyword">case</span> <span class="string">'u'</span>
+0361             Mobj.u = fvcom.u;
+0362         <span class="keyword">case</span> <span class="string">'v'</span>
+0363             Mobj.v = fvcom.v;
+0364         <span class="keyword">case</span> <span class="string">'density'</span>
+0365             Mobj.rho1 = fvcom.density;
+0366         <span class="keyword">case</span> <span class="string">'ssh'</span>
+0367             Mobj.ssh = fvcom.ssh;
+0368         <span class="keyword">otherwise</span>
+0369             warning(<span class="string">'Unrecognised variable %s'</span>, fvfields{s})
+0370     <span class="keyword">end</span>
+0371 <span class="keyword">end</span>
+0372 
+0373 <span class="keyword">if</span> isfield(hycom, <span class="string">'time'</span>)
+0374     Mobj.ts_times = hycom.time;
+0375 <span class="keyword">end</span>
+0376 
+0377 <span class="comment">% Close the MATLAB pool if we opened it.</span>
+0378 <span class="keyword">if</span> wasOpened
+0379     <span class="keyword">try</span>
+0380         pool.delete
+0381     <span class="keyword">catch</span>
+0382         matlabpool close
+0383     <span class="keyword">end</span>
+0384 <span class="keyword">end</span>
+0385 
+0386 <span class="keyword">if</span> ftbverbose
+0387     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0388 <span class="keyword">end</span>
+0389 
+0390 
+0391 <span class="comment">%%</span>
+0392 <span class="comment">% Plot a vertical profile for a boundary node (for my Irish Sea case, this</span>
+0393 <span class="comment">% is one of the ones along the Celtic Sea boundary). Also plot the</span>
+0394 <span class="comment">% distribution of interpolated values over the HYCOM data. Add the location</span>
+0395 <span class="comment">% of the vertical profile (both FVCOM and HYCOM) to the plot.</span>
+0396 
+0397 <span class="comment">% nn = 128;  % open boundary index</span>
+0398 <span class="comment">% tt = 1;    % time index</span>
+0399 <span class="comment">% fvz = 1;   % fvcom depth index (currently 1-20)</span>
+0400 <span class="comment">% hyz = 1;   % hycom depth index (1-33)</span>
+0401 <span class="comment">%</span>
+0402 <span class="comment">% % Find the HYCOM seabed indices</span>
+0403 <span class="comment">% % [~, hyz] = nanmax(hdepth, [], 3);</span>
+0404 <span class="comment">%</span>
+0405 <span class="comment">% % Get the corresponding indices for the HYCOM data</span>
+0406 <span class="comment">% [~, idx] = min(sqrt((lon(:) - fvlon(nn)).^2 + (lat(:) - fvlat(nn)).^2));</span>
+0407 <span class="comment">% [xidx, yidx] = ind2sub(size(lon), idx);</span>
+0408 <span class="comment">%</span>
+0409 <span class="comment">% zidx = isfinite(hdepth(xidx, yidx, :));</span>
+0410 <span class="comment">% hz = 1:nz;</span>
+0411 <span class="comment">%</span>
+0412 <span class="comment">% % close all</span>
+0413 <span class="comment">%</span>
+0414 <span class="comment">% figure(100)</span>
+0415 <span class="comment">% clf</span>
+0416 <span class="comment">% subplot(2,2,1)</span>
+0417 <span class="comment">% plot(Mobj.temperature(nn, :, tt), Mobj.siglayz(oNodes(nn), :), 'x-')</span>
+0418 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
+0419 <span class="comment">% ylabel('Depth (m)')</span>
+0420 <span class="comment">% title('FVCOM')</span>
+0421 <span class="comment">%</span>
+0422 <span class="comment">% subplot(2,2,2)</span>
+0423 <span class="comment">% plot(squeeze(hycom.temperature.data(xidx, yidx, zidx, tt)), squeeze(-hdepth(xidx, yidx, zidx)), 'rx-')</span>
+0424 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
+0425 <span class="comment">% ylabel('Depth (m)')</span>
+0426 <span class="comment">% title('HYCOM')</span>
+0427 <span class="comment">%</span>
+0428 <span class="comment">% subplot(2,2,3)</span>
+0429 <span class="comment">% plot(Mobj.temperature(nn, :, tt), 1:fz, 'x-')</span>
+0430 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
+0431 <span class="comment">% ylabel('Array index')</span>
+0432 <span class="comment">% title('FVCOM')</span>
+0433 <span class="comment">%</span>
+0434 <span class="comment">% subplot(2,2,4)</span>
+0435 <span class="comment">% plot(squeeze(hycom.temperature.data(xidx, yidx, zidx, tt)), hz(zidx), 'rx-')</span>
+0436 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
+0437 <span class="comment">% ylabel('Array index')</span>
+0438 <span class="comment">% title('HYCOM')</span>
+0439 <span class="comment">%</span>
+0440 <span class="comment">% % Figure to check everything's as we'd expect. Plot first time step with</span>
+0441 <span class="comment">% % the HYCOM surface temperature as a background with the interpolated</span>
+0442 <span class="comment">% % boundary node surface values on top.</span>
+0443 <span class="comment">%</span>
+0444 <span class="comment">% figure(200)</span>
+0445 <span class="comment">% clf</span>
+0446 <span class="comment">% % Plot HYCOM surface data (last sigma layer)</span>
+0447 <span class="comment">% dx = mean(diff(hycom.lon(:)));</span>
+0448 <span class="comment">% dy = mean(diff(hycom.lat(:)));</span>
+0449 <span class="comment">% temp = hycom.temperature.data(:, :, :, tt);</span>
+0450 <span class="comment">% pcolor(hycom.lon - (dx / 2), hycom.lat - (dy / 2), ...</span>
+0451 <span class="comment">%     squeeze(temp(:, :, hyz)))</span>
+0452 <span class="comment">% shading flat</span>
+0453 <span class="comment">% axis('equal', 'tight')</span>
+0454 <span class="comment">% daspect([1.5, 1, 1])</span>
+0455 <span class="comment">% hold on</span>
+0456 <span class="comment">% % Add the interpolated surface data (first sigma layer)</span>
+0457 <span class="comment">% scatter(Mobj.lon(oNodes), Mobj.lat(oNodes), 40, Mobj.temperature(:, fvz, tt), 'filled', 'MarkerEdgeColor', 'k')</span>
+0458 <span class="comment">% axis([min(Mobj.lon(oNodes)), max(Mobj.lon(oNodes)), min(Mobj.lat(oNodes)), max(Mobj.lat(oNodes))])</span>
+0459 <span class="comment">% caxis([3, 13])</span>
+0460 <span class="comment">% plot(lon(xidx, yidx), lat(xidx, yidx), 'rs') % polcoms is all backwards</span>
+0461 <span class="comment">% plot(Mobj.lon(oNodes(nn)), Mobj.lat(oNodes(nn)), 'wo')</span>
+0462 <span class="comment">% colorbar</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_BADC_data</title>
+  <meta name="keywords" content="get_BADC_data">
+  <meta name="description" content="Child function to do the actual downloading from the BADC site via FTP.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; get_BADC_data.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_BADC_data
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Child function to do the actual downloading from the BADC site via FTP.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function tfiles = get_BADC_data(site, filepath, files, credentials) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Child function to do the actual downloading from the BADC site via FTP.
+ If the remote file doesn't exist, the function continues to the next file
+ warning that the file couldn't be found. You may end up with gaps if the
+ Met Office don't have those data (e.g. the 31st July 2010 doesn't have
+ any model results, for some reason).
+ 
+ INPUTS:
+   site - FTP server name (e.g. ftp.ceda.ac.uk')
+   filepath - path to the files to download
+   files - cell array of a file or files to download
+   credentials - cell array of {'username', 'password'}.
+ 
+ OUTPUTS:
+   tfiles = cell array of files downloaded. NaN = failed to download.
+
+ WARNING:
+   This function will indiscriminately overwrite files in the destination
+   directory (which is the system temporary directory appended with
+   'metum'). Really, the files in</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function tfiles = get_BADC_data(site, filepath, files, credentials)</a>
+0002 <span class="comment">% Child function to do the actual downloading from the BADC site via FTP.</span>
+0003 <span class="comment">% If the remote file doesn't exist, the function continues to the next file</span>
+0004 <span class="comment">% warning that the file couldn't be found. You may end up with gaps if the</span>
+0005 <span class="comment">% Met Office don't have those data (e.g. the 31st July 2010 doesn't have</span>
+0006 <span class="comment">% any model results, for some reason).</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% INPUTS:</span>
+0009 <span class="comment">%   site - FTP server name (e.g. ftp.ceda.ac.uk')</span>
+0010 <span class="comment">%   filepath - path to the files to download</span>
+0011 <span class="comment">%   files - cell array of a file or files to download</span>
+0012 <span class="comment">%   credentials - cell array of {'username', 'password'}.</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% OUTPUTS:</span>
+0015 <span class="comment">%   tfiles = cell array of files downloaded. NaN = failed to download.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% WARNING:</span>
+0018 <span class="comment">%   This function will indiscriminately overwrite files in the destination</span>
+0019 <span class="comment">%   directory (which is the system temporary directory appended with</span>
+0020 <span class="comment">%   'metum'). Really, the files in</span>
+0021 
+0022 <span class="keyword">global</span> ftbverbose
+0023 
+0024 assert(iscell(files), <span class="string">'Provide a cell array of files to download'</span>)
+0025 
+0026 tdir = fullfile(tempdir, <span class="string">'metum'</span>);
+0027 
+0028 <span class="keyword">if</span> exist(tdir, <span class="string">'dir'</span>) ~= 7
+0029     mkdir(tdir)
+0030 <span class="keyword">end</span>
+0031 
+0032 nf = length(files);
+0033 
+0034 tfiles = cell(nf, 1);
+0035 
+0036 <span class="keyword">for</span> j = 1:nf
+0037     <span class="comment">% Open a remote connection to the FTP site. I found that the timeout on</span>
+0038     <span class="comment">% the FTP connection to ftp.ceda.ac.uk is pretty low, so it's best to</span>
+0039     <span class="comment">% explicitly re-open it each time we want a bunch of new files.</span>
+0040     remote = ftp(site, credentials(1), credentials(2));
+0041 
+0042     S = whos(<span class="string">'remote'</span>);
+0043     assert(strcmpi(S.class, <span class="string">'ftp'</span>), <span class="string">'remote is not an FTP class. See HELP FTP.'</span>)
+0044     clear S
+0045     
+0046     <span class="keyword">try</span>
+0047         cd(remote, filepath);
+0048     <span class="keyword">catch</span>
+0049         warning(<span class="string">'No such path %s (file %s)'</span>, filepath, files{j})
+0050         <span class="keyword">continue</span>
+0051     <span class="keyword">end</span>
+0052 
+0053     <span class="keyword">try</span>
+0054         <span class="keyword">if</span> ftbverbose
+0055             fprintf(<span class="string">'Downloading %s to %s\n'</span>, fullfile(site, filepath, files{j}), tdir)
+0056         <span class="keyword">end</span>
+0057         tfiles{j} = mget(remote, files{j}, tdir);
+0058     <span class="keyword">catch</span>
+0059         tfiles{j} = nan;
+0060         warning(<span class="string">'Failed to fetch data from %s'</span>, fullfile(site, filepath, files{j}))
+0061     <span class="keyword">end</span>
+0062     
+0063     <span class="comment">% Close the connection to the FTP server.</span>
+0064     close(remote)
+0065 <span class="keyword">end</span>
+0066</pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

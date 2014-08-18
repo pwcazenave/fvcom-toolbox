@@ -176,7 +176,7 @@ This function is called by:
 0090             ncdata.(getVar).data = data;
 0091         <span class="keyword">else</span>
 0092             <span class="keyword">if</span> ndims(data) &lt; 3
-0093                 <span class="keyword">if</span> strcmpi(varlist{var}, <span class="string">'time'</span>)
+0093                 <span class="keyword">if</span> strcmpi(getVar, <span class="string">'time'</span>)
 0094                     <span class="comment">% If the dimension is time, we need to be a bit more</span>
 0095                     <span class="comment">% clever since we'll need a concatenated time series</span>
 0096                     <span class="comment">% (in which values are continuous and from which we</span>
@@ -228,6 +228,6 @@ This function is called by:
 0142 <span class="keyword">if</span> ftbverbose
 0143     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
 0144 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 04-Jun-2013 12:12:57 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

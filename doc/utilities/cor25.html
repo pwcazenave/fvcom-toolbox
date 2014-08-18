@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of cor25</title>
+  <meta name="keywords" content="cor25">
+  <meta name="description" content="x=[6.3 0 28.7 26 24.2 18.5 141 419 0 600 1010 15 15 15 0 1];">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; cor25.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>cor25
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>x=[6.3 0 28.7 26 24.2 18.5 141 419 0 600 1010 15 15 15 0 1];</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function y=cor25(x) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">x=[6.3 0 28.7 26 24.2 18.5 141 419 0 600 1010 15 15 15 0 1];</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="grv.html" class="code" title="function g=grv(lat)">grv</a>	</li><li><a href="psit_25.html" class="code" title="function psi=psit(zet)">psit_25</a>	</li><li><a href="psiu_25.html" class="code" title="function psi=psiuo(zet)">psiu_25</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function y=cor25(x)</a>
+0002 <span class="comment">%x=[6.3 0 28.7 26 24.2 18.5 141 419 0 600 1010 15 15 15 0 1];</span>
+0003 u=x(1);
+0004 us=x(2);
+0005 ts=x(3);
+0006 t=x(4);
+0007 Qs=x(5)/1000;
+0008 Q=x(6)/1000;
+0009 Rs=x(7);
+0010 Rl=x(8);
+0011 rain=x(9);
+0012 zi=x(10);
+0013 P=x(11);
+0014 zu=x(12);
+0015 zt=x(13);
+0016 zq=x(14);
+0017 lat=x(15);
+0018 jcool=x(16);
+0019 
+0020 <span class="comment">%***********   set constants *************</span>
+0021 Beta=1.2;
+0022 von=0.4;
+0023 fdg=1.00;
+0024 tdk=273.16;
+0025 grav=<a href="grv.html" class="code" title="function g=grv(lat)">grv</a>(lat);<span class="comment">%9.82;</span>
+0026 <span class="comment">%*************  air constants ************</span>
+0027 Rgas=287.1;
+0028 Le=(2.501-.00237*ts)*1e6;
+0029 cpa=1004.67;
+0030 cpv=cpa*(1+0.84*Q);
+0031 rhoa=P*100/(Rgas*(t+tdk)*(1+0.61*Q));
+0032 visa=1.326e-5*(1+6.542e-3*t+8.301e-6*t*t-4.84e-9*t*t*t);
+0033 <span class="comment">%************  cool skin constants  *******</span>
+0034 Al=2.1e-5*(ts+3.2)^0.79;
+0035 be=0.026;
+0036 cpw=4000;
+0037 rhow=1022;
+0038 visw=1e-6;
+0039 tcw=0.6;
+0040 bigc=16*grav*cpw*(rhow*visw)^3/(tcw*tcw*rhoa*rhoa);
+0041 wetc=0.622*Le*Qs/(Rgas*(ts+tdk)^2);
+0042 
+0043 <span class="comment">%**************  compute aux stuff *******</span>
+0044 Rns=Rs*.945;
+0045 Rnl=0.97*(5.67e-8*(ts+tdk)^4-Rl);
+0046 
+0047 <span class="comment">%***************   Begin bulk loop *******</span>
+0048 
+0049 <span class="comment">%***************  first guess ************</span>
+0050 du=u-us;
+0051 dt=ts-t-.0098*zt;
+0052 dq=Qs-Q;
+0053 ta=t+tdk;
+0054 ug=.5;
+0055 ut=sqrt(du*du+ug*ug);
+0056 usr=.035*ut;
+0057 tsr=-.035*dt;
+0058 qsr=-.035*dq;
+0059 dter=0;
+0060 tkt=.001;
+0061 Rib=-grav*zu/ta*(dt+.61*ta*dq)/ut^2;
+0062 
+0063 
+0064 
+0065 <span class="comment">%disp(usr)</span>
+0066 
+0067 <span class="comment">%***************  bulk loop ************</span>
+0068 <span class="keyword">for</span> i=1:20
+0069     zet=von*grav*zu/ta*(tsr+.61*ta*qsr)/(usr*usr);
+0070     
+0071     <span class="comment">%disp(usr)</span>
+0072     <span class="comment">%disp(zet)</span>
+0073     zo=0.011*usr*usr/grav+0.11*visa/usr;
+0074     rr=zo*usr/visa;
+0075     <span class="keyword">if</span> rr&lt;=.11,
+0076         rt=.177;
+0077         rq=.292;
+0078     <span class="keyword">elseif</span> rr&lt;=.825,
+0079         rt=1.376*rr^.929;
+0080         rq=1.808*rr^.826;
+0081     <span class="keyword">elseif</span> rr&lt;=3.0,
+0082         rt=1.026*rr^(-.599);
+0083         rq=1.393*rr^(-.528);
+0084     <span class="keyword">elseif</span> rr&lt;=10.0,
+0085         rt=1.625*rr^(-1.018);
+0086         rq=1.956*rr^(-.870);
+0087     <span class="keyword">elseif</span> rr&lt;=30.0,
+0088         rt=4.661*rr^(-1.475);
+0089         rq=4.994*rr^(-1.297);
+0090     <span class="keyword">elseif</span> rr&lt;=100.0,
+0091         rt=34.904*rr^(-2.067);
+0092         rq=30.709*rr^(-1.845);
+0093     <span class="keyword">elseif</span> rr&lt;=300.0,
+0094         rt=1667.19*rr^(-2.907);
+0095         rq=1448.68*rr^(-2.682);
+0096     <span class="keyword">elseif</span> rr&lt;=1000.0,
+0097         rt=5.88e5*rr^(-3.935);
+0098         rq=2.98e5*rr^(-3.616);
+0099     <span class="keyword">end</span>;
+0100     
+0101     L=zu/zet;
+0102     zot=rt*visa/usr;
+0103     zoq=rq*visa/usr;
+0104     usr=ut*von/(log(zu/zo)-<a href="psiu_25.html" class="code" title="function psi=psiuo(zet)">psiu_25</a>(zu/L));
+0105     tsr=-(dt-dter*jcool)*von*fdg/(log(zt/zot)-<a href="psit_25.html" class="code" title="function psi=psit(zet)">psit_25</a>(zt/L));
+0106     qsr=-(dq-wetc*dter*jcool)*von*fdg/(log(zq/zoq)-<a href="psit_25.html" class="code" title="function psi=psit(zet)">psit_25</a>(zq/L));
+0107     Bf=-grav/ta*usr*(tsr+.61*ta*qsr);
+0108     <span class="keyword">if</span> Bf&gt;0
+0109         ug=Beta*(Bf*zi)^.333;
+0110     <span class="keyword">else</span>
+0111         ug=.2;
+0112     <span class="keyword">end</span>;
+0113     ut=sqrt(du*du+ug*ug);
+0114     hsb=-rhoa*cpa*usr*tsr;
+0115     hlb=-rhoa*Le*usr*qsr;
+0116     qout=Rnl+hsb+hlb;
+0117     dels=Rns*(.137+11*tkt-6.6e-5/tkt*(1-exp(-tkt/8.0e-4)));     <span class="comment">% Eq.16 Shortwave</span>
+0118     qcol=qout-dels;
+0119     <span class="keyword">if</span> qcol&gt;0;
+0120         alq=Al*qcol+be*hlb*cpw/Le;                    <span class="comment">% Eq. 7 Buoy flux water</span>
+0121         xlamx=6/(1+(bigc*alq/usr^4)^.75)^.333;            <span class="comment">% Eq 13 Saunders</span>
+0122         tkt=xlamx*visw/(sqrt(rhoa/rhow)*usr);            <span class="comment">%Eq.11 Sub. thk</span>
+0123         dter=qcol*tkt/tcw;<span class="comment">%  Eq.12 Cool skin</span>
+0124     <span class="keyword">else</span>
+0125         dter=0;
+0126     <span class="keyword">end</span>;
+0127     dqer=wetc*dter;
+0128     
+0129 <span class="keyword">end</span>;<span class="comment">%bulk iter loop</span>
+0130 tau=rhoa*usr*usr*du/ut;                <span class="comment">%stress</span>
+0131 
+0132 <span class="comment">%****************   rain heat flux ********</span>
+0133 
+0134 dwat=2.11e-5*((t+tdk)/tdk)^1.94;<span class="comment">%! water vapour diffusivity</span>
+0135 dtmp=(1.+3.309e-3*t-1.44e-6*t*t)*0.02411/(rhoa*cpa);     <span class="comment">%!heat diffusivity</span>
+0136 dqs_dt=Q*Le/(Rgas*(t+tdk)^2);                            <span class="comment">%!Clausius-Clapeyron</span>
+0137 alfac= 1/(1+0.622*(dqs_dt*Le*dwat)/(cpa*dtmp));          <span class="comment">%! wet bulb factor</span>
+0138 RF= rain*alfac*cpw*((ts-t-dter*jcool)+(Qs-Q-dqer*jcool)*Le/cpa)/3600;
+0139 <span class="comment">%****************   Webb et al. correection  ************</span>
+0140 wbar=1.61*hlb/Le/rhoa+(1+1.61*Q)*hsb/cpa/ta/rhoa;
+0141 hl_webb=rhoa*wbar*Q*Le;
+0142 <span class="comment">%**************   compute transfer coeffs relative to du @meas. ht **********</span>
+0143 Cd=tau/rhoa/du^2;
+0144 Ch=-usr*tsr/du/(dt-dter*jcool);
+0145 Ce=-usr*qsr/(dq-dqer*jcool)/du;
+0146 <span class="comment">%************  10-m neutral coeff realtive to ut ********</span>
+0147 Cdn_10=von*von/log(10/zo)/log(10/zo);
+0148 Chn_10=von*von*fdg/log(10/zo)/log(10/zot);
+0149 Cen_10=von*von*fdg/log(10/zo)/log(10/zoq);
+0150 
+0151 y=[hsb hlb tau zo zot zoq L usr tsr qsr dter dqer tkt RF hl_webb Cd Ch Ce Cdn_10 Chn_10 Cen_10];
+0152 <span class="comment">%   1   2    3  4  5   6  7  8   9   10   11  12   13 14   15    16 17 18   19     20      21</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

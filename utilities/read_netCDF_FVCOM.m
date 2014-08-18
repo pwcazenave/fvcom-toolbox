@@ -182,21 +182,21 @@ try
     Itime.ID=netcdf.inqVarID(nc,'Itime');
     Itime.Data  = netcdf.getVar(nc,Itime.ID,'int32');
     Itime2.Data  = netcdf.getVar(nc,Itime.ID+1,'int32');
-    
+
     [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);
     [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
-    
+
     var_time = double(Itime.Data)+time_offset+double(Itime2.Data)./(24*600*6000);
     start_date=sum(start_d.*[1 1/(24*60*60*1000)]);     %hkj missing 1000 inserted
     end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       %hkj missing 1000 inserted
 catch me
     if ftbverbose
-        fprintf('No ''Itime'' and/or ''Itime2'' variables, using ''time'' instead.\n(%s)\n', me.message)
+        warning('No ''Itime'' and/or ''Itime2'' variables, using less precise ''time'' instead.\n(%s)\n', me.message)
     end
     Itime.idx=find(strcmpi(vars,'time'));
     Itime.ID=netcdf.inqVarID(nc,'time');
     Itime.Data  = netcdf.getVar(nc,Itime.ID,'double');
-    
+
     var_time = (Itime.Data)+time_offset;
     [start_date,end_date] = deal(var_time(1),var_time(end));
 end
@@ -261,7 +261,7 @@ for aa=1:length(varnames)
     disp(['Processing variable ',varnames{aa}])
     % Tidy up the previous iteration's variables so we don't get confused.
     clear dimName dimLength
-    
+
     TF = strcmpi(varnames{aa},vars);
     if ~isempty(find(TF));
         varidx(aa) = find(TF);
@@ -276,10 +276,10 @@ for aa=1:length(varnames)
         error('Variable %s NOT found in file. Stopping. Check input variable names.\n', varnames{aa})
     end
     varID=netcdf.inqVarID(nc,vars{varidx(aa)});
-    
+
     [name,xtype,dimids,natts] = netcdf.inqVar(nc,varID);
     dimens=length(dimids);
-    
+
     for dd=1:length(dimids)
         [dimName{dd}, dimLength(dd)] = netcdf.inqDim(nc,dimids(dd));
         if ftbverbose
@@ -295,7 +295,7 @@ for aa=1:length(varnames)
         end
     end
     if ftbverbose; fprintf('\n'); end
-    
+
     %----------------------------------------------------------------------
     % Get the data!
     %----------------------------------------------------------------------
@@ -307,7 +307,7 @@ for aa=1:length(varnames)
                 case 'time'
                     if time_idx>=0
                         % Only restrict data on access if dimension is TIME
-                        
+
                         % hkj it appears the first value in matlab netcdf
                         % interface is 0.
                         % hkj time_idx(1) CORRECTED TO time_idx(1)-1.
@@ -554,29 +554,6 @@ for aa=1:length(varnames)
                     eval(['selection.',varnames{aa},'.count=count]};'])
                     
             end
-            
-            % only restrict if required...
-            %             if sum(do_restrict)
-            %                 for dd=1:length(do_restrict)
-            %                     sd=dd-1;
-            %                     % calculate indices to extract (might not have been
-            %                     % consecutive numbers)
-            %                     idx=RestrictDims.idx{dimidx(dd)}-start(dd)+1;
-            %                     if (do_restrict(dd) && ~(count(dd)==length(idx)))
-            %                         [~,idx]=setdiff(start(dd):RestrictDims.idx{dimidx(dd)}(end),RestrictDims.idx{dimidx(dd)});
-            %                         eval([varnames{aa},' = shiftdim(',varnames{aa},',sd);'])
-            %                         switch  dimens
-            %                             case 2
-            %                                 eval([varnames{aa},'(idx, :) = [];'])
-            %                             case 3
-            %                                 eval([varnames{aa},'(idx, :,:) = [];'])
-            %                             case 4
-            %                                 eval([varnames{aa},'(idx, :,:,:) = [];'])
-            %                         end
-            %                         eval([varnames{aa},' = shiftdim(',varnames{aa},',dimens-sd);'])
-            %                     end
-            %                 end
-            %             end
     end
     eval(['data.(varnames{aa}) = ',varnames{aa},';'])
     eval(['clear ',varnames{aa}])

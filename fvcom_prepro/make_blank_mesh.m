@@ -17,8 +17,10 @@ function [Mobj] = make_blank_mesh
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
+%    2015-05-20 Add new boolean flag for rivers.
 %   
 %==============================================================================
 global ftbverbose
@@ -50,6 +52,7 @@ Mobj.have_cor     = false;
 Mobj.have_xy      = false;
 Mobj.have_bath    = false;
 Mobj.have_mets    = false;
+Mobj.have_rivers  = false;
 
 
 if(ftbverbose)

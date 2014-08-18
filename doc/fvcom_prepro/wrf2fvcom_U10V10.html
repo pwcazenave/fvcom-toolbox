@@ -37,7 +37,7 @@ warning off</pre></div>
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="my_project.html" class="code" title="function [out_east,out_north] = my_project(in_east,in_north,direction)">my_project</a>	Sample user-defined projection and inverse projection of (lon,lat) to (x,y)</li><li><a href="read_fvcom_mesh.html" class="code" title="function [Mobj] = read_fvcom_mesh(gridfile)">read_fvcom_mesh</a>	Read fvcom mesh file into Matlab mesh object</li></ul>
+<li><a href="my_project.html" class="code" title="function [out_east,out_north] = my_project(in_east,in_north,direction)">my_project</a>	Sample user-defined projection and inverse projection of (lon,lat) to (x,y)</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -84,7 +84,7 @@ This function is called by:
 0036 <span class="keyword">end</span>;
 0037 
 0038 <span class="comment">% load FVCOM mesh</span>
-0039 Mobj = <a href="read_fvcom_mesh.html" class="code" title="function [Mobj] = read_fvcom_mesh(gridfile)">read_fvcom_mesh</a>(fvcom_grid_file);
+0039 Mobj = read_fvcom_mesh(fvcom_grid_file);
 0040 tri = Mobj.tri;
 0041 x   = Mobj.x;
 0042 y   = Mobj.y;
@@ -211,6 +211,6 @@ This function is called by:
 0163 
 0164 ierr = close(nc);
 0165 ierr = close(nc2);</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -25,6 +25,7 @@ function [Mobj] = read_sms_mesh(varargin)
 % Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
+%    Rory O'Hara Murray (Marine Scotland Science)
 %
 % Revision history
 %

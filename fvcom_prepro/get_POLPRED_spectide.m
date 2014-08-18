@@ -8,8 +8,12 @@ function [Mobj] = get_POLPRED_spectide(Mobj, POLPRED)
 %    the POLPRED grid to the open boundary nodes in Mobj.
 %
 % INPUT:
-%   Mobj    = MATLAB mesh object (see read_sms_mesh.m)
-%   POLPRED = ASCII file of the POLPRED harmonics
+%   Mobj    = MATLAB mesh object (see read_sms_mesh.m), with fields:
+%               - have_lonlat - flag indicating spherical coordinates
+%               - obc_nodes - open boundary node IDs
+%               - lon - longitude values
+%               - lat - latitude values
+%   POLPRED = ASCII file path of the POLPRED harmonics
 %
 % OUTPUT:
 %    Mobj  = MATLAB mesh object with two new arrays:
@@ -21,12 +25,12 @@ function [Mobj] = get_POLPRED_spectide(Mobj, POLPRED)
 %
 % Author(s):  
 %    Pierre Cazenave (Plymouth Marine Laboratory)
-% 
+%
 % Revision history
 %    2012-11-15 First version. Based in part on tide_tools.py from the
-%    fvcom-py Python toolbox (https://bitbucket.org/pwcazenave/fvcom-py)
+%    PyFVCOM Python toolbox (https://gitlab.em.pml.ac.uk/pica/PyFVCOM)
 %    and Ricardo Torres' searchtides.m.
-%   
+%
 %==========================================================================
 
 subname = 'get_POLPRED_spectide';

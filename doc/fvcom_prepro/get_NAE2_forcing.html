@@ -128,14 +128,14 @@ This function is called by:
 0049     metfname = [<span class="string">'/bank/jane/met/'</span>,datestr(inputConf.startDate,<span class="string">'YYYY'</span>),<span class="keyword">...</span>
 0050         <span class="string">'/'</span>,lower(datestr(inputConf.startDate,<span class="string">'mmmYY'</span>)),<span class="string">'nae10R.dat'</span>];
 0051     comprfname = <span class="string">'/login/jane/NAE2/metintco.cs3x.nae2.compress.2'</span>;
-0052     setupfname = <span class="string">'/work/jane/cs3x/prep/setupcs3xSGIL.uda'</span>;
+0052     setupfname = <span class="string">'/work/jane/cs3x/prep/setupcs3xSGIl.uda'</span>;
 0053 <span class="comment">%     elevfname = ['/bank/jane/cs3x/sarray.uda.',...</span>
 0054 <span class="comment">%         datestr(inputConf.startDate,'YYYY')];</span>
 0055 <span class="keyword">elseif</span> ispc     <span class="comment">% Or Windows?</span>
 0056     metfname = [<span class="string">'\\store\bank\jane\met\'</span>,datestr(inputConf.startDate,<span class="string">'YYYY'</span>),<span class="keyword">...</span>
 0057         <span class="string">'\'</span>,lower(datestr(inputConf.startDate,<span class="string">'mmmYY'</span>)),<span class="string">'nae10R.dat'</span>];
 0058     comprfname = <span class="string">'\\store\kthurs\from_Jane\metintco.cs3x.nae2.compress.2'</span>;
-0059     setupfname = <span class="string">'\\store\work\jane\cs3x\prep\setupcs3xSGIL.uda'</span>;
+0059     setupfname = <span class="string">'\\store\work\jane\cs3x\prep\setupcs3xSGIl.uda'</span>;
 0060 <span class="comment">%     elevfname = ['\\store\bank\jane\cs3x\sarray.uda.',...</span>
 0061 <span class="comment">%         datestr(inputConf.startDate,'YYYY')];</span>
 0062 <span class="keyword">end</span>
@@ -267,312 +267,201 @@ This function is called by:
 0188     nelf = max(FIEJ)+1;
 0189 <span class="keyword">end</span>
 0190 
-0191 <span class="comment">% I may need to find a different method for storing the data. I'm not sure</span>
-0192 <span class="comment">% if I can do a whole month of data on my laptop.</span>
-0193 PASTIT = false;
-0194 kline = 0;
+0191 <span class="comment">%%</span>
+0192 <span class="comment">% Create an array of daily timesteps, ensuring the output time series is</span>
+0193 <span class="comment">% at least as long as the FVCOM model run time.</span>
+0194 timesteps = datevec(datenum(inputConf.startDate):datenum(inputConf.endDate)+1);
 0195 
-0196 <span class="comment">% Open the met file</span>
-0197 fid = fopen(metfname);
+0196 <span class="comment">% Find the number of months in the timeseries</span>
+0197 [months,ia]=unique(timesteps(:,1:2),<span class="string">'rows'</span>);
 0198 
-0199 <span class="comment">% calculate the number of lines per data segment</span>
-0200 I = fgets(fid);
-0201 m1 = sscanf(I,<span class="string">'%u'</span>);
-0202 data_seg = ceil(m1(1)/m1(2));
-0203 
-0204 frewind(fid);
-0205 
-0206 <span class="comment">% Initialise the met data array</span>
-0207 met_temp = cell(1);
-0208 
-0209 <span class="comment">% Get met data from the met file and write to temporary cell array</span>
-0210 <span class="keyword">while</span> PASTIT == false
-0211     kline = kline + 2;
-0212     I = fgets(fid);
-0213     <span class="keyword">if</span> I==-1
-0214         <span class="comment">% break the loop, it's the EOF</span>
-0215         <span class="keyword">break</span>
-0216     <span class="keyword">end</span>
-0217     J = fgets(fid);
-0218     <span class="keyword">if</span> J==-1
-0219         <span class="comment">% break the loop, it's the EOF</span>
-0220         <span class="keyword">break</span>
-0221     <span class="keyword">end</span>
-0222 
-0223     <span class="comment">% find the date in the met file</span>
-0224     datem = sscanf(J,<span class="string">'%u'</span>);
-0225     datem = datenum(datem(4),datem(3),datem(2),datem(1),0,0);
+0199 <span class="keyword">for</span> i=1:size(months,1)
+0200     <span class="comment">% Where are the met data files?</span>
+0201     <span class="keyword">if</span> isunix       <span class="comment">% Unix?</span>
+0202         metfname = [<span class="string">'/bank/jane/met/'</span>,num2str(timesteps(ia(i),1)),<span class="keyword">...</span>
+0203             <span class="string">'/'</span>,lower(datestr(timesteps(ia(i),:),<span class="string">'mmmYY'</span>)),<span class="string">'nae10R.dat'</span>];
+0204     <span class="keyword">elseif</span> ispc     <span class="comment">% Or Windows?</span>
+0205         metfname = [<span class="string">'\\store\bank\jane\met\'</span>,num2str(timesteps(ia(i),1)),<span class="keyword">...</span>
+0206             <span class="string">'\'</span>,lower(datestr(timesteps(ia(i),:),<span class="string">'mmmYY'</span>)),<span class="string">'nae10R.dat'</span>];
+0207     <span class="keyword">end</span>
+0208     
+0209     PASTIT = false;
+0210     kline = 0;
+0211     
+0212     <span class="comment">% Open the met file</span>
+0213     fid = fopen(metfname);
+0214     
+0215     <span class="comment">% calculate the number of lines per data segment</span>
+0216     I = fgets(fid);
+0217     m1 = sscanf(I,<span class="string">'%u'</span>);
+0218     data_seg = ceil(m1(1)/m1(2));
+0219     
+0220     frewind(fid);
+0221     
+0222     <span class="keyword">if</span> i==1
+0223         <span class="comment">% Initialise the met data array</span>
+0224         met_temp = cell(1);
+0225     <span class="keyword">end</span>
 0226     
-0227     <span class="comment">% Compare met file date with inputConf.startDate (is it bigger?) and</span>
-0228     <span class="comment">% with inputConf.endDate (is it smaller?) If yes and yes, then we want</span>
-0229     <span class="comment">% this. Write data to a temporary array.</span>
-0230     <span class="keyword">if</span> (datem &gt;= datenum(inputConf.startDate)) &amp;&amp; <span class="keyword">...</span>
-0231             (datem &lt;= datenum(inputConf.endDate))
-0232         <span class="comment">% Initialise temp cell array</span>
-0233         temp = cell(data_seg+2,1);
-0234         <span class="comment">% write I and J</span>
-0235         temp{1} = sscanf(I,<span class="string">'%u'</span>);
-0236         temp{2} = sscanf(J,<span class="string">'%u'</span>);
-0237         <span class="comment">% Get the actual data</span>
-0238         <span class="keyword">for</span> m = 1:data_seg
-0239             I = fgetl(fid);
-0240             temp{m+2} = sscanf(I,<span class="string">'%10f'</span>);
-0241         <span class="keyword">end</span>
-0242         met_temp{end+1}=temp;
-0243         clear temp;
-0244     <span class="keyword">else</span>
-0245         PASTIT = true;
-0246     <span class="keyword">end</span>
-0247 <span class="keyword">end</span>
-0248 
-0249 fclose(fid);
-0250 
-0251 met_temp = met_temp(2:end);
-0252 
-0253 <span class="comment">% Not sure what these numbers are for.</span>
-0254 JBLP = IBLP-NCCP;
-0255 JBRP = IBRP-NCCP;
-0256 JBLW = IBLW-NCCW;
-0257 JBRW = IBRW-NCCW;
-0258 
-0259 elf = zeros(nelf,1);
-0260 
-0261 <span class="comment">% Temporary arrays to hold pressure/u-wind/v-wind from extracted met data</span>
-0262 P2 = zeros(NTOTI,1);
-0263 tmpa = zeros(NTOTI,1);
-0264 tmpb = zeros(NTOTI,1);
-0265 
-0266 <span class="comment">% i1j1 = zeros(4,Mobj.nElems);</span>
-0267 <span class="comment">% A1 = zeros(2,Mobj.nElems);</span>
-0268 <span class="comment">% A2 = zeros(2,Mobj.nElems);</span>
-0269 <span class="comment">% A3 = zeros(2,Mobj.nElems);</span>
-0270 <span class="comment">% A4 = zeros(2,Mobj.nElems);</span>
-0271 
-0272 <span class="comment">% FirstInt = true;</span>
-0273 kline = 1;
-0274 
-0275 <span class="comment">% Arrays to hold the pressure/u-wind/v-wind data when interpolated to the</span>
-0276 <span class="comment">% FVCOM grid</span>
-0277 slp = zeros(Mobj.nVerts,size(met_temp,2)/3);
-0278 uwnd = zeros(Mobj.nElems,size(met_temp,2)/3);
-0279 vwnd = zeros(Mobj.nElems,size(met_temp,2)/3);
-0280 time = zeros(size(met_temp,2)/3,1);
-0281 
-0282 <span class="comment">% Take our forcing data, translate it to the cs3x grid, then interpolate</span>
-0283 <span class="comment">% onto the FVCOM grid.</span>
-0284 <span class="keyword">for</span> m=0:3:size(met_temp,2)-1
-0285     <span class="keyword">for</span> ISW = 1:3
-0286         kline = kline+2;
-0287         ipts =  met_temp{m+ISW}{1}(1);
-0288         kpts =  met_temp{m+ISW}{1}(2);
-0289         
-0290         <span class="comment">% Store the date</span>
-0291         <span class="keyword">if</span> ISW == 1
-0292             time((m/3)+1) = datenum(met_temp{m+ISW}{2}(4),<span class="keyword">...</span>
-0293                 met_temp{m+ISW}{2}(3),met_temp{m+ISW}{2}(2),<span class="keyword">...</span>
-0294                 met_temp{m+ISW}{2}(1),0,0);
-0295         <span class="keyword">end</span>
-0296         
-0297         <span class="comment">% Preallocate 'field' for speed</span>
-0298         field = NaN(8,data_seg);
-0299         
-0300         <span class="comment">% Get the met data we're interested in</span>
-0301         <span class="keyword">for</span> n=1:data_seg
-0302             field(:,n)=met_temp{m+ISW}{n+2};
-0303         <span class="keyword">end</span>
-0304         field = reshape(field,data_seg*8,1);
-0305         
-0306         <span class="comment">% if the last column of data is not full, adjust for that</span>
-0307         <span class="keyword">if</span> size(met_temp{m+ISW}{end},1)&lt;8
-0308             too_many = 8-size(met_temp{m+ISW}{end},1);
-0309             field = field(1:end-too_many);
-0310         <span class="keyword">end</span>
-0311         
-0312         elf(ELFI)=field(FIEJ);
-0313         
-0314         <span class="comment">% Interpolate the data to the sea model grid</span>
-0315         <span class="keyword">if</span> ISW == 1
-0316             P2 = (WBLP.*elf(IBLP)')+(WBRP.*elf(IBRP)')+(WTLP.*elf(JBLP)')+<span class="keyword">...</span>
-0317                 (WTRP.*elf(JBRP)');
-0318         <span class="keyword">elseif</span> ISW == 2
-0319             tmpa = (WBLW.*elf(IBLW)')+(WBRW.*elf(IBRW)')+(WTLW.*elf(JBLW)')+<span class="keyword">...</span>
-0320                 (WTRW.*elf(JBRW)');
-0321         <span class="keyword">elseif</span> ISW == 3
-0322             tmpb = (WBLW.*elf(IBLW)')+(WBRW.*elf(IBRW)')+(WTLW.*elf(JBLW)')+<span class="keyword">...</span>
-0323                 (WTRW.*elf(JBRW)');
-0324         <span class="keyword">end</span>
-0325         
-0326         kline = kline+data_seg;
-0327     <span class="keyword">end</span>
-0328     
-0329     <span class="comment">% Rotate the winds to equatorial lat/lon</span>
-0330     tmpc = (COEFF1.*tmpa)+(COEFF2.*tmpb);
-0331     tmpd = (COEFF1.*tmpb)-(COEFF2.*tmpa);
-0332     
-0333     k = 0;
-0334     
-0335     <span class="comment">% Convert the data to a gridded array instead of a vector</span>
-0336     <span class="keyword">for</span> j = 0:NRR-1
-0337         I1 = NTRNT(j+1);
-0338         I2 = NTRNS(j+1);
-0339         <span class="keyword">for</span> i = I1+1:I2
-0340             k = k+1;
-0341             PRESS(i,NRR-j) = P2(k);
-0342             U10E(i,NRR-j) = tmpc(k);
-0343             U10N(i,NRR-j) = tmpd(k);
-0344         <span class="keyword">end</span>
-0345     <span class="keyword">end</span>
-0346     
-0347     <span class="comment">% Interpolate the pressure data onto the FVCOM grid</span>
-0348     slp(:,(m/3)+1) = interp2(cs3x_lon,cs3x_lat,PRESS',Mobj.lon,Mobj.lat);
-0349     
-0350     <span class="comment">% Calculate the coordinates of the centre of each FVCOM grid element</span>
-0351     xelement = mean(Mobj.lon(Mobj.tri(:,:)),2);
-0352     yelement = mean(Mobj.lat(Mobj.tri(:,:)),2);
-0353     
-0354     <span class="comment">% Interpolate the wind data onto the FVCOM grid</span>
-0355     uwnd(:,(m/3)+1) = interp2(cs3x_lon,cs3x_lat,U10E',xelement,yelement);
-0356     vwnd(:,(m/3)+1) = interp2(cs3x_lon,cs3x_lat,U10N',xelement,yelement);
-0357     
-0358     
-0359 <span class="comment">%      if FirstInt==1</span>
-0360 <span class="comment">%         % Interpolate the pressure onto the model grid nodes</span>
-0361 <span class="comment">%         for i = 1:Mobj.nVerts</span>
-0362 <span class="comment">%             xmet = cs3x_lonstart;</span>
-0363 <span class="comment">%             ymet = cs3x_latstart;</span>
-0364 <span class="comment">%             i1 = 1;</span>
-0365 <span class="comment">%             i2 = 2;</span>
-0366 <span class="comment">%             j1 = 1;</span>
-0367 <span class="comment">%             j2 = 2;</span>
-0368 <span class="comment">%</span>
-0369 <span class="comment">%             while Mobj.lon(i) &gt; xmet+cs3x_loninc</span>
-0370 <span class="comment">%                 i1 = i1+1;</span>
-0371 <span class="comment">%                 i2 = i2+1;</span>
-0372 <span class="comment">%                 xmet = xmet+cs3x_loninc;</span>
-0373 <span class="comment">%             end</span>
-0374 <span class="comment">%</span>
-0375 <span class="comment">%             while Mobj.lat(i) &gt; ymet+cs3x_latinc</span>
-0376 <span class="comment">%                 j1 = j1+1;</span>
-0377 <span class="comment">%                 j2 = j2+1;</span>
-0378 <span class="comment">%                 ymet = ymet+cs3x_latinc;</span>
-0379 <span class="comment">%             end</span>
-0380 <span class="comment">%</span>
-0381 <span class="comment">%             a1 = (xmet + cs3x_loninc - Mobj.lon(i)).*...</span>
-0382 <span class="comment">%                 (ymet + cs3x_latinc - Mobj.lat(i));</span>
-0383 <span class="comment">%             a2 = (xmet + cs3x_loninc - Mobj.lon(i)) .* (Mobj.lat(i)-ymet);</span>
-0384 <span class="comment">%             a3 = (Mobj.lon(i) - xmet).*(ymet + cs3x_latinc - Mobj.lat(i));</span>
-0385 <span class="comment">%             a4 = (Mobj.lon(i) - xmet).*(Mobj.lat(i) - ymet);</span>
-0386 <span class="comment">%</span>
-0387 <span class="comment">%             P(i,(m/3)+1) = (PRESS(i1,j1).*a1 + PRESS(i1,j2).*a2 + PRESS(i2,j1).*a3 ...</span>
-0388 <span class="comment">%                 + PRESS(i2,j2).*a4) ./cs3x_area;</span>
-0389 <span class="comment">%</span>
-0390 <span class="comment">%             i1j1(1,i) = i1;</span>
-0391 <span class="comment">%             i1j1(2,i) = j1;</span>
-0392 <span class="comment">%             A1(1,i) = a1;</span>
-0393 <span class="comment">%             A2(1,i) = a2;</span>
-0394 <span class="comment">%             A3(1,i) = a3;</span>
-0395 <span class="comment">%             A4(1,i) = a4;</span>
-0396 <span class="comment">%</span>
-0397 <span class="comment">%             % tidy up</span>
-0398 <span class="comment">%             clear xmet ymet i1 i2 j1 j2 a1 a2 a3 a4</span>
-0399 <span class="comment">%         end</span>
-0400 <span class="comment">%</span>
-0401 <span class="comment">%         % Interpolate the winds onto the model grid nodes</span>
-0402 <span class="comment">%         for i = 1:Mobj.nElems</span>
-0403 <span class="comment">%             xmet = cs3x_lonstart;</span>
-0404 <span class="comment">%             ymet = cs3x_latstart;</span>
-0405 <span class="comment">%             i1 = 0;</span>
-0406 <span class="comment">%             i2 = 1;</span>
-0407 <span class="comment">%             j1 = 0;</span>
-0408 <span class="comment">%             j2 = 1;</span>
-0409 <span class="comment">%</span>
-0410 <span class="comment">%             % Calculate the coordinates of the centre of the element</span>
-0411 <span class="comment">%             xelement = mean(Mobj.lon(Mobj.tri(i,:)));</span>
-0412 <span class="comment">%             yelement = mean(Mobj.lat(Mobj.tri(i,:)));</span>
-0413 <span class="comment">%</span>
-0414 <span class="comment">%             while xelement &gt; xmet+cs3x_loninc</span>
-0415 <span class="comment">%                 i1 = i1+1;</span>
-0416 <span class="comment">%                 i2 = i2+1;</span>
-0417 <span class="comment">%                 xmet = xmet+cs3x_loninc;</span>
-0418 <span class="comment">%             end</span>
-0419 <span class="comment">%</span>
-0420 <span class="comment">%             while yelement &gt; ymet+cs3x_latinc</span>
-0421 <span class="comment">%                 j1 = j1+1;</span>
-0422 <span class="comment">%                 j2 = j2+1;</span>
-0423 <span class="comment">%                 ymet = ymet+cs3x_latinc;</span>
-0424 <span class="comment">%             end</span>
-0425 <span class="comment">%</span>
-0426 <span class="comment">%             a1 = (xmet + cs3x_loninc - xelement).*...</span>
-0427 <span class="comment">%                 (ymet + cs3x_latinc - yelement);</span>
-0428 <span class="comment">%             a2 = (xmet + cs3x_loninc - xelement) .* (yelement-ymet);</span>
-0429 <span class="comment">%             a3 = (xelement - xmet).*(ymet + cs3x_latinc - yelement);</span>
-0430 <span class="comment">%             a4 = (xelement - xmet).*(yelement - ymet);</span>
-0431 <span class="comment">%</span>
-0432 <span class="comment">%             Uwind(i,(m/3)+1) = (U10E(i1,j1).*a1 + U10E(i1,j2).*a2 + U10E(i2,j1).*a3 ...</span>
-0433 <span class="comment">%                 + U10E(i2,j2).*a4) ./cs3x_area;</span>
-0434 <span class="comment">%             Vwind(i,(m/3)+1) = (U10N(i1,j1).*a1 + U10N(i1,j2).*a2 + U10N(i2,j1).*a3 ...</span>
-0435 <span class="comment">%                 + U10N(i2,j2).*a4) ./cs3x_area;</span>
-0436 <span class="comment">%</span>
-0437 <span class="comment">%             i1j1(3,i) = i1;</span>
-0438 <span class="comment">%             i1j1(4,i) = j1;</span>
-0439 <span class="comment">%             A1(2,i) = a1;</span>
-0440 <span class="comment">%             A2(2,i) = a2;</span>
-0441 <span class="comment">%             A3(2,i) = a3;</span>
-0442 <span class="comment">%             A4(2,i) = a4;</span>
-0443 <span class="comment">%</span>
-0444 <span class="comment">%             % tidy up</span>
-0445 <span class="comment">%             clear xmet ymet i1 i2 j1 j2 a1 a2 a3 a4 xelement y element</span>
-0446 <span class="comment">%         end</span>
-0447 <span class="comment">%     else</span>
-0448 <span class="comment">%         % If it's not the first pass, there's no need to re-calculate i1j1</span>
-0449 <span class="comment">%         % or A1, A2, A3, A4.</span>
-0450 <span class="comment">%         for i = 1:Mobj.nVerts</span>
-0451 <span class="comment">%             P(i,(m/3)+1) = (PRESS(i1j1(1,i),i1j1(2,i)).*A1(1,i) + ...</span>
-0452 <span class="comment">%                 PRESS(i1j1(1,i),i1j1(2,i)+1).*A2(1,i) + ...</span>
-0453 <span class="comment">%                 PRESS(i1j1(1,i)+1,i1j1(2,i)).*A3(1,i) + ...</span>
-0454 <span class="comment">%                 PRESS(i1j1(1,i)+1,i1j1(2,i)+1).*A4(1,i))./cs3x_area;</span>
-0455 <span class="comment">%         end</span>
-0456 <span class="comment">%</span>
-0457 <span class="comment">%         for i = 1:Mobj.nElems</span>
-0458 <span class="comment">%             Uwind(i,(m/3)+1) = (U10E(i1j1(3,i),i1j1(4,i)).*A1(2,i) + ...</span>
-0459 <span class="comment">%                 U10E(i1j1(3,i),i1j1(4,i)+1).*A2(2,i) + ...</span>
-0460 <span class="comment">%                 U10E(i1j1(3,i)+1,i1j1(4,i)).*A3(2,i) + ...</span>
-0461 <span class="comment">%                 U10E(i1j1(3,i)+1,i1j1(4,i)+1).*A4(2,i))./cs3x_area;</span>
-0462 <span class="comment">%             Vwind(i,(m/3)+1) = (U10N(i1j1(3,i),i1j1(4,i)).*A1(2,i) + ...</span>
-0463 <span class="comment">%                 U10N(i1j1(3,i),i1j1(4,i)+1).*A2(2,i) + ...</span>
-0464 <span class="comment">%                 U10N(i1j1(3,i)+1,i1j1(4,i)).*A3(2,i) + ...</span>
-0465 <span class="comment">%                 U10N(i1j1(3,i)+1,i1j1(4,i)+1).*A4(2,i))./cs3x_area;</span>
-0466 <span class="comment">%         end</span>
-0467 <span class="comment">%     end</span>
-0468     
-0469 <span class="comment">%     FirstInt = false;</span>
-0470 <span class="keyword">end</span>
-0471 
-0472 <span class="comment">% Convert data time to Modified Julian Day time for FVCOM</span>
-0473 time = datevec(time);
-0474 MJD_time = greg2mjulian(time(:,1),time(:,2),time(:,3),time(:,4),time(:,5),<span class="keyword">...</span>
-0475     time(:,6));
-0476 
-0477 <span class="comment">% Add slp, uwnd, vwnd and time to Mobj</span>
-0478 Mobj.Met.slp.node = slp;
-0479 Mobj.Met.uwnd.data = uwnd;
-0480 Mobj.Met.vwnd.data = vwnd;
-0481 Mobj.Met.time = MJD_time;
-0482 
-0483 <span class="comment">%% mjd0 = nml file start time (inputConf.startDate)</span>
-0484 <span class="comment">% mjd1 = nml file finish time (inputConf.endDate)</span>
-0485 <span class="comment">% mjd2 = variable time from met data file</span>
-0486 <span class="comment">% mjd3 = variable time from temporary met data file</span>
-0487 <span class="comment">% mjd4 = variable time from surge data file</span>
-0488 <span class="comment">% mjd5 = time at start of surge data file, the reference start point of the</span>
-0489 <span class="comment">%           harmonic analysis</span>
-0490 
-0491 <span class="comment">% What are the surge parameters? (Don't know if I need these in this file.</span>
-0492 <span class="comment">% Let's keep them here for now)</span>
-0493 <span class="comment">% surge_lonstart = -19.916667;</span>
-0494 <span class="comment">% surge_latstart = 40.0555555;</span>
-0495 <span class="comment">% surge_loninc = 1/6;</span>
-0496 <span class="comment">% surge_latinc = 1/9;</span></pre></div>
-<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0227     <span class="comment">% Get met data from the met file and write to temporary cell array</span>
+0228     <span class="keyword">while</span> PASTIT == false
+0229         kline = kline + 2;
+0230         I = fgets(fid);
+0231         <span class="keyword">if</span> I==-1
+0232             <span class="comment">% break the loop, it's the EOF</span>
+0233             <span class="keyword">break</span>
+0234         <span class="keyword">end</span>
+0235         J = fgets(fid);
+0236         <span class="keyword">if</span> J==-1
+0237             <span class="comment">% break the loop, it's the EOF</span>
+0238             <span class="keyword">break</span>
+0239         <span class="keyword">end</span>
+0240         
+0241         <span class="comment">% find the date in the met file</span>
+0242         datem = sscanf(J,<span class="string">'%u'</span>);
+0243         datem = datenum(datem(4),datem(3),datem(2),datem(1),0,0);
+0244         
+0245         <span class="comment">% Compare met file date with inputConf.startDate (is it bigger?) and</span>
+0246         <span class="comment">% with inputConf.endDate (is it smaller?) If yes and yes, then we want</span>
+0247         <span class="comment">% this. Write data to a temporary array.</span>
+0248         <span class="keyword">if</span> (datem &gt;= datenum(inputConf.startDate)) &amp;&amp; <span class="keyword">...</span>
+0249                 (datem &lt;= datenum(inputConf.endDate))
+0250             <span class="comment">% Initialise temp cell array</span>
+0251             temp = cell(data_seg+2,1);
+0252             <span class="comment">% write I and J</span>
+0253             temp{1} = sscanf(I,<span class="string">'%u'</span>);
+0254             temp{2} = sscanf(J,<span class="string">'%u'</span>);
+0255             <span class="comment">% Get the actual data</span>
+0256             <span class="keyword">for</span> m = 1:data_seg
+0257                 I = fgetl(fid);
+0258                 temp{m+2} = sscanf(I,<span class="string">'%10f'</span>);
+0259             <span class="keyword">end</span>
+0260             met_temp{end+1}=temp;
+0261             clear temp;
+0262         <span class="keyword">else</span>
+0263             PASTIT = true;
+0264         <span class="keyword">end</span>
+0265     <span class="keyword">end</span>
+0266     
+0267     fclose(fid);
+0268 <span class="keyword">end</span>
+0269 
+0270 met_temp = met_temp(2:end);
+0271     
+0272 <span class="comment">% Not sure what these numbers are for.</span>
+0273 JBLP = IBLP-NCCP;
+0274 JBRP = IBRP-NCCP;
+0275 JBLW = IBLW-NCCW;
+0276 JBRW = IBRW-NCCW;
+0277 
+0278 elf = zeros(nelf,1);
+0279 
+0280 <span class="comment">% Temporary arrays to hold pressure/u-wind/v-wind from extracted met data</span>
+0281 P2 = zeros(NTOTI,1);
+0282 tmpa = zeros(NTOTI,1);
+0283 tmpb = zeros(NTOTI,1);
+0284 
+0285 <span class="comment">% FirstInt = true;</span>
+0286 kline = 1;
+0287 
+0288 <span class="comment">% Arrays to hold the pressure/u-wind/v-wind data when interpolated to the</span>
+0289 <span class="comment">% FVCOM grid</span>
+0290 slp = zeros(Mobj.nVerts,size(met_temp,2)/3);
+0291 uwnd = zeros(Mobj.nElems,size(met_temp,2)/3);
+0292 vwnd = zeros(Mobj.nElems,size(met_temp,2)/3);
+0293 time = zeros(size(met_temp,2)/3,1);
+0294 
+0295 <span class="comment">% Take our forcing data, translate it to the cs3x grid, then interpolate</span>
+0296 <span class="comment">% onto the FVCOM grid.</span>
+0297 <span class="keyword">for</span> m=0:3:size(met_temp,2)-1
+0298     <span class="keyword">for</span> ISW = 1:3
+0299         kline = kline+2;
+0300         ipts =  met_temp{m+ISW}{1}(1);
+0301         kpts =  met_temp{m+ISW}{1}(2);
+0302         
+0303         <span class="comment">% Store the date</span>
+0304         <span class="keyword">if</span> ISW == 1
+0305             time((m/3)+1) = datenum(met_temp{m+ISW}{2}(4),<span class="keyword">...</span>
+0306                 met_temp{m+ISW}{2}(3),met_temp{m+ISW}{2}(2),<span class="keyword">...</span>
+0307                 met_temp{m+ISW}{2}(1),0,0);
+0308         <span class="keyword">end</span>
+0309         
+0310         <span class="comment">% Preallocate 'field' for speed</span>
+0311         field = NaN(8,data_seg);
+0312         
+0313         <span class="comment">% Get the met data we're interested in</span>
+0314         <span class="keyword">for</span> n=1:data_seg
+0315             field(:,n)=met_temp{m+ISW}{n+2};
+0316         <span class="keyword">end</span>
+0317         field = reshape(field,data_seg*8,1);
+0318         
+0319         <span class="comment">% if the last column of data is not full, adjust for that</span>
+0320         <span class="keyword">if</span> size(met_temp{m+ISW}{end},1)&lt;8
+0321             too_many = 8-size(met_temp{m+ISW}{end},1);
+0322             field = field(1:end-too_many);
+0323         <span class="keyword">end</span>
+0324         
+0325         elf(ELFI)=field(FIEJ);
+0326         
+0327         <span class="comment">% Interpolate the data to the sea model grid</span>
+0328         <span class="keyword">if</span> ISW == 1
+0329             P2 = (WBLP.*elf(IBLP)')+(WBRP.*elf(IBRP)')+(WTLP.*elf(JBLP)')+<span class="keyword">...</span>
+0330                 (WTRP.*elf(JBRP)');
+0331         <span class="keyword">elseif</span> ISW == 2
+0332             tmpa = (WBLW.*elf(IBLW)')+(WBRW.*elf(IBRW)')+(WTLW.*elf(JBLW)')+<span class="keyword">...</span>
+0333                 (WTRW.*elf(JBRW)');
+0334         <span class="keyword">elseif</span> ISW == 3
+0335             tmpb = (WBLW.*elf(IBLW)')+(WBRW.*elf(IBRW)')+(WTLW.*elf(JBLW)')+<span class="keyword">...</span>
+0336                 (WTRW.*elf(JBRW)');
+0337         <span class="keyword">end</span>
+0338         
+0339         kline = kline+data_seg;
+0340     <span class="keyword">end</span>
+0341     
+0342     <span class="comment">% Rotate the winds to equatorial lat/lon</span>
+0343     tmpc = (COEFF1.*tmpa)+(COEFF2.*tmpb);
+0344     tmpd = (COEFF1.*tmpb)-(COEFF2.*tmpa);
+0345     
+0346     k = 0;
+0347     
+0348     <span class="comment">% Convert the data to a gridded array instead of a vector</span>
+0349     <span class="keyword">for</span> j = 0:NRR-1
+0350         I1 = NTRNT(j+1);
+0351         I2 = NTRNS(j+1);
+0352         <span class="keyword">for</span> i = I1+1:I2
+0353             k = k+1;
+0354             PRESS(i,NRR-j) = P2(k);
+0355             U10E(i,NRR-j) = tmpc(k);
+0356             U10N(i,NRR-j) = tmpd(k);
+0357         <span class="keyword">end</span>
+0358     <span class="keyword">end</span>
+0359     
+0360     <span class="comment">% Interpolate the pressure data onto the FVCOM grid</span>
+0361     slp(:,(m/3)+1) = interp2(cs3x_lon,cs3x_lat,PRESS',Mobj.lon,Mobj.lat);
+0362     
+0363     <span class="comment">% Calculate the coordinates of the centre of each FVCOM grid element</span>
+0364     xelement = mean(Mobj.lon(Mobj.tri(:,:)),2);
+0365     yelement = mean(Mobj.lat(Mobj.tri(:,:)),2);
+0366     
+0367     <span class="comment">% Interpolate the wind data onto the FVCOM grid</span>
+0368     uwnd(:,(m/3)+1) = interp2(cs3x_lon,cs3x_lat,U10E',xelement,yelement);
+0369     vwnd(:,(m/3)+1) = interp2(cs3x_lon,cs3x_lat,U10N',xelement,yelement);
+0370 <span class="keyword">end</span>
+0371 
+0372 <span class="comment">% Convert data time to Modified Julian Day time for FVCOM</span>
+0373 time = datevec(time);
+0374 MJD_time = greg2mjulian(time(:,1),time(:,2),time(:,3),time(:,4),time(:,5),<span class="keyword">...</span>
+0375     time(:,6));
+0376 
+0377 <span class="comment">% Add slp, uwnd, vwnd and time to Mobj</span>
+0378 Mobj.Met.slp.node = slp;
+0379 Mobj.Met.uwnd.data = uwnd;
+0380 Mobj.Met.vwnd.data = vwnd;
+0381 Mobj.Met.time = MJD_time;
+0382 
+0383 <span class="keyword">if</span>(ftbverbose);
+0384     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>]);
+0385 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

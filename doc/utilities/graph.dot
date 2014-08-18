@@ -22,10 +22,14 @@ digraph m2html {
   ST_wset -> SW_Kviscosity;
   SW_Kviscosity -> SW_Density;
   SW_Kviscosity -> SW_Viscosity;
-  calc_tauw -> SW_Density;
-  calc_tauw -> SW_Kviscosity;
   check_wset -> SW_Density;
   check_wset -> SW_Kviscosity;
+  cor25 -> grv;
+  cor25 -> psit_25;
+  cor25 -> psiu_25;
+  cor26_5a -> grv;
+  cor26_5a -> psit_26;
+  cor26_5a -> psiu_26;
   do_residual_plot -> do_residual;
   do_residual_plot -> m_ll2ll;
   do_transect_plot -> m_ll2ll;
@@ -37,7 +41,6 @@ digraph m2html {
   inkmlbb -> isintriangle;
   inkmlbb -> read_kml;
   inkmlbb -> tri_from_bndry;
-  mjulian2greg -> julian2greg;
   show_sigma -> sigma_gen;
   transect_nodes_screen -> ginput2;
 
@@ -53,11 +56,13 @@ digraph m2html {
   SW_Density [URL="SW_Density.html"];
   SW_Kviscosity [URL="SW_Kviscosity.html"];
   SW_Viscosity [URL="SW_Viscosity.html"];
-  calc_tauw [URL="calc_tauw.html"];
+  calc_rad [URL="calc_rad.html"];
   catstruct [URL="catstruct.html"];
   centroid [URL="centroid.html"];
   check_wset [URL="check_wset.html"];
   connectivity [URL="connectivity.html"];
+  cor25 [URL="cor25.html"];
+  cor26_5a [URL="cor26_5a.html"];
   deg2utm [URL="deg2utm.html"];
   do_ph_change_plot [URL="do_ph_change_plot.html"];
   do_ph_change_points_plot [URL="do_ph_change_points_plot.html"];
@@ -73,6 +78,8 @@ digraph m2html {
   do_volume_change2 [URL="do_volume_change2.html"];
   find_boundary_elements [URL="find_boundary_elements.html"];
   fix_inside_boundary [URL="fix_inside_boundary.html"];
+  fvcom2grid [URL="fvcom2grid.html"];
+  get_BADC_data [URL="get_BADC_data.html"];
   get_NCEP_year [URL="get_NCEP_year.html"];
   get_runs [URL="get_runs.html"];
   get_runs_test [URL="get_runs_test.html"];
@@ -82,6 +89,7 @@ digraph m2html {
   grid2fvcom [URL="grid2fvcom.html"];
   grid_vert_interp [URL="grid_vert_interp.html"];
   gridvecs [URL="gridvecs.html"];
+  grv [URL="grv.html"];
   inbox [URL="inbox.html"];
   inkmlbb [URL="inkmlbb.html"];
   isintriangle [URL="isintriangle.html"];
@@ -96,9 +104,19 @@ digraph m2html {
   mjulian2greg [URL="mjulian2greg.html"];
   naut_2_cart [URL="naut_2_cart.html"];
   pl64 [URL="pl64.html"];
+  plot_fvcom_field [URL="plot_fvcom_field.html"];
+  pp2nc [URL="pp2nc.html"];
+  pp2nc_subset [URL="pp2nc_subset.html"];
+  psit_25 [URL="psit_25.html"];
+  psit_26 [URL="psit_26.html"];
+  psiu_25 [URL="psiu_25.html"];
+  psiu_26 [URL="psiu_26.html"];
+  qsat [URL="qsat.html"];
+  qsee [URL="qsee.html"];
   read_fvcom_mesh [URL="read_fvcom_mesh.html"];
   read_kml [URL="read_kml.html"];
   read_netCDF_FVCOM [URL="read_netCDF_FVCOM.html"];
+  read_netcdf_vars [URL="read_netcdf_vars.html"];
   readdir [URL="readdir.html"];
   runmean [URL="runmean.html"];
   show_sigma [URL="show_sigma.html"];

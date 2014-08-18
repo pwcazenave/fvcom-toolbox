@@ -24,7 +24,7 @@
 <div class="box"><strong>Smooth a vertex-based field using averages</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [field]  = smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts) </strong></div>
+<div class="box"><strong>function field = smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Smooth a vertex-based field using averages  
@@ -32,11 +32,11 @@
  [field] = function smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts)  
 
  DESCRIPTION:
-    Smooth a vertex based field 
+    Smooth a vertex based field
 
  INPUT
     Mobj         = Matlab mesh object
-    fielin       = vertex based field
+    fieldin      = vertex based field
     SmoothFactor = smoothing factor (0, no smoothing, 1 full smoothing)
     nLoops       = number of smoothing iterations
     SmoothPts    = list of vertices to smooth [optional, default = all]
@@ -49,10 +49,12 @@
 
  Author(s):  
     Geoff Cowles (University of Massachusetts Dartmouth)
+    Pierre Cazenave (Plymouth Marine Laboratory)
 
  Revision history
+   2014-02-25 Add verbose flag and some minor cosmetic changes.
    
-==============================================================================</pre></div>
+==========================================================================</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -67,82 +69,82 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [field]  = smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts)</a>
-0002 
-0003 <span class="comment">% Smooth a vertex-based field using averages</span>
-0004 <span class="comment">%</span>
-0005 <span class="comment">% [field] = function smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts)</span>
-0006 <span class="comment">%</span>
-0007 <span class="comment">% DESCRIPTION:</span>
-0008 <span class="comment">%    Smooth a vertex based field</span>
-0009 <span class="comment">%</span>
-0010 <span class="comment">% INPUT</span>
-0011 <span class="comment">%    Mobj         = Matlab mesh object</span>
-0012 <span class="comment">%    fielin       = vertex based field</span>
-0013 <span class="comment">%    SmoothFactor = smoothing factor (0, no smoothing, 1 full smoothing)</span>
-0014 <span class="comment">%    nLoops       = number of smoothing iterations</span>
-0015 <span class="comment">%    SmoothPts    = list of vertices to smooth [optional, default = all]</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">% OUTPUT:</span>
-0018 <span class="comment">%    field = smoothed, vertex-based field</span>
-0019 <span class="comment">%</span>
-0020 <span class="comment">% EXAMPLE USAGE</span>
-0021 <span class="comment">%    Mobj.h = smoothfield(Mobj.h,Mobj,0.5,4)</span>
-0022 <span class="comment">%</span>
-0023 <span class="comment">% Author(s):</span>
-0024 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function field = smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts)</a>
+0002 <span class="comment">% Smooth a vertex-based field using averages</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% [field] = function smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Smooth a vertex based field</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT</span>
+0010 <span class="comment">%    Mobj         = Matlab mesh object</span>
+0011 <span class="comment">%    fieldin      = vertex based field</span>
+0012 <span class="comment">%    SmoothFactor = smoothing factor (0, no smoothing, 1 full smoothing)</span>
+0013 <span class="comment">%    nLoops       = number of smoothing iterations</span>
+0014 <span class="comment">%    SmoothPts    = list of vertices to smooth [optional, default = all]</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%    field = smoothed, vertex-based field</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% EXAMPLE USAGE</span>
+0020 <span class="comment">%    Mobj.h = smoothfield(Mobj.h,Mobj,0.5,4)</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Author(s):</span>
+0023 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0024 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
 0025 <span class="comment">%</span>
 0026 <span class="comment">% Revision history</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">%==============================================================================</span>
-0029 subname = <span class="string">'smoothfield'</span>;
-0030 <span class="comment">%fprintf('\n')</span>
-0031 <span class="comment">%fprintf(['begin : ' subname '\n'])</span>
-0032 
-0033 <span class="comment">%------------------------------------------------------------------------------</span>
-0034 <span class="comment">% Parse input</span>
-0035 <span class="comment">%------------------------------------------------------------------------------</span>
+0027 <span class="comment">%   2014-02-25 Add verbose flag and some minor cosmetic changes.</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">%==========================================================================</span>
+0030 
+0031 <span class="keyword">global</span> ftbverbose;
+0032 subname = <span class="string">'smoothfield'</span>;
+0033 <span class="keyword">if</span> ftbverbose
+0034     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0035 <span class="keyword">end</span>
 0036 
-0037 <span class="keyword">if</span>(exist(<span class="string">'fieldin'</span>)*exist(<span class="string">'Mobj'</span>)*exist(<span class="string">'SmoothFactor'</span>)*exist(<span class="string">'nLoops'</span>) == 0)
-0038     error(<span class="string">'arguments to smoothfield are missing'</span>)
-0039 <span class="keyword">end</span>;
+0037 <span class="comment">%--------------------------------------------------------------------------</span>
+0038 <span class="comment">% Parse input</span>
+0039 <span class="comment">%--------------------------------------------------------------------------</span>
 0040 
-0041 <span class="keyword">if</span>(exist(<span class="string">'SmoothPts'</span>))
-0042     nPts = length(SmoothPts);
-0043 <span class="keyword">else</span>
-0044     nPts       = Mobj.nVerts;
-0045     SmoothPts  = 1:Mobj.nVerts;
-0046 <span class="keyword">end</span>;
-0047 
-0048 <span class="keyword">if</span>(~Mobj.have_mets)
-0049     error(<span class="string">'cannot smooth field, need mesh metrics for smoothing, use setup_metrics'</span>)
-0050 <span class="keyword">end</span>;
+0041 <span class="keyword">if</span> exist(<span class="string">'fieldin'</span>, <span class="string">'var'</span>) * exist(<span class="string">'Mobj'</span>, <span class="string">'var'</span>) * exist(<span class="string">'SmoothFactor'</span>, <span class="string">'var'</span>) * exist(<span class="string">'nLoops'</span>, <span class="string">'var'</span>) == 0
+0042     error(<span class="string">'Arguments to smoothfield are missing'</span>)
+0043 <span class="keyword">end</span>
+0044 
+0045 <span class="keyword">if</span> exist(<span class="string">'SmoothPts'</span>, <span class="string">'var'</span>)
+0046     nPts = length(SmoothPts);
+0047 <span class="keyword">else</span>
+0048     nPts       = Mobj.nVerts;
+0049     SmoothPts  = 1:Mobj.nVerts;
+0050 <span class="keyword">end</span>
 0051 
-0052 <span class="comment">%------------------------------------------------------------------------------</span>
-0053 <span class="comment">% Smoothing Loops</span>
-0054 <span class="comment">%------------------------------------------------------------------------------</span>
+0052 <span class="keyword">if</span> ~Mobj.have_mets
+0053     error(<span class="string">'Cannot smooth field, need mesh metrics for smoothing, use setup_metrics.'</span>)
+0054 <span class="keyword">end</span>
 0055 
-0056 <span class="comment">% initialize iteration</span>
-0057 field = fieldin;
-0058 
-0059 <span class="comment">%iterate</span>
-0060 <span class="keyword">for</span> ll=1:nLoops;
+0056 <span class="comment">%--------------------------------------------------------------------------</span>
+0057 <span class="comment">% Smoothing Loops</span>
+0058 <span class="comment">%--------------------------------------------------------------------------</span>
+0059 
+0060 <span class="keyword">for</span> ll = 1:nLoops;
 0061     field = fieldin;
-0062     <span class="keyword">for</span> ii=1:nPts;
+0062     <span class="keyword">for</span> ii = 1:nPts;
 0063           i = SmoothPts(ii);
-0064           ss = 0.;
-0065           <span class="keyword">for</span> k=1:Mobj.ntsn(i); 
+0064         ss = 0;
+0065         <span class="keyword">for</span> k = 1:Mobj.ntsn(i);
 0066             node = Mobj.nbsn(i,k);
 0067             ss = ss + field(node)/real(Mobj.ntsn(i));
-0068           <span class="keyword">end</span>;
+0068         <span class="keyword">end</span>
 0069           fieldin(i) = (1-SmoothFactor)*field(i) + SmoothFactor*ss;
-0070     <span class="keyword">end</span>;
-0071 <span class="keyword">end</span>;
+0070     <span class="keyword">end</span>
+0071 <span class="keyword">end</span>
 0072 field = fieldin; 
 0073 
-0074 
-0075 <span class="comment">%fprintf(['end   : ' subname '\n'])</span>
-0076</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0074 <span class="keyword">if</span> ftbverbose
+0075     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0076 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

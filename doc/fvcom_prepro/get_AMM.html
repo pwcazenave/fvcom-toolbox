@@ -4,7 +4,7 @@
 <head>
   <title>Description of get_AMM</title>
   <meta name="keywords" content="get_AMM">
-  <meta name="description" content="Extract boundary forcing information from NOC Operational Tide Surge">
+  <meta name="description" content="Extract boundary forcing information from NOC Operational Tide Model">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
   <meta name="robots" content="index, follow">
@@ -21,20 +21,20 @@
 </h1>
 
 <h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>Extract boundary forcing information from NOC Operational Tide Surge</strong></div>
+<div class="box"><strong>Extract boundary forcing information from NOC Operational Tide Model</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="box"><strong>function [Mobj] = get_AMM(Mobj,StartDate,EndDate,ModelFolder) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"> Extract boundary forcing information from NOC Operational Tide Surge
- Model output output  
+<div class="fragment"><pre class="comment"> Extract boundary forcing information from NOC Operational Tide Model
+ output.
 
  function get_AMM(Mobj,StartDate,EndDate,ModelFolder)
 
  DESCRIPTION:
-    Extract boundary forcing information from NOC Operational Tide Surge
-    Model output and interpolate to FVCOM open boundary nodes.
+    Extract boundary forcing information from NOC Operational Tide
+    Model (no surge) output and interpolate to FVCOM open boundary nodes.
 
  INPUT
     Mobj          = Matlab mesh object
@@ -71,14 +71,14 @@ This function is called by:
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = get_AMM(Mobj,StartDate,EndDate,ModelFolder)</a>
 0002 
-0003 <span class="comment">% Extract boundary forcing information from NOC Operational Tide Surge</span>
-0004 <span class="comment">% Model output output</span>
+0003 <span class="comment">% Extract boundary forcing information from NOC Operational Tide Model</span>
+0004 <span class="comment">% output.</span>
 0005 <span class="comment">%</span>
 0006 <span class="comment">% function get_AMM(Mobj,StartDate,EndDate,ModelFolder)</span>
 0007 <span class="comment">%</span>
 0008 <span class="comment">% DESCRIPTION:</span>
-0009 <span class="comment">%    Extract boundary forcing information from NOC Operational Tide Surge</span>
-0010 <span class="comment">%    Model output and interpolate to FVCOM open boundary nodes.</span>
+0009 <span class="comment">%    Extract boundary forcing information from NOC Operational Tide</span>
+0010 <span class="comment">%    Model (no surge) output and interpolate to FVCOM open boundary nodes.</span>
 0011 <span class="comment">%</span>
 0012 <span class="comment">% INPUT</span>
 0013 <span class="comment">%    Mobj          = Matlab mesh object</span>
@@ -162,6 +162,6 @@ This function is called by:
 0091 <span class="keyword">if</span>(ftbverbose);
 0092     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>]);
 0093 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 04-Feb-2013 14:22:28 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

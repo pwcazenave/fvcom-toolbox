@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of extract_mesoscale</title>
+  <meta name="keywords" content="extract_mesoscale">
+  <meta name="description" content="Load mesoscale operational POLCOMS meteorlogical input data and convert">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; extract_mesoscale.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>extract_mesoscale
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Load mesoscale operational POLCOMS meteorlogical input data and convert</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [metvar,X_send,Y_send] = extract_mesoscale(floc,ndays) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Load mesoscale operational POLCOMS meteorlogical input data and convert
+ to the cs3 operational surge model grid.
+
+ [metvar,X_send,Y_send] = extract_mesoscale(floc,ndays)
+
+ DESCRIPTION:
+     Extracts meteorological data from the met input files for the POLCOMS 
+     operational model, and reformats it to fit the cs3 operational surge 
+     model grid.
+     
+ INPUT:
+     floc - location of the met data file to be converted
+     ndays - the number of days in the month of interest
+     
+ OUTPUT:
+     metvar - array of met data ready to be interpolated onto the FVCOM 
+     grid.
+     X_send, Y_send - x and y coordinates of the met data
+     
+ Author(s):
+     Jenny Brown (National Oceanography Centre, Liverpool)
+     Karen Amoudry (National Oceanography Centre, Liverpool)
+     
+ KJA revision history:
+     2013-08-07 Adapted original version from JMB to take the file location 
+     as an input to the script.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [metvar,X_send,Y_send] = extract_mesoscale(floc,ndays)</a>
+0002 <span class="comment">% Load mesoscale operational POLCOMS meteorlogical input data and convert</span>
+0003 <span class="comment">% to the cs3 operational surge model grid.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% [metvar,X_send,Y_send] = extract_mesoscale(floc,ndays)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%     Extracts meteorological data from the met input files for the POLCOMS</span>
+0009 <span class="comment">%     operational model, and reformats it to fit the cs3 operational surge</span>
+0010 <span class="comment">%     model grid.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% INPUT:</span>
+0013 <span class="comment">%     floc - location of the met data file to be converted</span>
+0014 <span class="comment">%     ndays - the number of days in the month of interest</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%     metvar - array of met data ready to be interpolated onto the FVCOM</span>
+0018 <span class="comment">%     grid.</span>
+0019 <span class="comment">%     X_send, Y_send - x and y coordinates of the met data</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% Author(s):</span>
+0022 <span class="comment">%     Jenny Brown (National Oceanography Centre, Liverpool)</span>
+0023 <span class="comment">%     Karen Amoudry (National Oceanography Centre, Liverpool)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% KJA revision history:</span>
+0026 <span class="comment">%     2013-08-07 Adapted original version from JMB to take the file location</span>
+0027 <span class="comment">%     as an input to the script.</span>
+0028 
+0029 A= load (fullfile(floc));
+0030 tint=24/3;<span class="comment">%Time interval 3hrs</span>
+0031 days=ndays+2-1/tint; <span class="comment">% number of days in month +2-1 to include extra day of output up to 21:00, the output before midnight of the next day</span>
+0032                <span class="comment">% day 1 = 00:00 of the start day, day 1.5 = 12:00 of the start day</span>
+0033 
+0034 <span class="comment">%POLCOMS meso met grid</span>
+0035 dx=0.11; dy=0.11; 
+0036 x1=-13;
+0037 y1=48.39;
+0038 nx=218;
+0039 ny=136;
+0040 x2=(nx-1)*dx+x1;
+0041 y2=(ny-1)*dy+y1;
+0042 [X,Y]=meshgrid(x1:dx:x2,y1:dy:y2);<span class="comment">%grid</span>
+0043 X_send = x1:dx:x2;
+0044 Y_send = y1:dy:y2;
+0045 
+0046 C=zeros(ny*days*tint,nx);<span class="comment">%ygrid*number of days * outputs per day, xgrid</span>
+0047 jj=1;
+0048 <span class="keyword">for</span> ii=1:(ny*nx):length(A) <span class="comment">%total length every 3 hours output</span>
+0049    <span class="comment">% B = reshape(A(ii,ii+29647),136,218);</span>
+0050     C(jj:jj+ny-1,:) = reshape(A(ii:ii+nx*ny-1),nx,ny)';
+0051     jj=jj+ny;
+0052 <span class="keyword">end</span>
+0053 
+0054 <span class="comment">% Reshape C to have form ny x nx x days*tint</span>
+0055 metvar = zeros(ny,nx,days*tint);
+0056 jj=1;
+0057 <span class="keyword">for</span> kk = 1:ny:length(C)
+0058     metvar(:,:,jj) = C(kk:kk+ny-1,:);
+0059     jj = jj+1;
+0060 <span class="keyword">end</span>
+0061 
+0062 <span class="comment">%%</span>
+0063 <span class="comment">% for kk=1:ny:length(C)</span>
+0064 <span class="comment">%     figure(3)</span>
+0065 <span class="comment">%     pcolor(X,Y,C(kk:kk+ny-1,:))</span>
+0066 <span class="comment">%     shading interp</span>
+0067 <span class="comment">%     hold on</span>
+0068 <span class="comment">%     colorbar</span>
+0069 <span class="comment">% end</span>
+0070 
+0071</pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

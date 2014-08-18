@@ -27,15 +27,15 @@
 <div class="box"><strong>function [Mobj] = read_fvcom_mesh(gridfile) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"> Read fvcom mesh file into Matlab mesh object  
+<div class="fragment"><pre class="comment"> Read fvcom mesh file into Matlab mesh object
 
  [Mobj] = function read_fvcom_mesh(gridfile)
 
  DESCRIPTION:
     Read FVCOM Grid file (connectivity + nodes)
-    Store in a matlab mesh object 
+    Store in a matlab mesh object
 
- INPUT [keyword pairs]:  
+ INPUT [keyword pairs]:
    'gridfile'  = fvcom mesh file
 
  OUTPUT:
@@ -44,11 +44,13 @@
  EXAMPLE USAGE
     Mobj = read_fvcom_mesh('tst_grd.dat')
 
- Author(s):  
+ Author(s):
     Geoff Cowles (University of Massachusetts Dartmouth)
+    Pierre Cazenave (Plymouth Marine Laboratory)
 
  Revision history
-   
+    2014-04-23 Minor formatting fixes and add the global ftbverbose flag.
+
 ==============================================================================</pre></div>
 
 <!-- crossreference -->
@@ -64,7 +66,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = read_fvcom_mesh(gridfile) </a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = read_fvcom_mesh(gridfile)</a>
 0002 
 0003 <span class="comment">% Read fvcom mesh file into Matlab mesh object</span>
 0004 <span class="comment">%</span>
@@ -85,93 +87,101 @@ This function is called by:
 0019 <span class="comment">%</span>
 0020 <span class="comment">% Author(s):</span>
 0021 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0022 <span class="comment">%</span>
-0023 <span class="comment">% Revision history</span>
-0024 <span class="comment">%</span>
-0025 <span class="comment">%==============================================================================</span>
-0026 
-0027 subname = <span class="string">'read_fvcom_mesh'</span>;
-0028 fprintf(<span class="string">'\n'</span>)
-0029 fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
-0030 
-0031 
-0032 <span class="comment">%------------------------------------------------------------------------------</span>
-0033 <span class="comment">% Create a blank mesh object</span>
-0034 <span class="comment">%------------------------------------------------------------------------------</span>
-0035 Mobj = make_blank_mesh();
-0036 coordinate = <span class="string">'cartesian'</span>;
-0037 have_bath = false;
-0038 have_xy = true;
-0039 have_lonlat = false;
-0040 
-0041 
-0042 <span class="comment">%------------------------------------------------------------------------------</span>
-0043 <span class="comment">% Read the mesh from the fvcom grid file</span>
-0044 <span class="comment">%------------------------------------------------------------------------------</span>
+0022 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Revision history</span>
+0025 <span class="comment">%    2014-04-23 Minor formatting fixes and add the global ftbverbose flag.</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">%==============================================================================</span>
+0028 
+0029 subname = <span class="string">'read_fvcom_mesh'</span>;
+0030 <span class="keyword">global</span> ftbverbose;
+0031 <span class="keyword">if</span> ftbverbose
+0032     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0033 <span class="keyword">end</span>
+0034 
+0035 
+0036 <span class="comment">%------------------------------------------------------------------------------</span>
+0037 <span class="comment">% Create a blank mesh object</span>
+0038 <span class="comment">%------------------------------------------------------------------------------</span>
+0039 Mobj = make_blank_mesh();
+0040 coordinate = <span class="string">'cartesian'</span>;
+0041 have_bath = false;
+0042 have_xy = true;
+0043 have_lonlat = false;
+0044 
 0045 
-0046 
-0047 fid = fopen(gridfile,<span class="string">'r'</span>);
-0048 <span class="keyword">if</span>(fid  &lt; 0)
-0049     error([<span class="string">'file: '</span> gridfile <span class="string">' does not exist'</span>]);
-0050 <span class="keyword">end</span>;
-0051 
-0052 <span class="comment">%----------------------------------------------------</span>
-0053 <span class="comment">% read in the fvcom connectivity and vertices</span>
-0054 <span class="comment">%----------------------------------------------------</span>
-0055 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1); nVerts = C{4};
-0056 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1); nElems = C{4};
-0057 tri = zeros(nElems,3); 
-0058 x   = zeros(nVerts,1);
-0059 y   = zeros(nVerts,1);
-0060 h   = zeros(nVerts,1);
-0061 lon = zeros(nVerts,1);
-0062 lat = zeros(nVerts,1);
-0063 ts  = zeros(nVerts,1);
-0064 
-0065 fprintf(<span class="string">'reading mesh file\n'</span>);
-0066 fprintf(<span class="string">'# nodes %d\n'</span>,nVerts);
-0067 fprintf(<span class="string">'# elems %d\n'</span>,nElems);
-0068 <span class="keyword">for</span> i=1:nElems
-0069   C = textscan(fid,<span class="string">' %d %d %d %d %d\n'</span>,1);
-0070   tri(i,1) = C{2};  tri(i,2) = C{3}; tri(i,3) = C{4};
-0071 <span class="keyword">end</span>;
-0072 <span class="keyword">for</span> i=1:nVerts 
-0073   C = textscan(fid, <span class="string">'%d %f %f %f'</span>, 1);
-0074   x(i) = C{2};
-0075   y(i) = C{3};
-0076 <span class="keyword">end</span>;
-0077 fprintf(<span class="string">'mesh read in\n'</span>);
-0078 fclose(fid);
-0079 
-0080 <span class="comment">%------------------------------------------------------------------------------</span>
-0081 <span class="comment">% Transfer to Mesh structure</span>
-0082 <span class="comment">%------------------------------------------------------------------------------</span>
-0083 
-0084 Mobj.nVerts  = nVerts;
-0085 Mobj.nElems  = nElems;
-0086 Mobj.nativeCoords = coordinate;
-0087 
-0088 <span class="keyword">if</span>(have_lonlat)
-0089     Mobj.have_lonlat  = have_lonlat;
-0090 <span class="keyword">end</span>;
-0091 <span class="keyword">if</span>(have_xy)
-0092     Mobj.have_xy      = have_xy;
-0093 <span class="keyword">end</span>;
-0094 <span class="keyword">if</span>(have_bath)
-0095     Mobj.have_bath    = have_bath;
+0046 <span class="comment">%------------------------------------------------------------------------------</span>
+0047 <span class="comment">% Read the mesh from the fvcom grid file</span>
+0048 <span class="comment">%------------------------------------------------------------------------------</span>
+0049 
+0050 
+0051 fid = fopen(gridfile,<span class="string">'r'</span>);
+0052 <span class="keyword">if</span>(fid  &lt; 0)
+0053     error([<span class="string">'file: '</span> gridfile <span class="string">' does not exist'</span>]);
+0054 <span class="keyword">end</span>;
+0055 
+0056 <span class="comment">%----------------------------------------------------</span>
+0057 <span class="comment">% read in the fvcom connectivity and vertices</span>
+0058 <span class="comment">%----------------------------------------------------</span>
+0059 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1); nVerts = C{4};
+0060 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1); nElems = C{4};
+0061 tri = zeros(nElems,3);
+0062 x   = zeros(nVerts,1);
+0063 y   = zeros(nVerts,1);
+0064 h   = zeros(nVerts,1);
+0065 lon = zeros(nVerts,1);
+0066 lat = zeros(nVerts,1);
+0067 ts  = zeros(nVerts,1);
+0068 
+0069 <span class="keyword">if</span> ftbverbose
+0070     fprintf(<span class="string">'reading mesh file\n'</span>);
+0071     fprintf(<span class="string">'# nodes %d\n'</span>,nVerts);
+0072     fprintf(<span class="string">'# elems %d\n'</span>,nElems);
+0073 <span class="keyword">end</span>
+0074 <span class="keyword">for</span> i=1:nElems
+0075   C = textscan(fid,<span class="string">' %d %d %d %d %d\n'</span>,1);
+0076   tri(i,1) = C{2};  tri(i,2) = C{3}; tri(i,3) = C{4};
+0077 <span class="keyword">end</span>;
+0078 <span class="keyword">for</span> i=1:nVerts
+0079   C = textscan(fid, <span class="string">'%d %f %f %f'</span>, 1);
+0080   x(i) = C{2};
+0081   y(i) = C{3};
+0082 <span class="keyword">end</span>;
+0083 <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'mesh read in\n'</span>); <span class="keyword">end</span>
+0084 fclose(fid);
+0085 
+0086 <span class="comment">%------------------------------------------------------------------------------</span>
+0087 <span class="comment">% Transfer to Mesh structure</span>
+0088 <span class="comment">%------------------------------------------------------------------------------</span>
+0089 
+0090 Mobj.nVerts  = nVerts;
+0091 Mobj.nElems  = nElems;
+0092 Mobj.nativeCoords = coordinate;
+0093 
+0094 <span class="keyword">if</span>(have_lonlat)
+0095     Mobj.have_lonlat  = have_lonlat;
 0096 <span class="keyword">end</span>;
-0097 Mobj.x            = x;
-0098 Mobj.y            = y;
-0099 Mobj.ts           = ts;
-0100 Mobj.lon          = lon;
-0101 Mobj.lat          = lat;
-0102 Mobj.h            = h;
-0103 Mobj.tri          = tri;
-0104 
-0105 
-0106 fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0107 
-0108</pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0097 <span class="keyword">if</span>(have_xy)
+0098     Mobj.have_xy      = have_xy;
+0099 <span class="keyword">end</span>;
+0100 <span class="keyword">if</span>(have_bath)
+0101     Mobj.have_bath    = have_bath;
+0102 <span class="keyword">end</span>;
+0103 Mobj.x            = x;
+0104 Mobj.y            = y;
+0105 Mobj.ts           = ts;
+0106 Mobj.lon          = lon;
+0107 Mobj.lat          = lat;
+0108 Mobj.h            = h;
+0109 Mobj.tri          = tri;
+0110 
+0111 
+0112 <span class="keyword">if</span> ftbverbose
+0113     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0114 <span class="keyword">end</span>
+0115 
+0116</pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

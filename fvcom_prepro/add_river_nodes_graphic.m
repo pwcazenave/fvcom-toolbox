@@ -19,12 +19,14 @@ function [Mobj]  = add_river_nodes(Mobj,RiverName)
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Note:
 %    Uses ginput2 which allows zooming before selecting points and displays
 %    clicked points realtime
 %
 % Revision history
+%    2014-05-20 Set boolean flag to true to indicate rivers.
 %   
 %==============================================================================
 subname = 'add_river_nodes';
@@ -86,6 +88,7 @@ Mobj.nRivNodes(Mobj.nRivers) = npts;
 Mobj.riv_nodes(Mobj.nRivers,1:npts) = ipt;
 Mobj.riv_name{Mobj.nRivers} = RiverName;
 
+Mobj.have_rivers = true;
 
 if(ftbverbose)
   fprintf(['end   : ' subname '\n'])

@@ -4,7 +4,7 @@
 <head>
   <title>Description of read_netCDF_FVCOM</title>
   <meta name="keywords" content="read_netCDF_FVCOM">
-  <meta name="description" content="">
+  <meta name="description" content="Function to extract data from a Netcdf file output from FVCOM.">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
   <meta name="robots" content="index, follow">
@@ -21,72 +21,102 @@
 </h1>
 
 <h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong></strong></div>
+<div class="box"><strong>Function to extract data from a Netcdf file output from FVCOM.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [varargout]=read_netCDF_FVCOM(varargin) </strong></div>
+<div class="box"><strong>function data =read_netCDF_FVCOM(varargin) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment">
- Function to extract data from a Netcdf file output from FVCOM
+<div class="fragment"><pre class="comment"> Function to extract data from a Netcdf file output from FVCOM.
 
- [data] = read_netCDF_FVCOM(varargin)
+ data = read_netCDF_FVCOM(varargin)
 
  DESCRIPTION:
-    Function to extract data from a Netcdf file output from FVCOM
-    Outputs data in cell array
-    
+    Function to extract data from a netCDF file output from FVCOM. Outputs
+    data in cell array.
 
- INPUT [keyword pairs]:  
+ INPUT [keyword pairs]:
    Options are passed in pairs.
-   The list of options (in no particular order) includes:
-   params_opts={'time','data_dir','file_netcdf','varnames','nele_idx','node_idx','siglay_idx','siglev_idx'};
 
-   time  time_interval = {'30/01/06 00:00:00','01/02/06 23:00:00'} or -1 to
-   extract all times in NC file
+   The list of keywords is:
+       - 'time'
+       - 'data_dir'
+       - 'file_netcdf'
+       - 'varnames'
+       - 'nele_idx'
+       - 'node_idx'
+       - 'siglay_idx'
+       - 'siglev_idx'
 
-   data_dir '/home_nfs/rito/models/FVCOM/...' directory where NC file is.
-   default value is ../fvcom_postproc/netcdf
+   'time' - {'30/01/06 00:00:00', '01/02/06 23:00:00'} or -1 to extract
+   all times.
 
-   file_netcdf 'filename.nc'  default value is file_netcdf='*.nc', but it
-   only access the first file in alphabetical order in the directory
+   'data_dir' - '/home/fvcom/results/...' directory where netCDF file is.
+   Default value is ../fvcom_postproc/netcdf
 
-   varnames  {'Itime','Itime2','xc','yc','art1','art2','h','siglay','siglev','nv','zeta','ua','va'}
-   cell array of variable names to be read from NC file
-   the variables need to exist in the file but they are case insensitive. The complete list is given by
-   running this script with varnames set to [];
+   'file_netcdf' - 'filename.nc'. Default value is '*.nc', but it only
+   access the first file in alphabetical order in the directory.
 
-   The variables can be restricted in five possible dimensions
-   node_idx, nele_idx, siglev_idx, siglay_idx and time_idx
-   default values cause the script to extract all available data for all
-   possible dimensions. time_idx is constructed from time_interval. All
-   other indices need to be zero referenced as is Netcdf standard.
-   No checks are done on the bounds of each dimension so make sure you
-   choose them right!
+   'varnames' - Cell array of variable names to read from the netCDF file.
+   The variables need to exist in the file but they are case insensitive.
+   Choose FVCOM output variable names. For example:
+       - 'Itime'
+       - 'Itime2'
+       - 'xc'
+       - 'yc'
+       - 'art1'
+       - 'art2'
+       - 'h'
+       - 'siglay'
+       - 'siglev'
+       - 'nv'
+       - 'zeta'
+       - 'ua'
+       - 'va'
+   The complete list for a given file is given by running this script with
+   varnames set to [].
+
+   The variables can be restricted in five possible dimensions:
+       - 'node_idx'
+       - 'nele_idx'
+       - 'siglev_idx'
+       - 'siglay_idx'
+       - 'time_idx'
+   Default values cause the script to extract all available data for all
+   possible dimensions. All indices except time need to be zero referenced
+   as is standard for netCDF indexing. No checks are done on the bounds of
+   each dimension so make sure you choose them right!
 
 
  OUTPUT:
-    data = cell array with variables in the order they were requested
+    data = cell with variables in the order they were requested.
 
  EXAMPLE USAGE
-   var_2_xtractFVCOM_0 = {'Itime','Itime2','xc','yc','art1','art2','h','siglay','siglev','nv','zeta','ua','va'};
-   date_range={'30/01/06 00:00:00','15/02/06 23:00:00'};  1 if all available data wanted
-   node_idx=[10:30,40:50];% zero referenced!
-   FVCOM_data=read_netCDF_FVCOM_in_progress('time',date_range,'data_dir','/home_nfs/models/FVCOM/runCO2_leak/output/',...
-     'file_netcdf','co2_S1_0001.nc','siglev_idx',1,...
-     'node_idx',node_idx,'varnames',var_2_xtractFVCOM_0);
+   vars = {'Times', 'xc', 'yc', 'h', 'siglay', 'nv', 'zeta', 'ua', 'va'};
+   date_range = {'30/01/06 00:00:00', '15/02/06 23:00:00'};
+   node_idx = [10:30, 40:50]; % zero referenced!
+   data_dir = '/home/fvcom/results/output/';
+   FVCOM = read_netCDF_FVCOM('data_dir', data_dir, ...
+       'file_netcdf', 'casename_0001.nc', ...
+       'time', date_range, ...
+       'siglev_idx', 1, ...
+       'node_idx', node_idx, ...
+       'varnames', vars);
 
-
- Author(s):  
+ Author(s):
     Ricardo Torres - Plymouth Marine Laboratory 2012
+    Hakeem Johnson - CH2M
+    Pierre Cazenave - Plymouth Marine Laboratory
 
- Revision history
+ Revision history:
    v0 March 2012
-==============================================================================
-%
-------------------------------------------------------------------------------
-  Parse input arguments 
-------------------------------------------------------------------------------</pre></div>
+   2014-03-06 - Add the global verbose flag. Also tidy up the help a bit.
+   Also change some verbose statements to use fprintf instead of disp for
+   better control over formatting. Also fixed a bug where if a 2D array
+   was requested after a 3D array, the 2D array would cause the function
+   to crash (because it was using a 3D index for getVar).
+
+==========================================================================</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -101,297 +131,408 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [varargout]=read_netCDF_FVCOM(varargin)</a>
-0002 <span class="comment">%</span>
-0003 <span class="comment">% Function to extract data from a Netcdf file output from FVCOM</span>
-0004 <span class="comment">%</span>
-0005 <span class="comment">% [data] = read_netCDF_FVCOM(varargin)</span>
-0006 <span class="comment">%</span>
-0007 <span class="comment">% DESCRIPTION:</span>
-0008 <span class="comment">%    Function to extract data from a Netcdf file output from FVCOM</span>
-0009 <span class="comment">%    Outputs data in cell array</span>
-0010 <span class="comment">%</span>
-0011 <span class="comment">%</span>
-0012 <span class="comment">% INPUT [keyword pairs]:</span>
-0013 <span class="comment">%   Options are passed in pairs.</span>
-0014 <span class="comment">%   The list of options (in no particular order) includes:</span>
-0015 <span class="comment">%   params_opts={'time','data_dir','file_netcdf','varnames','nele_idx','node_idx','siglay_idx','siglev_idx'};</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">%   time  time_interval = {'30/01/06 00:00:00','01/02/06 23:00:00'} or -1 to</span>
-0018 <span class="comment">%   extract all times in NC file</span>
-0019 <span class="comment">%</span>
-0020 <span class="comment">%   data_dir '/home_nfs/rito/models/FVCOM/...' directory where NC file is.</span>
-0021 <span class="comment">%   default value is ../fvcom_postproc/netcdf</span>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function data =read_netCDF_FVCOM(varargin)</a>
+0002 <span class="comment">% Function to extract data from a Netcdf file output from FVCOM.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% data = read_netCDF_FVCOM(varargin)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Function to extract data from a netCDF file output from FVCOM. Outputs</span>
+0008 <span class="comment">%    data in cell array.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT [keyword pairs]:</span>
+0011 <span class="comment">%   Options are passed in pairs.</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">%   The list of keywords is:</span>
+0014 <span class="comment">%       - 'time'</span>
+0015 <span class="comment">%       - 'data_dir'</span>
+0016 <span class="comment">%       - 'file_netcdf'</span>
+0017 <span class="comment">%       - 'varnames'</span>
+0018 <span class="comment">%       - 'nele_idx'</span>
+0019 <span class="comment">%       - 'node_idx'</span>
+0020 <span class="comment">%       - 'siglay_idx'</span>
+0021 <span class="comment">%       - 'siglev_idx'</span>
 0022 <span class="comment">%</span>
-0023 <span class="comment">%   file_netcdf 'filename.nc'  default value is file_netcdf='*.nc', but it</span>
-0024 <span class="comment">%   only access the first file in alphabetical order in the directory</span>
+0023 <span class="comment">%   'time' - {'30/01/06 00:00:00', '01/02/06 23:00:00'} or -1 to extract</span>
+0024 <span class="comment">%   all times.</span>
 0025 <span class="comment">%</span>
-0026 <span class="comment">%   varnames  {'Itime','Itime2','xc','yc','art1','art2','h','siglay','siglev','nv','zeta','ua','va'}</span>
-0027 <span class="comment">%   cell array of variable names to be read from NC file</span>
-0028 <span class="comment">%   the variables need to exist in the file but they are case insensitive. The complete list is given by</span>
-0029 <span class="comment">%   running this script with varnames set to [];</span>
-0030 <span class="comment">%</span>
-0031 <span class="comment">%   The variables can be restricted in five possible dimensions</span>
-0032 <span class="comment">%   node_idx, nele_idx, siglev_idx, siglay_idx and time_idx</span>
-0033 <span class="comment">%   default values cause the script to extract all available data for all</span>
-0034 <span class="comment">%   possible dimensions. time_idx is constructed from time_interval. All</span>
-0035 <span class="comment">%   other indices need to be zero referenced as is Netcdf standard.</span>
-0036 <span class="comment">%   No checks are done on the bounds of each dimension so make sure you</span>
-0037 <span class="comment">%   choose them right!</span>
-0038 <span class="comment">%</span>
-0039 <span class="comment">%</span>
-0040 <span class="comment">% OUTPUT:</span>
-0041 <span class="comment">%    data = cell array with variables in the order they were requested</span>
-0042 <span class="comment">%</span>
-0043 <span class="comment">% EXAMPLE USAGE</span>
-0044 <span class="comment">%   var_2_xtractFVCOM_0 = {'Itime','Itime2','xc','yc','art1','art2','h','siglay','siglev','nv','zeta','ua','va'};</span>
-0045 <span class="comment">%   date_range={'30/01/06 00:00:00','15/02/06 23:00:00'};  1 if all available data wanted</span>
-0046 <span class="comment">%   node_idx=[10:30,40:50];% zero referenced!</span>
-0047 <span class="comment">%   FVCOM_data=read_netCDF_FVCOM_in_progress('time',date_range,'data_dir','/home_nfs/models/FVCOM/runCO2_leak/output/',...</span>
-0048 <span class="comment">%     'file_netcdf','co2_S1_0001.nc','siglev_idx',1,...</span>
-0049 <span class="comment">%     'node_idx',node_idx,'varnames',var_2_xtractFVCOM_0);</span>
+0026 <span class="comment">%   'data_dir' - '/home/fvcom/results/...' directory where netCDF file is.</span>
+0027 <span class="comment">%   Default value is ../fvcom_postproc/netcdf</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">%   'file_netcdf' - 'filename.nc'. Default value is '*.nc', but it only</span>
+0030 <span class="comment">%   access the first file in alphabetical order in the directory.</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%   'varnames' - Cell array of variable names to read from the netCDF file.</span>
+0033 <span class="comment">%   The variables need to exist in the file but they are case insensitive.</span>
+0034 <span class="comment">%   Choose FVCOM output variable names. For example:</span>
+0035 <span class="comment">%       - 'Itime'</span>
+0036 <span class="comment">%       - 'Itime2'</span>
+0037 <span class="comment">%       - 'xc'</span>
+0038 <span class="comment">%       - 'yc'</span>
+0039 <span class="comment">%       - 'art1'</span>
+0040 <span class="comment">%       - 'art2'</span>
+0041 <span class="comment">%       - 'h'</span>
+0042 <span class="comment">%       - 'siglay'</span>
+0043 <span class="comment">%       - 'siglev'</span>
+0044 <span class="comment">%       - 'nv'</span>
+0045 <span class="comment">%       - 'zeta'</span>
+0046 <span class="comment">%       - 'ua'</span>
+0047 <span class="comment">%       - 'va'</span>
+0048 <span class="comment">%   The complete list for a given file is given by running this script with</span>
+0049 <span class="comment">%   varnames set to [].</span>
 0050 <span class="comment">%</span>
-0051 <span class="comment">%</span>
-0052 <span class="comment">% Author(s):</span>
-0053 <span class="comment">%    Ricardo Torres - Plymouth Marine Laboratory 2012</span>
-0054 <span class="comment">%</span>
-0055 <span class="comment">% Revision history</span>
-0056 <span class="comment">%   v0 March 2012</span>
-0057 <span class="comment">%==============================================================================</span>
-0058 <span class="comment">%%</span>
-0059 <span class="comment">%------------------------------------------------------------------------------</span>
-0060 <span class="comment">%  Parse input arguments</span>
-0061 <span class="comment">%------------------------------------------------------------------------------</span>
-0062 CD=pwd;
-0063 disp(<span class="string">'Using date conversion of +678942 to go from FVCOM time to matlab time'</span>)
-0064 time_offset = 678942;
-0065 params_opts={<span class="string">'time'</span>,<span class="string">'data_dir'</span>,<span class="string">'file_netcdf'</span>,<span class="string">'varnames'</span>,<span class="string">'nele_idx'</span>,<span class="string">'node_idx'</span>,<span class="string">'siglay_idx'</span>,<span class="string">'siglev_idx'</span>};
-0066 
-0067 disp(<span class="string">'Parameters being used are ...'</span>)
-0068 var_in_list = {<span class="string">'all_data'</span>,<span class="string">'netfile_dir'</span>,<span class="string">'file_netcdf'</span>,<span class="string">'varnames'</span>,<span class="string">'nele_idx'</span>,<span class="string">'node_idx'</span>,<span class="string">'siglay_idx'</span>,<span class="string">'siglev_idx'</span>};
-0069 all_data = 1;
-0070 netfile_dir = <span class="string">'../fvcom_postproc/netcdf'</span>;
-0071 file_netcdf=<span class="string">'*.nc'</span>;
-0072 siglay_idx=-1;
-0073 siglev_idx=-1;
-0074 nele_idx=-1;node_idx=-1;
-0075 time_idx=-1;
-0076 varnames={};
-0077 <span class="keyword">for</span> aa=1:2:nargin
-0078     res=strcmp(varargin(aa),params_opts);
-0079     <span class="keyword">if</span> ~isempty(res),
-0080         eval([var_in_list{res},<span class="string">' = varargin{aa+1};'</span>])
-0081         disp([params_opts{res}])
-0082     <span class="keyword">end</span>
-0083 <span class="keyword">end</span>
-0084 <span class="comment">%------------------------------------------------------------------------------</span>
-0085 <span class="comment">% sort and remove repeats all indices elements, nodes or layers to increasing values</span>
-0086 <span class="comment">%------------------------------------------------------------------------------</span>
-0087 nele_idx=unique(nele_idx);
-0088 node_idx=unique(node_idx);
-0089 siglay_idx=unique(siglay_idx);
-0090 siglev_idx=unique(siglev_idx);
-0091 <span class="comment">%</span>
-0092 RestrictDims.Name={<span class="string">'node'</span> <span class="string">'nele'</span> <span class="string">'siglay'</span> <span class="string">'siglev'</span> <span class="string">'time'</span>};
-0093 RestrictDims.idx={node_idx, nele_idx, siglay_idx, siglev_idx, time_idx};
-0094 <span class="comment">%</span>
-0095 <span class="keyword">if</span> ~isempty(varnames)
-0096     nvarnames = length(varnames);
-0097     <span class="keyword">for</span> nn=1:nvarnames
-0098         data{nn} = [];
-0099     <span class="keyword">end</span>
-0100 <span class="keyword">end</span>
-0101 <span class="comment">%%</span>
-0102 <span class="comment">%------------------------------------------------------------------------------</span>
-0103 <span class="comment">% Open netcdf file</span>
-0104 <span class="comment">%------------------------------------------------------------------------------</span>
-0105 file_netcdf=[netfile_dir file_netcdf];
-0106 filesINdir=dir(file_netcdf);
-0107 file_netcdf= fullfile(netfile_dir,filesINdir(1).name);
-0108 nc = netcdf.open(file_netcdf, <span class="string">'NC_NOWRITE'</span>);
-0109 disp([<span class="string">'NetCDF file '</span>, file_netcdf,<span class="string">' opened successfully.'</span>])
-0110 <span class="comment">% Get information from netcdf file</span>
-0111 info=ncinfo(file_netcdf);
-0112 <span class="comment">% Extract all possible dimensions in file</span>
-0113 DimsAll=info.Dimensions;
-0114 <span class="comment">% Extract variable names in  nc file</span>
-0115 Vars=struct2cell(info.Variables);
-0116 vars = squeeze(Vars(1,:,:));
-0117 <span class="comment">%%</span>
-0118 <span class="comment">%------------------------------------------------------------------------------</span>
-0119 <span class="comment">% find variable Itime</span>
-0120 <span class="comment">%------------------------------------------------------------------------------</span>
-0121 Itime.idx=find(strcmpi(vars,<span class="string">'Itime'</span>));
-0122 Itime.ID=netcdf.inqVarID(nc,<span class="string">'Itime'</span>);
-0123 Itime.Data  = netcdf.getVar(nc,Itime.ID,<span class="string">'int32'</span>);
-0124 Itime2.Data  = netcdf.getVar(nc,Itime.ID+1,<span class="string">'int32'</span>);
-0125 <span class="comment">%</span>
-0126 [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);
-0127 [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
-0128 <span class="comment">%</span>
-0129 var_time = double(Itime.Data)+time_offset+double(Itime2.Data)./(24*600*6000);
-0130 start_date=sum(start_d.*[1 1/(24*60*60)]);
-0131 end_date = sum(end_d.*[1 1/(24*60*60)]);
-0132 <span class="keyword">if</span> (length(all_data)==2)
-0133     req_st = datenum(all_data{1},<span class="string">'dd/mm/yy HH:MM:SS'</span>);
-0134     req_end = datenum(all_data{2},<span class="string">'dd/mm/yy HH:MM:SS'</span>);
-0135 <span class="keyword">else</span>
-0136     req_st =start_date;
-0137     req_end =end_date;
-0138 <span class="keyword">end</span>
-0139 time_idx = find(req_st &lt;= var_time &amp;   var_time &lt;= req_end );
-0140 <span class="comment">% add correct time_idx to RestrictDims</span>
-0141 RestrictDims.idx{end}=time_idx;
-0142 disp([<span class="string">'Start and end of file, '</span>, datestr(start_date),<span class="string">' '</span>,datestr(end_date)])
-0143 <span class="comment">%%</span>
-0144 <span class="comment">%------------------------------------------------------------------------------</span>
-0145 <span class="comment">% Return information about file to the screen</span>
-0146 <span class="comment">%------------------------------------------------------------------------------</span>
-0147 
-0148 disp([<span class="string">'Possible variables to extract are: '</span>])
-0149 <span class="keyword">for</span> ii = 1 : length(vars)
-0150     fprintf(<span class="string">'%s\n '</span>,vars{ii})
-0151 <span class="keyword">end</span>
-0152 <span class="keyword">if</span> isempty(varnames)
-0153     disp([<span class="string">'Stopping, Choose a variable from the list above : '</span>])
-0154     varargout{1} = 0;
-0155     netcdf.close(nc)
-0156     <span class="keyword">return</span>
-0157 <span class="keyword">end</span>
-0158 <span class="comment">%%</span>
-0159 <span class="comment">%------------------------------------------------------------------------------</span>
-0160 <span class="comment">% re-organise RestrictDims to follow order of dimensions in nc file from FVCOM</span>
-0161 <span class="comment">%------------------------------------------------------------------------------</span>
-0162 cc=1;
-0163 <span class="keyword">for</span> dd=1:length(DimsAll)
-0164     idx=find(strcmpi(RestrictDims.Name,DimsAll(dd).Name));
-0165     <span class="keyword">if</span> ~isempty(idx)
-0166         TEMP{cc}=RestrictDims.Name{idx};
-0167         TEMPidx{cc}=RestrictDims.idx{idx};
-0168         cc=cc+1;
-0169     <span class="keyword">end</span>
-0170 <span class="keyword">end</span>
-0171 RestrictDims.Name=TEMP;
-0172 RestrictDims.idx=TEMPidx;clear TEMP TEMPidx
-0173 <span class="comment">%%</span>
-0174 <span class="comment">%------------------------------------------------------------------------------</span>
-0175 <span class="comment">% Start Processing extraction of data from NC file</span>
-0176 <span class="comment">%------------------------------------------------------------------------------</span>
-0177 disp([<span class="string">'NetCDF file '</span>, file_netcdf,<span class="string">' opened successfully.'</span>])
-0178 nvars=length(info.Variables);
-0179 <span class="keyword">for</span> aa=1:length(varnames)
-0180 <span class="comment">%------------------------------------------------------------------------------</span>
-0181 <span class="comment">% Extract number of dimensions, lengths and names of all variables</span>
-0182 <span class="comment">%------------------------------------------------------------------------------</span>
-0183     TF = strcmpi(varnames{aa},vars);
-0184     <span class="keyword">if</span> ~isempty(find(TF));
-0185     varidx(aa) = find(TF);TF = sum(TF);
-0186     dimens=ndims(aa);
-0187         disp([<span class="string">'Variable '</span>,vars{varidx(aa)},<span class="string">' found in file'</span>])
-0188     <span class="keyword">else</span>
-0189         disp([<span class="string">'Variable '</span>,varnames{aa},<span class="string">' NOT found in file Stopping. Check variable names.'</span>])
-0190         netcdf.close(nc)
-0191         varargout{1} = 0;
-0192         <span class="keyword">return</span>
-0193     <span class="keyword">end</span>
-0194     varID=netcdf.inqVarID(nc,vars{varidx(aa)});
-0195     
-0196     [name,xtype,dimids,natts] = netcdf.inqVar(nc,varID);
-0197     dimens=length(dimids);
-0198     
-0199     <span class="keyword">for</span> dd=1:length(dimids)
-0200         [dimName{dd},dimLength(dd)] = netcdf.inqDim(nc,dimids(dd));
-0201         disp([<span class="string">'Variable '</span>,name,<span class="string">' has '</span>,num2str(dimens),<span class="string">' dimensions: '</span>,dimName{dd}])
-0202     <span class="keyword">end</span>
-0203 <span class="comment">%------------------------------------------------------------------------------</span>
-0204 <span class="comment">% Get the data!</span>
-0205 <span class="comment">%------------------------------------------------------------------------------</span>
-0206     
-0207     start=zeros(size(dimLength));
-0208     count=dimLength;
-0209     <span class="keyword">switch</span> dimens
-0210         <span class="keyword">case</span> 1
-0211             <span class="comment">% only one dimension present in variable</span>
-0212             <span class="keyword">switch</span> dimName{1}
-0213                 <span class="keyword">case</span> <span class="string">'time'</span>
-0214                     <span class="keyword">if</span> time_idx&gt;=0
-0215                         <span class="comment">% only restrict data on access if dimension is TIME</span>
-0216                         eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,time_idx(1),length(time_idx));'</span>])
-0217                     <span class="keyword">end</span>
-0218                 <span class="keyword">case</span> <span class="string">'nele'</span>
-0219                     eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID);'</span>])
-0220                     <span class="keyword">if</span> nele_idx&gt;=0
-0221                         eval([varnames{aa},<span class="string">' = '</span>,varnames{aa},<span class="string">'(nele_idx);'</span>])
-0222                     <span class="keyword">end</span>
-0223                 <span class="keyword">case</span> <span class="string">'node'</span>
-0224                     eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID);'</span>])
-0225                     <span class="keyword">if</span> node_idx&gt;=0
-0226                         eval([varnames{aa},<span class="string">' = '</span>,varnames{aa},<span class="string">'(node_idx);'</span>])
-0227                     <span class="keyword">end</span>
-0228                 <span class="keyword">otherwise</span>
-0229                     disp(<span class="string">'Unkown dimension for variable '</span>,name,<span class="string">' Skipping to next one function call'</span>);
-0230             <span class="keyword">end</span>
-0231         <span class="keyword">otherwise</span>
-0232             <span class="comment">% identified dimensions to restrict</span>
-0233             do_restrict=zeros(size(dimName));
-0234             dimidx=nan*ones(size(dimName));
-0235             <span class="keyword">for</span> dd=1:length(dimName)
-0236                 test=find(strcmpi(RestrictDims.Name,dimName{dd}));
-0237                 <span class="keyword">if</span> ~isempty(test); dimidx(dd)=test;   <span class="keyword">end</span>
-0238             <span class="keyword">end</span>
-0239             <span class="comment">% create start index for dimensions of the variable to</span>
-0240             <span class="comment">% access</span>
-0241             <span class="keyword">if</span> (sum(isfinite(dimidx))==length(dimidx))
-0242                 <span class="comment">% we have two valid dimension indices, proceed</span>
-0243                 <span class="keyword">for</span> dd=1:length(dimidx)
-0244                     <span class="comment">% if restriction is not -1 then select specified</span>
-0245                     <span class="comment">% indices otherwise read all</span>
-0246                     <span class="keyword">if</span> RestrictDims.idx{dimidx(dd)}(1)&gt;=0
-0247                         start(dd)=RestrictDims.idx{dimidx(dd)}(1);
-0248                         count(dd)=length(start(dd):RestrictDims.idx{dimidx(dd)}(end));
-0249                         do_restrict(dd)=1;
-0250                     <span class="keyword">end</span>
-0251                 <span class="keyword">end</span>
-0252             <span class="keyword">else</span>
-0253                 fprintf(<span class="string">'Wrong selection of dimensions to extract, \n  Extracting all values in current variable \n'</span>);
-0254             <span class="keyword">end</span>
-0255             eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,start,count);'</span>])
-0256             <span class="comment">% only restrict if required...</span>
-0257             <span class="keyword">if</span> sum(do_restrict)
-0258                 <span class="keyword">for</span> dd=1:length(do_restrict)
-0259                     sd=dd-1;
-0260                     <span class="comment">% calculate indices to extract (might not have been</span>
-0261                     <span class="comment">% consecutive numbers)</span>
-0262                     idx=RestrictDims.idx{dimidx(dd)}-start(dd)+1;
-0263                     <span class="keyword">if</span> ( do_restrict(dd) &amp; ~(count(dd)==length(idx)) )
-0264                         [~,idx]=setdiff(start(dd):RestrictDims.idx{dimidx(dd)}(end),RestrictDims.idx{dimidx(dd)});
-0265                         eval([varnames{aa},<span class="string">' = shiftdim('</span>,varnames{aa},<span class="string">',sd);'</span>])
-0266                         <span class="keyword">switch</span>  dimens
-0267                             <span class="keyword">case</span> 2
-0268                                 eval([varnames{aa},<span class="string">'(idx, :) = [];'</span>])
-0269                             <span class="keyword">case</span> 3
-0270                                 eval([varnames{aa},<span class="string">'(idx, :,:) = [];'</span>])
-0271                                 
-0272                             <span class="keyword">case</span> 4
-0273                                 eval([varnames{aa},<span class="string">'(idx, :,:,:) = [];'</span>])
-0274                         <span class="keyword">end</span>
-0275                         eval([varnames{aa},<span class="string">' = shiftdim('</span>,varnames{aa},<span class="string">',dimens-sd);'</span>])
-0276                     <span class="keyword">end</span>
-0277                 <span class="keyword">end</span>
-0278             <span class="keyword">end</span>
-0279     <span class="keyword">end</span>
-0280     eval([<span class="string">'data(aa) = {[data{aa};'</span>,varnames{aa},<span class="string">']};'</span>])
-0281     eval([<span class="string">'clear '</span>,varnames{aa}])
-0282 <span class="keyword">end</span>
-0283 <span class="comment">%%</span>
-0284 <span class="comment">%------------------------------------------------------------------------------</span>
-0285 <span class="comment">% Tidy up, finish and return data</span>
-0286 <span class="comment">%------------------------------------------------------------------------------</span>
-0287 
-0288 netcdf.close(nc)
-0289 cd(CD)
-0290 varargout{1} = data;
-0291 <span class="keyword">return</span></pre></div>
-<hr><address>Generated on Tue 18-Dec-2012 12:37:31 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0051 <span class="comment">%   The variables can be restricted in five possible dimensions:</span>
+0052 <span class="comment">%       - 'node_idx'</span>
+0053 <span class="comment">%       - 'nele_idx'</span>
+0054 <span class="comment">%       - 'siglev_idx'</span>
+0055 <span class="comment">%       - 'siglay_idx'</span>
+0056 <span class="comment">%       - 'time_idx'</span>
+0057 <span class="comment">%   Default values cause the script to extract all available data for all</span>
+0058 <span class="comment">%   possible dimensions. All indices except time need to be zero referenced</span>
+0059 <span class="comment">%   as is standard for netCDF indexing. No checks are done on the bounds of</span>
+0060 <span class="comment">%   each dimension so make sure you choose them right!</span>
+0061 <span class="comment">%</span>
+0062 <span class="comment">%</span>
+0063 <span class="comment">% OUTPUT:</span>
+0064 <span class="comment">%    data = cell with variables in the order they were requested.</span>
+0065 <span class="comment">%</span>
+0066 <span class="comment">% EXAMPLE USAGE</span>
+0067 <span class="comment">%   vars = {'Times', 'xc', 'yc', 'h', 'siglay', 'nv', 'zeta', 'ua', 'va'};</span>
+0068 <span class="comment">%   date_range = {'30/01/06 00:00:00', '15/02/06 23:00:00'};</span>
+0069 <span class="comment">%   node_idx = [10:30, 40:50]; % zero referenced!</span>
+0070 <span class="comment">%   data_dir = '/home/fvcom/results/output/';</span>
+0071 <span class="comment">%   FVCOM = read_netCDF_FVCOM('data_dir', data_dir, ...</span>
+0072 <span class="comment">%       'file_netcdf', 'casename_0001.nc', ...</span>
+0073 <span class="comment">%       'time', date_range, ...</span>
+0074 <span class="comment">%       'siglev_idx', 1, ...</span>
+0075 <span class="comment">%       'node_idx', node_idx, ...</span>
+0076 <span class="comment">%       'varnames', vars);</span>
+0077 <span class="comment">%</span>
+0078 <span class="comment">% Author(s):</span>
+0079 <span class="comment">%    Ricardo Torres - Plymouth Marine Laboratory 2012</span>
+0080 <span class="comment">%    Hakeem Johnson - CH2M</span>
+0081 <span class="comment">%    Pierre Cazenave - Plymouth Marine Laboratory</span>
+0082 <span class="comment">%</span>
+0083 <span class="comment">% Revision history:</span>
+0084 <span class="comment">%   v0 March 2012</span>
+0085 <span class="comment">%   2014-03-06 - Add the global verbose flag. Also tidy up the help a bit.</span>
+0086 <span class="comment">%   Also change some verbose statements to use fprintf instead of disp for</span>
+0087 <span class="comment">%   better control over formatting. Also fixed a bug where if a 2D array</span>
+0088 <span class="comment">%   was requested after a 3D array, the 2D array would cause the function</span>
+0089 <span class="comment">%   to crash (because it was using a 3D index for getVar).</span>
+0090 <span class="comment">%</span>
+0091 <span class="comment">%==========================================================================</span>
+0092 
+0093 <span class="keyword">global</span> ftbverbose
+0094 subname = <span class="string">'read_netCDF_FVCOM'</span>;
+0095 
+0096 <span class="keyword">if</span> ftbverbose
+0097     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0098 <span class="keyword">end</span>
+0099 
+0100 <span class="comment">%--------------------------------------------------------------------------</span>
+0101 <span class="comment">%  Parse input arguments</span>
+0102 <span class="comment">%--------------------------------------------------------------------------</span>
+0103 
+0104 params_opts = {<span class="string">'time'</span>, <span class="string">'data_dir'</span>, <span class="string">'file_netcdf'</span>, <span class="string">'varnames'</span>, <span class="string">'nele_idx'</span>, <span class="keyword">...</span>
+0105     <span class="string">'node_idx'</span>, <span class="string">'siglay_idx'</span>, <span class="string">'siglev_idx'</span>};
+0106 
+0107 <span class="keyword">if</span> ftbverbose
+0108     fprintf(<span class="string">'Input parameters being used are:\n'</span>)
+0109 <span class="keyword">end</span>
+0110 var_in_list = {<span class="string">'all_data'</span>, <span class="string">'netfile_dir'</span>, <span class="string">'file_netcdf'</span>, <span class="string">'varnames'</span>, <span class="keyword">...</span>
+0111     <span class="string">'nele_idx'</span>, <span class="string">'node_idx'</span>, <span class="string">'siglay_idx'</span>, <span class="string">'siglev_idx'</span>};
+0112 all_data = 1;
+0113 netfile_dir = <span class="string">'../fvcom_postproc/netcdf'</span>;
+0114 file_netcdf=<span class="string">'*.nc'</span>;
+0115 siglay_idx=-1;
+0116 siglev_idx=-1;
+0117 nele_idx=-1;
+0118 node_idx=-1;
+0119 time_idx=-1;
+0120 varnames={};
+0121 <span class="keyword">for</span> aa=1:2:nargin
+0122     res=strcmp(varargin(aa),params_opts);
+0123     <span class="keyword">if</span> ~isempty(res)
+0124         eval([var_in_list{res},<span class="string">' = varargin{aa+1};'</span>])
+0125         <span class="keyword">if</span> ftbverbose
+0126             fprintf(<span class="string">' %s\n'</span>, params_opts{res})
+0127         <span class="keyword">end</span>
+0128     <span class="keyword">end</span>
+0129 <span class="keyword">end</span>
+0130 
+0131 <span class="comment">%--------------------------------------------------------------------------</span>
+0132 <span class="comment">% Sort (and remove repeats) for all indices elements, nodes or layers</span>
+0133 <span class="comment">%--------------------------------------------------------------------------</span>
+0134 nele_idx=unique(nele_idx);
+0135 node_idx=unique(node_idx);
+0136 siglay_idx=unique(siglay_idx);
+0137 siglev_idx=unique(siglev_idx);
+0138 
+0139 RestrictDims.Name={<span class="string">'node'</span> <span class="string">'nele'</span> <span class="string">'siglay'</span> <span class="string">'siglev'</span> <span class="string">'time'</span>};
+0140 RestrictDims.idx={node_idx, nele_idx, siglay_idx, siglev_idx, time_idx};
+0141 
+0142 <span class="keyword">if</span> ~isempty(varnames)
+0143     nvarnames = length(varnames);
+0144     <span class="keyword">for</span> nn=1:nvarnames
+0145         data{nn} = [];
+0146     <span class="keyword">end</span>
+0147 <span class="keyword">end</span>
+0148 
+0149 <span class="comment">%--------------------------------------------------------------------------</span>
+0150 <span class="comment">% Open netcdf file</span>
+0151 <span class="comment">%--------------------------------------------------------------------------</span>
+0152 file_netcdf=fullfile(netfile_dir, file_netcdf);
+0153 filesINdir=dir(file_netcdf);
+0154 file_netcdf= fullfile(netfile_dir,filesINdir(1).name);
+0155 nc = netcdf.open(file_netcdf, <span class="string">'NC_NOWRITE'</span>);
+0156 <span class="keyword">if</span> ftbverbose
+0157     <span class="keyword">if</span> length(file_netcdf) &gt; 50
+0158         <span class="comment">% Truncate output file name to display.</span>
+0159         fprintf(<span class="string">'NetCDF file ...%s opened successfully.\n'</span>, file_netcdf(end-70:end))
+0160     <span class="keyword">else</span>
+0161         fprintf(<span class="string">'NetCDF file %s opened successfully.\n'</span>, file_netcdf)
+0162     <span class="keyword">end</span>
+0163 <span class="keyword">end</span>
+0164 <span class="comment">% Get information from netcdf file</span>
+0165 info=ncinfo(file_netcdf);
+0166 <span class="comment">% Extract all possible dimensions in file</span>
+0167 DimsAll=info.Dimensions;
+0168 <span class="comment">% Extract variable names in  nc file</span>
+0169 Vars=struct2cell(info.Variables);
+0170 vars = squeeze(Vars(1,:,:));
+0171 
+0172 <span class="comment">%--------------------------------------------------------------------------</span>
+0173 <span class="comment">% Find variable Itime</span>
+0174 <span class="comment">%--------------------------------------------------------------------------</span>
+0175 <span class="keyword">if</span> ftbverbose
+0176     fprintf(<span class="string">'Using date conversion of +678942 days to go from FVCOM time (Modified Julian Day) to MATLAB time.\n'</span>)
+0177 <span class="keyword">end</span>
+0178 time_offset = 678942;
+0179 
+0180 <span class="keyword">try</span>
+0181     Itime.idx=find(strcmpi(vars,<span class="string">'Itime'</span>));
+0182     Itime.ID=netcdf.inqVarID(nc,<span class="string">'Itime'</span>);
+0183     Itime.Data  = netcdf.getVar(nc,Itime.ID,<span class="string">'int32'</span>);
+0184     Itime2.Data  = netcdf.getVar(nc,Itime.ID+1,<span class="string">'int32'</span>);
+0185 
+0186     [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);
+0187     [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
+0188 
+0189     var_time = double(Itime.Data)+time_offset+double(Itime2.Data)./(24*600*6000);
+0190     start_date=sum(start_d.*[1 1/(24*60*60*1000)]);     <span class="comment">%hkj missing 1000 inserted</span>
+0191     end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       <span class="comment">%hkj missing 1000 inserted</span>
+0192 <span class="keyword">catch</span> me
+0193     <span class="keyword">if</span> ftbverbose
+0194         fprintf(<span class="string">'No ''Itime'' and/or ''Itime2'' variables, using ''time'' instead.\n(%s)\n'</span>, me.message)
+0195     <span class="keyword">end</span>
+0196     Itime.idx=find(strcmpi(vars,<span class="string">'time'</span>));
+0197     Itime.ID=netcdf.inqVarID(nc,<span class="string">'time'</span>);
+0198     Itime.Data  = netcdf.getVar(nc,Itime.ID,<span class="string">'double'</span>);
+0199 
+0200     var_time = (Itime.Data)+time_offset;
+0201     [start_date,end_date] = deal(var_time(1),var_time(end));
+0202 <span class="keyword">end</span>
+0203 
+0204 <span class="keyword">if</span> length(all_data) == 2
+0205     req_st = datenum(all_data{1},<span class="string">'dd/mm/yy HH:MM:SS'</span>);
+0206     req_end = datenum(all_data{2},<span class="string">'dd/mm/yy HH:MM:SS'</span>);
+0207 <span class="keyword">else</span>
+0208     req_st = start_date;
+0209     req_end =end_date;
+0210 <span class="keyword">end</span>
+0211 time_idx = find(req_st &lt;= var_time &amp;   var_time &lt;= req_end );
+0212 <span class="comment">% Add correct time_idx to RestrictDims</span>
+0213 RestrictDims.idx{end}=time_idx;
+0214 <span class="keyword">if</span> ftbverbose
+0215     fprintf(<span class="string">'Start and end of file: %s - %s\n'</span>, datestr(start_date), datestr(end_date))
+0216 <span class="keyword">end</span>
+0217 
+0218 <span class="comment">%--------------------------------------------------------------------------</span>
+0219 <span class="comment">% Return information about file to the screen</span>
+0220 <span class="comment">%--------------------------------------------------------------------------</span>
+0221 
+0222 <span class="keyword">if</span> ftbverbose
+0223     fprintf(<span class="string">'Possible variables to extract are:\n'</span>)
+0224 <span class="keyword">end</span>
+0225 <span class="keyword">for</span> ii = 1:length(vars)
+0226     <span class="keyword">if</span> ftbverbose
+0227         fprintf(<span class="string">' %s\n'</span>, vars{ii})
+0228     <span class="keyword">end</span>
+0229 <span class="keyword">end</span>
+0230 <span class="keyword">if</span> isempty(varnames)
+0231     data = 0;
+0232     netcdf.close(nc)
+0233     error(<span class="string">'Stopping. Choose a variable from the list above.'</span>)
+0234 <span class="keyword">end</span>
+0235 
+0236 <span class="comment">%--------------------------------------------------------------------------</span>
+0237 <span class="comment">% Re-organise RestrictDims to follow order of dimensions in nc file from</span>
+0238 <span class="comment">% FVCOM</span>
+0239 <span class="comment">%--------------------------------------------------------------------------</span>
+0240 cc=1;
+0241 <span class="keyword">for</span> dd=1:length(DimsAll)
+0242     idx=find(strcmpi(RestrictDims.Name,DimsAll(dd).Name));
+0243     <span class="keyword">if</span> ~isempty(idx)
+0244         TEMP{cc}=RestrictDims.Name{idx};
+0245         TEMPidx{cc}=RestrictDims.idx{idx};
+0246         cc=cc+1;
+0247     <span class="keyword">end</span>
+0248 <span class="keyword">end</span>
+0249 RestrictDims.Name = TEMP;
+0250 RestrictDims.idx = TEMPidx;
+0251 clear TEMP TEMPidx
+0252 
+0253 <span class="comment">%--------------------------------------------------------------------------</span>
+0254 <span class="comment">% Start Processing extraction of data from NC file</span>
+0255 <span class="comment">%--------------------------------------------------------------------------</span>
+0256 
+0257 <span class="keyword">for</span> aa=1:length(varnames)
+0258     <span class="comment">%----------------------------------------------------------------------</span>
+0259     <span class="comment">% Extract number of dimensions, lengths and names of all variables</span>
+0260     <span class="comment">%----------------------------------------------------------------------</span>
+0261 
+0262     <span class="comment">% Tidy up the previous iteration's variables so we don't get confused.</span>
+0263     clear dimName dimLength
+0264 
+0265     TF = strcmpi(varnames{aa},vars);
+0266     <span class="keyword">if</span> ~isempty(find(TF));
+0267         varidx(aa) = find(TF);
+0268         TF = sum(TF);
+0269         dimens=ndims(aa);
+0270         <span class="keyword">if</span> ftbverbose
+0271             fprintf(<span class="string">'Variable %s found'</span>, vars{varidx(aa)})
+0272         <span class="keyword">end</span>
+0273     <span class="keyword">else</span>
+0274         netcdf.close(nc)
+0275         varargout{1} = 0;
+0276         error(<span class="string">'Variable %s NOT found in file. Stopping. Check input variable names.\n'</span>, varnames{aa})
+0277     <span class="keyword">end</span>
+0278     varID=netcdf.inqVarID(nc,vars{varidx(aa)});
+0279 
+0280     [name,xtype,dimids,natts] = netcdf.inqVar(nc,varID);
+0281     dimens=length(dimids);
+0282 
+0283     <span class="keyword">for</span> dd=1:length(dimids)
+0284         [dimName{dd}, dimLength(dd)] = netcdf.inqDim(nc,dimids(dd));
+0285         <span class="keyword">if</span> ftbverbose
+0286             <span class="keyword">if</span> dd == 1
+0287                 <span class="keyword">if</span> length(dimids) == 1
+0288                     fprintf(<span class="string">' with %i dimension: %s '</span>, dimens, dimName{dd})
+0289                 <span class="keyword">else</span>
+0290                     fprintf(<span class="string">' with %i dimensions: %s '</span>, dimens, dimName{dd})
+0291                 <span class="keyword">end</span>
+0292             <span class="keyword">else</span>
+0293                 fprintf(<span class="string">'%s '</span>, dimName{dd})
+0294             <span class="keyword">end</span>
+0295         <span class="keyword">end</span>
+0296     <span class="keyword">end</span>
+0297     <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'\n'</span>); <span class="keyword">end</span>
+0298 
+0299     <span class="comment">%----------------------------------------------------------------------</span>
+0300     <span class="comment">% Get the data!</span>
+0301     <span class="comment">%----------------------------------------------------------------------</span>
+0302 
+0303     start=zeros(size(dimLength));
+0304     count=dimLength;
+0305     <span class="keyword">switch</span> dimens
+0306         <span class="keyword">case</span> 1
+0307             <span class="comment">% only one dimension present in variable</span>
+0308             <span class="keyword">switch</span> dimName{1}
+0309                 <span class="keyword">case</span> <span class="string">'time'</span>
+0310                     <span class="keyword">if</span> time_idx&gt;=0
+0311                         <span class="comment">% Only restrict data on access if dimension is TIME</span>
+0312 
+0313                         <span class="comment">% hkj it appears the first value in matlab netcdf</span>
+0314                         <span class="comment">% interface is 0.</span>
+0315                         <span class="comment">% hkj time_idx(1) CORRECTED TO time_idx(1)-1.</span>
+0316                         eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,time_idx(1)-1,length(time_idx),''double'');'</span>])
+0317                     <span class="keyword">end</span>
+0318                 <span class="keyword">case</span> <span class="string">'nele'</span>
+0319                     eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,''double'');'</span>])
+0320                     <span class="keyword">if</span> nele_idx&gt;=0
+0321                         eval([varnames{aa},<span class="string">' = '</span>,varnames{aa},<span class="string">'(nele_idx);'</span>])
+0322                     <span class="keyword">end</span>
+0323                 <span class="keyword">case</span> <span class="string">'node'</span>
+0324                     eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,''double'');'</span>])
+0325                     <span class="keyword">if</span> node_idx&gt;=0
+0326                         eval([varnames{aa},<span class="string">' = '</span>,varnames{aa},<span class="string">'(node_idx);'</span>])
+0327                     <span class="keyword">end</span>
+0328                 <span class="keyword">otherwise</span>
+0329                     <span class="keyword">if</span> ftbverbose
+0330                         fprintf(<span class="string">'Unkown dimension for variable %s. Skipping to next one in function call.\n'</span>, name);
+0331                     <span class="keyword">end</span>
+0332             <span class="keyword">end</span>
+0333         <span class="keyword">otherwise</span>
+0334             <span class="comment">% identified dimensions to restrict</span>
+0335             do_restrict=zeros(size(dimName));
+0336             dimidx=nan*ones(size(dimName));
+0337             <span class="keyword">for</span> dd=1:length(dimName)
+0338                 test=find(strcmpi(RestrictDims.Name,dimName{dd}));
+0339                 <span class="keyword">if</span> ~isempty(test); dimidx(dd)=test; <span class="keyword">end</span>
+0340             <span class="keyword">end</span>
+0341             <span class="comment">% create start index for dimensions of the variable to</span>
+0342             <span class="comment">% access</span>
+0343             <span class="keyword">if</span> (sum(isfinite(dimidx))==length(dimidx))
+0344                 <span class="comment">% we have two valid dimension indices, proceed</span>
+0345                 <span class="keyword">for</span> dd=1:length(dimidx)
+0346                     <span class="comment">% if restriction is not -1 then select specified</span>
+0347                     <span class="comment">% indices otherwise read all</span>
+0348                     <span class="keyword">if</span> RestrictDims.idx{dimidx(dd)}(1)&gt;=0
+0349                         <span class="keyword">if</span> (strcmpi(dimName(dd),<span class="string">'time'</span>))
+0350                             start(dd)=RestrictDims.idx{dimidx(dd)}(1)-1;
+0351                             count(dd)=length(start(dd)+1:RestrictDims.idx{dimidx(dd)}(end));
+0352                         <span class="keyword">else</span>
+0353                             start(dd)=RestrictDims.idx{dimidx(dd)}(1);
+0354                             count(dd)=length(start(dd):RestrictDims.idx{dimidx(dd)}(end));
+0355                         <span class="keyword">end</span>
+0356                         do_restrict(dd)=1;
+0357                     <span class="keyword">end</span>
+0358                 <span class="keyword">end</span>
+0359             <span class="keyword">else</span>
+0360                 <span class="keyword">if</span> ftbverbose
+0361                     fprintf(<span class="string">'Wrong selection of dimensions to extract.\nExtracting all values in current variable.\n'</span>);
+0362                 <span class="keyword">end</span>
+0363             <span class="keyword">end</span>
+0364 
+0365             eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,start,count,''double'');'</span>])
+0366 
+0367             <span class="comment">% only restrict if required...</span>
+0368             <span class="keyword">if</span> sum(do_restrict)
+0369                 <span class="keyword">for</span> dd=1:length(do_restrict)
+0370                     sd=dd-1;
+0371                     <span class="comment">% calculate indices to extract (might not have been</span>
+0372                     <span class="comment">% consecutive numbers)</span>
+0373                     idx=RestrictDims.idx{dimidx(dd)}-start(dd)+1;
+0374                     <span class="keyword">if</span> (do_restrict(dd) &amp;&amp; ~(count(dd)==length(idx)))
+0375                         [~,idx]=setdiff(start(dd):RestrictDims.idx{dimidx(dd)}(end),RestrictDims.idx{dimidx(dd)});
+0376                         eval([varnames{aa},<span class="string">' = shiftdim('</span>,varnames{aa},<span class="string">',sd);'</span>])
+0377                         <span class="keyword">switch</span>  dimens
+0378                             <span class="keyword">case</span> 2
+0379                                 eval([varnames{aa},<span class="string">'(idx, :) = [];'</span>])
+0380                             <span class="keyword">case</span> 3
+0381                                 eval([varnames{aa},<span class="string">'(idx, :,:) = [];'</span>])
+0382                             <span class="keyword">case</span> 4
+0383                                 eval([varnames{aa},<span class="string">'(idx, :,:,:) = [];'</span>])
+0384                         <span class="keyword">end</span>
+0385                         eval([varnames{aa},<span class="string">' = shiftdim('</span>,varnames{aa},<span class="string">',dimens-sd);'</span>])
+0386                     <span class="keyword">end</span>
+0387                 <span class="keyword">end</span>
+0388             <span class="keyword">end</span>
+0389     <span class="keyword">end</span>
+0390     eval([<span class="string">'data(aa) = {[data{aa};'</span>,varnames{aa},<span class="string">']};'</span>])
+0391     eval([<span class="string">'clear '</span>,varnames{aa}])
+0392 <span class="keyword">end</span>
+0393 
+0394 <span class="comment">%--------------------------------------------------------------------------</span>
+0395 <span class="comment">% Tidy up, finish and return data</span>
+0396 <span class="comment">%--------------------------------------------------------------------------</span>
+0397 
+0398 netcdf.close(nc)
+0399 
+0400 <span class="keyword">if</span> ftbverbose
+0401     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0402 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -1,0 +1,249 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of read_netcdf_vars</title>
+  <meta name="keywords" content="read_netcdf_vars">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; read_netcdf_vars.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>read_netcdf_vars
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [M] = read_netcdf_vars(varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+ Function to read in listed variables from a netCDF file
+
+ [M] = read_netcdf_vars(varargin)
+
+ DESCRIPTION:
+   Optionally select a dimension to select a range for
+   This should work for any netCDF, but was written with FCOM output files in mind
+
+ INPUT
+   Pass the variable names that you want to extract
+   [optional pair] filename, the netCDF filename
+   [optional triple] dimrange, the dimension name, the dimension range
+
+ EXAMPLE USAGE
+   Extract variables time, x, y
+   M = read_netcdf_vars('time', 'x', 'y');
+
+   Extract variables time, x, y from filename text.nc:
+   M = read_netcdf_vars('filename', 'test.nc', 'time', 'x', 'y');
+
+   Extract variables time, x, y from filename text.nc but only for time
+   indicies 0-99:
+   M = read_netcdf_vars('filename', 'test.nc', 'dimrange', 'time', [0 100], 'time', 'x', 'y');
+
+   Extract variables time, x, y from filename text.nc but only for time
+   indicies 0-99 and siglay index of 0:
+   M = read_netcdf_vars('filename', 'test.nc', 'dimrange', 'time', [0 100], ...
+                        'dimrange', 'siglay', [0 1], 'time', 'x', 'y', 'u', 'v');
+ Author(s)
+   Rory O'Hara Murray, Marine Scotland Science
+
+ Revision history
+   v0 July 2013
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [M] = read_netcdf_vars(varargin)</a>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% Function to read in listed variables from a netCDF file</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% [M] = read_netcdf_vars(varargin)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%   Optionally select a dimension to select a range for</span>
+0009 <span class="comment">%   This should work for any netCDF, but was written with FCOM output files in mind</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT</span>
+0012 <span class="comment">%   Pass the variable names that you want to extract</span>
+0013 <span class="comment">%   [optional pair] filename, the netCDF filename</span>
+0014 <span class="comment">%   [optional triple] dimrange, the dimension name, the dimension range</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% EXAMPLE USAGE</span>
+0017 <span class="comment">%   Extract variables time, x, y</span>
+0018 <span class="comment">%   M = read_netcdf_vars('time', 'x', 'y');</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">%   Extract variables time, x, y from filename text.nc:</span>
+0021 <span class="comment">%   M = read_netcdf_vars('filename', 'test.nc', 'time', 'x', 'y');</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">%   Extract variables time, x, y from filename text.nc but only for time</span>
+0024 <span class="comment">%   indicies 0-99:</span>
+0025 <span class="comment">%   M = read_netcdf_vars('filename', 'test.nc', 'dimrange', 'time', [0 100], 'time', 'x', 'y');</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">%   Extract variables time, x, y from filename text.nc but only for time</span>
+0028 <span class="comment">%   indicies 0-99 and siglay index of 0:</span>
+0029 <span class="comment">%   M = read_netcdf_vars('filename', 'test.nc', 'dimrange', 'time', [0 100], ...</span>
+0030 <span class="comment">%                        'dimrange', 'siglay', [0 1], 'time', 'x', 'y', 'u', 'v');</span>
+0031 <span class="comment">% Author(s)</span>
+0032 <span class="comment">%   Rory O'Hara Murray, Marine Scotland Science</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% Revision history</span>
+0035 <span class="comment">%   v0 July 2013</span>
+0036 <span class="comment">%==========================================================================</span>
+0037 
+0038 dimrange = false;
+0039 
+0040 <span class="comment">% look for some keywords with some setting after them and remember which</span>
+0041 <span class="comment">% index of varargin are 'taken' in freeI.</span>
+0042 freeI = ones(size(varargin));
+0043 subsample_num = 0;
+0044 <span class="keyword">for</span> ii=1:1:length(varargin)
+0045     keyword  = lower(varargin{ii});
+0046     <span class="keyword">if</span> length(keyword)&lt;8, <span class="keyword">continue</span>; <span class="keyword">end</span>
+0047     <span class="keyword">switch</span>(keyword(1:8))
+0048         <span class="keyword">case</span> <span class="string">'filename'</span>
+0049             netcdf_filename = varargin{ii+1};
+0050             freeI([ii ii+1]) = 0;
+0051         <span class="keyword">case</span> <span class="string">'dimrange'</span>
+0052             dimrange = true;
+0053             subsample_num = subsample_num + 1;
+0054             subsample_dim(subsample_num) = {varargin{ii+1}};
+0055             subsample_ran(:,subsample_num) = varargin{ii+2};
+0056             freeI([ii ii+1 ii+2]) = 0;
+0057     <span class="keyword">end</span>
+0058 <span class="keyword">end</span>
+0059 
+0060 <span class="comment">% save all the non 'taken' values of varargin as a list</span>
+0061 <span class="comment">% of varables to look for and extract</span>
+0062 varnames = varargin(find(freeI));
+0063 
+0064 <span class="comment">% if there isn't a netCDF filename defined, ask the user for one</span>
+0065 <span class="keyword">if</span> exist(<span class="string">'netcdf_filename'</span>)==0
+0066     [FileName,PathName] = uigetfile(<span class="string">'*.nc'</span>, <span class="string">'Select FVCOM netCDF file to read'</span>);
+0067     netcdf_filename = [PathName FileName];
+0068 <span class="keyword">end</span>
+0069 
+0070 <span class="comment">% open netCDF file for reading</span>
+0071 ncid = netcdf.open(netcdf_filename, <span class="string">'NC_NOWRITE'</span>);
+0072 
+0073 [ndims,nvars,ngatts,unlimdimid] = netcdf.inq(ncid);
+0074 
+0075 <span class="comment">% get a list of the variables avaliable and check the inputs</span>
+0076 <span class="keyword">for</span> ii=0:nvars-1
+0077     variable_names_avaliable{ii+1} = netcdf.inqVar(ncid, ii);
+0078 <span class="keyword">end</span>
+0079 test = [];
+0080 <span class="keyword">for</span> ii=1:size(varnames,2);
+0081     test1 = strmatch(varnames{ii}, variable_names_avaliable, <span class="string">'exact'</span>);
+0082     <span class="keyword">if</span> size(test1,1)==0 test = [test ii]; <span class="keyword">end</span>
+0083 <span class="keyword">end</span>
+0084 
+0085 <span class="keyword">if</span> sum(test)&gt;0
+0086     disp([varnames(test) <span class="string">' could not be found'</span>]);
+0087     disp([<span class="string">'variables avaliable are: '</span> variable_names_avaliable]);
+0088     M = 0; netcdf.close(ncid);
+0089     <span class="keyword">return</span>
+0090 <span class="keyword">end</span>
+0091     
+0092 <span class="comment">% Get global attributes</span>
+0093 <span class="keyword">for</span> ii=1:ngatts
+0094     M.gattname{ii} = netcdf.inqAttName(ncid,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),ii-1);
+0095     M.gattval{ii} = netcdf.getAtt(ncid,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),M.gattname{ii});
+0096 <span class="keyword">end</span>
+0097 
+0098 <span class="comment">% get dimension lengths</span>
+0099 <span class="keyword">for</span> jj=1:ndims
+0100     [dimname{jj} dimsize(jj)] = netcdf.inqDim(ncid, jj-1);
+0101 <span class="keyword">end</span>
+0102 
+0103 <span class="keyword">if</span> dimrange
+0104     <span class="comment">%get ID for sub_var dimension</span>
+0105     <span class="keyword">for</span> ii=1:size(dimname,2)
+0106         <span class="keyword">for</span> jj=1:subsample_num
+0107             <span class="keyword">if</span> findstr(dimname{ii},subsample_dim{jj}) sDID(jj) = ii-1; <span class="keyword">end</span>
+0108         <span class="keyword">end</span>
+0109     <span class="keyword">end</span>
+0110 <span class="keyword">end</span>
+0111 
+0112 <span class="keyword">for</span> ii=1:size(varnames,2) <span class="comment">% loop through all the variables to extract</span>
+0113     varid(ii) = netcdf.inqVarID(ncid,varnames{ii});
+0114     
+0115     <span class="comment">% Get the attributes of the variables listed</span>
+0116     [varname,tmp,tmp,natts] = netcdf.inqVar(ncid, varid(ii));
+0117     <span class="keyword">for</span> jj=0:natts-1
+0118         attname = netcdf.inqAttName(ncid, varid(ii), jj);
+0119         <span class="keyword">if</span> attname(1)==<span class="string">'_'</span>
+0120             attname2 = attname(2:end);
+0121         <span class="keyword">else</span> 
+0122             attname2 = attname;
+0123         <span class="keyword">end</span>
+0124         aI = strfind(attname2, <span class="string">'-'</span>);
+0125         attname2(aI) = <span class="string">'_'</span>;
+0126 
+0127         eval([<span class="string">'M.'</span> varnames{ii} <span class="string">'_att.'</span> attname2 <span class="string">' = netcdf.getAtt(ncid, varid(ii), attname);'</span>]);
+0128     <span class="keyword">end</span>
+0129 
+0130     <span class="comment">% get info about the variable in question</span>
+0131     [varname xtype dimids atts] = netcdf.inqVar(ncid,varid(ii));
+0132 
+0133     <span class="comment">% Take a subset if variable is dependent on the subsample variable</span>
+0134     <span class="keyword">if</span> dimrange
+0135         
+0136         <span class="comment">% work out which dimensions this variable has that should be</span>
+0137         <span class="comment">% subsampled, assuming it has any...</span>
+0138         clear I
+0139         <span class="keyword">for</span> jj=1:length(dimids)
+0140             tmp = find(dimids(jj)==sDID);
+0141             <span class="keyword">if</span> tmp I(jj) = tmp; <span class="keyword">end</span>
+0142         <span class="keyword">end</span>
+0143     <span class="keyword">end</span>
+0144         
+0145     <span class="comment">% 'I' only exists if this variable has dimensions that should be sub</span>
+0146     <span class="comment">% sampled</span>
+0147     <span class="keyword">if</span> dimrange &amp; exist(<span class="string">'I'</span>)
+0148         clear dim_range
+0149         <span class="comment">% get all the dimension lengths and make a starts one (zeros)</span>
+0150         dim_range(2,:) = dimsize(dimids+1); <span class="comment">% the sizes</span>
+0151         dim_range(1,:) = zeros(1, size(dim_range,2));   <span class="comment">% the start positions, i.e. zeros</span>
+0152         
+0153         <span class="comment">% redefine the dim_starts and dim array</span>
+0154         <span class="keyword">for</span> jj=1:length(I)
+0155             <span class="keyword">if</span> I(jj) dim_range(:,jj) = [subsample_ran(1,I(jj)); subsample_ran(<span class="keyword">end</span>,I(jj))-subsample_ran(1,I(jj))]; <span class="keyword">end</span>
+0156         <span class="keyword">end</span>
+0157                 
+0158         M.(varnames{ii}) = double(netcdf.getVar(ncid, varid(ii), dim_range(1,:), dim_range(2,:)));
+0159     <span class="keyword">else</span>
+0160         <span class="comment">% Do not subsample if 'I' doens't exist or we are not subsampling</span>
+0161         M.(varnames{ii}) = double(netcdf.getVar(ncid, varid(ii)));
+0162     <span class="keyword">end</span>
+0163 <span class="keyword">end</span>
+0164 
+0165 <span class="comment">% close netCDF file</span>
+0166 netcdf.close(ncid)
+0167 
+0168 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
