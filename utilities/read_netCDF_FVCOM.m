@@ -142,7 +142,7 @@ RestrictDims.idx={node_idx, nele_idx, siglay_idx, siglev_idx, time_idx};
 if ~isempty(varnames)
     nvarnames = length(varnames);
     for nn=1:nvarnames
-        data{nn} = [];
+        data.(varnames{nn}) = [];
     end
 end
 
@@ -258,7 +258,7 @@ for aa=1:length(varnames)
     %----------------------------------------------------------------------
     % Extract number of dimensions, lengths and names of all variables
     %----------------------------------------------------------------------
-    
+    disp(['Processing variable ',varnames{aa}])
     % Tidy up the previous iteration's variables so we don't get confused.
     clear dimName dimLength
     
@@ -491,9 +491,12 @@ for aa=1:length(varnames)
                         read_count(do_time)=count.(cc_names{do_time});
                         
                         % search for the non_restrictive variable
-                        cc=1
-                        while ~(length( start.(cc_names{cc}))==1);cc=cc+1;end
-                        
+%                         cc=1
+%                         while ~(length( start.(cc_names{cc}))==1);cc=cc+1;end
+% esto esta mal.... tengo que incluir otra opcion por si tenemos una
+% variable de dos dimensiones donde los dos son restrictivas....
+                        cc=find(~do_restrict);
+                        if isempty(cc);cc=length(cc_names);end
                         read_start(cc)=start.(cc_names{cc});
                         read_count(cc)=count.(cc_names{cc});
                         do_other = setdiff(dimidx,[dimidx(cc),5]) ; % one of these is also restrictive...
@@ -575,7 +578,7 @@ for aa=1:length(varnames)
             %                 end
             %             end
     end
-    eval(['data(aa) = {[data{aa};',varnames{aa},']};'])
+    eval(['data.(varnames{aa}) = ',varnames{aa},';'])
     eval(['clear ',varnames{aa}])
 end
 
