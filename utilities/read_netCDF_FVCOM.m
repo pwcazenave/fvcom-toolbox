@@ -55,10 +55,8 @@ function [data,selection] =read_netCDF_FVCOM(varargin)
 %       - 'siglay_idx'
 %       - 'time_idx'
 %   Default values cause the script to extract all available data for all
-%   possible dimensions. All indices except time need to be zero referenced
-%   as is standard for netCDF indexing. No checks are done on the bounds of
-%   each dimension so make sure you choose them right!
-%
+%   possible dimensions. No checks are done on the bounds of each dimension
+%   so make sure you choose them right!
 %
 % OUTPUT:
 %    data = cell with variables in the order they were requested.
