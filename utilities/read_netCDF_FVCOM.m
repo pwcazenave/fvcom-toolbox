@@ -331,7 +331,7 @@ for aa=1:length(varnames)
         otherwise
             % identified dimensions to restrict
             do_restrict=zeros(size(dimName));
-            dimidx=nan*ones(size(dimName));
+            dimidx=nan(size(dimName));
             clear start count
             for dd=1:length(dimName)
                 start.(dimName{dd})=[];
@@ -373,7 +373,7 @@ for aa=1:length(varnames)
             end
             %
             %             eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count,''double'');'])
-            cc_names=fieldnames(count)
+            cc_names=fieldnames(count);
             switch sum(do_restrict) % there are dimensions to restrict
                 case 1 % only one dimension to restrict
                     switch find(do_restrict) % find position of restrictive variable
@@ -382,14 +382,14 @@ for aa=1:length(varnames)
                             switch dimens
                                 % initialise variable
                                 case 2
-                                    rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))]
+                                    rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))];
                                 case 3
                                     rr=[min(sum(count.(cc_names{1})),dimLength(1)),...
                                         min(sum(count.(cc_names{2})),dimLength(2)),...
-                                        min(sum(count.(cc_names{3})),dimLength(3))]
+                                        min(sum(count.(cc_names{3})),dimLength(3))];
                             end
-                            
-                            eval([varnames{aa},'=nan*ones(rr);'])
+
+                            eval([varnames{aa},'=nan(rr);'])
                             % reorganize start and count arrays
                             read_start(find(~do_restrict))=start.(cc_names{find(~do_restrict)});
                             read_count(find(~do_restrict))=count.(cc_names{find(~do_restrict)});
@@ -408,14 +408,14 @@ for aa=1:length(varnames)
                             switch dimens
                                 % initialise variable
                                 case 2
-                                    rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))]
+                                    rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))];
                                 case 3
                                     rr=[min(sum(count.(cc_names{1})),dimLength(1)),...
                                         min(sum(count.(cc_names{2})),dimLength(2)),...
-                                        min(sum(count.(cc_names{3})),dimLength(3))]
+                                        min(sum(count.(cc_names{3})),dimLength(3))];
                             end
-                            
-                            eval([varnames{aa},'=nan*ones(rr);'])
+
+                            eval([varnames{aa},'=nan(rr);'])
                             % reorganize start and count arrays
                             read_start(find(~do_restrict))=start.(cc_names{find(~do_restrict)});
                             read_count(find(~do_restrict))=count.(cc_names{find(~do_restrict)});
@@ -437,9 +437,9 @@ for aa=1:length(varnames)
                             % but the variable needs to have at least 3 dimensions
                             rr=[min(sum(count.(cc_names{1})),dimLength(1)),...
                                 min(sum(count.(cc_names{2})),dimLength(2)),...
-                                min(sum(count.(cc_names{3})),dimLength(3))]
-                            
-                            eval([varnames{aa},'=nan*ones(rr);'])
+                                min(sum(count.(cc_names{3})),dimLength(3))];
+
+                            eval([varnames{aa},'=nan(rr);'])
                             % reorganize start and count arrays
                             % There are now 2 unrestricted dimensions
                             for tt=find(~do_restrict)
@@ -479,14 +479,14 @@ for aa=1:length(varnames)
                     switch dimens
                         % initialise variable
                         case 2
-                            rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))]
+                            rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))];
                         case 3
                             rr=[min(sum(count.(cc_names{1})),dimLength(1)),...
                                 min(sum(count.(cc_names{2})),dimLength(2)),...
-                                min(sum(count.(cc_names{3})),dimLength(3))]
+                                min(sum(count.(cc_names{3})),dimLength(3))];
                     end
-                    
-                    eval([varnames{aa},'=nan*ones(rr);'])
+
+                    eval([varnames{aa},'=nan(rr);'])
                     % check if time is one of them
                     if ~isempty(find(dimidx==5))
                         do_time = find(dimidx==5); % 5 is the index for time
