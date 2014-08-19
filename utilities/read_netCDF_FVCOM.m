@@ -342,14 +342,14 @@ for aa=1:length(varnames)
             end
             % create start index for dimensions of the variable to
             % access
-            if (sum(isfinite(dimidx))==length(dimidx))
+            if any(isfinite(dimidx))
                 % we have at least two valid dimension indices, proceed
                 for dd=1:length(dimidx)
                     % restrict time as range but node and nele dims are
                     % considered as stations rather than ranges.
                     % if restriction is not -1 then select specified
                     % indices otherwise read all
-                    if RestrictDims.idx{dimidx(dd)}(1)>=0
+                    if ~isnan(dimidx(dd)) && RestrictDims.idx{dimidx(dd)}(1)>=0
                         if (strcmpi(dimName(dd),'time'))
                             start.(dimName{dd})=RestrictDims.idx{dimidx(dd)}(1)-1;
                             count.(dimName{dd})=length(start.(dimName{dd})+1:RestrictDims.idx{dimidx(dd)}(end));
@@ -420,13 +420,17 @@ for aa=1:length(varnames)
                             read_start(find(~do_restrict))=start.(cc_names{find(~do_restrict)});
                             read_count(find(~do_restrict))=count.(cc_names{find(~do_restrict)});
                             
-                            for cc=1:length(start.(cc_names{(do_restrict)}))
+                            for cc=1:length(start.(cc_names{logical(do_restrict)}))
                                 read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
                                 read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
                                 
                                 var_dump=netcdf.getVar(nc,varID,read_start,read_count,'double');
+                                try
+                                    eval([varnames{aa},'(:,cc)=var_dump;'])
+                                catch
+                                    eval([varnames{aa},'(:,:,cc)=var_dump;'])
                                 
-                                eval([varnames{aa},'(:,cc)=var_dump;'])
+                                end
                                 clear var_dump
                             end
                         case 3 % restrict the second variable (ie depth)
@@ -549,9 +553,9 @@ for aa=1:length(varnames)
                         read_start(nn)=start.(cc_names{nn});
                         read_count(nn)=count.(cc_names{nn});
                     end
-                    eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count,''double'');'])
-                    eval(['selection.',varnames{aa},'.start=start]};'])
-                    eval(['selection.',varnames{aa},'.count=count]};'])
+                    eval([varnames{aa},'=netcdf.getVar(nc,varID,read_start,read_count,''double'');'])
+                    eval(['selection.',varnames{aa},'.start=start;'])
+                    eval(['selection.',varnames{aa},'.count=count;'])
                     
             end
     end
