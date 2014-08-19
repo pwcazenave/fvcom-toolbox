@@ -372,6 +372,7 @@ for aa=1:length(varnames)
             %
             %             eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count,''double'');'])
             cc_names=fieldnames(count);
+            clear read_start read_count
             switch sum(do_restrict) % there are dimensions to restrict
                 case 1 % only one dimension to restrict
                     switch find(do_restrict) % find position of restrictive variable
