@@ -174,31 +174,42 @@ if ftbverbose
     fprintf('Using date conversion of +678942 days to go from FVCOM time (Modified Julian Day) to MATLAB time.\n')
 end
 time_offset = 678942;
-
+idx=find(strcmpi(cat(1,{DimsAll.Name}),'time'));
+last_entry=DimsAll(idx).Length;
+Itime=[];Itime2=[];
+tic
 try
     Itime.idx=find(strcmpi(vars,'Itime'));
     Itime.ID=netcdf.inqVarID(nc,'Itime');
-    Itime.Data  = netcdf.getVar(nc,Itime.ID,'int32');
-    Itime2.Data  = netcdf.getVar(nc,Itime.ID+1,'int32');
-
+    Itime.Data(1)  = netcdf.getVar(nc,Itime.ID,0,1,'int32');
+    Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-1,1,'int32');
+    Itime2.Data(1)  = netcdf.getVar(nc,Itime.ID+1,0,1,'int32');
+    Itime2.Data(2)  = netcdf.getVar(nc,Itime.ID+1,last_entry-1,1,'int32');
+    
     [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);
     [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
-
-    var_time = double(Itime.Data)+time_offset+double(Itime2.Data)./(24*600*6000);
+    
     start_date=sum(start_d.*[1 1/(24*60*60*1000)]);     %hkj missing 1000 inserted
     end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       %hkj missing 1000 inserted
+    var_time =  netcdf.getVar(nc,Itime.ID,[0],[10],'double')+time_offset+...
+        netcdf.getVar(nc,Itime.ID+1,0,10,'double')./(24*600*6000) ;
+    
+    DeltaT=median(diff(var_time));
+    var_time = start_date:DeltaT:(end_date-DeltaT);
+    
 catch me
     if ftbverbose
         warning('No ''Itime'' and/or ''Itime2'' variables, using less precise ''time'' instead.\n(%s)\n', me.message)
     end
     Itime.idx=find(strcmpi(vars,'time'));
     Itime.ID=netcdf.inqVarID(nc,'time');
-    Itime.Data  = netcdf.getVar(nc,Itime.ID,'double');
-
-    var_time = (Itime.Data)+time_offset;
-    [start_date,end_date] = deal(var_time(1),var_time(end));
+    Itime.Data(1)  = netcdf.getVar(nc,Itime.ID,0,1,'double');
+    Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-1,1,'double');
+    [start_date,end_date] = deal(Itime.Data(1)+time_offset,Itime.Data(end)+time_offset);
+    DeltaT=(end_date-start_date)./last_entry;    
+    var_time = start_date:DeltaT:(end_date-DeltaT);
 end
-
+toc
 if length(all_data) == 2
     req_st = datenum(all_data{1},'dd/mm/yy HH:MM:SS');
     req_end = datenum(all_data{2},'dd/mm/yy HH:MM:SS');
@@ -256,6 +267,7 @@ for aa=1:length(varnames)
     %----------------------------------------------------------------------
     % Extract number of dimensions, lengths and names of all variables
     %----------------------------------------------------------------------
+tic
     disp(['Processing variable ',varnames{aa}])
     % Tidy up the previous iteration's variables so we don't get confused.
     clear dimName dimLength
@@ -560,6 +572,7 @@ for aa=1:length(varnames)
     end
     eval(['data.(varnames{aa}) = ',varnames{aa},';'])
     eval(['clear ',varnames{aa}])
+    toc
 end
 
 %--------------------------------------------------------------------------
