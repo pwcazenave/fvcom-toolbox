@@ -35,6 +35,7 @@ function Mobj = get_EA_river_climatology(Mobj, ea, dist_thresh)
 %   2013-11-05 First version.
 %   2014-07-08 Think I've fixed the issue with leap years and incorrectly
 %   sized output temperature arrays with multiple years.
+%   2014-09-02 Nope, I hadn't fixed leap years, but I might have now.
 
 subname = 'get_EA_river_climatology';
 
@@ -92,6 +93,11 @@ for r = 1:nr
     end
 end
 
+% Since the EA climatology is only 365 days long, add the mean of
+% the first and last days to the end of the time series for leap
+% years.
+clim = [clim; mean([clim(1, :); clim(end, :)])];
+
 % Now we have the climatologies for the relevant river nodes, we need to
 % repeat it to fit the length of the Mobj.river_time array. Since the
 % climatology data are for a year only, we need to find the correct index
@@ -105,13 +111,9 @@ warning('Don''t know what''s going on with this here. Check the code to find the
 years = unique(yyyy);
 ny = length(years);
 if ny == 1
-    if mod(years, 4) == 0
-        endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
-            datenum(max(yyyy), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
-    else
-        endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
-            datenum(max(yyyy), 1, 1, 0, 0, 0));
-    end
+    % Offset time series by 1 day to get a full year (365/366 days).
+    endday = (1 + datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - ...
+        datenum(max(yyyy), 1, 1, 0, 0, 0));
 
     % Subset the river climatology for the right days.
     repclim = clim(startday:endday, :);
@@ -123,13 +125,9 @@ else
         % from the climatology.
         tidx = 1:length(yyyy);
         tidx(yyyy ~= years(y)) = [];
-        if mod(years(y), 4) == 0
-            endday = (datenum(yyyy(tidx(end)), mm(tidx(end)), dd(tidx(end)), HH(tidx(end)), MM(tidx(end)), SS(tidx(end))) - ...
-                datenum(max(yyyy(tidx)), 1, 1, 0, 0, 0)) + 1; % add offset of 1 for MATLAB indexing.
-        else
-            endday = (datenum(yyyy(tidx(end)), mm(tidx(end)), dd(tidx(end)), HH(tidx(end)), MM(tidx(end)), SS(tidx(end))) - ...
-                datenum(max(yyyy(tidx)), 1, 1, 0, 0, 0));
-        end
+        % Offset time series by 1 day to get a full year (365/366 days).
+        endday = (1 + datenum(yyyy(tidx(end)), mm(tidx(end)), dd(tidx(end)), HH(tidx(end)), MM(tidx(end)), SS(tidx(end))) - ...
+            datenum(max(yyyy(tidx)), 1, 1, 0, 0, 0));
 
         nd = sum(eomday(years(y), 1:12));
         if y == 1
@@ -144,8 +142,9 @@ else
             repclim = [repclim; clim];
         end
 
-        % We need to add an extra couple of day's data to the end of the
-        % array for this (leap) year.
+        % We sometimes need to add an extra couple of day's data to the end
+        % of the array for this (leap) year. A recent fix to the code above
+        % should have made this obsolete, but you never know...
         if nd == 366
             backidx = 366 - nd;
             repclim = [repclim; repclim(end - backidx:end, :)];
