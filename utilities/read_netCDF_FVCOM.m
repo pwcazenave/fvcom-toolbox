@@ -85,6 +85,8 @@ function [data,selection] =read_netCDF_FVCOM(varargin)
 %   better control over formatting. Also fixed a bug where if a 2D array
 %   was requested after a 3D array, the 2D array would cause the function
 %   to crash (because it was using a 3D index for getVar).
+%   2014-08-20 - Complete the functionality to be able to slice the data
+%   along any dimension (siglay, time, node etc.).
 %
 %==========================================================================
 
