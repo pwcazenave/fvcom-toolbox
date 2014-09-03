@@ -277,13 +277,10 @@ for aa=1:length(varnames)
         varidx(aa) = find(TF);
         TF = sum(TF);
         dimens=ndims(aa);
-        if ftbverbose
-            fprintf('Variable %s found', vars{varidx(aa)})
-        end
     else
         netcdf.close(nc)
         varargout{1} = 0;
-        error('Variable %s NOT found in file. Stopping. Check input variable names.\n', varnames{aa})
+        error('\nNOT found in file. Stopping. Check input variable names.')
     end
     varID=netcdf.inqVarID(nc,vars{varidx(aa)});
 
@@ -295,9 +292,9 @@ for aa=1:length(varnames)
         if ftbverbose
             if dd == 1
                 if length(dimids) == 1
-                    fprintf(' with %i dimension: %s ', dimens, dimName{dd})
+                    fprintf('%i dimension: %s ', dimens, dimName{dd})
                 else
-                    fprintf(' with %i dimensions: %s ', dimens, dimName{dd})
+                    fprintf('%i dimensions: %s ', dimens, dimName{dd})
                 end
             else
                 fprintf('%s ', dimName{dd})
