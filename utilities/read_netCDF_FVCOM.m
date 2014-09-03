@@ -177,7 +177,7 @@ time_offset = 678942;
 idx=find(strcmpi(cat(1,{DimsAll.Name}),'time'));
 last_entry=DimsAll(idx).Length;
 Itime=[];Itime2=[];
-tic
+% tic
 try
     Itime.idx=find(strcmpi(vars,'Itime'));
     Itime.ID=netcdf.inqVarID(nc,'Itime');
@@ -209,7 +209,7 @@ catch me
     DeltaT=(end_date-start_date)./last_entry;    
     var_time = start_date:DeltaT:(end_date-DeltaT);
 end
-toc
+% toc
 if length(all_data) == 2
     req_st = datenum(all_data{1},'dd/mm/yy HH:MM:SS');
     req_end = datenum(all_data{2},'dd/mm/yy HH:MM:SS');
@@ -267,8 +267,8 @@ for aa=1:length(varnames)
     %----------------------------------------------------------------------
     % Extract number of dimensions, lengths and names of all variables
     %----------------------------------------------------------------------
-tic
-    disp(['Processing variable ',varnames{aa}])
+% tic
+    fprintf('Processing variable %s: ', varnames{aa})
     % Tidy up the previous iteration's variables so we don't get confused.
     clear dimName dimLength
 
@@ -572,7 +572,7 @@ tic
     end
     eval(['data.(varnames{aa}) = ',varnames{aa},';'])
     eval(['clear ',varnames{aa}])
-    toc
+%     toc
 end
 
 %--------------------------------------------------------------------------
