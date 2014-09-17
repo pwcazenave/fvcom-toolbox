@@ -59,7 +59,8 @@ function [data,selection] =read_netCDF_FVCOM(varargin)
 %   so make sure you choose them right!
 %
 % OUTPUT:
-%    data = cell with variables in the order they were requested.
+%    data = struct with fields whose names match those from the list of
+%    input variables extracted ('varnames').
 %
 % EXAMPLE USAGE
 %   vars = {'Times', 'xc', 'yc', 'h', 'siglay', 'nv', 'zeta', 'ua', 'va'};
@@ -434,7 +435,11 @@ for aa=1:length(varnames)
                                 read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
                                 read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
 
-                                var_dump=netcdf.getVar(nc,varID,read_start,read_count,'double');
+                                try
+                                    var_dump=netcdf.getVar(nc,varID,read_start,read_count,'double');
+                                catch
+                                    var_dump=netcdf.getVar(nc,varID,read_start,read_count);
+                                end
                                 try
                                     eval([varnames{aa},'(:,cc)=var_dump;'])
                                 catch
