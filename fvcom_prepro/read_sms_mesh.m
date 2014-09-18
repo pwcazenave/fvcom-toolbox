@@ -212,7 +212,7 @@ allNodes(allNodes == 0) = [];
 % Add a new field to Mobj with all the nodestrings as a cell array.
 nodeStrings = find(allNodes < 0);
 read_obc_nodes = cell(1, length(nodeStrings));
-for nString = 1:sum(allNodes < 0)
+for nString = 1:sum(allNodes(:) < 0)
     if nString == 1
         read_obc_nodes{nString} = abs(allNodes(1:nodeStrings(nString)));
     else
