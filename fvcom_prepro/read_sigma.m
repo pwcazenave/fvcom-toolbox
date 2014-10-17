@@ -36,7 +36,7 @@ function Mobj = read_sigma(Mobj, sigmafile)
 %   input file. Also changed the way the uniform distribution is calculated
 %   (by using a P_SIGMA value of 1 and the sigma_geo.m function rather than
 %   fiddling around with ranges, although the output is the same).
-%   2014-04-28 Add the sigma levels for the element centres in additions to
+%   2014-04-28 Add the sigma levels for the element centres in addition to
 %   the element nodes.
 
 subname = 'read_sigma';
