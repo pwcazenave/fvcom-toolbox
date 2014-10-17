@@ -3,7 +3,10 @@ Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 20141017
 --------
 
-Update to fix a number of bugs and improve functionality.
+Fairly major update to fix a number of bugs and improve functionality. This
+includes additional functionality to work with POLCOMS model output (mainly the
+input files, configuration files and flat binary outputs). There are also some
+new functions to work with FVCOM-ERSEM.
 
 fvcom_prepro:
     get_EA_river_climatology.m
@@ -15,6 +18,13 @@ fvcom_prepro:
         * Update interp1 function to use pchip instead of csap as the latter
         will be removed in a future version of MATLAB and the innumerable
         warnings were doing my nut in.
+    get_POLCOMS_tsobc_gcoms.m
+        * Add support for clipping in time.
+    get_POLPRED_spectide.m
+        * Update help.
+    init_lag.m
+        * Add new (largely untested) function to create the initial Lagrangian
+        netCDF file.
     interp_HYCOM2FVCOM.m
         * Fix bug when interpolating velocity data due to incorrectly sized
         preallocated array.
@@ -27,20 +37,89 @@ fvcom_prepro:
         * Add the sigma levels for the element centres in additions to the
         element nodes.
     read_sms_mesh.m
+        * Add Rory as an author.
         * Fix bugs when not using bathymetry (i.e. only reading the grid data
         in).
         * Also make a depth array for the element centres.
+    write_FVCOM_elevtide.m
+        * Add new flags to control which time variables to use. FVCOM reads the
+        'Times' variable first if present, then falls back to 'Itime' and
+        'Itime2' and finally 'time'.
+        * Also reinstate the original version of the calculation of Itime2 as
+        the rounding effect was smoothing out the data too much, affecting its
+        precision.
+        * Update help accordingly.
+    write_FVCOM_forcing.m
+        * Add new flags to control which time variables to use. FVCOM reads the
+        'Times' variable first if present, then falls back to 'Itime' and
+        'Itime2' and finally 'time'.
     write_FVCOM_restart.m
         * Update the help to better describe how the optional 'out_date'
         argument works.
+    write_FVCOM_river_ERSEM.m
+        * Add new function to output river data for FVCOM-ERSEM.
+    write_FVCOM_tsobc.m
+        * Add new flags to control which time variables to use. FVCOM reads the
+        'Times' variable first if present, then falls back to 'Itime' and
+        'Itime2' and finally 'time'.
+        * Add better check for the size of the input arrays (works with scalars).
+    write_FVCOM_tsobcERSEM.m
+        * Add new function to output temperature and salinity open boundary
+        data for FVCOM-ERSEM.
+
 
 utilites:
+    calc_rad.m
+        * New function for calculating instantaneous irradiance from a given
+        latitude and time.
+    calc_scoord.m
+        * Calculate POLCOMS s-coordinates.
+    distance_to_coast.m
+        * Calculate the distance to the model coastline from a given position.
+        Requires additional third-party tools (HJB Solver Package - the path to
+        this must be edited in the function (not ideal)).
+    do_surface_plotMatlabMap.m
+        * Add script to plot a surface using the MATLAB mapping toolbox.
+    do_surface_plotVel.m
+        * Add script to plot a velocity surface using the third-party m_map
+        mapping toolbox.
+    do_surface_plotVelMatlabMap.m
+        * Add script to plot a velocity surface using the MATLAB mapping
+        toolbox.
+    do_vector_plot_MatlabMap.m
+        * Add script to plot velocity vectors with the MATLAB mapping toolbox.
+    find_relaxation_boundary.m
+        * Add function to find the elements which fall along the boundary.
+    get_polcoms_fixed_vars.m
+        * Add function to get POLCOMS fixed variables from a flat binary output
+        file.
+    get_polcoms_timeseriesv1.m
+        * Add function to extract time series from POLCOMS outputs.
+    greg2julian.m
+        * Fix input arguments check.
     grid_vert_interp.m
         * Add new argument to allow specifying different coordinates for the
         extrapolation. This allows us to interpolate data which belongs either
         to the element centres or element nodes (defaults to element nodes).
         This is only really important when the model grid falls outside the
         coverage of the supplied data and we're extrapolating data.
+    interpolate_near_coast.m
+        * Add new function to interpolate a dataset towards a coastline.
+    interpolate_polcoms_timeseries_zet.m
+        * Add new function to interpolate POLCOMS surface elevation data
+        towards a coastline.
+    read_netCDF_FVCOM.m
+        * Complete the functionality to be able to slice the data along any
+        dimension (siglay, time, node etc.).
+        * Fix ability to slice with any combination of space (horizontal and
+        vertical) and time.
+    read_polcoms_params.m
+        * New function to read polcoms parameters.
+    read_scoord_param.m
+        * New function to read hc, cc, theta and bb from POLCOMS
+        scoord_params.dat file
+    readzetUBVB.m
+        * New function to read POLCOMS output binary files (dailymean).
 
 
 20140728
