@@ -1,5 +1,48 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20141017
+--------
+
+Update to fix a number of bugs and improve functionality.
+
+fvcom_prepro:
+    get_EA_river_climatology.m
+        * Another fix for leap year times.
+    get_EHYPE_rivers.m
+        * Add option to exclude rivers by name. Add new option to use an
+        alternatively formatted input (two column time,flux).
+    get_HYCOM_tsobc.m
+        * Update interp1 function to use pchip instead of csap as the latter
+        will be removed in a future version of MATLAB and the innumerable
+        warnings were doing my nut in.
+    interp_HYCOM2FVCOM.m
+        * Fix bug when interpolating velocity data due to incorrectly sized
+        preallocated array.
+        * Make the way the data to be interpolated onto the element centres
+        (i.e. the velocity data), as opposed to the element nodes, more
+        understandable.
+    read_MetUM_forcing.m
+        * Change warning to a simple printed statement.
+    read_sigma.m
+        * Add the sigma levels for the element centres in additions to the
+        element nodes.
+    read_sms_mesh.m
+        * Fix bugs when not using bathymetry (i.e. only reading the grid data
+        in).
+        * Also make a depth array for the element centres.
+    write_FVCOM_restart.m
+        * Update the help to better describe how the optional 'out_date'
+        argument works.
+
+utilites:
+    grid_vert_interp.m
+        * Add new argument to allow specifying different coordinates for the
+        extrapolation. This allows us to interpolate data which belongs either
+        to the element centres or element nodes (defaults to element nodes).
+        This is only really important when the model grid falls outside the
+        coverage of the supplied data and we're extrapolating data.
+
+
 20140728
 --------
 
