@@ -277,7 +277,9 @@ for aa=1:length(varnames)
     % Extract number of dimensions, lengths and names of all variables
     %----------------------------------------------------------------------
 % tic
-    fprintf('Processing variable %s: ', varnames{aa})
+    if ftbverbose
+        fprintf('Processing variable %s: ', varnames{aa})
+    end
     % Tidy up the previous iteration's variables so we don't get confused.
     clear dimName dimLength
 
@@ -289,7 +291,7 @@ for aa=1:length(varnames)
     else
         netcdf.close(nc)
         varargout{1} = 0;
-        fprintf('\n')
+        if ftbverbose; fprintf('\n'); end
         error('Variable %s NOT found in file. Stopping. Check input variable names.', varnames{aa})
     end
     varID=netcdf.inqVarID(nc,vars{varidx(aa)});
@@ -302,12 +304,18 @@ for aa=1:length(varnames)
         if ftbverbose
             if dd == 1
                 if length(dimids) == 1
-                    fprintf('%i dimension: %s ', dimens, dimName{dd})
+                    if ftbverbose
+                        fprintf('%i dimension: %s ', dimens, dimName{dd})
+                    end
                 else
-                    fprintf('%i dimensions: %s ', dimens, dimName{dd})
+                    if ftbverbose
+                        fprintf('%i dimensions: %s ', dimens, dimName{dd})
+                    end
                 end
             else
-                fprintf('%s ', dimName{dd})
+                if ftbverbose
+                    fprintf('%s ', dimName{dd})
+                end
             end
         end
     end
