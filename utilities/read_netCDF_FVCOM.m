@@ -191,18 +191,18 @@ try
     Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-1,1,'int32');
     Itime2.Data(1)  = netcdf.getVar(nc,Itime.ID+1,0,1,'int32');
     Itime2.Data(2)  = netcdf.getVar(nc,Itime.ID+1,last_entry-1,1,'int32');
-    
+
     [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);
     [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
-    
+
     start_date=sum(start_d.*[1 1/(24*60*60*1000)]);     %hkj missing 1000 inserted
     end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       %hkj missing 1000 inserted
     var_time =  netcdf.getVar(nc,Itime.ID,[0],[10],'double')+time_offset+...
         netcdf.getVar(nc,Itime.ID+1,0,10,'double')./(24*600*6000) ;
-    
+
     DeltaT=median(diff(var_time));
     var_time = start_date:DeltaT:(end_date-DeltaT);
-    
+
 catch me
     if ftbverbose
         warning('No ''Itime'' and/or ''Itime2'' variables, using less precise ''time'' instead.\n(%s)\n', me.message)
@@ -379,7 +379,7 @@ for aa=1:length(varnames)
                             start.(dimName{dd})=RestrictDims.idx{dimidx(dd)}(1)-1;
                             count.(dimName{dd})=length(RestrictDims.idx{dimidx(dd)});
                             stride.(dimName{dd})=timestrd;
-                            
+
                         else
                             for ss=1:length(RestrictDims.idx{dimidx(dd)})
                                 start.(dimName{dd})(ss)=RestrictDims.idx{dimidx(dd)}(ss)-1;
@@ -423,14 +423,14 @@ for aa=1:length(varnames)
                             read_start(find(~do_restrict))=start.(cc_names{find(~do_restrict)});
                             read_count(find(~do_restrict))=count.(cc_names{find(~do_restrict)});
                             read_stride(find(~do_restrict))=stride.(cc_names{find(~do_restrict)});
-                            
+
                             for cc=1:length(start.(cc_names{find(do_restrict)}))
                                 read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
                                 read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
                                 read_stride(find(do_restrict))=stride.(cc_names{find(do_restrict)});
-                                
+
                                 var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,'double');
-                                
+
                                 eval([varnames{aa},'(cc,:)=var_dump;'])
                                 clear var_dump
                             end
@@ -478,7 +478,7 @@ for aa=1:length(varnames)
                                 read_start(tt)=start.(cc_names{tt});
                                 read_count(tt)=count.(cc_names{tt});
                                 read_stride(tt)=stride.(cc_names{tt});
-                                
+
                             end
 
                             % check if time is one of them
@@ -495,7 +495,7 @@ for aa=1:length(varnames)
                                     read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
                                     read_stride(find(do_restrict))=stride.(cc_names{find(do_restrict)});
                                     var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,'double');
-                                    
+
                                     switch dimName(find(do_restrict))
                                         case 'node' | 'nele'
                                             eval([varnames{aa},'(cc,:,:)=var_dump;'])
@@ -572,7 +572,7 @@ for aa=1:length(varnames)
                                 read_count(2)=count.(cc_names{2})(cc);
                                 read_stride(2)=stride.(cc_names{2});
                                 var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,'double');
-                                
+
                                 eval([varnames{aa},'(kk,cc)=var_dump;'])
                                 clear var_dump
                             end
@@ -583,7 +583,7 @@ for aa=1:length(varnames)
 
                     eval(['selection.',varnames{aa},'.start=start;'])
                     eval(['selection.',varnames{aa},'.count=count;'])
-                    
+
                 case 3 % three dimension to restrict!
                     % but the variable can have more than 2 dimensions
                     switch dimens
@@ -595,7 +595,7 @@ for aa=1:length(varnames)
                                 min(sum(count.(cc_names{2})),dimLength(2)),...
                                 min(sum(count.(cc_names{3})),dimLength(3))];
                     end
-                    
+
                     eval([varnames{aa},'=nan(rr);'])
                     % check if time is one of them
                     if isempty(find(dimidx==5));disp('This won''t work, try again');return;end
@@ -604,7 +604,7 @@ for aa=1:length(varnames)
                     read_start(do_time)=start.(cc_names{do_time});
                     read_count(do_time)=count.(cc_names{do_time});
                     read_stride(do_time)=stride.(cc_names{do_time});
-                    
+
                     % search for the non_restrictive variable
                     %                         cc=1
                     %                         while ~(length( start.(cc_names{cc}))==1);cc=cc+1;end
@@ -616,17 +616,17 @@ for aa=1:length(varnames)
                     else
                         do_one=do_other(2);do_two=do_other(1);
                     end
-                    
+
                     for cc=1:length(start.(cc_names{do_one}))
                         read_start(do_one)=start.(cc_names{do_one})(cc);
                         read_count(do_one)=count.(cc_names{do_one})(cc);
                         read_stride(do_one)=stride.(cc_names{do_one});
-                        
+
                         for pp=1:length(start.(cc_names{do_two}))
                             read_start(do_two)=start.(cc_names{do_two})(pp);
                             read_count(do_two)=count.(cc_names{do_two})(pp);
                             read_stride(do_two)=stride.(cc_names{do_two});
-                            
+
                             var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,'double');
                             eval([varnames{aa},'(pp,cc,:)=var_dump;'])
                         end
@@ -635,7 +635,7 @@ for aa=1:length(varnames)
                     eval(['selection.',varnames{aa},'.start=start;'])
                     eval(['selection.',varnames{aa},'.count=count;'])
                 case 0 % there are NO dimensions to restrict and 3 dimensions haven't been coded yet!!
-                    
+
                     for nn=1:length(cc_names)
                         read_start(nn)=start.(cc_names{nn});
                         read_count(nn)=count.(cc_names{nn});
