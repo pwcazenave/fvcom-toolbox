@@ -74,7 +74,7 @@ else
 end
 
 inc = 1;
-% out = cell(nPos, 1);
+out = cell(nPos, 1);
 
 for s=1:nPos
     [node, dist] = find_nearest_pt(Positions(s, cols(1)), Positions(s, cols(2)), Mobj);
