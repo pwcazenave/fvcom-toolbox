@@ -52,7 +52,7 @@ function [Mobj]  = add_stations_list(Mobj,Positions,Names,Dist)
 subname = 'add_stations_list';
 global ftbverbose
 if ftbverbose
-  fprintf('\nbegin : %s\n', subname)
+    fprintf('\nbegin : %s\n', subname)
 end
 
 %--------------------------------------------------------------------------
@@ -113,5 +113,5 @@ else
 end
 
 if ftbverbose
-  fprintf('\nend   : %s\n', subname)
+    fprintf('\nend   : %s\n', subname)
 end
