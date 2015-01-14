@@ -32,11 +32,11 @@ function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj)
 %
 %==============================================================================
 
-global ftbverbose
+% global ftbverbose
 subname = 'find_nearest_pt';
-if ftbverbose
-    fprintf('\nbegin : %s\n', subname)
-end
+% if ftbverbose
+%     fprintf('\nbegin : %s\n', subname)
+% end
 
 %------------------------------------------------------------------------------
 % Parse input arguments
@@ -63,8 +63,8 @@ end
 %------------------------------------------------------------------------------
 [Distance, Point] = min(sqrt((xloc - x).^2 + (yloc - y).^2));
 
-if ftbverbose
-    fprintf(['end   : ' subname '\n'])
-end
+% if ftbverbose
+%     fprintf(['end   : ' subname '\n'])
+% end
 
 
