@@ -65,6 +65,10 @@ function write_FVCOM_probes(nml_file, interval, probes)
 %
 % Revision history:
 %   2014-02-10 - First version.
+%   2015-01-14 - Fix export of the u and v locations to use the closest
+%   element instead of the node ID. Using the node ID for the u and v data
+%   will yield velocity time series miles away from the actual location of
+%   interest.
 %
 %==========================================================================
 
@@ -103,7 +107,11 @@ for p = 1:np
         file = fullfile(pathstr, name);
         fprintf(f, '&NML_PROBE\n');
         fprintf(f, ' PROBE_INTERVAL = "seconds=%.1f",\n', interval);
-        fprintf(f, ' PROBE_LOCATION = %i,\n', probes.(fnames{p}).node);
+        if any(strcmpi(vname, {'u', 'v'}))
+            fprintf(f, ' PROBE_LOCATION = %i,\n', probes.(fnames{p}).elem);
+        else
+            fprintf(f, ' PROBE_LOCATION = %i,\n', probes.(fnames{p}).node);
+        end
         fprintf(f, ' PROBE_TITLE = "%s",\n', file);
         % If we've got something which is vertically resolved, output the
         % vertical levels.

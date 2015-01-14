@@ -21,8 +21,14 @@ function [Mobj]  = add_stations_list(Mobj,Positions,Names,Dist)
 %    ensure Dist is in those units.
 %
 % OUTPUT:
-%    Mobj = Matlab mesh object with an additional cell array containing id,
-%    x, y, nodelist, depth and station name.
+%    Mobj = Matlab mesh object with an additional cell array (stations)
+%    containing:
+%       {id, x, y, nodelist, depth, 'station name', elem}
+%    where id is the station ID (from 1 number of valid stations, x and y
+%    are the coordinates of the station, nodelist is the indices of the
+%    model grid nodes, depth is the depth at the grid node, station name is
+%    a string of the name from the input file and eleme is the grid element
+%    ID closest to each station.
 %
 % EXAMPLE USAGE
 %    Mobj = add_stations_list(Mobj, [-5.54, 50.103; -3.0865, 58.441], ...
@@ -31,9 +37,11 @@ function [Mobj]  = add_stations_list(Mobj,Positions,Names,Dist)
 % Author(s):
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
-%
 % Revision history
 %    2012-11-30 First version.
+%    2015-01-14 Add support for exporting the element ID closest to the
+%    station of interest (as well as the node ID which was already there).
+%    Fix some formatting issues.
 %
 %==========================================================================
 subname = 'add_stations_list';
@@ -74,10 +82,11 @@ else
 end
 
 inc = 1;
-out = cell(nPos, 1);
+out = cell(1); % don't preallocate as we don't know how many we'll have
 
 for s=1:nPos
     [node, dist] = find_nearest_pt(Positions(s, cols(1)), Positions(s, cols(2)), Mobj);
+    [~, elem] = min(abs(sqrt((Mobj.xc - Positions(s, cols(1))).^2 + Mobj.yc - Positions(s, cols(2))).^2));
 
     if dist >= Dist
         % Skip out for this station
@@ -86,7 +95,7 @@ for s=1:nPos
         end
         continue
     end
-    out{inc} = {inc, Positions(s, cols(1)), Positions(s, cols(2)), node, Mobj.h(node), Names{s}};
+    out{inc} = {inc, Positions(s, cols(1)), Positions(s, cols(2)), node, Mobj.h(node), Names{s}, elem};
     inc = inc + 1;
 end
 
