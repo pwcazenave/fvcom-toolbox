@@ -10,7 +10,12 @@ function [Mobj]  = add_stations_list(Mobj,Positions,Names,Dist)
 %    grid node to those supplied will be used in the output file.
 %
 % INPUT
-%    Mobj = Matlab mesh object
+%    Mobj = Matlab mesh object with the following fields:
+%       - nativeCoords = native grid coordinate type.
+%       - x, y = grid node positions
+%       - xc, yc  = grid element positions
+%       - h = water depth at the nodes
+%       - tri = grid triangulation table
 %    Positions = 2xn array of the XY positions of the stations
 %    Names = Cell array of the names of the stations defined in Positions
 %    Dist = Maximum distance from a station for a node to be included
