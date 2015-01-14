@@ -46,10 +46,9 @@ function [Mobj]  = add_stations_list(Mobj,Positions,Names,Dist)
 %==========================================================================
 subname = 'add_stations_list';
 global ftbverbose
-if(ftbverbose)
-  fprintf('\n')
-  fprintf(['begin : ' subname '\n'])
-end;
+if ftbverbose
+  fprintf('\nbegin : %s\n', subname)
+end
 
 %--------------------------------------------------------------------------
 % Check the inputs
@@ -84,13 +83,13 @@ end
 inc = 1;
 out = cell(1); % don't preallocate as we don't know how many we'll have
 
-for s=1:nPos
+for s = 1:nPos
     [node, dist] = find_nearest_pt(Positions(s, cols(1)), Positions(s, cols(2)), Mobj);
     [~, elem] = min(abs(sqrt((Mobj.xc - Positions(s, cols(1))).^2 + Mobj.yc - Positions(s, cols(2))).^2));
 
     if dist >= Dist
         % Skip out for this station
-        if(ftbverbose)
+        if ftbverbose
             fprintf('Skipping station %s (%g, %g). Nodal distance from station position = %f\n', Names{s}, Positions(s, 1), Positions(s, 2), dist)
         end
         continue
@@ -106,4 +105,8 @@ else
     if ftbverbose
         fprintf('No stations found within the model domain.\n')
     end
+end
+
+if ftbverbose
+  fprintf('\nend   : %s\n', subname)
 end
