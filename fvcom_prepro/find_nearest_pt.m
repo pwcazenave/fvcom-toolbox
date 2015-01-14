@@ -1,5 +1,4 @@
 function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj) 
-
 % Find nearest point in Mesh structure to (x,y) 
 %
 % function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj) 
@@ -8,11 +7,14 @@ function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj)
 %    Find nearest point to (xloc,yloc) in the domain of Mobj
 %    using native coordinates of Mobj
 %
-% INPUT: 
+% INPUT:
 %   xloc   = x location of point (in native Mobj coordinates)
 %   yloc   = y location of point (in native Mobj coordinates)
-%   Mobj   = Mesh object
-%           
+%   Mobj   = Mesh object with the following fields:
+%               - nativeCoords = grid type (cartesian or spherical)
+%               - x, y and/or lon, lat = coordinates (dependent on
+%               nativeCoords).
+%
 % OUTPUT:
 %   Point = index of nearest vertex in the mesh
 %   Distance = Distance from x,y to Point in Mobj native coordinates
@@ -22,40 +24,47 @@ function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj)
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
-%   
+%    2015-01-14 Tidy up the code a bit and add extra information to the
+%    help.
+%
 %==============================================================================
 
+global ftbverbose
 subname = 'find_nearest_pt';
-%fprintf('\n')
-%fprintf(['begin : ' subname '\n'])
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
 
 %------------------------------------------------------------------------------
 % Parse input arguments
 %------------------------------------------------------------------------------
-if(exist('xloc')*exist('yloc')*exist('Mobj') == 0)
-	error('arguments to find_nearest_pt are missing')
-end;
+if ~exist('xloc', 'var') || ~exist('yloc', 'var') || ~exist('Mobj', 'var')
+	error('arguments to %s are missing', subname)
+end
 
 %------------------------------------------------------------------------------
 % Set native coordinates
 %------------------------------------------------------------------------------
-if(lower(Mobj.nativeCoords(1:3)) == 'car')
+if strcmpi(Mobj.nativeCoords, 'cartesian')
 	x = Mobj.x;
 	y = Mobj.y;
-else
+elseif strcmpi(Mobj.nativeCoords, 'spherical')
 	x = Mobj.lon;
 	y = Mobj.lat;
-end;
+else
+    error('Unrecognised coordinate type.')
+end
 
 %------------------------------------------------------------------------------
 % Find the nearest point
 %------------------------------------------------------------------------------
-radvec = sqrt( (xloc-x).^2 + (yloc-y).^2);
-[Distance,Point] = min(radvec);
+[Distance, Point] = min(sqrt((xloc - x).^2 + (yloc - y).^2));
 
-
-%fprintf(['end   : ' subname '\n'])
+if ftbverbose
+    fprintf(['end   : ' subname '\n'])
+end
 
 
