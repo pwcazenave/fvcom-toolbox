@@ -12,7 +12,9 @@ function write_FVCOM_probes(nml_file, interval, probes)
 %   interval - output interval (in seconds)
 %   probe - struct of structs with fields whose names are the probe title.
 %   Each probe struct must have the following fields:
-%       node        - unstructured grid node number.
+%       node        - unstructured grid node ID (for all scalars except u
+%           and v).
+%       elem        - unstructured grid element ID (for u and v only).
 %       file        - file name for the current probe's output. If the
 %           'variable' field is a cell array of multiple variables, each
 %           output file name will have the variable name appended (e.g.
@@ -39,6 +41,7 @@ function write_FVCOM_probes(nml_file, interval, probes)
 % EXAMPLE USAGE:
 %   probes.newlyn.file = 'newlyn_elev.dat';
 %   probes.newlyn.node = 1045;
+%   probes.newlyn.elem = 467;
 %   probes.newlyn.description = 'Elevation at Newlyn';
 %   probes.newlyn.variable = 'el';
 %   probes.newlyn.longname = 'Surface elevation (m)';
