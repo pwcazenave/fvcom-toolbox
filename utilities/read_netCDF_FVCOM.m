@@ -74,6 +74,13 @@ function [data,selection] = read_netCDF_FVCOM(varargin)
 %       'node_idx', node_idx, ...
 %       'varnames', vars);
 %
+% BUGS:
+%   - When loading all times with the argument pair:
+%       'time', -1
+%     the returned time series is nt - 1 (where nt is the number of time
+%     steps in the netCDF file). Not sure where this is broken, but
+%     probably around line 377.
+%
 % Author(s):
 %   Ricardo Torres - Plymouth Marine Laboratory 2012
 %   Hakeem Johnson - CH2M
