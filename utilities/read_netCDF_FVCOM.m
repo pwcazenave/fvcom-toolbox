@@ -1,4 +1,4 @@
-function [data,selection] =read_netCDF_FVCOM(varargin)
+function [data,selection] = read_netCDF_FVCOM(varargin)
 % Function to extract data from a Netcdf file output from FVCOM.
 %
 % data = read_netCDF_FVCOM(varargin)
@@ -75,9 +75,9 @@ function [data,selection] =read_netCDF_FVCOM(varargin)
 %       'varnames', vars);
 %
 % Author(s):
-%    Ricardo Torres - Plymouth Marine Laboratory 2012
-%    Hakeem Johnson - CH2M
-%    Pierre Cazenave - Plymouth Marine Laboratory
+%   Ricardo Torres - Plymouth Marine Laboratory 2012
+%   Hakeem Johnson - CH2M
+%   Pierre Cazenave - Plymouth Marine Laboratory
 %
 % Revision history:
 %   v0 March 2012
