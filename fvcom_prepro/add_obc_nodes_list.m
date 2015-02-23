@@ -31,7 +31,8 @@ function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType,plotFig)
 %    2013-01-02 KJA bug fix: amended usage of 'unique' in line 53 to
 %    prevent it from sorting the values it returns. Amended by Pierre to
 %    support pre-2012 versions of MATLAB whilst giving the same result.
-%   
+%    2015-02-23 Output number of nodes if the verbose flag is set.
+%
 %==========================================================================
 subname = 'add_obc_nodes_list';
 
@@ -88,6 +89,9 @@ Mobj.obc_nodes(Mobj.nObs,1:npts) = Nlist;
 Mobj.obc_name{Mobj.nObs} = ObcName;
 Mobj.obc_type(Mobj.nObs) = ObcType;
 
+if ftbverbose
+    fprintf('found %d open boundary nodes', npts)
+end
 
 if ftbverbose
     fprintf('\nend   : %s\n', subname)
