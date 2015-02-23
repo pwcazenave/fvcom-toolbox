@@ -33,11 +33,11 @@ function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType,plotFig)
 %    support pre-2012 versions of MATLAB whilst giving the same result.
 %   
 %==========================================================================
-subname = 'add_obc_nodes';
+subname = 'add_obc_nodes_list';
+
 global ftbverbose
-if(ftbverbose)
-  fprintf('\n')
-  fprintf(['begin : ' subname '\n'])
+if ftbverbose
+  fprintf('\nbegin : %s\n', subname)
 end
 
 % Do we want a figure showing how we're getting along?
@@ -89,7 +89,7 @@ Mobj.obc_name{Mobj.nObs} = ObcName;
 Mobj.obc_type(Mobj.nObs) = ObcType;
 
 
-if(ftbverbose)
-  fprintf(['end   : ' subname '\n'])
+if ftbverbose
+    fprintf('\nend   : %s\n', subname)
 end
 
