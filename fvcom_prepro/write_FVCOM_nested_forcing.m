@@ -53,6 +53,9 @@ function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 %   2013-06-04 First version.
 %   2015-02-19 Updated to use either weighted or non-weighted nesting. Also
 %   general tidy up.
+%   2015-02-24 Add extra time variables, which although not strictly
+%   necessary for the model to run, makes sanity checking the time series a
+%   lot more straightforward.
 %
 %==========================================================================
 
@@ -70,6 +73,10 @@ function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 % weight_node:  Weighting for nodes             [node]
 % Itime:        Days since 1858-11-17 00:00:00  [time]
 % Itime2:       msec since 00:00:00             [time]
+%
+% We include these optional ones for humans:
+% time:         Modified Julian Day             [time]
+% Times:        Gregorian dates                 [time, datestrlen]
 
 subname = 'write_FVCOM_nested_forcing';
 
@@ -98,7 +105,7 @@ for f = required
     end
 end
 
-[elems, nsiglay, ~] = size(nest.u);
+[elems, nsiglay, ntimes] = size(nest.u);
 nsiglev = nsiglay + 1;
 [nodes, ~] = size(nest.zeta);
 
@@ -123,13 +130,14 @@ three_dimid = netcdf.defDim(nc, 'three', 3);
 time_dimid = netcdf.defDim(nc, 'time', netcdf.getConstant('NC_UNLIMITED'));
 siglay_dimid = netcdf.defDim(nc, 'siglay', nsiglay);
 siglev_dimid = netcdf.defDim(nc, 'siglev', nsiglev);
+datestrlen_dimid = netcdf.defDim(nc, 'DateStrLen', 26);
 
 % define variables
-% time_varid = netcdf.defVar(nc, 'time', 'NC_FLOAT', time_dimid);
-% netcdf.putAtt(nc, time_varid, 'long_name', 'time');
-% netcdf.putAtt(nc, time_varid, 'units', 'days since 1858-11-17 00:00:00');
-% netcdf.putAtt(nc, time_varid, 'format', 'modified julian day (MJD)');
-% netcdf.putAtt(nc, time_varid, 'time_zone', 'UTC');
+time_varid = netcdf.defVar(nc, 'time', 'NC_FLOAT', time_dimid);
+netcdf.putAtt(nc, time_varid, 'long_name', 'time');
+netcdf.putAtt(nc, time_varid, 'units', 'days since 1858-11-17 00:00:00');
+netcdf.putAtt(nc, time_varid, 'format', 'modified julian day (MJD)');
+netcdf.putAtt(nc, time_varid, 'time_zone', 'UTC');
 
 itime_varid = netcdf.defVar(nc, 'Itime', 'NC_INT', ...
     time_dimid);
@@ -141,6 +149,10 @@ itime2_varid = netcdf.defVar(nc, 'Itime2', 'NC_INT', ...
     time_dimid);
 netcdf.putAtt(nc, itime2_varid, 'units', 'msec since 00:00:00');
 netcdf.putAtt(nc, itime2_varid, 'time_zone', 'UTC');
+
+Times_varid=netcdf.defVar(nc, 'Times' ,'NC_CHAR', ...
+    [datestrlen_dimid, time_dimid]);
+netcdf.putAtt(nc, Times_varid, 'time_zone', 'UTC');
 
 x_varid = netcdf.defVar(nc, 'x', 'NC_FLOAT', ...
     node_dimid);
@@ -287,10 +299,31 @@ end
 
 % end definitions
 netcdf.endDef(nc);
-% write data
+
+% write time data
+nStringOut = char();
+for i = 1:ntimes
+    [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(nest.time(i));
+    if strcmp(sprintf('%02i', nSec), '60')
+        % Fix some weirdness with mjulian2greg. I think this is caused by
+        % rounding errors. My testing suggests this is not a problem around
+        % midnight, so the number of days (and thus possibly months and
+        % years) is unaffected.
+        if mod(nMin + 1, 60) == 0
+            % Up the hour by one too
+            nHour = mod(nHour + 1, 24);
+        end
+        nMin = mod(nMin + 1, 60);
+        nSec = 0;
+    end
+    nDate = [nYr, nMon, nDay, nHour, nMin, nSec];
+    nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ', nDate)];
+end
 netcdf.putVar(nc, itime_varid, 0, numel(nest.time), floor(nest.time));
 netcdf.putVar(nc, itime2_varid, 0, numel(nest.time), ...
     mod(nest.time, 1)*24*3600*1000);
+netcdf.putVar(nc, Times_varid, nStringOut);
+
 % write grid information
 netcdf.putVar(nc, nv_varid, nest.nv);
 netcdf.putVar(nc, x_varid, nest.x);
@@ -301,6 +334,7 @@ netcdf.putVar(nc, lon_varid, nest.lon);
 netcdf.putVar(nc, lat_varid, nest.lat);
 netcdf.putVar(nc, lonc_varid, nest.lonc);
 netcdf.putVar(nc, latc_varid, nest.latc);
+
 % dump data
 netcdf.putVar(nc, zeta_varid, nest.zeta);
 netcdf.putVar(nc, ua_varid, nest.ua);
@@ -321,4 +355,3 @@ netcdf.close(nc)
 if ftbverbose
     fprintf('end   : %s\n', subname)
 end
-
