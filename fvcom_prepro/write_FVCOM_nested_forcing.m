@@ -5,7 +5,7 @@ function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 %
 % DESCRIPTION:
 %   Uses timeseries data from structured grid already interpolated into
-%   FVCOM nodes and elements and generates a netcdf file to drive FVCOM at
+%   FVCOM nodes and elements and generates a netCDF file to drive FVCOM at
 %   boundaries
 %
 % Optionally specify nesting type:
@@ -30,27 +30,28 @@ function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 %   FVCOM nesting file.
 %
 % EXAMPLE USAGE:
-%   nest.temp = Temperature
-%   nest.salinity = Salinity
-%   nest.ua = Vertically averaged x velocity
-%   nest.va = Vertically averaged y velocity
-%   nest.u = Eastward Water Velocity
-%   nest.v = Northward Water Velocity
-%   nest.hyw = hydro static vertical velocity
-%   nest.weight_cell = weights see manual for explanation
-%   nest.weight_node = weights see manual for explanation
-%   nest.Itime = time in modified julian days
-%   nest.Itime2 = time milliseconds since midnight
+%   nest.time = time [modified julian days (floats)]
+%   nest.temp = Temperature [degrees celsius]
+%   nest.salinity = Salinity [PSU]
+%   nest.ua = Vertically averaged x velocity [ms^{-1}]
+%   nest.va = Vertically averaged y velocity [ms^{-1}]
+%   nest.u = Eastward Water Velocity [ms^{-1}]
+%   nest.v = Northward Water Velocity [ms^{-1}]
+%   nest.hyw = hydro static vertical velocity [ms^{-1}?]
+%   nest.weight_cell = weights see manual for explanation [0-1]
+%   nest.weight_node = weights see manual for explanation [0-1]
 %
-%   write_FVCOM_nested_forcing('/tmp/fvcom_restart.nc', ...
-%       '/tmp/fvcom_restart_interp.nc', N)
+%   write_FVCOM_nested_forcing(nest, '/tmp/fvcom_nested.nc', 1)
 %
 % Author(s):
 %   Ricardo Torres (Plymouth Marine Laboratory)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
+%   Darren Price (CH2MHill)
+%   Hakeem Johnson (CH2MHill)
 %
 % Revision history:
-%   2013-06-04 First version.
+%   2013-06-04 First version based on Riqui's write_nesting_struct_fvcom.m
+%   script.
 %   2015-02-19 Updated to use either weighted or non-weighted nesting. Also
 %   general tidy up.
 %   2015-02-24 Add extra time variables, which although not strictly
