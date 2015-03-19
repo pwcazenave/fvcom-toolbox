@@ -22,6 +22,9 @@ Notes:
 
 The PML version of the toolbox includes tagged releases, which can be downloaded as standalone (and thus relatively stable) versions. See the PML_ChangeLog.txt for details. Links to the direct downloads are:
 
+- v20150319: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20150319
+- v20141017: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20141017
+- v20140728: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20140728
 - v20140423: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20140423
 - v20140131: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20140131
 - v20130917: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20130917
@@ -44,7 +47,6 @@ If you are stuck for something to get started with on the toolbox, there are som
     * example_FVCOM_wind_ts.m
     * example_FVCOM_wind_ts_speed.m
     * example_init_lag.m
-    * generate_mjd.m
     * wrf2fvcom_U10V10.m
     * write_FVCOM_bedflag.m
 - swan_scripts:
