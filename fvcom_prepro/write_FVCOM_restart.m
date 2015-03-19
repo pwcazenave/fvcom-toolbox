@@ -330,11 +330,11 @@ for ii = 1:numvars
                         ss = 0:1 / (nt - 1):1; % scale from 0 to 1.
                         % Use the first modelled time step.
                         startdata = squeeze(data(:, :, 1));
+                        td = indata.(fnames{vv}) - startdata;
                         for tt = 1:nt
                             if tt == 1
                                 sfvdata(:, :, 1) = startdata;
                             else
-                                td = indata.(fnames{vv}) - startdata;
                                 sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
                             end
                         end
