@@ -1,7 +1,7 @@
 function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 % Creates an FVCOM nesting file.
 %
-% function write_nesting_struct_fvcom(Mobj, out_nesting, N)
+% function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 %
 % DESCRIPTION:
 %   Uses timeseries data from structured grid already interpolated into
@@ -11,7 +11,7 @@ function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 % Optionally specify nesting type:
 %   1/2: DIRECT/INDIRECT nesting:
 %       - Full variables/no surface elevation respectively.
-%   3:   RELAXATION nestING:
+%   3:   RELAXATION nesting:
 %       - Nesting with a relaxation method.
 %
 % INPUT:
@@ -303,27 +303,28 @@ netcdf.endDef(nc);
 
 % write time data
 nStringOut = char();
+[nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(nest.time);
 for i = 1:ntimes
-    [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(nest.time(i));
     if strcmp(sprintf('%02i', nSec), '60')
         % Fix some weirdness with mjulian2greg. I think this is caused by
         % rounding errors. My testing suggests this is not a problem around
         % midnight, so the number of days (and thus possibly months and
         % years) is unaffected.
-        if mod(nMin + 1, 60) == 0
+        if mod(nMin(i) + 1, 60) == 0
             % Up the hour by one too
-            nHour = mod(nHour + 1, 24);
+            nHour(i) = mod(nHour(i) + 1, 24);
         end
-        nMin = mod(nMin + 1, 60);
-        nSec = 0;
+        nMin(i) = mod(nMin(i) + 1, 60);
+        nSec(i) = 0;
     end
-    nDate = [nYr, nMon, nDay, nHour, nMin, nSec];
-    nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%02i       ', nDate)];
+    nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
+    nStringOut = [nStringOut, sprintf('%-026s', datestr(datenum(nDate), 'yyyy-mm-dd HH:MM:SS.FFF'))];
 end
 netcdf.putVar(nc, itime_varid, 0, numel(nest.time), floor(nest.time));
 netcdf.putVar(nc, itime2_varid, 0, numel(nest.time), ...
     mod(nest.time, 1)*24*3600*1000);
 netcdf.putVar(nc, Times_varid, nStringOut);
+netcdf.putVar(nc, time_varid, nest.time);
 
 % write grid information
 netcdf.putVar(nc, nv_varid, nest.nv);
