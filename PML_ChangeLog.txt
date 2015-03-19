@@ -1,5 +1,56 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20150319
+--------
+
+Add support for writing nesting files to force FVCOM. Also bugfix and
+streamline existing functions.
+
+examples:
+    example_fvcom_inputs.m
+        * New example script to generate FVCOM inputs from TPXO tides, NCEP
+        surface heat and HYCOM open boundary forcing.
+
+fvcom_prepro:
+    add_obc_nodes_list.m
+        * Output number of nodes if the verbose flag is set. Minor coding style
+        changes.
+    add_stations_list.m
+        * Add support for exporting the element ID closest to the station of
+        interest (as well as the node ID which was already there). Fix some
+        formatting issues.
+    find_nearest_pt.m
+        * Tidy up the code a bit and add extra information to the help.
+    get_NCEP_forcing.m
+        * Fix off by one error with the air pressure data from NCEP.
+    read_fvcom_obc.m
+        * Add new function to read in open boundary node IDs from a FVCOM
+        casename_obc.dat file.
+    read_sms_mesh.m
+        * Add spherical coordinates on element centres.
+    write_FVCOM_bath.m
+        * Minor coding style changes.
+    write_FVCOM_nested_forcing.m
+        * New function to output nesting data (either interpolated from a
+        structured grid/other data source or from a larger FVCOM model) to
+        netCDF.
+    write_FVCOM_probes.m
+        * Fix export of the u and v locations to use the closest element
+        instead of the node ID. Using the node ID for the u and v data will
+        yield velocity time series miles away from the actual location of
+        interest.
+    write_FVCOM_restart.m
+        * Move variable creation outside of a loop as it doesn't change between
+        iterations.
+
+utilities:
+    read_netCDF_FVCOM.m
+        * Fix verbose output and change indenting here and there. Add a BUGS
+        section.
+    surrounders.m
+        * New function to find the nodes connected to a specified node.
+
+
 20141017
 --------
 
@@ -66,7 +117,6 @@ fvcom_prepro:
     write_FVCOM_tsobcERSEM.m
         * Add new function to output temperature and salinity open boundary
         data for FVCOM-ERSEM.
-
 
 utilites:
     calc_rad.m
