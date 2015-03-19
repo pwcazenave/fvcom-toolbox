@@ -44,6 +44,7 @@ function [Mobj] = read_sms_mesh(varargin)
 %   2013-12-11 Closed the sms_2dm file using fclose (ROM).
 %   2014-04-10 Fix bugs when not using bathymetry (i.e. only reading the
 %   grid data in).
+%   2015-03-19 Add spherical coordinates on element centres.
 %
 %==============================================================================
 
@@ -347,6 +348,10 @@ Mobj.tri          = tri;
 
 % Make a depth array for the element centres.
 Mobj.hc = nodes2elems(h, Mobj);
+
+% Add element spherical coordinates too.
+Mobj.lonc = nodes2elems(lon, Mobj);
+Mobj.latc = nodes2elems(lat, Mobj);
 
 if ftbverbose
   fprintf('end   : %s\n', subname)
