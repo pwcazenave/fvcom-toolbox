@@ -24,7 +24,7 @@
 <div class="box"><strong>Read temperature and salinity from the PML POLCOMS-ERSEM NetCDF model</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function Mobj = get_POLCOMS_tsobc_gcoms(Mobj, ts) </strong></div>
+<div class="box"><strong>function [Mobj,pc] = get_POLCOMS_tsobc_gcoms(Mobj, ts,inputConf) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Read temperature and salinity from the PML POLCOMS-ERSEM NetCDF model
@@ -55,7 +55,7 @@
        files (e.g. longitude, latitude etc.). The fourth dimension is
        time.
        - The order of the files given should be chronological.
- 
+
    - The NetCDF files used here are those from the PML POLCOMS-ERSEM model
    output.
 
@@ -90,7 +90,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = get_POLCOMS_tsobc_gcoms(Mobj, ts)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj,pc] = get_POLCOMS_tsobc_gcoms(Mobj, ts,inputConf)</a>
 0002 <span class="comment">% Read temperature and salinity from the PML POLCOMS-ERSEM NetCDF model</span>
 0003 <span class="comment">% output files and interpolate onto the open boundaries in Mobj.</span>
 0004 <span class="comment">%</span>
@@ -140,226 +140,265 @@ This function is called by:
 0048 <span class="comment">%    2013-02-07 First version based on get_POLCOMS_tsobc.m.</span>
 0049 <span class="comment">%</span>
 0050 <span class="comment">%==========================================================================</span>
-0051 
-0052 subname = <span class="string">'get_POLCOMS_tsobc_gcoms'</span>;
-0053 
-0054 <span class="keyword">global</span> ftbverbose;
-0055 <span class="keyword">if</span> ftbverbose
-0056     fprintf(<span class="string">'\n'</span>)
-0057     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
-0058     fprintf([<span class="string">'Expecting two files  : '</span> ts{1} <span class="string">'\n'</span> ts{2} <span class="string">'\n'</span>])
+0051 wasOpened = false;
+0052 <span class="keyword">if</span> license(<span class="string">'test'</span>, <span class="string">'Distrib_Computing_Toolbox'</span>)
+0053     <span class="comment">% We have the Parallel Computing Toolbox, so launch a bunch of workers.</span>
+0054     <span class="keyword">if</span> matlabpool(<span class="string">'size'</span>) == 0
+0055         <span class="comment">% Force pool to be local in case we have remote pools available.</span>
+0056         matlabpool open local
+0057         wasOpened = true;
+0058     <span class="keyword">end</span>
 0059 <span class="keyword">end</span>
 0060 
-0061 varlist = {<span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'ETW'</span>, <span class="string">'x1X'</span>, <span class="string">'time'</span>};
+0061 subname = <span class="string">'get_POLCOMS_tsobc_gcoms'</span>;
 0062 
-0063 varlistdmeaneco3d = {<span class="string">'depth'</span>, <span class="string">'pdepth'</span>};
-0064 
-0065 <span class="comment">% Data format:</span>
-0066 <span class="comment">%</span>
-0067 <span class="comment">%   pc.ETWD.data and pc.x1XD.data are y, x, sigma, time</span>
-0068 <span class="comment">%</span>
-0069 dd = 1;
-0070 catstr = <span class="string">'pc=catstruct('</span>;
-0071 <span class="keyword">for</span> ff = 1:2:length(ts)-1
-0072     pc = <a href="get_POLCOMS_netCDF.html" class="code" title="function ncdata = get_POLCOMS_netCDF(files, varlist)">get_POLCOMS_netCDF</a>(ts{ff}, varlist);
-0073     pcdmean = <a href="get_POLCOMS_netCDF.html" class="code" title="function ncdata = get_POLCOMS_netCDF(files, varlist)">get_POLCOMS_netCDF</a>(ts{ff+1}, varlistdmeaneco3d);
-0074     eval([<span class="string">'dump'</span>,num2str(dd),<span class="string">'=catstruct(pc,pcdmean);'</span>])
-0075     dd = dd+1;
-0076     catstr = [catstr,<span class="string">'dump'</span>,num2str(dd),<span class="string">','</span>];
-0077 <span class="keyword">end</span>
-0078 eval([catstr(1:end-1),<span class="string">');'</span>])
-0079 clear pcdmean dump*
-0080 [~, ~, nz, nt] = size(pc.ETW.data);
-0081 
-0082 <span class="comment">% Make rectangular arrays for the nearest point lookup.</span>
-0083 [lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
-0084 
-0085 fvlon = Mobj.lon(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
-0086 fvlat = Mobj.lat(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
-0087 
-0088 <span class="comment">% Number of boundary nodes</span>
-0089 nf = sum(Mobj.nObcNodes);
-0090 <span class="comment">% Number of sigma layers.</span>
-0091 fz = size(Mobj.siglayz, 2);
-0092 
-0093 fvtemp = nan(nf, fz, nt); <span class="comment">% FVCOM interpolated temperatures</span>
-0094 fvsal = nan(nf, fz, nt); <span class="comment">% FVCOM interpolated salinities</span>
-0095 
-0096 <span class="keyword">if</span> ftbverbose
-0097     tic
-0098 <span class="keyword">end</span>
-0099 <span class="keyword">for</span> t = 1:nt
-0100     <span class="keyword">if</span> ftbverbose
-0101         fprintf(<span class="string">'%s : %i of %i timesteps... '</span>, subname, t, nt)
-0102     <span class="keyword">end</span>
-0103     <span class="comment">% Get the current 3D array of PML POLCOMS-ERSEM results.</span>
-0104     pctemp3 = pc.ETW.data(:, :, :, t);
-0105     pcsalt3 = pc.x1X.data(:, :, :, t);
-0106     
-0107     <span class="comment">% Preallocate the intermediate results arrays.</span>
-0108     itempz = nan(nf, nz);
-0109     isalz = nan(nf, nz);
-0110     idepthz = nan(nf, nz);
-0111     
-0112     <span class="keyword">for</span> j = 1:nz
-0113         <span class="comment">% Now extract the relevant layer from the 3D subsets. Transpose the</span>
-0114         <span class="comment">% data to be (x, y) rather than (y, x).</span>
-0115         pctemp2 = pctemp3(:, :, j)';
-0116         pcsalt2 = pcsalt3(:, :, j)';
-0117         pcdepth2 = squeeze(pc.depth.data(:, :, j, t))';
-0118        
-0119         <span class="comment">% Create new arrays which will be flattened when masking (below).</span>
-0120         tpctemp2 = pctemp2;
-0121         tpcsalt2 = pcsalt2;
-0122         tpcdepth2 = pcdepth2;
-0123         tlon = lon;
-0124         tlat = lat;
-0125         
-0126         <span class="comment">% Create and apply a mask to remove values outside the domain. This</span>
-0127         <span class="comment">% inevitably flattens the arrays, but it shouldn't be a problem</span>
-0128         <span class="comment">% since we'll be searching for the closest values in such a manner</span>
-0129         <span class="comment">% as is appropriate for an unstructured grid (i.e. we're assuming</span>
-0130         <span class="comment">% the PML POLCOMS-ERSEM data is irregularly spaced).</span>
-0131         mask = tpcdepth2 &lt; -10e+10;
-0132         tpctemp2(mask) = [];
-0133         tpcsalt2(mask) = [];
-0134         tpcdepth2(mask) = [];
-0135         <span class="comment">% Also apply the masks to the position arrays so we can't even find</span>
-0136         <span class="comment">% positions outside the domain, effectively meaning if a value is</span>
-0137         <span class="comment">% outside the domain, the nearest value to the boundary node will</span>
-0138         <span class="comment">% be used.</span>
-0139         tlon(mask) = [];
-0140         tlat(mask) = [];
-0141         
-0142         <span class="comment">% Preallocate the intermediate results arrays.</span>
-0143         itempobc = nan(nf, 1);
-0144         isalobc = nan(nf, 1);
-0145         idepthobc = nan(nf, 1);
-0146         
-0147         <span class="comment">% Speed up the tightest loop with a parallelized loop.</span>
-0148         parfor i = 1:nf
-0149 <span class="comment">%        for i = 1:nf</span>
-0150             <span class="comment">% Now we can do each position within the 2D layer.</span>
+0063 <span class="keyword">global</span> ftbverbose;
+0064 <span class="keyword">if</span> ftbverbose
+0065     fprintf(<span class="string">'\n'</span>)
+0066     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0067     fprintf([<span class="string">'Expecting two files  : '</span> ts{1} <span class="string">'\n'</span> ts{2} <span class="string">'\n'</span>])
+0068 <span class="keyword">end</span>
+0069 
+0070 varlist = {<span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'ETW'</span>, <span class="string">'x1X'</span>, <span class="string">'time'</span>};
+0071 
+0072 varlistdmeaneco3d = {<span class="string">'depth'</span>, <span class="string">'pdepth'</span>,<span class="string">'N3n'</span>,<span class="string">'N1p'</span>,<span class="string">'N5s'</span>,<span class="string">'N4n'</span>};
+0073 <span class="comment">%  varlistdmeaneco3d = {'depth', 'pdepth'};</span>
+0074 <span class="comment">% 4D variables</span>
+0075 varnames_time={<span class="string">'ETW'</span>, <span class="string">'x1X'</span>,<span class="string">'N3n'</span>,<span class="string">'N1p'</span>,<span class="string">'N5s'</span>,<span class="string">'N4n'</span> }
+0076 varnames_fvcom={<span class="string">'temperature'</span>, <span class="string">'salt'</span>,<span class="string">'N3n'</span>,<span class="string">'N1p'</span>,<span class="string">'N5s'</span>,<span class="string">'N4n'</span>}
+0077 
+0078 <span class="comment">% Data format:</span>
+0079 <span class="comment">%</span>
+0080 <span class="comment">%   pc.ETWD.data and pc.x1XD.data are y, x, sigma, time</span>
+0081 <span class="comment">%</span>
+0082 dd = 1;
+0083 catstr = <span class="string">'pc=catstruct('</span>;
+0084 <span class="keyword">for</span> ff = 1:2:length(ts)-1
+0085     pc = <a href="get_POLCOMS_netCDF.html" class="code" title="function ncdata = get_POLCOMS_netCDF(files, varlist)">get_POLCOMS_netCDF</a>(ts{ff}, varlist);
+0086     <span class="comment">% Convert the current times to Modified Julian Day (this is a bit ugly).</span>
+0087     pc.time.all = strtrim(regexp(pc.time.units, <span class="string">'since'</span>, <span class="string">'split'</span>));
+0088     pc.time.datetime = strtrim(regexp(pc.time.all{end}, <span class="string">' '</span>, <span class="string">'split'</span>));
+0089     pc.time.ymd = str2double(strtrim(regexp(pc.time.datetime{1}, <span class="string">'-'</span>, <span class="string">'split'</span>)));
+0090     pc.time.hms = str2double(strtrim(regexp(datestr(datenum(pc.time.ymd),<span class="string">'HH:MM:SS'</span>), <span class="string">':'</span>, <span class="string">'split'</span>)));
+0091     pc.time.data = datenum(<span class="keyword">...</span>
+0092         pc.time.ymd(1), <span class="keyword">...</span>
+0093         pc.time.ymd(2), <span class="keyword">...</span>
+0094         pc.time.ymd(3), <span class="keyword">...</span>
+0095         pc.time.hms(1), <span class="keyword">...</span>
+0096         pc.time.hms(2), <span class="keyword">...</span>
+0097         pc.time.hms(3)) + (pc.time.data / 3600 / 24);
+0098     
+0099     pcdmean = <a href="get_POLCOMS_netCDF.html" class="code" title="function ncdata = get_POLCOMS_netCDF(files, varlist)">get_POLCOMS_netCDF</a>(ts{ff+1}, varlistdmeaneco3d);
+0100     eval([<span class="string">'dump'</span>,num2str(dd),<span class="string">'=catstruct(pc,pcdmean);'</span>])
+0101     
+0102     catstr = [catstr,<span class="string">'dump'</span>,num2str(dd),<span class="string">','</span>];
+0103     dd = dd+1;
+0104 <span class="keyword">end</span>
+0105 fieldN=fieldnames(dump1);
+0106 <span class="keyword">for</span> fdn=1:length(fieldN)
+0107     catstr = <span class="string">''</span>;
+0108     <span class="keyword">for</span> fn=1:dd-1
+0109         <span class="comment">% -- time is always the last field!!</span>
+0110         catstr = [catstr,<span class="string">'dump'</span>,num2str(fn),<span class="string">'.'</span>,(fieldN{fdn}),<span class="string">'.data,'</span>];
+0111     <span class="keyword">end</span>
+0112     eval([<span class="string">'[nx,ny,nz,nt]=size(dump1.'</span>,(fieldN{fdn}),<span class="string">'.data);'</span>])
+0113     ND=find([nx,ny,nz,nt]==length(dump1.time.data))
+0114     <span class="keyword">if</span> isempty(ND)
+0115         <span class="comment">% no time dimension... do not concatenate, use one of the dumps</span>
+0116         eval([<span class="string">'pc.'</span>,(fieldN{fdn}),<span class="string">'.data=dump1.'</span>,(fieldN{fdn}),<span class="string">'.data;'</span>])
+0117     <span class="keyword">else</span>
+0118         disp( [<span class="string">'pc.'</span>,(fieldN{fdn}),<span class="string">'.data=cat(ND,'</span>,catstr(1:end-1),<span class="string">');'</span>])
+0119         eval([<span class="string">'pc.'</span>,(fieldN{fdn}),<span class="string">'.data=cat(ND,'</span>,catstr(1:end-1),<span class="string">');'</span>])
+0120     <span class="keyword">end</span>
+0121 <span class="keyword">end</span>
+0122 clear pcdmean dump*
+0123 <span class="comment">% find time limit for range of interest</span>
+0124 d0=datenum(inputConf.startDate);
+0125 d1=datenum(inputConf.endDate);
+0126 <span class="comment">% Include one day before and one day after the required time range</span>
+0127 d0=d0-1;d1=d1+1;
+0128 igood=find(pc.time.data &gt;= d0 &amp;   pc.time.data &lt;= d1);
+0129 
+0130 [yyyy,mm,dd,HH,MM,SS]=datevec(pc.time.data(igood))
+0131 Mobj.ts_times = greg2mjulian(yyyy,mm,dd,HH,MM,SS);
+0132 
+0133 
+0134 <span class="keyword">for</span> fdn=1:length(varnames_time)
+0135     pc.(varnames_time{fdn}).data=pc.(varnames_time{fdn}).data(:,:,:,igood);
+0136 <span class="keyword">end</span>
+0137 <span class="comment">% progress to interpolation</span>
+0138 
+0139 [~, ~, nz, nt] = size(pc.ETW.data);
+0140 
+0141 <span class="comment">% Make rectangular arrays for the nearest point lookup.</span>
+0142 [lon, lat] = meshgrid(pc.lon.data, pc.lat.data);
+0143 
+0144 fvlon = Mobj.lon(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
+0145 fvlat = Mobj.lat(Mobj.obc_nodes(Mobj.obc_nodes ~= 0));
+0146 
+0147 <span class="comment">% Number of boundary nodes</span>
+0148 nf = sum(Mobj.nObcNodes);
+0149 <span class="comment">% Number of sigma layers.</span>
+0150 fz = size(Mobj.siglayz, 2);
 0151 
-0152             fx = fvlon(i);
-0153             fy = fvlat(i);
-0154 
-0155             [~, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
-0156             <span class="comment">% Get the n nearest nodes from PML POLCOMS-ERSEM data (more?</span>
-0157             <span class="comment">% fewer?).</span>
-0158             ixy = ii(1:16);
-0159 
-0160             <span class="comment">% Get the variables into static variables for the</span>
-0161             <span class="comment">% parallelisation.</span>
-0162             plon = tlon(ixy);
-0163             plat = tlat(ixy);
-0164             ptemp = tpctemp2(ixy);
-0165             psal = tpcsalt2(ixy);
-0166             pdepth = tpcdepth2(ixy);
-0167             
-0168             <span class="comment">% Use a triangulation to do the horizontal interpolation.</span>
-0169             tritemp = TriScatteredInterp(plon', plat', ptemp', <span class="string">'natural'</span>);
-0170             trisal = TriScatteredInterp(plon', plat', psal', <span class="string">'natural'</span>);
-0171             triz = TriScatteredInterp(plon', plat', pdepth', <span class="string">'natural'</span>);
-0172             itempobc(i) = tritemp(fx, fy);
-0173             isalobc(i) = trisal(fx, fy);
-0174             idepthobc(i) = triz(fx, fy);
-0175             
-0176             <span class="comment">% Check all three, though if one is NaN, they all will be.</span>
-0177             <span class="keyword">if</span> isnan(itempobc(i)) || isnan(isalobc(i)) || isnan(idepthobc(i))
-0178                 warning(<span class="string">'FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Setting to the closest PML POLCOMS-ERSEM value.'</span>, fx, fy)
-0179                 itempobc(i) = tpctemp2(ii(1));
-0180                 isalobc(i) = tpcsalt2(ii(1));
-0181                 idepthobc(i) = tpcdepth2(ii(1));
-0182             <span class="keyword">end</span>
-0183         <span class="keyword">end</span>
-0184         
-0185         <span class="comment">% Put the results in this intermediate array.</span>
-0186         itempz(:, j) = itempobc;
-0187         isalz(:, j) = isalobc;
-0188         idepthz(:, j) = idepthobc;
-0189     <span class="keyword">end</span>
-0190 
-0191     <span class="comment">% Now we've interpolated in space, we can interpolate the z-values</span>
-0192     <span class="comment">% to the sigma depths.</span>
-0193     oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);
-0194 
-0195         <span class="comment">% Preallocate the output arrays</span>
-0196         fvtempz = nan(nf, fz);
-0197         fvsalz = nan(nf, fz);
-0198 
-0199         <span class="keyword">for</span> pp = 1:nf
-0200             <span class="comment">% Get the FVCOM depths at this node</span>
-0201             tfz = Mobj.siglayz(oNodes(pp), :);
-0202             <span class="comment">% Now get the interpolated PML POLCOMS-ERSEM depth at this node</span>
-0203             tpz = idepthz(pp, :);
-0204 
-0205         <span class="comment">% To ensure we get the full vertical expression of the vertical</span>
-0206         <span class="comment">% profiles, we need to normalise the POLCOMS-ERSEM and FVCOM</span>
-0207         <span class="comment">% depths to the same range. This is because in instances where</span>
-0208         <span class="comment">% FVCOM depths are shallower (e.g. in coastal regions), if we</span>
-0209         <span class="comment">% don't normalise the depths, we end up truncating the vertical</span>
-0210         <span class="comment">% profile. This approach ensures we always use the full</span>
-0211         <span class="comment">% vertical profile, but we're potentially squeezing it into a</span>
-0212         <span class="comment">% smaller depth.</span>
-0213         A = max(tpz);
-0214         B = min(tpz);
-0215         C = max(tfz);
-0216         D = min(tfz);
-0217         norm_tpz = (((D - C) * (tpz - A)) / (B - A)) + C;
-0218 
-0219         <span class="comment">% Get the temperature and salinity values for this node and</span>
-0220         <span class="comment">% interpolate down the water column (from PML POLCOMS-ERSEM to</span>
-0221         <span class="comment">% FVCOM). I had originally planned to use csaps for the</span>
-0222         <span class="comment">% vertical interplation/subsampling at each location. However,</span>
-0223         <span class="comment">% the demo of csaps in the MATLAB documentation makes the</span>
-0224         <span class="comment">% interpolation look horrible (shaving off extremes). interp1</span>
-0225         <span class="comment">% provides a range of interpolation schemes, of which pchip</span>
-0226         <span class="comment">% seems to do a decent job of the interpolation (at least</span>
-0227         <span class="comment">% qualitatively).</span>
-0228         <span class="keyword">if</span> ~isnan(tpz)
-0229             fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, :), tfz, <span class="string">'linear'</span>, <span class="string">'extrap'</span>);
-0230             fvsalz(pp, :) = interp1(norm_tpz, isalz(pp, :), tfz, <span class="string">'linear'</span>, <span class="string">'extrap'</span>);
-0231         <span class="keyword">else</span>
-0232             warning(<span class="string">'Should never see this... '</span>) <span class="comment">% because we test for NaNs when fetching the values.</span>
-0233             warning(<span class="string">'FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Skipping.'</span>, fvlon(pp), fvlat(pp))
-0234             <span class="keyword">continue</span>
-0235         <span class="keyword">end</span>
-0236     <span class="keyword">end</span>
-0237     
-0238     <span class="comment">% The horizontally- and vertically-interpolated values in the final</span>
-0239     <span class="comment">% FVCOM results array.</span>
-0240     fvtemp(:, :, t) = fvtempz;
-0241     fvsal(:, :, t) = fvsalz;
-0242     
-0243     <span class="keyword">if</span> ftbverbose
-0244         fprintf(<span class="string">'done.\n'</span>)
-0245     <span class="keyword">end</span>
-0246 <span class="keyword">end</span>
-0247 <span class="keyword">if</span> ftbverbose
-0248     toc
-0249 <span class="keyword">end</span>
-0250 
-0251 Mobj.temperature = fvtemp;
-0252 Mobj.salt = fvsal;
-0253 
-0254 <span class="comment">% Convert the current times to Modified Julian Day (this is a bit ugly).</span>
-0255 pc.time.all = strtrim(regexp(pc.time.units, <span class="string">'since'</span>, <span class="string">'split'</span>));
-0256 pc.time.datetime = strtrim(regexp(pc.time.all{end}, <span class="string">' '</span>, <span class="string">'split'</span>));
-0257 pc.time.ymd = str2double(strtrim(regexp(pc.time.datetime{1}, <span class="string">'-'</span>, <span class="string">'split'</span>)));
-0258 pc.time.hms = str2double(strtrim(regexp(datestr(datenum(pc.time.ymd),<span class="string">'HH:MM:SS'</span>), <span class="string">':'</span>, <span class="string">'split'</span>)));
-0259 
-0260 Mobj.ts_times = greg2mjulian(<span class="keyword">...</span>
-0261     pc.time.ymd(1), <span class="keyword">...</span>
-0262     pc.time.ymd(2), <span class="keyword">...</span>
-0263     pc.time.ymd(3), <span class="keyword">...</span>
-0264     pc.time.hms(1), <span class="keyword">...</span>
-0265     pc.time.hms(2), <span class="keyword">...</span>
-0266     pc.time.hms(3)) + (pc.time.data / 3600 / 24);
-0267 
-0268 <span class="keyword">if</span> ftbverbose
-0269     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0270 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0152 fvtemp = nan(nf, fz, nt); <span class="comment">% FVCOM interpolated temperatures</span>
+0153 
+0154 <span class="keyword">if</span> ftbverbose
+0155     tic
+0156 <span class="keyword">end</span>
+0157 <span class="keyword">for</span> fdn=1:length(varnames_time)
+0158     
+0159     <span class="keyword">for</span> t = 1:nt
+0160         <span class="keyword">if</span> ftbverbose
+0161             fprintf(<span class="string">'%s : %i of %i timesteps... '</span>, subname, t, nt)
+0162         <span class="keyword">end</span>
+0163         <span class="comment">% Get the current 3D array of PML POLCOMS-ERSEM results.</span>
+0164         pctemp3 = pc.(varnames_time{fdn}).data(:, :, :, t);
+0165         <span class="comment">%     pcsalt3 = pc.x1X.data(:, :, :, t);</span>
+0166         
+0167         <span class="comment">% Preallocate the intermediate results arrays.</span>
+0168         itempz = nan(nf, nz);
+0169         idepthz = nan(nf, nz);
+0170         
+0171         <span class="keyword">for</span> j = 1:nz
+0172             <span class="comment">% Now extract the relevant layer from the 3D subsets. Transpose the</span>
+0173             <span class="comment">% data to be (x, y) rather than (y, x).</span>
+0174             pctemp2 = pctemp3(:, :, j)';
+0175             pcdepth2 = squeeze(pc.depth.data(:, :, j, t))';
+0176             
+0177             <span class="comment">% Create new arrays which will be flattened when masking (below).</span>
+0178             tpctemp2 = pctemp2;
+0179             tpcdepth2 = pcdepth2;
+0180             tlon = lon;
+0181             tlat = lat;
+0182             
+0183             <span class="comment">% Create and apply a mask to remove values outside the domain. This</span>
+0184             <span class="comment">% inevitably flattens the arrays, but it shouldn't be a problem</span>
+0185             <span class="comment">% since we'll be searching for the closest values in such a manner</span>
+0186             <span class="comment">% as is appropriate for an unstructured grid (i.e. we're assuming</span>
+0187             <span class="comment">% the PML POLCOMS-ERSEM data is irregularly spaced).</span>
+0188             mask = tpcdepth2 &lt; -10e+10;
+0189             tpctemp2(mask) = [];
+0190             tpcdepth2(mask) = [];
+0191             <span class="comment">% Also apply the masks to the position arrays so we can't even find</span>
+0192             <span class="comment">% positions outside the domain, effectively meaning if a value is</span>
+0193             <span class="comment">% outside the domain, the nearest value to the boundary node will</span>
+0194             <span class="comment">% be used.</span>
+0195             tlon(mask) = [];
+0196             tlat(mask) = [];
+0197             
+0198             <span class="comment">% Preallocate the intermediate results arrays.</span>
+0199             itempobc = nan(nf, 1);
+0200             idepthobc = nan(nf, 1);
+0201             
+0202             <span class="comment">% Speed up the tightest loop with a parallelized loop.</span>
+0203             parfor i = 1:nf
+0204                 <span class="comment">%        for i = 1:nf</span>
+0205                 <span class="comment">% Now we can do each position within the 2D layer.</span>
+0206                 
+0207                 fx = fvlon(i);
+0208                 fy = fvlat(i);
+0209                 
+0210                 [~, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
+0211                 <span class="comment">% Get the n nearest nodes from PML POLCOMS-ERSEM data (more?</span>
+0212                 <span class="comment">% fewer?).</span>
+0213                 ixy = ii(1:16);
+0214                 
+0215                 <span class="comment">% Get the variables into static variables for the</span>
+0216                 <span class="comment">% parallelisation.</span>
+0217                 plon = tlon(ixy);
+0218                 plat = tlat(ixy);
+0219                 ptemp = tpctemp2(ixy);
+0220                 pdepth = tpcdepth2(ixy);
+0221                 
+0222                 <span class="comment">% Use a triangulation to do the horizontal interpolation.</span>
+0223                 tritemp = TriScatteredInterp(plon', plat', ptemp', <span class="string">'linear'</span>);
+0224                 triz = TriScatteredInterp(plon', plat', pdepth', <span class="string">'linear'</span>);
+0225                 itempobc(i) = tritemp(fx, fy);
+0226                 idepthobc(i) = triz(fx, fy);
+0227                 
+0228                 <span class="comment">% Check all three, though if one is NaN, they all will be.</span>
+0229                 <span class="keyword">if</span> isnan(itempobc(i)) ||  isnan(idepthobc(i))
+0230                     warning(<span class="string">'FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Setting to the closest PML POLCOMS-ERSEM value.'</span>, fx, fy)
+0231                     itempobc(i) = tpctemp2(ii(1));
+0232                     idepthobc(i) = tpcdepth2(ii(1));
+0233                 <span class="keyword">end</span>
+0234             <span class="keyword">end</span>
+0235             
+0236             <span class="comment">% Put the results in this intermediate array.</span>
+0237             itempz(:, j) = itempobc;
+0238             idepthz(:, j) = idepthobc;
+0239         <span class="keyword">end</span>
+0240         
+0241         <span class="comment">% Now we've interpolated in space, we can interpolate the z-values</span>
+0242         <span class="comment">% to the sigma depths.</span>
+0243         oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);
+0244         
+0245         <span class="comment">% Preallocate the output arrays</span>
+0246         fvtempz = nan(nf, fz);
+0247         
+0248         <span class="keyword">for</span> pp = 1:nf
+0249             <span class="comment">% Get the FVCOM depths at this node</span>
+0250             tfz = Mobj.siglayz(oNodes(pp), :);
+0251             <span class="comment">% Now get the interpolated PML POLCOMS-ERSEM depth at this node</span>
+0252             tpz = idepthz(pp, :);
+0253             
+0254             <span class="comment">% To ensure we get the full vertical expression of the vertical</span>
+0255             <span class="comment">% profiles, we need to normalise the POLCOMS-ERSEM and FVCOM</span>
+0256             <span class="comment">% depths to the same range. This is because in instances where</span>
+0257             <span class="comment">% FVCOM depths are shallower (e.g. in coastal regions), if we</span>
+0258             <span class="comment">% don't normalise the depths, we end up truncating the vertical</span>
+0259             <span class="comment">% profile. This approach ensures we always use the full</span>
+0260             <span class="comment">% vertical profile, but we're potentially squeezing it into a</span>
+0261             <span class="comment">% smaller depth.</span>
+0262             A = max(tpz);
+0263             B = min(tpz);
+0264             C = max(tfz);
+0265             D = min(tfz);
+0266             norm_tpz = (((D - C) * (tpz - A)) / (B - A)) + C;
+0267             
+0268             <span class="comment">% Get the temperature and salinity values for this node and</span>
+0269             <span class="comment">% interpolate down the water column (from PML POLCOMS-ERSEM to</span>
+0270             <span class="comment">% FVCOM). I had originally planned to use csaps for the</span>
+0271             <span class="comment">% vertical interplation/subsampling at each location. However,</span>
+0272             <span class="comment">% the demo of csaps in the MATLAB documentation makes the</span>
+0273             <span class="comment">% interpolation look horrible (shaving off extremes). interp1</span>
+0274             <span class="comment">% provides a range of interpolation schemes, of which pchip</span>
+0275             <span class="comment">% seems to do a decent job of the interpolation (at least</span>
+0276             <span class="comment">% qualitatively).</span>
+0277             <span class="keyword">if</span> ~isnan(tpz)
+0278                 fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, :), tfz, <span class="string">'linear'</span>, <span class="string">'extrap'</span>);
+0279             <span class="keyword">else</span>
+0280                 warning(<span class="string">'Should never see this... '</span>) <span class="comment">% because we test for NaNs when fetching the values.</span>
+0281                 warning(<span class="string">'FVCOM boundary node at %f, %f is outside the PML POLCOMS-ERSEM domain. Skipping.'</span>, fvlon(pp), fvlat(pp))
+0282                 <span class="keyword">continue</span>
+0283             <span class="keyword">end</span>
+0284         <span class="keyword">end</span>
+0285         
+0286         <span class="comment">% The horizontally- and vertically-interpolated values in the final</span>
+0287         <span class="comment">% FVCOM results array.</span>
+0288         fvtemp(:, :, t) = fvtempz;
+0289         
+0290         <span class="keyword">if</span> ftbverbose
+0291             fprintf(<span class="string">'done.\n'</span>)
+0292         <span class="keyword">end</span>
+0293     <span class="keyword">end</span>
+0294     Mobj.(varnames_fvcom{fdn}) = fvtemp;
+0295 <span class="keyword">end</span>
+0296 
+0297 <span class="keyword">if</span> ftbverbose
+0298     toc
+0299 <span class="keyword">end</span>
+0300 
+0301 
+0302 
+0303 <span class="keyword">if</span> ftbverbose
+0304     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0305 <span class="keyword">end</span>
+0306 <span class="keyword">if</span> wasOpened
+0307     matlabpool close
+0308 <span class="keyword">end</span>
+0309 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

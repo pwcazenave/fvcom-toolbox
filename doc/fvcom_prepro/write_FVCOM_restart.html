@@ -462,11 +462,11 @@ This function is called by:
 0330                         ss = 0:1 / (nt - 1):1; <span class="comment">% scale from 0 to 1.</span>
 0331                         <span class="comment">% Use the first modelled time step.</span>
 0332                         startdata = squeeze(data(:, :, 1));
-0333                         <span class="keyword">for</span> tt = 1:nt
-0334                             <span class="keyword">if</span> tt == 1
-0335                                 sfvdata(:, :, 1) = startdata;
-0336                             <span class="keyword">else</span>
-0337                                 td = indata.(fnames{vv}) - startdata;
+0333                         td = indata.(fnames{vv}) - startdata;
+0334                         <span class="keyword">for</span> tt = 1:nt
+0335                             <span class="keyword">if</span> tt == 1
+0336                                 sfvdata(:, :, 1) = startdata;
+0337                             <span class="keyword">else</span>
 0338                                 sfvdata(:, :, tt) = startdata + (ss(tt) .* td);
 0339                             <span class="keyword">end</span>
 0340                         <span class="keyword">end</span>
@@ -590,6 +590,6 @@ This function is called by:
 0458 <span class="keyword">if</span> ftbverbose
 0459     fprintf(<span class="string">'end   : %s \n'</span>, subname)
 0460 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

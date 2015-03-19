@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of find_relaxation_boundary</title>
+  <meta name="keywords" content="find_relaxation_boundary">
+  <meta name="description" content="Find the elements which fall along the boundary.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; find_relaxation_boundary.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>find_relaxation_boundary
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Find the elements which fall along the boundary.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Mobj = find_relaxation_boundary(Mobj) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Find the elements which fall along the boundary.
+ 
+ Mobj = find_boundary_elements(Mobj)
+ 
+ DESCRIPTION:
+   Find the elements which are bounded by the open boundaries described by
+   the nodes in Mobj.read_obc_nodes.
+ 
+ INPUT:
+   Mobj - required fields:
+           - read_obc_nodes
+           - obc_nodes
+           - tri
+ 
+ OUTPUT:
+   Mobj - new field of a cell array read_obc_elements which contains the
+          IDs of the elements which fall on the model open boundaries and
+          nObcElements which is the total number of boundary elements
+          along each boundary.
+ 
+ NOTES:
+   This will be pretty slow if your unstructured grid has an enormous
+   number of elements in it (it loops through every element and compares
+   against the boundary nodes). I'm sure there's a quicker way, so feel
+   free to have at it.
+ 
+ EXAMPLE USAGE:
+   Mobj = find_boundary_elements(Mobj)
+ 
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+ 
+ Revision history:
+   2013-02-26 First version.
+   2013-02-28 Add new field to the output (total number of boundary
+   elements as nObcElements).
+ 
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = find_relaxation_boundary(Mobj)</a>
+0002 <span class="comment">% Find the elements which fall along the boundary.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Mobj = find_boundary_elements(Mobj)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Find the elements which are bounded by the open boundaries described by</span>
+0008 <span class="comment">%   the nodes in Mobj.read_obc_nodes.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   Mobj - required fields:</span>
+0012 <span class="comment">%           - read_obc_nodes</span>
+0013 <span class="comment">%           - obc_nodes</span>
+0014 <span class="comment">%           - tri</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%   Mobj - new field of a cell array read_obc_elements which contains the</span>
+0018 <span class="comment">%          IDs of the elements which fall on the model open boundaries and</span>
+0019 <span class="comment">%          nObcElements which is the total number of boundary elements</span>
+0020 <span class="comment">%          along each boundary.</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% NOTES:</span>
+0023 <span class="comment">%   This will be pretty slow if your unstructured grid has an enormous</span>
+0024 <span class="comment">%   number of elements in it (it loops through every element and compares</span>
+0025 <span class="comment">%   against the boundary nodes). I'm sure there's a quicker way, so feel</span>
+0026 <span class="comment">%   free to have at it.</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% EXAMPLE USAGE:</span>
+0029 <span class="comment">%   Mobj = find_boundary_elements(Mobj)</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Author(s):</span>
+0032 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% Revision history:</span>
+0035 <span class="comment">%   2013-02-26 First version.</span>
+0036 <span class="comment">%   2013-02-28 Add new field to the output (total number of boundary</span>
+0037 <span class="comment">%   elements as nObcElements).</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">%==========================================================================</span>
+0040 
+0041 subname = <span class="string">'find_boundary_elements'</span>;
+0042 
+0043 <span class="keyword">global</span> ftbverbose
+0044 <span class="keyword">if</span> ftbverbose
+0045     fprintf(<span class="string">'\n'</span>)
+0046     fprintf(<span class="string">'begin : %s\n'</span>, subname)
+0047 <span class="keyword">end</span>
+0048 
+0049 nb = length(Mobj.read_obc_nodes); <span class="comment">% number of boundaries</span>
+0050 bc_width=Mobj.relax_bc_Nnodes;
+0051 obc_elems = cell(nb, 1);
+0052 nObcElements = nan(nb, 1);
+0053 
+0054 
+0055 <span class="keyword">for</span> i = 1:nb
+0056     
+0057     <span class="comment">% Do the current boundary's nodes</span>
+0058     nodeIDs = Mobj.obc_nodes(i, Mobj.obc_nodes(i, :) ~= 0);
+0059     [C1,~] = ismember(Mobj.tri(:,1),nodeIDs(:), <span class="string">'rows'</span>);
+0060     [C2,~] = ismember(Mobj.tri(:,2), nodeIDs(:),<span class="string">'rows'</span>);
+0061     [C3,~] = ismember(Mobj.tri(:,3), nodeIDs(:),<span class="string">'rows'</span>);
+0062     obc_elems{i}= unique([find(C1);find(C2);find(C3)]);
+0063     nObcElements(i) = numel(obc_elems{i}(:));
+0064     
+0065 <span class="keyword">end</span>
+0066 Mobj.relaxBC_nodes={reshape([Mobj.read_obc_nodes{:}],[],1)};
+0067 Mobj.relaxBC_elems={reshape([obc_elems{:}],[],1)};
+0068 
+0069 <span class="keyword">for</span> bb=2:bc_width
+0070     nodeIDs = Mobj.tri(Mobj.relaxBC_elems{bb-1},:);
+0071     nodeIDs=unique(nodeIDs(:));
+0072     C1 = setdiff(nodeIDs(:),<span class="keyword">...</span>
+0073         cat(1,Mobj.relaxBC_nodes{1:bb-1}), <span class="string">'rows'</span>);
+0074     Mobj.relaxBC_nodes(bb)={C1};
+0075     [C1,~] = ismember(Mobj.tri(:,1),nodeIDs(:), <span class="string">'rows'</span>);
+0076     [C2,~] = ismember(Mobj.tri(:,2), nodeIDs(:),<span class="string">'rows'</span>);
+0077     [C3,~] = ismember(Mobj.tri(:,3), nodeIDs(:),<span class="string">'rows'</span>);
+0078     C1 = setdiff(unique([find(C1);find(C2);find(C3)]),<span class="keyword">...</span>
+0079         cat(1,Mobj.relaxBC_elems{1:bb-1}), <span class="string">'rows'</span>);
+0080     Mobj.relaxBC_elems(bb)={C1};
+0081 <span class="keyword">end</span>
+0082 
+0083 
+0084 <span class="comment">% nodeIDs = Mobj.tri(Mobj.relaxBC_elems{bb},:);</span>
+0085 <span class="comment">% nodeIDs=unique(nodeIDs(:));</span>
+0086 <span class="comment">% C1 = setdiff(nodeIDs(:),...</span>
+0087 <span class="comment">%     cat(1,Mobj.relaxBC_nodes{1:bb}), 'rows');</span>
+0088 <span class="comment">% Mobj.relaxBC_nodes(bb+1)={C1};</span>
+0089 Mobj.relaxnBC_elems=length(cat(1,Mobj.relaxBC_elems{:}));
+0090 Mobj.relaxnBC_nodes=length(cat(1,Mobj.relaxBC_nodes{:}));
+0091 <span class="comment">% % Check it's worked for the first model boundary.</span>
+0092 <span class="comment">% xc = nodes2elems(Mobj.x, Mobj);</span>
+0093 <span class="comment">% yc = nodes2elems(Mobj.y, Mobj);</span>
+0094 <span class="comment">% figure(1)</span>
+0095 <span class="comment">% clf</span>
+0096 <span class="comment">%     triplot(Mobj.tri,Mobj.x,Mobj.y,'k');</span>
+0097 <span class="comment">% hold on</span>
+0098 <span class="comment">%</span>
+0099 <span class="comment">% plot(Mobj.x( Mobj.relaxBC_nodes{1}), Mobj.y( Mobj.relaxBC_nodes{1}), 'r.')</span>
+0100 <span class="comment">% plot(Mobj.x( Mobj.relaxBC_nodes{2}), Mobj.y( Mobj.relaxBC_nodes{2}), 'r.')</span>
+0101 <span class="comment">% plot(Mobj.x( Mobj.relaxBC_nodes{3}), Mobj.y( Mobj.relaxBC_nodes{3}), 'kx')</span>
+0102 <span class="comment">% plot(Mobj.x( Mobj.relaxBC_nodes{4}), Mobj.y( Mobj.relaxBC_nodes{4}), 'rx')</span>
+0103 <span class="comment">%</span>
+0104 <span class="comment">% plot(xc(Mobj.relaxBC_elems{3}), yc(Mobj.relaxBC_elems{3}), 'kx')</span>
+0105 <span class="comment">% axis('equal', 'tight')</span>
+0106 
+0107 <span class="keyword">if</span> ftbverbose
+0108     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0109 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of create_nesting_nodes</title>
+  <meta name="keywords" content="create_nesting_nodes">
+  <meta name="description" content="create a list of the nesting boundary nodes">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; create_nesting_nodes.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>create_nesting_nodes
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>create a list of the nesting boundary nodes</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> create a list of the nesting boundary nodes
+ subname = 'create_nesting_nodes'
+
+ DESCRIPTION:
+    READ in the following data:
+          - FVCOM OBC file  
+        - FVCOM Grid file (connectivity + nodes)
+    Process data:
+       - Extract all nodes belonging to elements at the boundary 
+    Write output
+       - Write Node nesting file 
+
+ INPUT :  
+   FVCOM OBC file and Grid file
+
+ OUTPUT:
+   Node nesting file
+
+ EXAMPLE USAGE
+    create_nesting_nodes
+
+ Author(s):  
+    Hakeem Johnson (CH2MHILL, Warrington, UK)
+    Darren Price(CH2MHILL, Warrington, UK)
+
+ Revision history
+   Jan 2014: Beta version including the correct nesting format
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_HD_OBC.html" class="code" title="function [ Mobj ] = get_HD_OBC(nnodes_file )">get_HD_OBC</a>	Extract open boundary nodes from open boundary cordinate file</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 
+0002 <span class="comment">% create a list of the nesting boundary nodes</span>
+0003 <span class="comment">% subname = 'create_nesting_nodes'</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% DESCRIPTION:</span>
+0006 <span class="comment">%    READ in the following data:</span>
+0007 <span class="comment">%          - FVCOM OBC file</span>
+0008 <span class="comment">%        - FVCOM Grid file (connectivity + nodes)</span>
+0009 <span class="comment">%    Process data:</span>
+0010 <span class="comment">%       - Extract all nodes belonging to elements at the boundary</span>
+0011 <span class="comment">%    Write output</span>
+0012 <span class="comment">%       - Write Node nesting file</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% INPUT :</span>
+0015 <span class="comment">%   FVCOM OBC file and Grid file</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% OUTPUT:</span>
+0018 <span class="comment">%   Node nesting file</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% EXAMPLE USAGE</span>
+0021 <span class="comment">%    create_nesting_nodes</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Author(s):</span>
+0024 <span class="comment">%    Hakeem Johnson (CH2MHILL, Warrington, UK)</span>
+0025 <span class="comment">%    Darren Price(CH2MHILL, Warrington, UK)</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Revision history</span>
+0028 <span class="comment">%   Jan 2014: Beta version including the correct nesting format</span>
+0029 <span class="comment">%==============================================================================</span>
+0030 
+0031 clear;
+0032 subname = <span class="string">'create_nesting_nodes'</span>;
+0033 
+0034 <span class="keyword">global</span> ftbverbose;
+0035 <span class="keyword">if</span>(ftbverbose);
+0036   fprintf(<span class="string">'\n'</span>)
+0037   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0038 <span class="keyword">end</span>
+0039 
+0040 <span class="comment">%---------------------------------------------------------</span>
+0041 <span class="comment">% user specify input data &amp; parameters ...</span>
+0042 <span class="comment">%---------------------------------------------------------</span>
+0043 <span class="comment">% work &amp; data folders ...</span>
+0044 workDir=<span class="string">'\\hand-fs-01\maritime\Projects\Scottish Waters\Calcs\Models\WLLS\mesh10\nesting\'</span>;
+0045 dataDir=<span class="string">'\\hand-fs-01\maritime\Projects\Scottish Waters\Calcs\Models\WLLS\mesh10\mesh\'</span>;
+0046 basename = <span class="string">'WLLS_v3smth'</span>;
+0047 <span class="comment">% input file names</span>
+0048 meshFile=[basename <span class="string">'_grd.dat'</span>];
+0049 obcFile=[basename <span class="string">'_obc.dat'</span>];
+0050 
+0051 <span class="comment">% output file</span>
+0052 NestNodesFile = [basename <span class="string">'_node_nest.dat'</span>];
+0053 
+0054 <span class="comment">%---------------------------------------------------------</span>
+0055 <span class="comment">% set full file names ...</span>
+0056 <span class="comment">%---------------------------------------------------------</span>
+0057 meshFile     = [dataDir meshFile];
+0058 obcFile      = [dataDir obcFile];
+0059 NestNodesFile     = [workDir NestNodesFile]; 
+0060 checkfile(meshFile);
+0061 checkfile(obcFile);
+0062 
+0063 <span class="comment">%---------------------------------------------------------</span>
+0064 <span class="comment">% Read data into matlab</span>
+0065 <span class="comment">% 1) grid mesh; 2)boundary nodes; ...</span>
+0066 <span class="comment">%---------------------------------------------------------</span>
+0067 <span class="comment">% get fvcom grid file in as mesh object ...</span>
+0068 FV_Mesh = read_fvcom_mesh_lonlat(meshFile);        <span class="comment">% ... from matlab toolbox</span>
+0069 
+0070 <span class="comment">% get wave nesting nodes and associated lat/lon coord file</span>
+0071 FV_OBC = <a href="get_HD_OBC.html" class="code" title="function [ Mobj ] = get_HD_OBC(nnodes_file )">get_HD_OBC</a>(obcFile);
+0072 
+0073 <span class="comment">%---------------------------------------------------------------------</span>
+0074 <span class="comment">% get elements at boundary &amp; element centres</span>
+0075 <span class="comment">%---------------------------------------------------------------------</span>
+0076 <span class="comment">% get elements at boundary</span>
+0077 T = FV_Mesh.tri;
+0078 X1 = FV_Mesh.lon;
+0079 Y1 = FV_Mesh.lat;
+0080 P = [X1,Y1];
+0081 TR = triangulation(T,P);
+0082 vi = FV_OBC.nnodesID;
+0083 ti = vertexAttachments(TR,vi);
+0084 <span class="comment">% arrange as column data; since elements overlap, get unique elements</span>
+0085 temp1 = [ti{:}]';
+0086 <span class="comment">% bdcell = unique(temp1,'stable');</span>
+0087 bdcell = unique(temp1);  
+0088 nCells = numel(bdcell);
+0089 
+0090 nElems = nCells;
+0091 bdElem = bdcell;
+0092 
+0093 <span class="comment">% get element nodes &amp; arrange in required format</span>
+0094 nv= zeros(3*nElems,1);
+0095 k = 1;
+0096 <span class="keyword">for</span> i=1:nElems
+0097     ielem = bdElem(i);
+0098     nv(k)   = FV_Mesh.tri(ielem,1);
+0099     nv(k+1) = FV_Mesh.tri(ielem,2);
+0100     nv(k+2) = FV_Mesh.tri(ielem,3);
+0101     k = k+3;
+0102 <span class="keyword">end</span>
+0103 
+0104 <span class="comment">% I don't think preserving the order is the problem - remove next line</span>
+0105 <span class="comment">% nestNodeID= unique(nv,'stable');</span>
+0106 nestNodeID= unique(nv);
+0107 nestNodes = numel(nestNodeID);
+0108 out = ones(nestNodes,3);
+0109 <span class="keyword">for</span> i=1:nestNodes
+0110     out(i,1) = i;
+0111     out(i,2) = nestNodeID(i);
+0112 <span class="keyword">end</span>
+0113 
+0114 <span class="comment">%------------------------------------------------------------------------------</span>
+0115 <span class="comment">% Dump the file</span>
+0116 <span class="comment">%------------------------------------------------------------------------------</span>
+0117 
+0118 filename = NestNodesFile;
+0119 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'writing FVCOM obc %s\n'</span>,filename); <span class="keyword">end</span>;
+0120 
+0121 <span class="comment">%------------------------------------------------------------------------------</span>
+0122 <span class="comment">% Check output file</span>
+0123 <span class="comment">%------------------------------------------------------------------------------</span>
+0124 fid = fopen(filename,<span class="string">'w'</span>);
+0125 fprintf(fid,<span class="string">'Nest_Node Number = %12d\n'</span>,nestNodes);
+0126 fprintf(fid,<span class="string">'No.           Node_ID            Node_Type\n'</span>);
+0127 <span class="keyword">for</span> i=1:nestNodes
+0128     fprintf(fid,<span class="string">'%12d %12d %12d\n'</span>,out(i,:));
+0129 <span class="keyword">end</span>
+0130 
+0131 fclose(fid);
+0132 
+0133 disp(<span class="string">'finished creating nesting file'</span>);</pre></div>
+<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

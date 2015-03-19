@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_polcoms_fixed_vars</title>
+  <meta name="keywords" content="get_polcoms_fixed_vars">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; get_polcoms_fixed_vars.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_polcoms_fixed_vars
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [polcoms]=get_polcoms_fixed_vars(fileU,fileB,fileparams,filebathy,filescoord,ipexfile) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+ fileU = '/data/perseus1/to_archive/suka_VECTORS/MEDI29_RA/daily/dmeanUVT.MEDI29.RA.2000.01.U.nc'
+ fileB =  '/data/perseus1/to_archive/suka_VECTORS/MEDI29_RA/daily/dmeanUVT.MEDI29.RA.2000.01.B.nc'
+ filebio='/data/perseus1/to_archive/suka_VECTORS/MEDI29_RA/daily/dmeaneco3d.MEDI29.RA.2000.01.nc'
+ ipexfile='/users/modellers/rito/Models/MEDINA/polcoms/zet_UBVB.MEDI29.RA.2009.12'
+ filescoord='/users/modellers/rito/Models/MEDINA/polcoms/scoord_params.dat'
+ fileparams='/users/modellers/rito/Models/MEDINA/polcoms/MEDI29.parameters'
+ filebathy='/users/modellers/rito/Models/MEDINA/polcoms/MEDI29.bathy'
+ Read Tseries file with number and locations of timeseries</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="calc_scoord.html" class="code" title="function [polcoms]=calc_scoord(polcoms)">calc_scoord</a>	%n=18;iesub=63;jesub=36;</li><li><a href="read_polcoms_params.html" class="code" title="function params=read_polcoms_params(fileparams)">read_polcoms_params</a>	function to read polcoms parameters</li><li><a href="read_scoord_params.html" class="code" title="function scoord=read_scoord_params(filename)">read_scoord_params</a>	function to read hc, cc, theta and bb from scoord_params.dat file</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [polcoms]=get_polcoms_fixed_vars(fileU,fileB,fileparams,filebathy,filescoord,ipexfile)</a>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% fileU = '/data/perseus1/to_archive/suka_VECTORS/MEDI29_RA/daily/dmeanUVT.MEDI29.RA.2000.01.U.nc'</span>
+0004 <span class="comment">% fileB =  '/data/perseus1/to_archive/suka_VECTORS/MEDI29_RA/daily/dmeanUVT.MEDI29.RA.2000.01.B.nc'</span>
+0005 <span class="comment">% filebio='/data/perseus1/to_archive/suka_VECTORS/MEDI29_RA/daily/dmeaneco3d.MEDI29.RA.2000.01.nc'</span>
+0006 <span class="comment">% ipexfile='/users/modellers/rito/Models/MEDINA/polcoms/zet_UBVB.MEDI29.RA.2009.12'</span>
+0007 <span class="comment">% filescoord='/users/modellers/rito/Models/MEDINA/polcoms/scoord_params.dat'</span>
+0008 <span class="comment">% fileparams='/users/modellers/rito/Models/MEDINA/polcoms/MEDI29.parameters'</span>
+0009 <span class="comment">% filebathy='/users/modellers/rito/Models/MEDINA/polcoms/MEDI29.bathy'</span>
+0010 <span class="comment">% Read Tseries file with number and locations of timeseries</span>
+0011 varlistU = {<span class="string">'lon'</span>, <span class="string">'lat'</span>};
+0012 varlistB = {<span class="string">'lon'</span>, <span class="string">'lat'</span>};
+0013 <span class="comment">% varlistbio = {'depth', 'pdepth'};</span>
+0014 
+0015 <span class="comment">% read s_coord file from polcoms setup</span>
+0016 
+0017 
+0018 polcoms.scoord=<a href="read_scoord_params.html" class="code" title="function scoord=read_scoord_params(filename)">read_scoord_params</a>(filescoord);
+0019 <span class="comment">% Read domain parameters</span>
+0020 polcoms.params=<a href="read_polcoms_params.html" class="code" title="function params=read_polcoms_params(fileparams)">read_polcoms_params</a>(fileparams);
+0021 <span class="comment">% read ipexu and ipexb</span>
+0022 <span class="comment">%fid is for the input file</span>
+0023 fid=fopen(ipexfile,<span class="string">'r'</span>,<span class="string">'n'</span>);
+0024 dump= fread(fid,1,<span class="string">'int32'</span>);
+0025 polcoms.iesub= fread(fid,1,<span class="string">'int32'</span>);
+0026 polcoms.jesub= fread(fid,1,<span class="string">'int32'</span>);
+0027 polcoms.n= fread(fid,1,<span class="string">'int32'</span>);
+0028 polcoms.npsea= fread(fid,1,<span class="string">'int32'</span>);
+0029 dump = fread(fid,2,<span class="string">'int32'</span>);
+0030 polcoms.isea= fread(fid,polcoms.npsea,<span class="string">'int32'</span>);
+0031 dump = fread(fid,2,<span class="string">'int32'</span>);
+0032 polcoms.jsea= fread(fid,polcoms.npsea,<span class="string">'int32'</span>);
+0033 dump = fread(fid,2,<span class="string">'int32'</span>);
+0034 
+0035 l= fread(fid,1,<span class="string">'int32'</span>);
+0036 m= fread(fid,1,<span class="string">'int32'</span>);
+0037 n= fread(fid,1,<span class="string">'int32'</span>);
+0038 polcoms.npusea= fread(fid,1,<span class="string">'int32'</span>);
+0039 dump = fread(fid,2,<span class="string">'int32'</span>);
+0040 polcoms.iusea= fread(fid,polcoms.npusea,<span class="string">'int32'</span>);
+0041 dump = fread(fid,2,<span class="string">'int32'</span>);
+0042 polcoms.jusea= fread(fid,polcoms.npusea,<span class="string">'int32'</span>);
+0043 dump = fread(fid,2,<span class="string">'int32'</span>);
+0044 fclose(fid);
+0045 <span class="comment">% read bathymetry and calculate scoords.</span>
+0046 polcoms.bathy = textread(filebathy,<span class="string">'%f'</span>,<span class="string">'delimiter'</span>,<span class="string">' '</span>);
+0047 polcoms.bathy = reshape(polcoms.bathy,polcoms.iesub,polcoms.jesub);
+0048 <span class="comment">%</span>
+0049 pcU = get_POLCOMS_netCDF(fileU, varlistU);
+0050 pcB = get_POLCOMS_netCDF(fileB, varlistB);
+0051 <span class="comment">% pcbio=get_POLCOMS_netCDF(filebio, varlistbio);</span>
+0052 [polcoms.lonb,polcoms.latb]=meshgrid(pcB.lon.data,pcB.lat.data);
+0053 [polcoms.lonu,polcoms.latu]=meshgrid(pcU.lon.data,pcU.lat.data);
+0054 
+0055 polcoms.lonb=polcoms.lonb';
+0056 polcoms.latb=polcoms.latb';
+0057 polcoms.lonu=polcoms.lonu';
+0058 polcoms.latu=polcoms.latu';
+0059 [polcoms]=<a href="calc_scoord.html" class="code" title="function [polcoms]=calc_scoord(polcoms)">calc_scoord</a>(polcoms);
+0060 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

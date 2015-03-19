@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of readzetUBVB</title>
+  <meta name="keywords" content="readzetUBVB">
+  <meta name="description" content="program to read POLCOMS output bin files dailymean">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; readzetUBVB.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>readzetUBVB
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>program to read POLCOMS output bin files dailymean</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [data]=readzetUBVB(opts,daysf) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> program to read POLCOMS output bin files dailymean
+ create file used next in many matlab file
+ output matrix  only
+ periode 1 for 'janjun' 2 for 'juldec'
+ function [u,v,tmp,sal]=readUVT()
+ opts = opts.outputfolder;opts.inputfolder;opt.RUN etc
+ chose if we had outputed the Vertical velocity, the TKE and the WA of
+ polcoms
+ variables=1 if they are outputed
+ variables=0 otherwise
+ outputfolder='/users/modellers/rito/research/Projects/ECOOP/WEC_V0.2/yr2/'
+ inputfolder='/users/modellers/rito/research/Projects/ECOOP/WEC_V0.2/yr2/'</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_polcoms_timeseriesv1.html" class="code" title="function [polcoms]=get_polcoms_timeseriesv1(rootfname,ts_controlfile,Mobj,inputConf,tseries_dir,mm,polcoms)">get_polcoms_timeseriesv1</a>	ts_controlfile='/users/modellers/rito/Models/MEDINA/tseries.MEDI29'</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">% program to read POLCOMS output bin files dailymean</span>
+0002 <span class="comment">% create file used next in many matlab file</span>
+0003 <span class="comment">% output matrix  only</span>
+0004 <span class="comment">% periode 1 for 'janjun' 2 for 'juldec'</span>
+0005 <span class="comment">% function [u,v,tmp,sal]=readUVT()</span>
+0006 <span class="comment">% opts = opts.outputfolder;opts.inputfolder;opt.RUN etc</span>
+0007 <a name="_sub0" href="#_subfunctions" class="code">function [data]=readzetUBVB(opts,daysf)</a>
+0008 <span class="comment">% chose if we had outputed the Vertical velocity, the TKE and the WA of</span>
+0009 <span class="comment">% polcoms</span>
+0010 <span class="comment">% variables=1 if they are outputed</span>
+0011 <span class="comment">% variables=0 otherwise</span>
+0012 <span class="comment">% outputfolder='/users/modellers/rito/research/Projects/ECOOP/WEC_V0.2/yr2/'</span>
+0013 <span class="comment">% inputfolder='/users/modellers/rito/research/Projects/ECOOP/WEC_V0.2/yr2/'</span>
+0014 readf=opts.zetUVfile;
+0015 LEV=opts.PolcomsLevs;
+0016 zet=[];u=[];v=[];
+0017 <span class="comment">%fid is for the input file</span>
+0018 readf
+0019 fid=fopen(readf,<span class="string">'r'</span>,<span class="string">'n'</span>);
+0020 dump= fread(fid,1,<span class="string">'int32'</span>);
+0021 l= fread(fid,1,<span class="string">'int32'</span>)
+0022 m= fread(fid,1,<span class="string">'int32'</span>)
+0023 n= fread(fid,1,<span class="string">'int32'</span>)
+0024 npsea= fread(fid,1,<span class="string">'int32'</span>);
+0025 dump = fread(fid,2,<span class="string">'int32'</span>);
+0026 isea= fread(fid,npsea,<span class="string">'int32'</span>);
+0027 dump = fread(fid,2,<span class="string">'int32'</span>);
+0028 jsea= fread(fid,npsea,<span class="string">'int32'</span>);
+0029 dump = fread(fid,2,<span class="string">'int32'</span>);
+0030 
+0031 l= fread(fid,1,<span class="string">'int32'</span>);
+0032 m= fread(fid,1,<span class="string">'int32'</span>);
+0033 n= fread(fid,1,<span class="string">'int32'</span>);
+0034 npusea= fread(fid,1,<span class="string">'int32'</span>);
+0035 dump = fread(fid,2,<span class="string">'int32'</span>);
+0036 iusea= fread(fid,npusea,<span class="string">'int32'</span>);
+0037 dump = fread(fid,2,<span class="string">'int32'</span>);
+0038 jusea= fread(fid,npusea,<span class="string">'int32'</span>);
+0039 dump = fread(fid,2,<span class="string">'int32'</span>);
+0040 hfb = ftell(fid)
+0041 <span class="keyword">for</span> jk=1:daysf
+0042     <span class="comment">%         read from  the binary file</span>
+0043     <span class="comment">%          hfb_old = ftell(fid)</span>
+0044     u=nan*ones(l,m);
+0045     v=nan*ones(l,m);
+0046     zet=nan*ones(l,m);
+0047     
+0048     itimt4 =fread(fid,1,<span class="string">'int32'</span>);disp([<span class="string">'Day :'</span>,num2str(jk)]);
+0049     dump = fread(fid,2,<span class="string">'int32'</span>);
+0050     dumpzet = fread(fid,[npsea],<span class="string">'float32'</span>)';
+0051     dump = fread(fid,2,<span class="string">'int32'</span>);
+0052     dumpu = fread(fid,[npusea],<span class="string">'float32'</span>)';
+0053     dump = fread(fid,2,<span class="string">'int32'</span>);
+0054     dumpv = fread(fid,[npusea],<span class="string">'float32'</span>)';
+0055     dump = fread(fid,2,<span class="string">'int32'</span>);
+0056     <span class="keyword">for</span> i=1:npusea
+0057         u(iusea(i),jusea(i))=dumpu(i);
+0058         v(iusea(i),jusea(i))=dumpv(i);
+0059     <span class="keyword">end</span>
+0060     <span class="keyword">for</span> i=1:npsea
+0061         zet(isea(i),jsea(i))=dumpzet(i);
+0062     <span class="keyword">end</span>
+0063     <span class="comment">%         print in the matlab file</span>
+0064     <span class="keyword">if</span> isfield(opts,<span class="string">'PolcomsPoints'</span>) &amp;&amp; ~isempty(opts.PolcomsPoints)
+0065         
+0066         data.zet(jk,:) = zet(sub2ind(size(v),opts.PolcomsPoints(:,1),opts.PolcomsPoints(:,2)));
+0067         data.ub(jk,:) = u(sub2ind(size(v),opts.PolcomsPoints(:,1),opts.PolcomsPoints(:,2)));
+0068         data.vb(jk,:) = v(sub2ind(size(v),opts.PolcomsPoints(:,1),opts.PolcomsPoints(:,2)));
+0069         
+0070     <span class="keyword">else</span>
+0071         data.zet(jk,:,:) = zet;
+0072         data.ub(jk,:,:) = u;
+0073         data.vb(jk,:,:) = v;
+0074     <span class="keyword">end</span>
+0075     <span class="comment">%      disp([ftell(fid),ftell(fid)-hfb_old])</span>
+0076 <span class="keyword">end</span>
+0077 fclose(fid);
+0078 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

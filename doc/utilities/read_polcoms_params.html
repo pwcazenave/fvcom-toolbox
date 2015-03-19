@@ -1,0 +1,63 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of read_polcoms_params</title>
+  <meta name="keywords" content="read_polcoms_params">
+  <meta name="description" content="function to read polcoms parameters">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; read_polcoms_params.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>read_polcoms_params
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function to read polcoms parameters</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function params=read_polcoms_params(fileparams) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> function to read polcoms parameters
+ fileparams='/users/modellers/rito/Models/MEDINA/polcoms/MEDI29.parameters'
+ list of variables to keep</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_polcoms_fixed_vars.html" class="code" title="function [polcoms]=get_polcoms_fixed_vars(fileU,fileB,fileparams,filebathy,filescoord,ipexfile)">get_polcoms_fixed_vars</a>	</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function params=read_polcoms_params(fileparams)</a>
+0002 <span class="comment">% function to read polcoms parameters</span>
+0003 <span class="comment">% fileparams='/users/modellers/rito/Models/MEDINA/polcoms/MEDI29.parameters'</span>
+0004 <span class="comment">% list of variables to keep</span>
+0005 varlist={<span class="string">'l'</span> <span class="string">'m'</span> <span class="string">'n'</span> <span class="string">'daldi'</span> <span class="string">'dbedi'</span> <span class="string">'along1'</span> <span class="string">'alat1'</span>}
+0006 fid = fopen(fileparams);
+0007 C = textscan(fid, <span class="string">'%s%s%*[^\n]'</span>);
+0008 fclose(fid);
+0009 <span class="keyword">for</span> vv=1:length(varlist)
+0010     iv=find(strcmpi(C{2},varlist(vv)));
+0011     params.(varlist{vv})=str2num(C{1}{iv});
+0012 <span class="keyword">end</span>
+0013 
+0014 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

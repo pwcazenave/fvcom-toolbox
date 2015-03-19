@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_polcoms_timeseriesv1</title>
+  <meta name="keywords" content="get_polcoms_timeseriesv1">
+  <meta name="description" content="ts_controlfile='/users/modellers/rito/Models/MEDINA/tseries.MEDI29'">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; get_polcoms_timeseriesv1.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_polcoms_timeseriesv1
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>ts_controlfile='/users/modellers/rito/Models/MEDINA/tseries.MEDI29'</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [polcoms]=get_polcoms_timeseriesv1(rootfname,ts_controlfile,Mobj,inputConf,tseries_dir,mm,polcoms) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">ts_controlfile='/users/modellers/rito/Models/MEDINA/tseries.MEDI29'
+tseries_dir='/data/perseus1/to_archive/suka_VECTORS/MEDI29_RA/physseries_MEDI29_2000';
+tseries_dir='/users/modellers/rito/Models/MEDINA/polcoms/physseries_MEDI29.2006';</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="catstruct.html" class="code" title="function A = catstruct(varargin)">catstruct</a>	CATSTRUCT   Concatenate or merge structures with different fieldnames</li><li><a href="readzetUBVB.html" class="code" title="function [data]=readzetUBVB(opts,daysf)">readzetUBVB</a>	program to read POLCOMS output bin files dailymean</li><li><a href="wgs2utm.html" class="code" title="function  [x,y,utmzone,utmhemi] = wgs2utm(Lat,Lon,utmzone,utmhemi)">wgs2utm</a>	-------------------------------------------------------------------------</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [polcoms]=get_polcoms_timeseriesv1(rootfname,ts_controlfile,Mobj,inputConf,tseries_dir,mm,polcoms)</a>
+0002 <span class="comment">%ts_controlfile='/users/modellers/rito/Models/MEDINA/tseries.MEDI29'</span>
+0003 <span class="comment">%tseries_dir='/data/perseus1/to_archive/suka_VECTORS/MEDI29_RA/physseries_MEDI29_2000';</span>
+0004 <span class="comment">%tseries_dir='/users/modellers/rito/Models/MEDINA/polcoms/physseries_MEDI29.2006';</span>
+0005 
+0006 <span class="comment">% Run jobs on multiple workers if we have that functionality. Not sure if</span>
+0007 <span class="comment">% it's necessary, but check we have the Parallel Toolbox first.</span>
+0008 
+0009 
+0010 <span class="comment">%%</span>
+0011 <span class="comment">% Read Tseries file with number and locations of timeseries</span>
+0012 nvars2 = 9;
+0013 var_names2 = {<span class="string">'u'</span>,<span class="string">'v'</span>,<span class="string">'temp'</span>,<span class="string">'sal'</span>,<span class="string">'aa'</span>,<span class="string">'ak'</span>,<span class="string">'qsq'</span>,<span class="string">'al'</span>,<span class="string">'iop'</span>};
+0014 <span class="comment">%%</span>
+0015 
+0016 fid = fopen(ts_controlfile);
+0017 nstations = textscan(fid, <span class="string">'%u'</span>,1);
+0018 C=  textscan(fid, <span class="string">'%u%u%f%f'</span>,nstations{1});
+0019 fclose(fid);
+0020 [lat,lon]=deal(C{3},C{4});
+0021 [polcoms_i,polcoms_j]=deal(C{1},C{2});
+0022 clear C
+0023 <span class="comment">% convert lat and lon to utm</span>
+0024 <span class="comment">% Convert the small subdomain into cartesian coordinates.</span>
+0025 tmpZone = regexpi(inputConf.utmZone,<span class="string">'\ '</span>,<span class="string">'split'</span>);
+0026 [tseries.x, tseries.y] = <a href="wgs2utm.html" class="code" title="function  [x,y,utmzone,utmhemi] = wgs2utm(Lat,Lon,utmzone,utmhemi)">wgs2utm</a>(lat(:), lon(:), str2double(char(tmpZone{1}(1))), <span class="string">'N'</span>);
+0027 
+0028 <span class="comment">% Select points in the FVCOM domain (near the boundary as determined in</span>
+0029 <span class="comment">% Mobj</span>
+0030 distance = abs(complex(tseries.x,tseries.y)-complex(nanmean(Mobj.x),nanmean(Mobj.y)));
+0031 dist_lim = mode(distance);
+0032 igood=find(distance &lt; dist_lim*5);
+0033 <span class="comment">%%</span>
+0034 
+0035 <span class="comment">% build timeseries filenames for the time range under consideration</span>
+0036 <span class="comment">% read timeseries files. Make sure the correct variables in the files are</span>
+0037 <span class="comment">% read. We need a map of variables on the file</span>
+0038 inputConf.zetUVfile=fullfile(tseries_dir,[<span class="string">'zet_UBVB.'</span>,rootfname,<span class="string">'.'</span>,num2str(inputConf.modelYear),<span class="string">'.'</span>,num2str(mm,<span class="string">'%02d'</span>)]);
+0039 inputConf.PolcomsPoints=[polcoms_i(igood),polcoms_j(igood)];
+0040 <span class="comment">% timeseries doesn't have information about the depth levels. Actual depths</span>
+0041 <span class="comment">% need to be calculated from total depth and scoord distribution.</span>
+0042 
+0043 
+0044 <span class="comment">% extract positions lat and lon at interest points</span>
+0045 polcoms.bcidx=sub2ind(size(polcoms.latb),inputConf.PolcomsPoints(:,1),inputConf.PolcomsPoints(:,2));
+0046 latb=polcoms.latb(polcoms.bcidx);
+0047 lonb=polcoms.lonb(polcoms.bcidx);
+0048 [polcoms.bcxb, polcoms.bcyb] = <a href="wgs2utm.html" class="code" title="function  [x,y,utmzone,utmhemi] = wgs2utm(Lat,Lon,utmzone,utmhemi)">wgs2utm</a>(latb(:), lonb(:), str2double(char(tmpZone{1}(1))), <span class="string">'N'</span>);
+0049 latu=polcoms.latu(polcoms.bcidx);
+0050 lonu=polcoms.lonu(polcoms.bcidx);
+0051 [polcoms.bcxu, polcoms.bcyu] = <a href="wgs2utm.html" class="code" title="function  [x,y,utmzone,utmhemi] = wgs2utm(Lat,Lon,utmzone,utmhemi)">wgs2utm</a>(latu(:), lonu(:), str2double(char(tmpZone{1}(1))), <span class="string">'N'</span>);
+0052 
+0053 <span class="comment">% obtain depth levels for each station</span>
+0054 <span class="comment">% depth levels at each station need reconstructing because polcoms timeseries files do not</span>
+0055 <span class="comment">% include information on the depth levels.</span>
+0056 [polcoms.xb, polcoms.yb] = <a href="wgs2utm.html" class="code" title="function  [x,y,utmzone,utmhemi] = wgs2utm(Lat,Lon,utmzone,utmhemi)">wgs2utm</a>(polcoms.latb(:), polcoms.lonb(:), str2double(char(tmpZone{1}(1))), <span class="string">'N'</span>);
+0057 [polcoms.xu, polcoms.yu] = <a href="wgs2utm.html" class="code" title="function  [x,y,utmzone,utmhemi] = wgs2utm(Lat,Lon,utmzone,utmhemi)">wgs2utm</a>(polcoms.latu(:), polcoms.lonu(:), str2double(char(tmpZone{1}(1))), <span class="string">'N'</span>);
+0058 
+0059 fdb = TriScatteredInterp(polcoms.xb(:), polcoms.yb(:), polcoms.bathy(:), <span class="string">'natural'</span>);
+0060 <span class="comment">% interpolate bathymetry onto boundary points (b and u points)</span>
+0061 polcoms.bchb=fdb(polcoms.bcxb,polcoms.bcyb);
+0062 polcoms.bchu=fdb(polcoms.bcxu, polcoms.bcyu);
+0063 <span class="comment">% and onto fvcom bc positions (I don't think I need this)</span>
+0064 <span class="comment">% polcoms.hb=fdb(Mobj.x(oNodes),Mobj.y(oNodes));</span>
+0065 <span class="comment">% polcoms.hu=fdb(Mobj.xc(oElems),Mobj.yc(oElems));</span>
+0066 polcoms.igood=igood;
+0067 
+0068 <span class="comment">%%</span>
+0069 
+0070 
+0071 <span class="keyword">for</span> ff=1:length(igood)
+0072     fname =fullfile(tseries_dir,[<span class="string">'physseries.'</span>,num2str(igood(ff)),<span class="string">'.'</span>,rootfname,<span class="string">'.'</span>,num2str(inputConf.modelYear),<span class="string">'.'</span>,num2str(mm,<span class="string">'%02d'</span>)]);
+0073     cleanfile =fullfile(tseries_dir,<span class="string">'cleanfile'</span>);
+0074     clean_statement=[<span class="string">'sed ''s/^\**/0/g'' '</span> , fname,<span class="string">' &gt; '</span>,cleanfile];
+0075     system(clean_statement);
+0076     data = load(cleanfile);
+0077     jday = data(:,1);data(:,1)=[];
+0078     jday = reshape(jday,nvars2,[]);
+0079     [~,ntimes]=size(jday);
+0080     [~,ndepths]=size(data);
+0081     
+0082      jday = jday(1,:);jday = repmat(jday,[ndepths 1]);
+0083     <span class="keyword">for</span> nn=1:length(var_names2)
+0084         polcoms.(var_names2{nn})(ff,:,:) = data(nn:length(var_names2):<span class="keyword">end</span>,:)'./1000;
+0085     <span class="keyword">end</span>
+0086      polcoms.jday(ff,:,:) = jday/24;
+0087     
+0088 <span class="keyword">end</span>
+0089 <span class="comment">% Generate timerecord from filename and length of data</span>
+0090 polcoms.time=datenum(inputConf.modelYear,mm,1):1/24:(size(polcoms.jday,3)-1)/24+datenum(inputConf.modelYear,mm,1);
+0091 inputConf.PolcomsLevs=ndepths;
+0092 
+0093 <span class="comment">% read zetUBVB file to extract surface elevation</span>
+0094 [dumpstruct]=<a href="readzetUBVB.html" class="code" title="function [data]=readzetUBVB(opts,daysf)">readzetUBVB</a>(inputConf,ntimes);
+0095 polcoms=<a href="catstruct.html" class="code" title="function A = catstruct(varargin)">catstruct</a>(dumpstruct,polcoms);
+0096 polcoms.ndepths=ndepths;
+0097 polcoms.ntimes=ntimes;
+0098 <span class="keyword">return</span>
+0099 <span class="comment">% make surface timeseries of 2d variables (zet, ub and vb)</span>
+0100 <span class="comment">% build timeseries matrix for each variable</span>
+0101 
+0102 
+0103 <span class="comment">% output as netcdf file in expected format for latest FVCOM 3.2</span>
+0104 
+0105 <span class="comment">% Close the MATLAB pool if we opened it.</span>
+0106</pre></div>
+<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

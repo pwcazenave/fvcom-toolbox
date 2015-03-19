@@ -62,7 +62,8 @@
  Reivision history
    2013-11-05 First version.
    2014-07-08 Think I've fixed the issue with leap years and incorrectly
-   sized output temperature arrays with multiple years.</pre></div>
+   sized output temperature arrays with multiple years.
+   2014-09-02 Nope, I hadn't fixed leap years, but I might have now.</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -114,130 +115,129 @@ This function is called by:
 0035 <span class="comment">%   2013-11-05 First version.</span>
 0036 <span class="comment">%   2014-07-08 Think I've fixed the issue with leap years and incorrectly</span>
 0037 <span class="comment">%   sized output temperature arrays with multiple years.</span>
-0038 
-0039 subname = <span class="string">'get_EA_river_climatology'</span>;
-0040 
-0041 <span class="keyword">global</span> ftbverbose;
-0042 <span class="keyword">if</span> ftbverbose
-0043     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
-0044 <span class="keyword">end</span>
-0045 
-0046 <span class="comment">% Load the position (lon/lat), time, climatology and SiteType variables</span>
-0047 <span class="comment">% only. Not really bothered about the other variables.</span>
-0048 nc = netcdf.open(ea, <span class="string">'NOWRITE'</span>);
-0049 varid = netcdf.inqVarID(nc, <span class="string">'climatology'</span>);
-0050 climatology = netcdf.getVar(nc, varid, <span class="string">'single'</span>);
-0051 varid = netcdf.inqVarID(nc, <span class="string">'time'</span>);
-0052 time = netcdf.getVar(nc, varid, <span class="string">'single'</span>);
-0053 varid = netcdf.inqVarID(nc, <span class="string">'lon'</span>);
-0054 lon = netcdf.getVar(nc, varid, <span class="string">'single'</span>);
-0055 varid = netcdf.inqVarID(nc, <span class="string">'lat'</span>);
-0056 lat = netcdf.getVar(nc, varid, <span class="string">'single'</span>);
-0057 varid = netcdf.inqVarID(nc, <span class="string">'SiteType'</span>);
-0058 SiteType = netcdf.getVar(nc, varid);
-0059 netcdf.close(nc)
-0060 clear varid
-0061 
-0062 <span class="comment">% Remove any sites which aren't RIVER in SiteType. This is not pretty but</span>
-0063 <span class="comment">% relatively speedy, so it'll have to do.</span>
-0064 good = [];
-0065 <span class="keyword">for</span> i = 1:size(SiteType, 2)
-0066     <span class="keyword">if</span> strcmp(strtrim(SiteType(:, i)'), <span class="string">'RIVER'</span>)
-0067         good = [good, i];
-0068     <span class="keyword">end</span>
-0069 <span class="keyword">end</span>
-0070 
-0071 <span class="comment">% Clear out the bad sites.</span>
-0072 climatology = climatology(:, good);
-0073 lon = lon(good);
-0074 lat = lat(good);
-0075 
-0076 <span class="comment">% Now find the nearest nodes to the river node positions.</span>
-0077 nr = length(Mobj.river_nodes);
-0078 
-0079 clim = nan(length(time), nr);
-0080 
-0081 <span class="keyword">for</span> r = 1:nr
-0082     dist = sqrt((lon - Mobj.lon(Mobj.river_nodes(r))).^2 + (lat - Mobj.lat(Mobj.river_nodes(r))).^2);
-0083     [howclose, idx] = min(dist);
-0084 
-0085     <span class="keyword">if</span> howclose &gt; dist_thresh
-0086         <span class="comment">% Find the 30 closest sites and use their data instead.</span>
-0087         [~, idx] = sort(dist);
-0088         clim(:, r) = median(climatology(:, idx(1:30)), 2);
-0089     <span class="keyword">else</span>
-0090         <span class="comment">% Get the relevant climatology.</span>
-0091         clim(:, r) = climatology(:, idx);
-0092     <span class="keyword">end</span>
-0093 <span class="keyword">end</span>
-0094 
-0095 <span class="comment">% Now we have the climatologies for the relevant river nodes, we need to</span>
-0096 <span class="comment">% repeat it to fit the length of the Mobj.river_time array. Since the</span>
-0097 <span class="comment">% climatology data are for a year only, we need to find the correct index</span>
-0098 <span class="comment">% for the start and end of the Mobj.river_time array so that we don't put</span>
-0099 <span class="comment">% January temperature in July, for example.</span>
-0100 [yyyy, mm, dd, HH, MM, SS] = mjulian2greg(Mobj.river_time);
-0101 startday = (datenum(yyyy(1), mm(1), dd(1), HH(1), MM(1), SS(1)) - <span class="keyword">...</span>
-0102     datenum(min(yyyy), 1, 1, 0, 0, 0)) + 1; <span class="comment">% add offset of 1 for MATLAB indexing.</span>
-0103 warning(<span class="string">'Don''t know what''s going on with this here. Check the code to find the end day for the river climatology.'</span>)
-0104 
-0105 years = unique(yyyy);
-0106 ny = length(years);
-0107 <span class="keyword">if</span> ny == 1
-0108 
-0109     <span class="keyword">if</span> mod(years, 4) == 0
-0110         endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - <span class="keyword">...</span>
-0111             datenum(max(yyyy), 1, 1, 0, 0, 0)) + 1; <span class="comment">% add offset of 1 for MATLAB indexing.</span>
-0112     <span class="keyword">else</span>
-0113         endday = (datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - <span class="keyword">...</span>
-0114             datenum(max(yyyy), 1, 1, 0, 0, 0));
-0115     <span class="keyword">end</span>
-0116 
-0117     <span class="comment">% Subset the river climatology for the right days.</span>
-0118     repclim = clim(startday:endday, :);
-0119 <span class="keyword">else</span>
-0120     <span class="comment">% Otherwise build up the time series using the number of unique years</span>
-0121     <span class="comment">% we have.</span>
-0122     <span class="keyword">for</span> y = 1:ny
-0123         <span class="comment">% Find the number of days in this year and only extract that number</span>
-0124         <span class="comment">% from the climatology.</span>
-0125         tidx = 1:length(yyyy);
-0126         tidx(yyyy ~= years(y)) = [];
-0127         <span class="keyword">if</span> mod(years(y), 4) == 0
-0128             endday = (datenum(yyyy(tidx(end)), mm(tidx(end)), dd(tidx(end)), HH(tidx(end)), MM(tidx(end)), SS(tidx(end))) - <span class="keyword">...</span>
-0129                 datenum(max(yyyy(tidx)), 1, 1, 0, 0, 0)) + 1; <span class="comment">% add offset of 1 for MATLAB indexing.</span>
-0130         <span class="keyword">else</span>
-0131             endday = (datenum(yyyy(tidx(end)), mm(tidx(end)), dd(tidx(end)), HH(tidx(end)), MM(tidx(end)), SS(tidx(end))) - <span class="keyword">...</span>
-0132                 datenum(max(yyyy(tidx)), 1, 1, 0, 0, 0));
-0133         <span class="keyword">end</span>
-0134 
-0135         nd = sum(eomday(years(y), 1:12));
-0136         <span class="keyword">if</span> y == 1
-0137             <span class="comment">% This is the part year for the first year. Prepend the</span>
-0138             <span class="comment">% existing array with the number of days required.</span>
-0139             repclim = clim(startday:<span class="keyword">end</span>, :);
-0140         <span class="keyword">elseif</span> y == ny
-0141             repclim = [repclim; clim(1:endday, :)];
-0142         <span class="keyword">elseif</span> y ~= 1 || y ~= ny
-0143             <span class="comment">% We're in the middle years, so just repeat add the clim array</span>
-0144             <span class="comment">% to the end of the previous interation's.</span>
-0145             repclim = [repclim; clim];
-0146         <span class="keyword">end</span>
-0147 
-0148         <span class="comment">% We need to add an extra couple of day's data to the end of the</span>
-0149         <span class="comment">% array for this (leap) year.</span>
-0150         <span class="keyword">if</span> nd == 366
-0151             repclim = [repclim; repclim(end - 1:<span class="keyword">end</span>, :)];
-0152         <span class="keyword">end</span>
-0153     <span class="keyword">end</span>
-0154 <span class="keyword">end</span>
-0155 
-0156 <span class="comment">% Add the temperature climatology to Mobj.</span>
-0157 Mobj.river_temp = repclim;
-0158 
-0159 <span class="keyword">if</span> ftbverbose
-0160     fprintf(<span class="string">'end   : %s \n'</span>, subname)
-0161 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0038 <span class="comment">%   2014-09-02 Nope, I hadn't fixed leap years, but I might have now.</span>
+0039 
+0040 subname = <span class="string">'get_EA_river_climatology'</span>;
+0041 
+0042 <span class="keyword">global</span> ftbverbose;
+0043 <span class="keyword">if</span> ftbverbose
+0044     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0045 <span class="keyword">end</span>
+0046 
+0047 <span class="comment">% Load the position (lon/lat), time, climatology and SiteType variables</span>
+0048 <span class="comment">% only. Not really bothered about the other variables.</span>
+0049 nc = netcdf.open(ea, <span class="string">'NOWRITE'</span>);
+0050 varid = netcdf.inqVarID(nc, <span class="string">'climatology'</span>);
+0051 climatology = netcdf.getVar(nc, varid, <span class="string">'single'</span>);
+0052 varid = netcdf.inqVarID(nc, <span class="string">'time'</span>);
+0053 time = netcdf.getVar(nc, varid, <span class="string">'single'</span>);
+0054 varid = netcdf.inqVarID(nc, <span class="string">'lon'</span>);
+0055 lon = netcdf.getVar(nc, varid, <span class="string">'single'</span>);
+0056 varid = netcdf.inqVarID(nc, <span class="string">'lat'</span>);
+0057 lat = netcdf.getVar(nc, varid, <span class="string">'single'</span>);
+0058 varid = netcdf.inqVarID(nc, <span class="string">'SiteType'</span>);
+0059 SiteType = netcdf.getVar(nc, varid);
+0060 netcdf.close(nc)
+0061 clear varid
+0062 
+0063 <span class="comment">% Remove any sites which aren't RIVER in SiteType. This is not pretty but</span>
+0064 <span class="comment">% relatively speedy, so it'll have to do.</span>
+0065 good = [];
+0066 <span class="keyword">for</span> i = 1:size(SiteType, 2)
+0067     <span class="keyword">if</span> strcmp(strtrim(SiteType(:, i)'), <span class="string">'RIVER'</span>)
+0068         good = [good, i];
+0069     <span class="keyword">end</span>
+0070 <span class="keyword">end</span>
+0071 
+0072 <span class="comment">% Clear out the bad sites.</span>
+0073 climatology = climatology(:, good);
+0074 lon = lon(good);
+0075 lat = lat(good);
+0076 
+0077 <span class="comment">% Now find the nearest nodes to the river node positions.</span>
+0078 nr = length(Mobj.river_nodes);
+0079 
+0080 clim = nan(length(time), nr);
+0081 
+0082 <span class="keyword">for</span> r = 1:nr
+0083     dist = sqrt((lon - Mobj.lon(Mobj.river_nodes(r))).^2 + (lat - Mobj.lat(Mobj.river_nodes(r))).^2);
+0084     [howclose, idx] = min(dist);
+0085 
+0086     <span class="keyword">if</span> howclose &gt; dist_thresh
+0087         <span class="comment">% Find the 30 closest sites and use their data instead.</span>
+0088         [~, idx] = sort(dist);
+0089         clim(:, r) = median(climatology(:, idx(1:30)), 2);
+0090     <span class="keyword">else</span>
+0091         <span class="comment">% Get the relevant climatology.</span>
+0092         clim(:, r) = climatology(:, idx);
+0093     <span class="keyword">end</span>
+0094 <span class="keyword">end</span>
+0095 
+0096 <span class="comment">% Since the EA climatology is only 365 days long, add the mean of</span>
+0097 <span class="comment">% the first and last days to the end of the time series for leap</span>
+0098 <span class="comment">% years.</span>
+0099 clim = [clim; mean([clim(1, :); clim(<span class="keyword">end</span>, :)])];
+0100 
+0101 <span class="comment">% Now we have the climatologies for the relevant river nodes, we need to</span>
+0102 <span class="comment">% repeat it to fit the length of the Mobj.river_time array. Since the</span>
+0103 <span class="comment">% climatology data are for a year only, we need to find the correct index</span>
+0104 <span class="comment">% for the start and end of the Mobj.river_time array so that we don't put</span>
+0105 <span class="comment">% January temperature in July, for example.</span>
+0106 [yyyy, mm, dd, HH, MM, SS] = mjulian2greg(Mobj.river_time);
+0107 startday = (datenum(yyyy(1), mm(1), dd(1), HH(1), MM(1), SS(1)) - <span class="keyword">...</span>
+0108     datenum(min(yyyy), 1, 1, 0, 0, 0)) + 1; <span class="comment">% add offset of 1 for MATLAB indexing.</span>
+0109 warning(<span class="string">'Don''t know what''s going on with this here. Check the code to find the end day for the river climatology.'</span>)
+0110 
+0111 years = unique(yyyy);
+0112 ny = length(years);
+0113 <span class="keyword">if</span> ny == 1
+0114     <span class="comment">% Offset time series by 1 day to get a full year (365/366 days).</span>
+0115     endday = (1 + datenum(yyyy(end), mm(end), dd(end), HH(end), MM(end), SS(end)) - <span class="keyword">...</span>
+0116         datenum(max(yyyy), 1, 1, 0, 0, 0));
+0117 
+0118     <span class="comment">% Subset the river climatology for the right days.</span>
+0119     repclim = clim(startday:endday, :);
+0120 <span class="keyword">else</span>
+0121     <span class="comment">% Otherwise build up the time series using the number of unique years</span>
+0122     <span class="comment">% we have.</span>
+0123     <span class="keyword">for</span> y = 1:ny
+0124         <span class="comment">% Find the number of days in this year and only extract that number</span>
+0125         <span class="comment">% from the climatology.</span>
+0126         tidx = 1:length(yyyy);
+0127         tidx(yyyy ~= years(y)) = [];
+0128         <span class="comment">% Offset time series by 1 day to get a full year (365/366 days).</span>
+0129         endday = (1 + datenum(yyyy(tidx(end)), mm(tidx(end)), dd(tidx(end)), HH(tidx(end)), MM(tidx(end)), SS(tidx(end))) - <span class="keyword">...</span>
+0130             datenum(max(yyyy(tidx)), 1, 1, 0, 0, 0));
+0131 
+0132         nd = sum(eomday(years(y), 1:12));
+0133         <span class="keyword">if</span> y == 1
+0134             <span class="comment">% This is the part year for the first year. Prepend the</span>
+0135             <span class="comment">% existing array with the number of days required.</span>
+0136             repclim = clim(startday:<span class="keyword">end</span>, :);
+0137         <span class="keyword">elseif</span> y == ny
+0138             repclim = [repclim; clim(1:endday, :)];
+0139         <span class="keyword">elseif</span> y ~= 1 || y ~= ny
+0140             <span class="comment">% We're in the middle years, so just repeat add the clim array</span>
+0141             <span class="comment">% to the end of the previous interation's.</span>
+0142             repclim = [repclim; clim];
+0143         <span class="keyword">end</span>
+0144 
+0145         <span class="comment">% We sometimes need to add an extra couple of day's data to the end</span>
+0146         <span class="comment">% of the array for this (leap) year. A recent fix to the code above</span>
+0147         <span class="comment">% should have made this obsolete, but you never know...</span>
+0148         <span class="keyword">if</span> nd == 366
+0149             backidx = 366 - nd;
+0150             repclim = [repclim; repclim(end - backidx:<span class="keyword">end</span>, :)];
+0151         <span class="keyword">end</span>
+0152     <span class="keyword">end</span>
+0153 <span class="keyword">end</span>
+0154 
+0155 <span class="comment">% Add the temperature climatology to Mobj.</span>
+0156 Mobj.river_temp = repclim;
+0157 
+0158 <span class="keyword">if</span> ftbverbose
+0159     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0160 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
