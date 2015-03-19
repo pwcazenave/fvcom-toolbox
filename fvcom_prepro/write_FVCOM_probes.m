@@ -12,7 +12,9 @@ function write_FVCOM_probes(nml_file, interval, probes)
 %   interval - output interval (in seconds)
 %   probe - struct of structs with fields whose names are the probe title.
 %   Each probe struct must have the following fields:
-%       node        - unstructured grid node number.
+%       node        - unstructured grid node ID (for all scalars except u
+%           and v).
+%       elem        - unstructured grid element ID (for u and v only).
 %       file        - file name for the current probe's output. If the
 %           'variable' field is a cell array of multiple variables, each
 %           output file name will have the variable name appended (e.g.
@@ -39,6 +41,7 @@ function write_FVCOM_probes(nml_file, interval, probes)
 % EXAMPLE USAGE:
 %   probes.newlyn.file = 'newlyn_elev.dat';
 %   probes.newlyn.node = 1045;
+%   probes.newlyn.elem = 467;
 %   probes.newlyn.description = 'Elevation at Newlyn';
 %   probes.newlyn.variable = 'el';
 %   probes.newlyn.longname = 'Surface elevation (m)';
@@ -65,6 +68,10 @@ function write_FVCOM_probes(nml_file, interval, probes)
 %
 % Revision history:
 %   2014-02-10 - First version.
+%   2015-01-14 - Fix export of the u and v locations to use the closest
+%   element instead of the node ID. Using the node ID for the u and v data
+%   will yield velocity time series miles away from the actual location of
+%   interest.
 %
 %==========================================================================
 
@@ -103,7 +110,11 @@ for p = 1:np
         file = fullfile(pathstr, name);
         fprintf(f, '&NML_PROBE\n');
         fprintf(f, ' PROBE_INTERVAL = "seconds=%.1f",\n', interval);
-        fprintf(f, ' PROBE_LOCATION = %i,\n', probes.(fnames{p}).node);
+        if any(strcmpi(vname, {'u', 'v'}))
+            fprintf(f, ' PROBE_LOCATION = %i,\n', probes.(fnames{p}).elem);
+        else
+            fprintf(f, ' PROBE_LOCATION = %i,\n', probes.(fnames{p}).node);
+        end
         fprintf(f, ' PROBE_TITLE = "%s",\n', file);
         % If we've got something which is vertically resolved, output the
         % vertical levels.

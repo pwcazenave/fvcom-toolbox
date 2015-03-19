@@ -579,7 +579,17 @@ for aa = 1:length(fields)
             % [~,length3] = netcdf.inqDim(ncid,dimids(3))
             start=[min(index_lon)-1,min(index_lat)-1,min(data_time_idx)-1];
             count=[length(index_lon),length(index_lat),length(data_time_idx)];
-            data1.(fields{aa}).(fields{aa}).(fields{aa}) = netcdf.getVar(ncid,varid,start,count,'double');
+            % The air data was failing with a three long start and count
+            % array, so try first without (to retain original behaviour for
+            % other potentially unaffected variables) but fall back to
+            % getting only the first level (start = 0, count = 1).
+            try
+                data1.(fields{aa}).(fields{aa}).(fields{aa}) = netcdf.getVar(ncid,varid,start,count,'double');
+            catch
+                start=[min(index_lon)-1,min(index_lat)-1,0,min(data_time_idx)-1];
+                count=[length(index_lon),length(index_lat),1,length(data_time_idx)];
+                data1.(fields{aa}).(fields{aa}).(fields{aa}) = netcdf.getVar(ncid,varid,start,count,'double');
+            end
 
         else
             eval(['data1.(fields{aa}) = loaddap(''', ncep.(fields{aa}),'?',...
