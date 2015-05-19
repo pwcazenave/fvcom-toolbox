@@ -91,9 +91,7 @@ else
         max(Mobj.lat(:)) + dy];
 end
 
-% if modelTime(end) - modelTime(1) > 365
-%     error('Can''t (yet) process more than a year at a time.')
-% end
+% Create year and month arrays for the period we've been given.
 [yyyy, mm, dd, HH, MM, SS] = mjulian2greg(modelTime);
 dates = datenum([yyyy; mm; dd; HH; MM; SS]');
 serial = dates(1):dates(2);
@@ -562,7 +560,7 @@ end
 
 % Have a look at some data.
 % [X, Y] = meshgrid(data.lon, data.lat);
-% for i=1:size(data.uwnd.data, 3)
+% for i = 1:size(data.uwnd.data, 3)
 %     figure(1)
 %     clf
 %     uv = sqrt(data.uwnd.data(:, :, i).^2 + data.vwnd.data(:, :, i).^2);
