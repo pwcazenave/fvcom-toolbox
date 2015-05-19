@@ -549,7 +549,9 @@ for f = 1:length(fields)
             % at n (i.e. 0).
             for n = 1:5
                 if t + n <= nt
-                    fixed(:, :, t + n) = (n * data(:, :, t + n)) - ((n - 1) * data(:, :, t + n - 1));
+                    fixed(:, :, t + n) = ...
+                        (n * data.(fields{f}).data(:, :, t + n)) - ...
+                        ((n - 1) * data.(fields{f}).data(:, :, t + n - 1));
                 end
             end
         end
