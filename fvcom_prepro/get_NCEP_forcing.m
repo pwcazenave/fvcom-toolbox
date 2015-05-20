@@ -202,7 +202,6 @@ switch src
         ncep.dswrf = [url, 'surface_gauss/dswrf.sfc.gauss.', num2str(year),'.nc'];
         ncep.uswrf = [url, 'surface_gauss/uswrf.sfc.gauss.', num2str(year),'.nc'];
         ncep.dlwrf = [url, 'surface_gauss/dlwrf.sfc.gauss.', num2str(year),'.nc'];
-        ncep.ulwrf = [url, 'surface_gauss/ulwrf.sfc.gauss.', num2str(year),'.nc'];
 
     case 'reanalysis2'
         url = 'http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis2/';
@@ -241,7 +240,6 @@ switch src
         ncep.dswrf  = [url, 'gaussian_grid/dswrf.sfc.gauss.', num2str(year), '.nc'];
         ncep.uswrf  = [url, 'gaussian_grid/uswrf.sfc.gauss.', num2str(year), '.nc'];
         ncep.dlwrf  = [url, 'gaussian_grid/dlwrf.sfc.gauss.', num2str(year), '.nc'];
-        ncep.ulwrf  = [url, 'gaussian_grid/ulwrf.sfc.gauss.', num2str(year), '.nc'];
     case '20thC'
         % Set up a struct of the NCEP remote locations in which we're interested.
         url = 'http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/20thC_ReanV2/';
@@ -276,11 +274,10 @@ switch src
         ncep.dswrf  = [url, 'gaussian/monolevel/dswrf.sfc.', num2str(year), '.nc'];
         ncep.uswrf  = [url, 'gaussian/monolevel/uswrf.sfc.', num2str(year), '.nc'];
         ncep.dlwrf  = [url, 'gaussian/monolevel/dlwrf.sfc.', num2str(year), '.nc'];
-        ncep.ulwrf  = [url, 'gaussian/monolevel/ulwrf.sfc.', num2str(year), '.nc'];
     otherwise
         error('Unrecognised ''source'' type. Valid values are ''reanalysis1'', ''reanalysis2'', ''20thC''.')
 end
-            
+
 fields = fieldnames(ncep);
 
 for aa = 1:length(fields)
