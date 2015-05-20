@@ -471,112 +471,6 @@ for t = 1:nt
             end
         end
     end
-
-    % Calculate the net long and shortwave radiation fluxes.
-    if isfield(data, 'uswsfc') && isfield(data, 'dswsfc')
-        data.nswsfc.data = data.uswsfc.data - data.dswsfc.data;
-        data.nswsfc.time = data.uswsfc.time;
-        data.nswsfc.lon = data.uswsfc.lon;
-        data.nswsfc.lat = data.uswsfc.lat;
-    end
-
-    % Convert precipitation from kg/m^2/s to m/s (required by FVCOM) by
-    % dividing by freshwater density (kg/m^3).
-    if isfield(data, 'prate')
-        data.prate.data = data.prate.data / 1000;
-    end
-
-    % Evaporation can be approximated by:
-    %
-    %   E(m/s) = lhtfl/Llv/rho
-    %
-    % where:
-    %
-    %   lhtfl   = "Mean daily latent heat net flux at the surface"
-    %   Llv     = Latent heat of vaporization (approx to 2.5*10^6 J kg^-1)
-    %   rho     = 1025 kg/m^3
-    %
-    if isfield(data, 'prate') && isfield(data, 'lhtfl')
-        Llv = 2.5 * 10^6;
-        rho = 1025; % using a typical value for seawater.
-        Et = data.lhtfl.data / Llv / rho;
-        data.P_E.data = data.prate.data - Et;
-        % Evaporation and precipitation need to have the same sign for
-        % FVCOM (ocean losing water is negative in both instances). So,
-        % flip the evaporation here.
-        data.Et.data = -Et;
-    end
-
-    % Get the fields we need for the subsequent interpolation. Find the
-    % position of a sensibly sized array (i.e. not 'topo', 'rhum' or
-    % 'pres').
-    for vv = 1:length(fields)
-        if ~isempty(varlist) && max(strcmp(fields{vv}, varlist)) ~= 1
-            continue
-        end
-
-        switch fields{vv}
-            % Set ii in each instance in case we've been told to only
-            % use one of the three (four including pres and press)
-            % alternatively gridded data.
-            case {'topo', 'rhum', 'pres', 'press'}
-                ii = vv;
-                continue
-            otherwise
-                % We've got one, so stop looking.
-                ii = vv;
-                break
-        end
-    end
-    data.lon = data.(fields{ii}).lon;
-    data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
-    data.lat = data.(fields{ii}).lat;
-
-    % Convert temperature to degrees Celsius (from Kelvin)
-    if isfield(data, 'tmp2m')
-        data.tmp2m.data = data.tmp2m.data - 273.15;
-    end
-
-    % Make sure all the data we have downloaded are the same shape as
-    % the longitude and latitude arrays.
-    for aa = 1:length(fields)
-        if ~isempty(varlist) && max(strcmp(fields{aa}, varlist)) ~= 1
-            % We've been given a list of variables to extract, so skip those
-            % that aren't in that list
-            continue
-        else
-            if isfield(data, fields{aa})
-                [px, py] = deal(length(data.(fields{aa}).lon), length(data.(fields{aa}).lat));
-                [ncx, ncy, ~] = size(data.(fields{aa}).data);
-                if ncx ~= px || ncy ~= py
-                    data.(fields{aa}).data = permute(data.(fields{aa}).data, [2, 1, 3]);
-
-                    % Check everything's OK now.
-                    [ncx, ncy, ~] = size(data.(fields{aa}).data);
-                    if ncx ~= px || ncy ~= py
-                        error('Unable to resize data arrays to match position data orientation. Are these on a different horizontal grid?')
-                    else
-                        if ftbverbose
-                            fprintf('Matching %s data and position array dimensions\n', fields{aa})
-                        end
-                    end
-                end
-            else
-                warning('Variable %s requested but not downloaded.', fields{aa})
-            end
-        end
-    end
-end
-% Concatenate each year's worth of data.
-for aa = 1:length(fields)
-    if exist('forcing', 'var') && isfield(forcing, (fields{aa}))
-        forcing.(fields{aa}).data = cat(3, forcing.(fields{aa}).data, data.(fields{aa}).data);
-        forcing.(fields{aa}).time = cat(1, forcing.(fields{aa}).time, data.(fields{aa}).time);
-        forcing.(fields{aa}).lon = data.(fields{aa}).lon;
-        forcing.(fields{aa}).lat = data.(fields{aa}).lat;
-    else
-        forcing = data;
-    end
 end
 
 % Now we have the data, we need to fix the averaging to be hourly instead
@@ -606,6 +500,111 @@ for f = 1:length(fields)
         end
         data.(fields{f}).data = fixed;
         clearvars fixed
+        if ftbverbose; fprintf('done.\n'); end
+    end
+end
+
+% Calculate the net long and shortwave radiation fluxes.
+if isfield(data, 'uswsfc') && isfield(data, 'dswsfc')
+    data.nswsfc.data = data.uswsfc.data - data.dswsfc.data;
+    data.nswsfc.time = data.uswsfc.time;
+    data.nswsfc.lon = data.uswsfc.lon;
+    data.nswsfc.lat = data.uswsfc.lat;
+end
+
+% Convert precipitation from kg/m^2/s to m/s (required by FVCOM) by
+% dividing by freshwater density (kg/m^3).
+if isfield(data, 'prate')
+    data.prate.data = data.prate.data / 1000;
+end
+
+% Evaporation can be approximated by:
+%
+%   E(m/s) = lhtfl/Llv/rho
+%
+% where:
+%
+%   lhtfl   = "Mean daily latent heat net flux at the surface"
+%   Llv     = Latent heat of vaporization (approx to 2.5*10^6 J kg^-1)
+%   rho     = 1025 kg/m^3
+%
+if isfield(data, 'prate') && isfield(data, 'lhtfl')
+    Llv = 2.5 * 10^6;
+    rho = 1025; % using a typical value for seawater.
+    Et = data.lhtfl.data / Llv / rho;
+    data.P_E.data = data.prate.data - Et;
+    % Evaporation and precipitation need to have the same sign for FVCOM
+    % (ocean losing water is negative in both instances). So, flip the
+    % evaporation here.
+    data.Et.data = -Et;
+end
+
+% Get the fields we need for the subsequent interpolation. Find the
+% position of a sensibly sized array (i.e. not 'topo', 'rhum' or 'pres').
+for vv = 1:length(fields)
+    if ~isempty(varlist) && max(strcmp(fields{vv}, varlist)) ~= 1
+        continue
+    end
+
+    switch fields{vv}
+        % Set ii in each instance in case we've been told to only use one
+        % of the three (four including pres and press) alternatively
+        % gridded data.
+        case {'topo', 'rhum', 'pres', 'press'}
+            ii = vv;
+            continue
+        otherwise
+            % We've got one, so stop looking.
+            ii = vv;
+            break
+    end
+end
+data.lon = data.(fields{ii}).lon;
+data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
+data.lat = data.(fields{ii}).lat;
+
+% Convert temperature to degrees Celsius (from Kelvin)
+if isfield(data, 'tmp2m')
+    data.tmp2m.data = data.tmp2m.data - 273.15;
+end
+
+% Convert specific humidity to relative humidity.
+if isfield(data, 'q2m') && isfield(data, 'tmp2m') && isfield(data, 'pressfc')
+    % Convert pressure from Pascals to millibars. Save relative humidity as
+    % percentage. Convert specific humidity to percent too.
+    data.rhum.data = 100 * qair2rh(data.q2m.data, data.tmp2m.data, data.pressfc.data / 100);
+end
+if isfield(data, 'q2m')
+    data.q2m.data = 100 * data.q2m.data;
+end
+
+% Make sure all the data we have downloaded are the same shape as the
+% longitude and latitude arrays.
+for aa = 1:length(fields)
+    if ~isempty(varlist) && max(strcmp(fields{aa}, varlist)) ~= 1
+        % We've been given a list of variables to extract, so skip those
+        % that aren't in that list
+        continue
+    else
+        if isfield(data, fields{aa})
+            [px, py] = deal(length(data.(fields{aa}).lon), ...
+                length(data.(fields{aa}).lat));
+            [ncx, ncy, ~] = size(data.(fields{aa}).data);
+            if ncx ~= px || ncy ~= py
+                data.(fields{aa}).data = ...
+                    permute(data.(fields{aa}).data, [2, 1, 3]);
+
+                % Check everything's OK now.
+                [ncx, ncy, ~] = size(data.(fields{aa}).data);
+                if ncx ~= px || ncy ~= py
+                    error(['Unable to resize data arrays to match ', ...
+                        'position data orientation. Are these on a ', ...
+                        'different horizontal grid?'])
+                end
+            end
+        else
+            warning('Variable %s requested but not downloaded.', fields{aa})
+        end
     end
 end
 
