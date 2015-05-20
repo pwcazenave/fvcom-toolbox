@@ -285,18 +285,6 @@ for t = 1:nt
 
     for aa = 1:length(fields)
 
-    %     % Skip the downward/upward arrays (most of the time we'll be using the
-    %     % NCEP-provided net values).
-    %     if strcmpi(fields{aa}, 'dswrf') || strcmpi(fields{aa}, 'dlwrf') || strcmpi(fields{aa}, 'uswrf') || strcmpi(fields{aa}, 'ulwrf')
-    %         if ftbverbose
-    %             fprintf('skipping.\n')
-    %         end
-    %         % But only if we haven't been given a list of variables to fetch.
-    %         if nargin ~= 3
-    %             continue
-    %         end
-    %     end
-
         % We've been given a list of variables to do, so skip those that aren't
         % in the list.
         if ~isempty(varlist) && max(strcmp(fields{aa}, varlist)) ~= 1
