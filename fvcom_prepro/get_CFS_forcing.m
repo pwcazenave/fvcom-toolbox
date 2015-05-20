@@ -235,8 +235,18 @@ for t = 1:nt
             timevec(:, 4), ...
             timevec(:, 5), ...
             timevec(:, 6));
-        % Clip the time to the given range.
-        data_time_mask = scratch.time >= modelTime(1) & scratch.time <= modelTime(end);
+        % Clip the time to the given range. Because of some oddness with
+        % some variables giving data beyond the end of the month whilst
+        % others don't, set the limits in time for each month to be the
+        % first/last day of the month or the modelTime start/end, whichever
+        % is larger/smaller.
+        startTime = max([modelTime(1), ...
+            greg2mjulian(year, month, 1, 0, 0, 0)]);
+        % Offset end by one day to capture the right number of days
+        % (midnight falls at the beginning of the specified day).
+        endTime = min([modelTime(end), ...
+            greg2mjulian(year, month, eomday(year, month), 0, 0, 0) + 1]);
+        data_time_mask = scratch.time >= startTime & scratch.time < endTime;
         data_time_idx = 1:size(scratch.time, 1);
         data_time_idx = data_time_idx(data_time_mask);
         if ~isempty(data_time_idx)
@@ -244,16 +254,21 @@ for t = 1:nt
         else
             % Reset the index to its original size. This is for data
             % with only a single time stamp which falls outside the
-            % model time. Only reset it when the length of the
-            % input time is equal to 1.
+            % model time.
             if length(scratch.time) == 1
                 data_time_idx = 1:size(scratch.time, 1);
             end
         end
 
-        % Check the times
-        %[yyyy, mm, dd, hh, MM, ss] = mjulian2greg(scratch.time(1))
-        %[yyyy, mm, dd, hh, MM, ss] = mjulian2greg(scratch.time(end))
+        % Check the times.
+        % [y, m, d, hh, mm, ss] = mjulian2greg(scratch.time);
+        % fprintf('(%s - %s) ', ...
+        %     datestr([y(1),m(1),d(1),hh(1),mm(1),ss(1)], ...
+        %         'yyyy-mm-dd HH:MM:SS'), ...
+        %     datestr([y(end),m(end),d(end),hh(end),mm(end),ss(end)], ...
+        %         'yyyy-mm-dd HH:MM:SS'))
+        % clearvars y m d hh mm ss oftv
+
         % Get the data in two goes, once for the end of the grid (west of
         % Greenwich), once for the beginning (east of Greenwich), and then
         % stick the two bits together.
@@ -448,8 +463,6 @@ for t = 1:nt
         data.(fields{aa}).lat = scratch.(fields{aa}).lat;
         data.(fields{aa}).lon = scratch.(fields{aa}).lon;
 
-        [y,m,d,hh,mm,ss] = mjulian2greg(data.(fields{aa}).time);
-        datestr([y,m,d,hh,mm,ss])
         if ftbverbose
             if isfield(data, fields{aa})
                 fprintf('done.\n')
