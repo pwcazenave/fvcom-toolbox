@@ -31,14 +31,14 @@ function data = get_NCEP_forcing(Mobj, modelTime, varargin)
 % The parameters which can be obtained from the NCEP data are:
 %     - u wind component (uwnd)
 %     - v wind component (vwnd)
-%     - Net longwave radiation surface (nlwrs = ulwrf - dlwrf)
+%     - Downward longwave radiation surface (dlwrf)
 %     - Net shortwave radiation surface (nswrs = uswrf - dswrf)
 %     - Air temperature (air)
 %     - Relative humidity (rhum)
 %     - Precipitation rate (prate)
 %     - Sea level pressure (pres or press)
 %     - Latent heat flux (lhtfl)
-%     - Surface heat flux (shtfl)
+%     - Sensible heat flux (shtfl)
 %     - Potential evaporation rate (pevpr)
 %     - Topography (topo)
 %
@@ -58,9 +58,9 @@ function data = get_NCEP_forcing(Mobj, modelTime, varargin)
 %   To only download wind data:
 %
 %       forcing = get_NCEP_forcing(Mobj, [51345, 51376], 'varlist', {'uwnd', 'vwnd'});
-% 
+%
 %   To use the 20th Century Reanalysis 2 data:
-% 
+%
 %       forcing = get_NCEP_forcing(Mobj, [51345, 51376], 'source', '20thC');
 %
 % REQUIRES:
