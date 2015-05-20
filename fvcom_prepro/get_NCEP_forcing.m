@@ -166,17 +166,20 @@ else
     extents = [min(Mobj.lon(:))-(2*dx), max(Mobj.lon(:))+(2*dx), min(Mobj.lat(:))-dy, max(Mobj.lat(:))+dy];
 end
 
-if modelTime(end) - modelTime(1) > 365
-    error('Can''t (yet) process more than a year at a time.')
-end
+% if modelTime(end) - modelTime(1) > 365
+%     error('Can''t (yet) process more than a year at a time.')
+% end
 
-yearStart = mjulian2greg(modelTime(1));
-yearEnd = mjulian2greg(modelTime(end));
-if yearEnd ~= yearStart
-    error('Can''t (yet) process across a year boundary.')
-else
-    year = yearEnd;
-end
+% Create year and month arrays for the period we've been given.
+[yyyy, mm, dd, HH, MM, SS] = mjulian2greg(modelTime);
+dates = datenum([yyyy; mm; dd; HH; MM; SS]');
+serial = dates(1):dates(2);
+[years, ~, ~, ~, ~, ~] = datevec(serial);
+years = unique(years, 'stable');
+nt = length(years);
+
+for t = 1:nt
+    year = years(t);
 
 % Set up a struct of the NCEP remote locations in which we're interested.
 % This list depends on the value of src (default is reanalysis2).
@@ -635,7 +638,7 @@ for aa = 1:length(fields)
         end
     end
 end
-
+end
 % Calculate the net long and shortwave radiation fluxes.
 if isfield(data, 'ulwrf') && isfield(data, 'uswrf') && isfield(data, 'dlwrf') && isfield(data, 'dswrf')
     vars = {'nswrs', 'nlwrs'};
