@@ -306,7 +306,7 @@ for aa = 1:length(fields)
     if ftbverbose
         fprintf('getting ''%s'' data... ', fields{aa})
     end
-    
+
     data.(fields{aa}).data = [];
     data.(fields{aa}).time = [];
     data.(fields{aa}).lat = [];
@@ -376,7 +376,7 @@ for aa = 1:length(fields)
         end
 
         if strcmpi(src, 'reanalysis1')
-            timevec = datevec((data_time.time)/24+365);
+            timevec = datevec((data_time.time) / 24 + 365);
         else
             timevec = datevec((data_time.time / 24) + datenum(1800, 1, 1, 0, 0, 0));
         end
@@ -387,7 +387,7 @@ for aa = 1:length(fields)
         data_time = loaddap([ncep.(fields{aa}),'?time']);
         data_attributes.(fields{aa}) = loaddap('-A',[ncep.(fields{aa})]);
         if strcmpi(src, 'reanalysis1')
-            timevec = datevec((data_time.time)/24+365);
+            timevec = datevec((data_time.time) / 24 + 365);
         else
             timevec = datevec((data_time.time / 24) + datenum(1800, 1, 1, 0, 0, 0));
         end
@@ -445,12 +445,12 @@ for aa = 1:length(fields)
     elseif extents(1) < 0 && extents(2) > 0
         % This is the tricky one. We'll do two passes to extract the
         % western chunk first (extents(1)+360 to 360), then the eastern
-        % chunk (0-extents(2))
+        % chunk (0-extents(2)).
         index_lon{1} = find(data_lon.lon >= extents(1) + 360);
         index_lon{2} = find(data_lon.lon <= extents(2));
     else
         % Dead easy, we're in the eastern hemisphere, so nothing too
-        % strenuous here
+        % strenuous here.
         index_lon = find(data_lon.lon > extents(1) & data_lon.lon < extents(2));
     end
 
@@ -462,7 +462,7 @@ for aa = 1:length(fields)
     if iscell(index_lon)
         data.(fields{aa}).lon = data_lon.lon(cat(1,index_lon{:}));
 
-        % We need to do each half and merge them
+        % We need to do each half and merge them.
         if native_netcdf
             % varidlon = netcdf.inqVarID(ncid,'lon');
             % varidtime = netcdf.inqVarID(ncid,'time');
@@ -498,7 +498,7 @@ for aa = 1:length(fields)
                 count = [length(index_lon{2}), length(index_lat), length(data_time_idx)];
             end
             data1_east.(fields{aa}).(fields{aa}) = netcdf.getVar(ncid, varid, start, count, 'double');
-            
+
             data1.(fields{aa}).(fields{aa}).(fields{aa}) = ...
                 cat(1, data1_west.(fields{aa}).(fields{aa}), data1_east.(fields{aa}).(fields{aa}));
 
@@ -521,7 +521,7 @@ for aa = 1:length(fields)
                 num2str(max(data_time_idx)-1), '][',...
                 num2str(min(index_lat)-1), ':', num2str(max(index_lat)-1),...
                 '][', '0', ':', num2str(max(index_lon{2})-1), ']'');']);
-            
+
             if strcmpi(fields{aa}, 'topo')
                 data1_east.(fields{aa}).(fields{aa}) = data1_east(fields{aa}).(tmpvarname);
                 data1_west.(fields{aa}).(fields{aa}) = data1_west(fields{aa}).(tmpvarname);
@@ -607,7 +607,7 @@ for aa = 1:length(fields)
     % Fix the longitude ranges for all data.
     data.(fields{aa}).lon(data.(fields{aa}).lon > 180) = ...
         data.(fields{aa}).lon(data.(fields{aa}).lon > 180) - 360;
-    
+
     data.(fields{aa}).data = datatmp;
     data.(fields{aa}).time = data.time;
     data.(fields{aa}).unpacked_valid_range = ...
@@ -788,7 +788,7 @@ end
 % end
 
 if ftbverbose
-    fprintf(['end   : ' subname '\n'])
+    fprintf('end   : %s\n', subname)
 end
 
 return
