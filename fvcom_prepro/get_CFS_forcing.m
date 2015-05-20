@@ -1,11 +1,12 @@
 function data = get_CFS_forcing(Mobj, modelTime, varargin)
-% Get the required parameters from CFSv2 products to force FVCOM.
+% Get the required parameters from CFSv2 reanalysis products to force
+% FVCOM.
 %
 % data = get_CFS_forcing(Mobj, modelTime)
 %
 % DESCRIPTION:
-%   Using OPeNDAP, extract the necessary parameters to create an FVCOM
-%   forcing file. Requires the air_sea toolbox.
+%   Using the NOAA OPeNDAP server, extract the necessary parameters to
+%   create an FVCOM forcing file.
 %
 % INPUT:
 %   Mobj - MATLAB mesh object. Must contain fields:
@@ -13,30 +14,33 @@ function data = get_CFS_forcing(Mobj, modelTime, varargin)
 %       have_lonlat - boolean to signify whether coordinates are spherical
 %                   or cartesian.
 %   modelTime - Modified Julian Date start and end times
-%   varargin - parameter/value pairs
+%   varargin - optional parameter/value pairs:
 %       - list of variables to extract:
-%           'varlist', {'nshf', 'uwnd', 'vwnd'}
+%           'varlist', {'tmp2m', 'uwnd', 'vwnd'}
 %
 % OUTPUT:
 %   data - struct of the data necessary to force FVCOM. These can be
 %   interpolated onto an unstructured grid in Mobj using grid2fvcom.m.
+%   Contains vectors of the longitude and latitude data (lon, lat).
 %
 % The parameters which can be obtained from the NCEP data are:
-%     - u wind component (uwnd)
-%     - v wind component (vwnd)
-%     - Downward longwave radiation surface (dlwrf)
-%     - Net shortwave radiation surface (nswrs = uswrf - dswrf)
-%     - Air temperature (air)
-%     - Relative humidity (rhum)
-%     - Precipitation rate (prate)
-%     - Surface pressure (pres or press)
-%     - Latent heat flux (lhtfl)
-%     - Potential evaporation rate (pevpr)
+%     - Net shortwave radiation surface (nswrs = uswrf - dswrf) [surface]
+%     - Downward longwave radiation surface (dlwrf) [surface]
+%     - Surface pressure (pressfc) [surface]
+%     - u wind component (uwnd) [10m]
+%     - v wind component (vwnd) [10m]
+%     - Air temperature (tmp2m) [2m]
+%     - Precipitation rate (prate) [surface]
+%     - Specific humidity (q2m) [2m]
+%     - Relative humidity (rhum) [2m] - calculated from q2m.
+%     - Latent heat flux (lhtfl) [surface]
+%     - Evaporation rate (Et) [surface]
 %
-% In addition to these, the momentum flux (tau) is calculated from wind
-% data. Precipitation is converted from kg/m^2/s to m/s. Evaporation (Et)
-% is calculated from the mean daily latent heat net flux (lhtfl) at the
-% surface. Precipitation-evaporation is also created (P_E).
+% Relative humidity is calculated from specific humidity with the QAIR2RH
+% function (see fvcom-toolbox/utilities). Precipitation is converted from
+% kg/m^2/s to m/s. Evaporation (Et) is calculated from the mean daily
+% latent heat net flux (lhtfl) at the surface. Precipitation-evaporation is
+% also created (P_E).
 %
 % EXAMPLE USAGE:
 %   To download the default set of data (see list above):
@@ -53,7 +57,7 @@ function data = get_CFS_forcing(Mobj, modelTime, varargin)
 %   Rory O'Hara Murray (Marine Scotland Science)
 %
 % Revision history:
-%   2015-05-19 First version based on get_NCEP_forcing.m.
+%   2015-05-19 First version loosely based on get_NCEP_forcing.m.
 %
 %==========================================================================
 
