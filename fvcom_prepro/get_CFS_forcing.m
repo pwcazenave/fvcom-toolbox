@@ -147,12 +147,19 @@ for t = 1:nt
             fprintf('getting ''%s'' data... ', fields{aa})
         end
 
-        data.(fields{aa}).data = [];
-        data.(fields{aa}).time = [];
-        data.(fields{aa}).lat = [];
-        data.(fields{aa}).lon = [];
+        % These are needed when catting the arrays together.
+        if t == 1
+            data.(fields{aa}).data = [];
+            data.(fields{aa}).time = [];
+            data.(fields{aa}).lat = [];
+            data.(fields{aa}).lon = [];
+        end
+        scratch.(fields{aa}).data = [];
+        scratch.(fields{aa}).time = [];
+        scratch.(fields{aa}).lat = [];
+        scratch.(fields{aa}).lon = [];
 
-        %ncid_info = ncinfo(ncep.(fields{aa}));
+        % ncid_info = ncinfo(ncep.(fields{aa}));
         ncid = netcdf.open(ncep.(fields{aa}));
 
         % If you don't know what it contains, start by using the
@@ -197,7 +204,7 @@ for t = 1:nt
         timevec = datevec((data_time / 24) + datenum(year, month, 1, 0, 0, 0));
 
         % Get the data time and convert to Modified Julian Day.
-        data.time = greg2mjulian(...
+        scratch.time = greg2mjulian(...
             timevec(:, 1), ...
             timevec(:, 2), ...
             timevec(:, 3), ...
@@ -205,24 +212,24 @@ for t = 1:nt
             timevec(:, 5), ...
             timevec(:, 6));
         % Clip the time to the given range.
-        data_time_mask = data.time >= modelTime(1) & data.time <= modelTime(end);
-        data_time_idx = 1:size(data.time, 1);
+        data_time_mask = scratch.time >= modelTime(1) & scratch.time <= modelTime(end);
+        data_time_idx = 1:size(scratch.time, 1);
         data_time_idx = data_time_idx(data_time_mask);
         if ~isempty(data_time_idx)
-            data.time = data.time(data_time_mask);
+            scratch.time = scratch.time(data_time_mask);
         else
             % Reset the index to its original size. This is for data
             % with only a single time stamp which falls outside the
             % model time. Only reset it when the length of the
             % input time is equal to 1.
-            if length(data.time) == 1
-                data_time_idx = 1:size(data.time, 1);
+            if length(scratch.time) == 1
+                data_time_idx = 1:size(scratch.time, 1);
             end
         end
 
         % Check the times
-        %[yyyy, mm, dd, hh, MM, ss] = mjulian2greg(data.time(1))
-        %[yyyy, mm, dd, hh, MM, ss] = mjulian2greg(data.time(end))
+        %[yyyy, mm, dd, hh, MM, ss] = mjulian2greg(scratch.time(1))
+        %[yyyy, mm, dd, hh, MM, ss] = mjulian2greg(scratch.time(end))
         % Get the data in two goes, once for the end of the grid (west of
         % Greenwich), once for the beginning (east of Greenwich), and then
         % stick the two bits together.
@@ -246,11 +253,11 @@ for t = 1:nt
 
         % Latitude is much more straightforward
         index_lat = find(data_lat.lat > extents(3) & data_lat.lat < extents(4));
-        data.(fields{aa}).lat = data_lat.lat(index_lat);
+        scratch.(fields{aa}).lat = data_lat.lat(index_lat);
 
         % Get the data
         if iscell(index_lon)
-            data.(fields{aa}).lon = data_lon.lon(cat(1,index_lon{:}));
+            scratch.(fields{aa}).lon = data_lon.lon(cat(1, index_lon{:}));
 
             varid = netcdf.inqVarID(ncid, names.(fields{aa}));
 
@@ -343,14 +350,14 @@ for t = 1:nt
                                 scratch.(fields{aa}).(structfields{ii}) = ...
                                     data_west.(fields{aa}).(structfields{ii});
                             else
-                                warning({'Unexpected data field and the', ...
+                                warning(['Unexpected data field and the', ...
                                     ' west and east halves don''t match.', ...
-                                    ' Skipping.'})
+                                    ' Skipping.'])
                             end
                         catch
-                            warning({'Unexpected data field and the', ...
+                            warning(['Unexpected data field and the', ...
                                 ' west and east halves don''t match.', ...
-                                ' Skipping.'})
+                                ' Skipping.'])
                         end
                         clearvars tdata
                 end
@@ -358,7 +365,7 @@ for t = 1:nt
             clearvars data_west data_east
         else
             % We have a straightforward data extraction
-            data.(fields{aa}).lon = data_lon.lon(index_lon);
+            scratch.(fields{aa}).lon = data_lon.lon(index_lon);
 
             varid = netcdf.inqVarID(ncid, (fields{aa}));
             % [varname,xtype,dimids,natts] = netcdf.inqVar(ncid,varid);
@@ -399,19 +406,22 @@ for t = 1:nt
         end
         clearvars data_time* data_level_idx
 
-        datatmp = squeeze(scratch.(fields{aa}).(fields{aa}));
+        scratch.(fields{aa}).lon(scratch.(fields{aa}).lon > 180) = ...
+            scratch.(fields{aa}).lon(scratch.(fields{aa}).lon > 180) - 360;
 
-        data.(fields{aa}).lon(data.(fields{aa}).lon > 180) = ...
-            data.(fields{aa}).lon(data.(fields{aa}).lon > 180) - 360;
+        datatmp = squeeze(scratch.(fields{aa}).(fields{aa}));
 
         % data.(fields{aa}).data = datatmp;
         data.(fields{aa}).data = cat(3, data.(fields{aa}).data, datatmp);
         % data.(fields{aa}).time = data.time;
-        data.(fields{aa}).time = cat(1, data.(fields{aa}).time, data.time);
-        % data.(fields{aa}).time = cat(1, data.(fields{aa}).time, squeeze(scratch.(fields{aa}).(fields{aa}).time));
-        % data.(fields{aa}).lat = squeeze(scratch.(fields{aa}).(fields{aa}).lat);
-        % data.(fields{aa}).lon = squeeze(scratch.(fields{aa}).(fields{aa}).lon);
+        data.(fields{aa}).time = cat(1, data.(fields{aa}).time, scratch.time);
+        % data.(fields{aa}).time = cat(1, data.(fields{aa}).time, ...
+        %     squeeze(scratch.(fields{aa}).(fields{aa}).time));
+        data.(fields{aa}).lat = scratch.(fields{aa}).lat;
+        data.(fields{aa}).lon = scratch.(fields{aa}).lon;
 
+        [y,m,d,hh,mm,ss] = mjulian2greg(data.(fields{aa}).time);
+        datestr([y,m,d,hh,mm,ss])
         if ftbverbose
             if isfield(data, fields{aa})
                 fprintf('done.\n')
