@@ -480,6 +480,12 @@ end
 fields = fieldnames(data);
 for f = 1:length(fields)
     if isfield(data.(fields{f}), 'data')
+        % Some fields are instantaneous, so don't de-average them. See:
+        % http://nomads.ncdc.noaa.gov/docs/CFSR-Hourly-Timeseries.pdf for
+        % details.
+        if any(strcmpi(fields{f}, {'pressfc', 'tmp2m', 'uwnd', 'vwnd'}))
+            continue
+        end
         [~, ~, nt] = size(data.(fields{f}).data);
         fixed = data.(fields{f}).data;
         if ftbverbose
@@ -493,7 +499,7 @@ for f = 1:length(fields)
             % if we want the first hour's worth of data, then the second
             % term in the formula with multiply by zero, so the formula is
             % essentially only using the first term, which is just the data
-            % at n (i.e. 0).
+            % at n = 0.
             for n = 1:5
                 if t + n <= nt
                     fixed(:, :, t + n) = ...
