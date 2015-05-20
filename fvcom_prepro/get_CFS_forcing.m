@@ -482,6 +482,10 @@ for f = 1:length(fields)
     if isfield(data.(fields{f}), 'data')
         [~, ~, nt] = size(data.(fields{f}).data);
         fixed = data.(fields{f}).data;
+        if ftbverbose
+            fprintf('De-averaging the n-hourly %s data to hourly... ', ....
+                fields{f})
+        end
 
         for t = 1:6:nt
             % Fix the next 5 hours of data. Assume 0th hour is just the
