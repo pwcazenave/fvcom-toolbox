@@ -107,10 +107,10 @@ end
 % wasOpened = false;
 if license('test', 'Distrib_Computing_Toolbox')
     % We have the Parallel Computing Toolbox, so launch a bunch of workers.
-    if matlabpool('size') == 0
+    if isempty(gcp('nocreate'))
         % Force pool to be local in case we have remote pools available.
-        matlabpool open local
-%         wasOpened = true;
+        pool = gcp('local');
+        wasOpened = true;
     end
 end
 
@@ -323,7 +323,7 @@ end
 % Better way of closing the pool after each invocation (though this might
 % incur some overhead due to the time it takes to spin up/close down a
 % MATLAB pool of workers).
-cleaner = onCleanup(@() matlabpool('close'));
+cleaner = onCleanup(@() delete(gcp));
 
 if ftbverbose
     fprintf('end   : %s \n', subname)
