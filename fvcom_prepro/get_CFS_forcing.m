@@ -6,7 +6,8 @@ function data = get_CFS_forcing(Mobj, modelTime, varargin)
 %
 % DESCRIPTION:
 %   Using the NOAA OPeNDAP server, extract the necessary parameters to
-%   create an FVCOM forcing file.
+%   create an FVCOM forcing file. Data are available for 1979-2009
+%   inclusive.
 %
 % INPUT:
 %   Mobj - MATLAB mesh object. Must contain fields:
