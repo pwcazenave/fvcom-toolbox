@@ -25,17 +25,17 @@ function data = get_CFS_forcing(Mobj, modelTime, varargin)
 %   Contains vectors of the longitude and latitude data (lon, lat).
 %
 % The parameters which can be obtained from the NCEP data are:
-%     - Net shortwave radiation surface (nswrs = uswrf - dswrf) [surface]
-%     - Downward longwave radiation surface (dlwrf) [surface]
-%     - Surface pressure (pressfc) [surface]
-%     - u wind component (uwnd) [10m]
-%     - v wind component (vwnd) [10m]
-%     - Air temperature (tmp2m) [2m]
-%     - Precipitation rate (prate) [surface]
-%     - Specific humidity (q2m) [2m]
-%     - Relative humidity (rhum) [2m] - calculated from q2m.
-%     - Latent heat flux (lhtfl) [surface]
-%     - Evaporation rate (Et) [surface]
+%     - Net shortwave radiation (nswsfc = uswsfc - dswsfc) [surface] [W/m^2]
+%     - Downward longwave radiation (dlwrf) [surface] [W/m^2]
+%     - Pressure (pressfc) [surface] [Pa]
+%     - u wind component (uwnd) [10m] [m/s]
+%     - v wind component (vwnd) [10m] [m/s]
+%     - Air temperature (tmp2m) [2m] [celsius]
+%     - Precipitation rate (prate) [surface] [m/s]
+%     - Specific humidity (q2m) [2m] [%]
+%     - Relative humidity (rhum) [2m] [%] - calculated from q2m.
+%     - Latent heat flux (lhtfl) [surface] [m/s]
+%     - Evaporation rate (Et) [surface] [m/s]
 %
 % Relative humidity is calculated from specific humidity with the QAIR2RH
 % function (see fvcom-toolbox/utilities). Precipitation is converted from
