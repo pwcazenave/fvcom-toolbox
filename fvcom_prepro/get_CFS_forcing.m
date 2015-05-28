@@ -476,6 +476,11 @@ for t = 1:nt
     end
 end
 
+% Save the time to the main data struct. This is just the time from
+% whatever variable we loaded last. Since they should all be the same, this
+% isn't a particular problem. Famous last words...
+data.time = scratch.time;
+
 % Now we have the data, we need to fix the averaging to be hourly instead
 % of n-hourly, where n varies from 0 to 6. See
 % http://rda.ucar.edu/datasets/ds094.1/#docs/FAQs_hrly_timeseries.html with
