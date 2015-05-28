@@ -62,7 +62,7 @@ function data = get_HYCOM_forcing(Mobj, modelTime, varargin)
 %   2015-05-21 Add support for the Global Reanalysis data which extends
 %   coverage back to 1992 (previously limited to 2008 with the Global
 %   Analysis data). The Global Analysis data is used from 2008 onwards even
-%   though the reanalysis exists upto 2012.
+%   though the reanalysis exists up to 2012.
 %
 %==========================================================================
 
