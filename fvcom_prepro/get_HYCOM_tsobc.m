@@ -43,6 +43,8 @@ function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)
 %    the new interp1 call and it's identical to the old version. Also
 %    update the parallel toolbox stuff for the same reason (future
 %    removal).
+%    2015-05-21 Remove the old parallel processing bits and replace with
+%    the current versions.
 %
 %==========================================================================
 
@@ -54,22 +56,11 @@ if ftbverbose
     fprintf(['begin : ' subname '\n'])
 end
 
-wasOpened = false;
 if license('test', 'Distrib_Computing_Toolbox')
     % We have the Parallel Computing Toolbox, so launch a bunch of workers.
-    try
-        % New version for MATLAB 2014a (I think) onwards.
-        if isempty(gcp('nocreate'))
-            pool = parpool('local');
-            wasOpened = true;
-        end
-    catch
-        % Version for pre-2014a MATLAB.
-        if matlabpool('size') == 0
-            % Force pool to be local in case we have remote pools available.
-            matlabpool open local
-            wasOpened = true;
-        end
+    if isempty(gcp('nocreate'))
+        % Force pool to be local in case we have remote pools available.
+        parpool('local');
     end
 end
 
@@ -374,14 +365,7 @@ if isfield(hycom, 'time')
     Mobj.ts_times = hycom.time;
 end
 
-% Close the MATLAB pool if we opened it.
-if wasOpened
-    try
-        pool.delete
-    catch
-        matlabpool close
-    end
-end
+cleaner = onCleanup(@() delete(gcp('nocreate')));
 
 if ftbverbose
     fprintf(['end   : ' subname '\n'])
