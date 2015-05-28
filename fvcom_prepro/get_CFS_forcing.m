@@ -98,6 +98,8 @@ end
 
 % Create year and month arrays for the period we've been given.
 [yyyy, mm, dd, HH, MM, SS] = mjulian2greg(modelTime);
+assert(min(yyyy) >= 1979, 'CFSv2 data not available prior to 1979')
+assert(max(yyyy) <= 2009, 'CFSv2 data not available after 2009')
 dates = datenum([yyyy; mm; dd; HH; MM; SS]');
 serial = dates(1):dates(2);
 [years, months, ~, ~, ~, ~] = datevec(serial);
