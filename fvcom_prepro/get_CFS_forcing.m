@@ -466,6 +466,8 @@ for t = 1:nt
         data.(fields{aa}).lat = scratch.(fields{aa}).lat;
         data.(fields{aa}).lon = scratch.(fields{aa}).lon;
 
+        clearvars scratch
+
         if ftbverbose
             if isfield(data, fields{aa})
                 fprintf('done.\n')
