@@ -1,4 +1,4 @@
-function fvcom = grid2fvcom(Mobj, vars, data)
+function fvcom = grid2fvcom(Mobj, vars, data, varargin)
 % Interpolate regularly gridded surface forcing data onto a given FVCOM
 % grid.
 %
@@ -25,11 +25,17 @@ function fvcom = grid2fvcom(Mobj, vars, data)
 %       of the NCEP surface products (e.g. relative humitidy, sea level
 %       pressure), you need to supply x and y coordinates for their grids
 %       as .xalt and .yalt).
+%   varargin - keyword/argument pairs:
+%       add_elems - true/false - set to true to enable interpolation of
+%       field onto both nodes and elements (defaults to both). This is
+%       useful if you run into memory issues as this can effectively halve
+%       the memory requirements.
 %
 % OUTPUT:
 %   fvcom - struct of the interpolated data values at the model nodes and
-%       element centres. Also includes any variables which were in the
-%       input struct but which have not been interpolated (e.g. time).
+%       element centres (unless add_elems is false, in which case, only
+%       nodes). Also includes any variables which were in the input struct
+%       but which have not been interpolated (e.g. time).
 %
 % EXAMPLE USAGE:
 %   interpfields = {'uwnd', 'vwnd', 'slp', 'nshf', 'nlwrs', 'nswrs', ...
@@ -39,11 +45,8 @@ function fvcom = grid2fvcom(Mobj, vars, data)
 % NOTE:
 %   The shape of the returned arrays for rhum and slp (via
 %   get_NCEP_forcing.m) have sometimes differed from the other vairables
-%   (they appear to be projected onto a different grid). Unless you
-%   desperately need them, I would suggest omitting them from the
-%   interpolation here as this assumes the arrays are all the same size.
-%   Alternatively, give data.xalt and data.yalt to specify the alternative
-%   grid.
+%   (they appear to be projected onto a different grid). Give data.xalt and
+%   data.yalt to specify the alternative grid.
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -81,11 +84,23 @@ function fvcom = grid2fvcom(Mobj, vars, data)
 %   in the input struct to avoid finding out that the last field in vars
 %   doesn't exist in data. Change the way the alternative coordinate arrays
 %   are used to accommodate subtleties in the parallel code in MATLAB.
+%   2015-05-20 Update the parallel processing commands.
+%   2015-05-22 Add option to disable output on element centres.
 %
 %==========================================================================
 
-if nargin ~= 3
+if nargin ~= 3 && isempty(varargin)
     error('Incorrect number of arguments')
+end
+
+do_elems = false;
+for v = 1:2:length(varargin)
+    switch varargin{v}
+        case 'add_elems'
+            if varargin{v + 1}
+                do_elems = true;
+            end
+    end
 end
 
 subname = 'grid2fvcom';
@@ -294,20 +309,24 @@ for vv = 1:length(vars)
                 % nnans(2) = sum(isnan(fvcom.(vars{vv}).data(:,i)));
                 % Parallel version:
                 tmp_fvcom_node(:, i) = ftsin(x, y);
-                tmp_fvcom_data(:, i) = ftsin(xc, yc);
                 nnans1 = sum(isnan(tmp_fvcom_node(:, i)));
-                nnans2 = sum(isnan(tmp_fvcom_data(:, i)));
                 if  nnans1 > 0
                     warning('%i NaNs in the interpolated node data. This won''t work with FVCOM.', nnans1)
                 end
-                if nnans2 > 0
-                    warning('%i NaNs in the interpolated element data. This won''t work with FVCOM.', nnans2)
+                if do_elems
+                    tmp_fvcom_data(:, i) = ftsin(xc, yc);
+                    nnans2 = sum(isnan(tmp_fvcom_data(:, i)));
+                    if nnans2 > 0
+                        warning('%i NaNs in the interpolated element data. This won''t work with FVCOM.', nnans2)
+                    end
                 end
             end
             % Transfer the temporary arrays back to the relevant struct and
             % clear out the temporary arrays.
             fvcom.(vars{vv}).node = tmp_fvcom_node;
-            fvcom.(vars{vv}).data = tmp_fvcom_data;
+            if do_elems
+                fvcom.(vars{vv}).data = tmp_fvcom_data;
+            end
             clear nnans* tmp_*
 
             if ftbverbose
