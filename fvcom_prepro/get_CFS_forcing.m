@@ -180,6 +180,7 @@ for t = 1:nt
             data.(fields{aa}).time = [];
             data.(fields{aa}).lat = [];
             data.(fields{aa}).lon = [];
+            data.time = [];
         end
         scratch.(fields{aa}).data = [];
         scratch.(fields{aa}).time = [];
@@ -466,7 +467,14 @@ for t = 1:nt
         data.(fields{aa}).lat = scratch.(fields{aa}).lat;
         data.(fields{aa}).lon = scratch.(fields{aa}).lon;
 
-        clearvars scratch
+        % Save the time to the main data struct. This is just the time from
+        % the first variable. Since they should all be the same, this isn't
+        % a particular problem. Famous last words...
+        if aa == 1
+            data.time = data.(fields{aa}).time;
+        else
+            clearvars scratch
+        end
 
         if ftbverbose
             if isfield(data, fields{aa})
@@ -477,11 +485,6 @@ for t = 1:nt
         end
     end
 end
-
-% Save the time to the main data struct. This is just the time from
-% whatever variable we loaded last. Since they should all be the same, this
-% isn't a particular problem. Famous last words...
-data.time = scratch.time;
 
 % Now we have the data, we need to fix the averaging to be hourly instead
 % of n-hourly, where n varies from 0 to 6. See
@@ -601,7 +604,7 @@ end
 % Make sure all the data we have downloaded are the same shape as the
 % longitude and latitude arrays.
 for aa = 1:length(fields)
-    if ~isempty(varlist) && max(strcmp(fields{aa}, varlist)) ~= 1
+    if (~isempty(varlist) && max(strcmp(fields{aa}, varlist)) ~= 1) || strcmpi(fields{aa}, 'time')
         % We've been given a list of variables to extract, so skip those
         % that aren't in that list
         continue
