@@ -40,11 +40,11 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver, varargin)
 %     - 'Et' or 'evap'      - evaporation
 %     - 'prate' or 'P_E'    - precipitation
 %     - 'nlwrs'             - net longwave radiation*,**
-%     - 'nswrs'             - net shortwave radiation*,**
+%     - 'nswrs'             - net shortwave radiation*,**,***
 %     - 'shtfl'             - sensible heat net flux*,**
 %     - 'lhtfl'             - latent heat net flux*,**
 %     - 'slp' or 'pres'     - mean sea level pressure***
-%     - 'dswrf'             - downward shortwave flux***
+%     - 'dswrf'             - downward shortwave flux
 %     - 'dlwrf'             - downward longwave flux***
 %     - 'rhum'              - relative humidity***
 %     - 'air'               - air temperature***
