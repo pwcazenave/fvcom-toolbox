@@ -330,7 +330,7 @@ for t = 1:nt
             end
 
             data_west.(fields{aa}).(fields{aa}) = ...
-                netcdf.getVar(ncid, varid, start, count, 'double');
+                flipud(netcdf.getVar(ncid, varid, start, count, 'double'));
 
             if length(dimids) == 4
                 start = [...
@@ -354,7 +354,7 @@ for t = 1:nt
                     length(data_time_idx)];
             end
             data_east.(fields{aa}).(fields{aa}) = ...
-                netcdf.getVar(ncid, varid, start, count, 'double');
+                flipud(netcdf.getVar(ncid, varid, start, count, 'double'));
 
             scratch.(fields{aa}).(fields{aa}).(fields{aa}) = ...
                 cat(1, ...
