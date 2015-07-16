@@ -529,7 +529,7 @@ end
 
 % Calculate the net long and shortwave radiation fluxes.
 if isfield(data, 'uswsfc') && isfield(data, 'dswsfc')
-    data.nswsfc.data = data.uswsfc.data - data.dswsfc.data;
+    data.nswsfc.data = data.dswsfc.data - data.uswsfc.data;
     data.nswsfc.time = data.uswsfc.time;
     data.nswsfc.lon = data.uswsfc.lon;
     data.nswsfc.lat = data.uswsfc.lat;
