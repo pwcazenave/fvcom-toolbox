@@ -330,7 +330,7 @@ for t = 1:nt
             end
 
             data_west.(fields{aa}).(fields{aa}) = ...
-                flipud(netcdf.getVar(ncid, varid, start, count, 'double'));
+                netcdf.getVar(ncid, varid, start, count, 'double');
 
             if length(dimids) == 4
                 start = [...
@@ -354,7 +354,7 @@ for t = 1:nt
                     length(data_time_idx)];
             end
             data_east.(fields{aa}).(fields{aa}) = ...
-                flipud(netcdf.getVar(ncid, varid, start, count, 'double'));
+                netcdf.getVar(ncid, varid, start, count, 'double');
 
             scratch.(fields{aa}).(fields{aa}).(fields{aa}) = ...
                 cat(1, ...
@@ -376,8 +376,8 @@ for t = 1:nt
                     case fields{aa}
                         % This is the actual data.
                         scratch.(fields{aa}).(structfields{ii}) = ...
-                            [rot90(data_west.(fields{aa}).(structfields{ii})), ...
-                            rot90(data_east.(fields{aa}).(structfields{ii}))];
+                            [data_west.(fields{aa}).(structfields{ii}); ...
+                            data_east.(fields{aa}).(structfields{ii})];
                     otherwise
                         % Assume the data are the same in both arrays.
                         % A simple check of the range of values in the
