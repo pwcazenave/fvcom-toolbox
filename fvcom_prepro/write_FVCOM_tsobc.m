@@ -9,12 +9,13 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj,varargin)
 %    sigma_layers, time).
 %
 % INPUT
-%    Model case name (to find the bathymetry and open boundary .dat files).
-%    Time
-%    Number of sigma layers
-%    Boundary temperature (Celcius)
-%    Boundary salinity (psu)
-%    Mobj (optional)
+%    basename - Model case name (to find the bathymetry and open boundary
+%    .dat files).
+%    time - Time (Modified Julian Days)
+%    nSiglay - Number of sigma layers
+%    in_temp - Boundary temperature (Celsius)
+%    in_salt - Boundary salinity (psu)
+%    Mobj - Mesh Object
 %    Optional keyword-argument pairs. These control the time variables.
 %    This script defaults to writing 'Times' only.
 %    FVCOM needs only one of:
@@ -29,7 +30,7 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj,varargin)
 %    'floattime' = set to true to output the 'time' variable
 %
 % OUTPUT:
-%    FVCOM hydrographic open boundary file
+%    FVCOM hydrographic open boundary netCDF file
 %
 % Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
@@ -57,17 +58,16 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj,varargin)
 %==============================================================================
 
 if nargin == 5
-    warning(['Assuming uniform terrain-following sigma coordinates. ',...
-        'To specify different sigma coordintes, supply a MATLAB mesh ',...
+    warning(['Assuming uniform terrain-following sigma coordinates. ', ...
+        'To specify different sigma coordintes, supply a MATLAB mesh ', ...
         'structure with fields siglay and siglev.'])
 end
 
 subname = 'write_FVCOM_tsobc';
 global ftbverbose;
-if(ftbverbose);
-  fprintf('\n')
-  fprintf(['begin : ' subname '\n'])
-end;
+if ftbverbose
+  fprintf('\nbegin : %s\n', subname)
+end
 
 % Default to string times as FVCOM looks for these first.
 strtime = true;
@@ -94,7 +94,7 @@ tsOBCFile = [basename, '_tsobc.nc'];
 fid = fopen(fvcom_obc,'r');
 if(fid  < 0)
   error(['file: ' fvcom_obc ' does not exist']);
-end;
+end
 C = textscan(fid, '%s %s %s %s %d', 1);
 nObc = C{5};
 obc_nodes = zeros(nObc,1);
@@ -103,7 +103,7 @@ if(ftbverbose); fprintf('# nodes %d\n',nObc); end;
 for i=1:nObc
   C = textscan(fid, '%d %d %d', 1);
   obc_nodes(i) = C{2};
-end;
+end
 
 if(ftbverbose); fprintf('obc reading complete\n');end;
 
@@ -113,7 +113,7 @@ if(ftbverbose); fprintf('obc reading complete\n');end;
 fid = fopen(fvcom_bathy,'r');
 if(fid  < 0)
   error(['file: ' fvcom_bathy ' does not exist']);
-end;
+end
 C = textscan(fid, '%s %s %s %d', 1);
 Nverts = C{4};
 h = zeros(Nverts,1);
@@ -122,7 +122,7 @@ if(ftbverbose); fprintf('# nodes %d\n',Nverts);end;
 for i=1:Nverts
   C = textscan(fid, '%f %f %f', 1);
   h(i) = C{3};
-end;
+end
 if(ftbverbose); fprintf('min depth %f max depth %f\n',min(h),max(h));end;
 if(ftbverbose); fprintf('bathymetry reading complete\n');end;
 fclose(fid);
@@ -215,8 +215,6 @@ siglay_dimid=netcdf.defDim(nc,'siglay',nSiglay);
 siglev_dimid=netcdf.defDim(nc,'siglev',nSiglev);
 
 % variables
-% nc{'river_names'} = ncchar('rivers', 'namelen');
-
 if strtime
     Times_varid=netcdf.defVar(nc,'Times','NC_CHAR',[datestrlen_dimid, time_dimid]);
     netcdf.putAtt(nc,Times_varid,'time_zone','UTC');
@@ -302,4 +300,4 @@ netcdf.putVar(nc,obc_salinity_varid,salt);
 % close file
 netcdf.close(nc);
 
-if(ftbverbose); fprintf(['end   : ' subname '\n']);end;
+if ftbverbose; fprintf('end   : %s\n', subname); end
