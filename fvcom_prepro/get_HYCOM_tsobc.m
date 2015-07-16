@@ -143,19 +143,37 @@ for v = 1:length(fields)
             tlon = lon(:);
             tlat = lat(:);
 
-            % Create and apply a mask to remove values outside the domain. This
-            % inevitably flattens the arrays, but it shouldn't be a problem
-            % since we'll be searching for the closest values in such a manner
-            % as is appropriate for an unstructured grid (i.e. we're assuming
-            % the HYCOM data is irregularly sampled and interpolation with a
-            % triangulation).
+            % Create and apply a mask to remove values outside the domain.
+            % This inevitably flattens the arrays, but it shouldn't be a
+            % problem since we'll be searching for the closest values in
+            % such a manner as is appropriate for an unstructured grid
+            % (i.e. we're assuming the HYCOM data is irregularly sampled
+            % and interpolating with a triangulation).
             mask = tpctemp2 > 1.26e29;
+
+            % We need to do some more checks for the data which has been
+            % saved via Python. This is a sort of bounds check to
+            % eliminate unrealistic data. Warn if we actually delete
+            % anything.
+            switch fields{v}
+                case 'salinity'
+                    warning('Removing negative salinities from the HYCOM data.')
+                    mask_alt = tpctemp2 < 0;
+                case 'temperature'
+                    warning('Removing temperature values below -20 celsius from the HYCOM data.')
+                    mask_alt = tpctemp2 < -20;
+                case 'ssh'
+                    warning('Removing sea surface height values below -20m from the HYCOM data.')
+                    mask_alt = tpctemp2 < -20;
+            end
+            mask = logical(~(~mask .* ~mask_alt));
+            clear mask_alt
             tpctemp2(mask) = [];
 
-            % Also apply the masks to the position arrays so we can't even find
-            % positions outside the domain, effectively meaning if a value is
-            % outside the domain, the nearest value to the boundary node will
-            % be used.
+            % Also apply the masks to the position arrays so we can't even
+            % find positions outside the domain, effectively meaning if a
+            % value is outside the domain, the nearest value to the
+            % boundary node will be used.
             tlon(mask) = [];
             tlat(mask) = [];
 
