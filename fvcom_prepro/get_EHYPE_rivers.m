@@ -354,6 +354,11 @@ fv_dups_names = cell(0);
 fv_uniq_obc_orig = fv_uniq_obc;
 c = 0;
 for nn = 1:length(fv_uniq_obc)
+    if isnan(fv_uniq_obc(nn))
+        % This was already flagged as a pair, so just skip it as we've
+        % already saved its index.
+        continue
+    end
     [~, idx] = sort(sqrt(...
         (Mobj.x(coast_nodes) - Mobj.x(fv_uniq_obc(nn))).^2 + ...
         (Mobj.y(coast_nodes) - Mobj.y(fv_uniq_obc(nn))).^2));
@@ -362,10 +367,11 @@ for nn = 1:length(fv_uniq_obc)
         fv_dups_idx = [fv_dups_idx, nn];
 
         c = c + 1;
-        % Remove the current node from the list of river nodes.
+        % Remove the current nodes from the list of river nodes.
         fv_dups_obc{c, 1} = fv_uniq_obc(nn);
         fv_dups_obc{c, 2} = fv_uniq_obc(ismember(fv_uniq_obc, coast_nodes(idx(2:3))));
         fv_uniq_obc(nn) = nan;
+        fv_uniq_obc(ismember(fv_uniq_obc, coast_nodes(idx(2:3)))) = nan;
 
         % We can sort out the names and discharges here too. We'll store
         % the modified fluxes in a copy of the flux array so we can append
@@ -385,6 +391,10 @@ clear c idx
 fv_uniq_obc(fv_dups_idx) = [];
 fv_uniq_flow(:, fv_dups_idx) = [];
 fv_uniq_names(fv_dups_idx) = [];
+fv_uniq_flow(:, isnan(fv_uniq_obc)) = [];
+fv_uniq_names(isnan(fv_uniq_obc)) = [];
+fv_uniq_obc(isnan(fv_uniq_obc)) = [];
+
 % And append the averaged flow, names and nodes to the relevant arrays.
 fv_uniq_flow = cat(2, fv_uniq_flow, fv_dups_flow(:, fv_dups_idx));
 fv_uniq_obc = [fv_uniq_obc, [fv_dups_obc{:, 1}]];
