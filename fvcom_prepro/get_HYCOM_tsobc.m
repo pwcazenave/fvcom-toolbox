@@ -52,8 +52,7 @@ subname = 'get_HYCOM_tsobc';
 
 global ftbverbose;
 if ftbverbose
-    fprintf('\n')
-    fprintf(['begin : ' subname '\n'])
+    fprintf('\nbegin : %s\n', subname)
 end
 
 if license('test', 'Distrib_Computing_Toolbox')
@@ -386,7 +385,7 @@ end
 cleaner = onCleanup(@() delete(gcp('nocreate')));
 
 if ftbverbose
-    fprintf(['end   : ' subname '\n'])
+    fprintf('end   : %s\n', subname)
 end
 
 
