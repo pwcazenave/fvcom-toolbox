@@ -115,6 +115,7 @@ function data = get_NCEP_forcing(Mobj, modelTime, varargin)
 %   original reanalysis ('reanalysis1'), the reanalysis-2 ('reanalysis2')
 %   or the 20th Century Reanalysis-2 ('20thC') data (PC).
 %   2014-02-03 Merge Rory's changes to my latest version (PC).
+%   2015-07-07 Add support for multi-year downloads (PC).
 %
 %==========================================================================
 
@@ -243,6 +244,7 @@ for t = 1:nt
             ncep.dswrf  = [url, 'gaussian_grid/dswrf.sfc.gauss.', num2str(year), '.nc'];
             ncep.uswrf  = [url, 'gaussian_grid/uswrf.sfc.gauss.', num2str(year), '.nc'];
             ncep.dlwrf  = [url, 'gaussian_grid/dlwrf.sfc.gauss.', num2str(year), '.nc'];
+            ncep.ulwrf  = [url, 'gaussian_grid/ulwrf.sfc.gauss.', num2str(year), '.nc'];
         case '20thC'
             % Set up a struct of the NCEP remote locations in which we're interested.
             url = 'http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/20thC_ReanV2/';
@@ -283,10 +285,14 @@ for t = 1:nt
 
     fields = fieldnames(ncep);
 
+    if ftbverbose
+        fprintf('Downloading for %04d\n', year)
+    end
+
     for aa = 1:length(fields)
 
-        % We've been given a list of variables to do, so skip those that aren't
-        % in the list.
+        % We've been given a list of variables to do, so skip those that
+        % aren't in the list.
         if ~isempty(varlist) && max(strcmp(fields{aa}, varlist)) ~= 1
             continue
         end
@@ -295,11 +301,13 @@ for t = 1:nt
             fprintf('getting ''%s'' data... ', fields{aa})
         end
 
-        data.(fields{aa}).data = [];
-        data.(fields{aa}).time = [];
-        data.(fields{aa}).lat = [];
-        data.(fields{aa}).lon = [];
-        data_attributes.(fields{aa}) = [];
+        if t == 1
+            data.(fields{aa}).data = [];
+            data.(fields{aa}).time = [];
+            data.(fields{aa}).lat = [];
+            data.(fields{aa}).lon = [];
+            data_attributes.(fields{aa}) = [];
+        end
 
         % Depending on the MATLAB version, either use the native netcdf
         % libraries to load the OPeNDAP data, otherwise we need the relevant
@@ -400,21 +408,26 @@ for t = 1:nt
         end
 
         % Get the data time and convert to Modified Julian Day.
-        data.time = greg2mjulian(timevec(:,1), timevec(:,2), timevec(:,3), ...
-            timevec(:,4), timevec(:,5), timevec(:,6));
+        scratch.time = greg2mjulian(...
+            timevec(:,1), ...
+            timevec(:,2), ...
+            timevec(:,3), ...
+            timevec(:,4), ...
+            timevec(:,5), ...
+            timevec(:,6));
         % Clip the time to the given range
-        data_time_mask = data.time >= modelTime(1) & data.time <= modelTime(end);
-        data_time_idx = 1:size(data.time,1);
+        data_time_mask = scratch.time >= modelTime(1) & scratch.time <= modelTime(end);
+        data_time_idx = 1:size(scratch.time,1);
         data_time_idx = data_time_idx(data_time_mask);
         if ~isempty(data_time_idx) % for the topo data mainly
-            data.time = data.time(data_time_mask);
+            scratch.time = scratch.time(data_time_mask);
         else
             % Reset the index to its original size. This is for data with only
             % a single time stamp which falls outside the model time (as is the
             % case with the topography data). Only reset it when the length of
             % the input time is equal to 1.
-            if length(data.time) == 1
-                data_time_idx = 1:size(data.time, 1);
+            if length(scratch.time) == 1
+                data_time_idx = 1:size(scratch.time, 1);
             end
         end
 
@@ -596,8 +609,13 @@ for t = 1:nt
         data.(fields{aa}).lon(data.(fields{aa}).lon > 180) = ...
             data.(fields{aa}).lon(data.(fields{aa}).lon > 180) - 360;
 
-        data.(fields{aa}).data = datatmp;
-        data.(fields{aa}).time = data.time;
+        if t == 1
+            data.(fields{aa}).data = datatmp;
+            data.(fields{aa}).time = scratch.time;
+        else
+            data.(fields{aa}).data = cat(3, data.(fields{aa}).data, datatmp);
+            data.(fields{aa}).time = cat(1, data.(fields{aa}).time, scratch.time);
+        end
         data.(fields{aa}).unpacked_valid_range = ...
             data_attributes.(fields{aa}).(fields{aa}).unpacked_valid_range;
         %     data.(fields{aa}).time = cat(1, data.(fields{aa}).time, squeeze(data1.(fields{aa}).(fields{aa}).time));
@@ -640,13 +658,17 @@ if isfield(data, 'ulwrf') && isfield(data, 'uswrf') && isfield(data, 'dlwrf') &&
     end
 end
 
+% To maintain compatibility, dump the time from the last variable
+% loaded into a top level variable.
+data.time = data.(fields{aa}).time;
+
 % Now we have some data, we need to create some additional parameters
 % required by FVCOM.
 
 % Convert precipitation from kg/m^2/s to m/s (required by FVCOM) by
 % dividing by freshwater density (kg/m^3).
 if isfield(data, 'prate')
-    data.prate.data = data.prate.data/1000;
+    data.prate.data = data.prate.data / 1000;
 end
 
 % Evaporation can be approximated by:
@@ -659,11 +681,14 @@ end
 %   Llv     = Latent heat of vaporization (approx to 2.5*10^6 J kg^-1)
 %   rho     = 1025 kg/m^3
 %
-if isfield(data, 'prate')
+if isfield(data, 'prate') && isfield(data, 'lhtfl')
     Llv = 2.5*10^6;
     rho = 1025; % using a typical value for seawater.
     Et = data.lhtfl.data/Llv/rho;
     data.P_E.data = data.prate.data - Et;
+    data.P_E.lon = data.prate.lon;
+    data.P_E.lat = data.prate.lat;
+    data.P_E.time = data.prate.time;
     % Evaporation and precipitation need to have the same sign for FVCOM (ocean
     % losing water is negative in both instances). So, flip the evaporation
     % here.
