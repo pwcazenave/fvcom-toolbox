@@ -114,6 +114,9 @@ mask = hycom.(fields{ff}).data(:, :, :, 1) > 1.26e29;
 if ftbverbose
     tic
 end
+% Only do warnings about removing values outside some ranges once per
+% variable.
+warned = true(3, 1);
 for v = 1:length(fields)
 
     if ~(isfield(hycom.(fields{v}), 'data') && ndims(hycom.(fields{v}).data) > 3)
@@ -156,13 +159,22 @@ for v = 1:length(fields)
             % anything.
             switch fields{v}
                 case 'salinity'
-                    warning('Removing negative salinities from the HYCOM data.')
+                    if warned(1)
+                        warned(1) = false;
+                        warning('Removing negative salinities from the HYCOM data.')
+                    end
                     mask_alt = tpctemp2 < 0;
                 case 'temperature'
-                    warning('Removing temperature values below -20 celsius from the HYCOM data.')
+                    if warned(2)
+                        warned(2) = false;
+                        warning('Removing temperature values below -20 celsius from the HYCOM data.')
+                    end
                     mask_alt = tpctemp2 < -20;
                 case 'ssh'
-                    warning('Removing sea surface height values below -20m from the HYCOM data.')
+                    if warned(3)
+                        warned(3) = false;
+                        warning('Removing sea surface height values below -20m from the HYCOM data.')
+                    end
                     mask_alt = tpctemp2 < -20;
                 otherwise
                     % Some other variable we won't mask.
