@@ -224,7 +224,7 @@ end
 % structure onto the FVCOM sigma levels.
 data.Depth.data = netcdf.getVar(ncid, varid, 'double');
 
-% netcdf.close(ncid)
+netcdf.close(ncid)
 
 % Get the number of vertical levels.
 nz = length(data.Depth.data);
@@ -239,9 +239,6 @@ for vv = 1:length(varlist)
         error('Variable %s is not a valid HYCOM variable name.', varlist{vv})
     end
 end
-
-% Open the initial connection.
-ncid = netcdf.open(hycom.MT, 'NOWRITE');
 
 c = 1; % counter for the tmjd cell array.
 for tt = 1:nt
@@ -282,8 +279,6 @@ for tt = 1:nt
         elseif times(tt) >= greg2mjulian(2008, 09, 19, 0, 0, 0)
             hycom.MT = [url, suffix.MT{2}];
         end
-        % Close the existing connection and start a new one.
-        netcdf.close(ncid)
         ncid = netcdf.open(hycom.MT, 'NOWRITE');
         try
             varid = netcdf.inqVarID(ncid, 'MT');
