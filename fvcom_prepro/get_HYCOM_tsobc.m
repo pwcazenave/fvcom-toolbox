@@ -164,6 +164,9 @@ for v = 1:length(fields)
                 case 'ssh'
                     warning('Removing sea surface height values below -20m from the HYCOM data.')
                     mask_alt = tpctemp2 < -20;
+                otherwise
+                    % Some other variable we won't mask.
+                    mask_alt = true(size(tpctemp2));
             end
             mask = logical(~(~mask .* ~mask_alt));
             clear mask_alt
