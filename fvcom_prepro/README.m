@@ -10,6 +10,11 @@
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Ricardo Torres (Plymouth Marine Laboratory)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
+%    Karen Amoudry (National Oceanography Centre, Liverpool)
+%    Rory O'Hara Murray (Marine Scotland Science)
+%    Hakeem Johnson (CH2M-Hill)
+%    Chang Liu (University of Massachusetts Dartmouth)
+%    Jenny Brown (National Oceanography Centre, Liverpool)
 %
 % Revision history
 %
