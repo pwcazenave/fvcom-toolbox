@@ -200,12 +200,14 @@ for t = 1:nt
             ncep.shtfl = [url, 'surface_gauss/shtfl.sfc.gauss.', num2str(year), '.nc'];
             ncep.pevpr = [url, 'surface_gauss/pevpr.sfc.gauss.', num2str(year), '.nc'];
 
-            % The fields below can be used to create the net shortwave and longwave
-            % fluxes if the data you're using don't include net fluxes. Subtract the
-            % downward from upward fluxes to get net fluxes.
-            ncep.dswrf = [url, 'surface_gauss/dswrf.sfc.gauss.', num2str(year),'.nc'];
-            ncep.uswrf = [url, 'surface_gauss/uswrf.sfc.gauss.', num2str(year),'.nc'];
-            ncep.dlwrf = [url, 'surface_gauss/dlwrf.sfc.gauss.', num2str(year),'.nc'];
+            % The fields below can be used to create the net shortwave and
+            % longwave fluxes if the data you're using don't include net
+            % fluxes. Subtract the upward from downward fluxes to get net
+            % fluxes (net = down - up).
+            ncep.dswrf = [url, 'surface_gauss/dswrf.sfc.gauss.', num2str(year), '.nc'];
+            ncep.uswrf = [url, 'surface_gauss/uswrf.sfc.gauss.', num2str(year), '.nc'];
+            ncep.dlwrf = [url, 'surface_gauss/dlwrf.sfc.gauss.', num2str(year), '.nc'];
+            ncep.ulwrf = [url, 'surface_gauss/ulwrf.sfc.gauss.', num2str(year), '.nc'];
 
         case 'reanalysis2'
             url = 'http://www.esrl.noaa.gov/psd/thredds/dodsC/Datasets/ncep.reanalysis2/';
@@ -239,8 +241,8 @@ for t = 1:nt
 
             % The fields below can be used to create the net shortwave and
             % longwave fluxes if the data you're using don't include net
-            % fluxes. Subtract the downward from upward fluxes to get net
-            % fluxes.
+            % fluxes. Subtract the upward from downward fluxes to get net
+            % fluxes (net = down - up).
             ncep.dswrf  = [url, 'gaussian_grid/dswrf.sfc.gauss.', num2str(year), '.nc'];
             ncep.uswrf  = [url, 'gaussian_grid/uswrf.sfc.gauss.', num2str(year), '.nc'];
             ncep.dlwrf  = [url, 'gaussian_grid/dlwrf.sfc.gauss.', num2str(year), '.nc'];
@@ -279,6 +281,7 @@ for t = 1:nt
             ncep.dswrf  = [url, 'gaussian/monolevel/dswrf.sfc.', num2str(year), '.nc'];
             ncep.uswrf  = [url, 'gaussian/monolevel/uswrf.sfc.', num2str(year), '.nc'];
             ncep.dlwrf  = [url, 'gaussian/monolevel/dlwrf.sfc.', num2str(year), '.nc'];
+            ncep.ulwrf  = [url, 'gaussian/monolevel/ulwrf.sfc.', num2str(year), '.nc'];
         otherwise
             error('Unrecognised ''source'' type. Valid values are ''reanalysis1'', ''reanalysis2'', ''20thC''.')
     end
@@ -651,7 +654,12 @@ if isfield(data, 'ulwrf') && isfield(data, 'uswrf') && isfield(data, 'dlwrf') &&
     up = {'uswrf', 'ulwrf'};
     down = {'dswrf', 'dlwrf'};
     for i = 1:length(vars)
-        data.(vars{i}).data = data.(up{i}).data - data.(down{i}).data;
+        % Don't overwrite the net fluxes if we already have them (for
+        % reanalysis-1, for example).
+        if isfield(data, vars{i})
+            continue
+        end
+        data.(vars{i}).data = data.(down{i}).data - data.(up{i}).data;
         data.(vars{i}).time = data.(up{i}).time;
         data.(vars{i}).lon = data.(up{i}).lon;
         data.(vars{i}).lat = data.(up{i}).lat;
