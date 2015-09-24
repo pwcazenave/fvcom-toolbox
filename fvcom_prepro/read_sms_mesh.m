@@ -45,6 +45,10 @@ function [Mobj] = read_sms_mesh(varargin)
 %   2014-04-10 Fix bugs when not using bathymetry (i.e. only reading the
 %   grid data in).
 %   2015-03-19 Add spherical coordinates on element centres.
+%   2015-09-24 Populate the alternative coordinate system with zeros rather
+%   than repeating the values. Also add element centre coordinates for
+%   cartesian coordinates. This is somewhat redundant given setup_metrics
+%   does this anyway.
 %
 %==============================================================================
 
@@ -321,11 +325,29 @@ Mobj.nVerts  = nVerts;
 Mobj.nElems  = nElems;
 Mobj.nativeCoords = coordinate;
 
+Mobj.ts           = ts;
+Mobj.h            = h;
+Mobj.tri          = tri;
+
 if have_lonlat
     Mobj.have_lonlat    = have_lonlat;
+    Mobj.lon            = lon;
+    Mobj.lat            = lat;
+    Mobj.x              = zeros(size(lon));
+    Mobj.y              = zeros(size(lat));
+    % Add element spherical coordinates too.
+    Mobj.lonc = nodes2elems(lon, Mobj);
+    Mobj.latc = nodes2elems(lat, Mobj);
 end
 if have_xy
     Mobj.have_xy        = have_xy;
+    Mobj.x              = x;
+    Mobj.y              = y;
+    Mobj.lon            = zeros(size(x));
+    Mobj.lat            = zeros(size(y));
+    % Add element cartesian coordinates too.
+    Mobj.xc = nodes2elems(x, Mobj);
+    Mobj.yc = nodes2elems(y, Mobj);
 end
 if have_bath
     Mobj.have_bath      = have_bath;
@@ -338,20 +360,17 @@ if exist('addCoriolis', 'var') && addCoriolis
     Mobj.have_cor       = true;
 end
 
-Mobj.x            = x;
-Mobj.y            = y;
-Mobj.ts           = ts;
-Mobj.lon          = lon;
-Mobj.lat          = lat;
-Mobj.h            = h;
-Mobj.tri          = tri;
+assert(isfield(Mobj, 'x'), 'No coordinate data provided. Check your inputs and try again.')
 
 % Make a depth array for the element centres.
 Mobj.hc = nodes2elems(h, Mobj);
 
-% Add element spherical coordinates too.
-Mobj.lonc = nodes2elems(lon, Mobj);
-Mobj.latc = nodes2elems(lat, Mobj);
+%--------------------------------------------------------------------------
+% Add the Coriolis values
+%--------------------------------------------------------------------------
+if exist('addCoriolis', 'var') && addCoriolis
+    Mobj = add_coriolis(Mobj, 'uselatitude');
+end
 
 if ftbverbose
   fprintf('end   : %s\n', subname)
