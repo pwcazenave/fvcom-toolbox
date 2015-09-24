@@ -61,7 +61,7 @@ tri = Mobj.tri;
 nVerts = Mobj.nVerts;
 nElems = Mobj.nElems;
 
-ts = ones(nVerts,1)*1e9;
+ts = inf(nVerts,1);
 lside = zeros(nVerts,1);
 for i=1:nElems
     n1 = tri(i,1);
@@ -71,14 +71,14 @@ for i=1:nElems
     % Check whether we have x and y values and use great circle
     % approximations if we don't.
     if Mobj.have_xy
-        lside(i) = sqrt( (x(n1)-x(n2))^2 + (y(n1)-y(n2))^2);
+        lside(i) = sqrt((x(n1)-x(n2))^2 + (y(n1)-y(n2))^2);
     else
         lside(i) = haversine(x(n1),y(n1),x(n2),y(n2));
     end
     dpth  = max(h(nds))+zeta;
     dpth  = max(dpth,1);
     ts(nds) = min(ts(nds),lside(i)/(sqrt(g*dpth) + u));
-end;
+end
 if(ftbverbose); fprintf('minimum time step: %f seconds\n',min(ts)); end;
 Mobj.ts = ts;
 Mobj.have_ts = true;
