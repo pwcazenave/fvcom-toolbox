@@ -159,23 +159,23 @@ for v = 1:length(fields)
             % anything.
             switch fields{v}
                 case 'salinity'
-                    if warned(1)
+                    mask_alt = tpctemp2 < 0;
+                    if min(mask_alt(:)) == 1 && warned(1)
                         warned(1) = false;
                         warning('Removing negative salinities from the HYCOM data.')
                     end
-                    mask_alt = tpctemp2 < 0;
                 case 'temperature'
-                    if warned(2)
+                    mask_alt = tpctemp2 < -20;
+                    if min(mask_alt(:)) == 1 && warned(2)
                         warned(2) = false;
                         warning('Removing temperature values below -20 celsius from the HYCOM data.')
                     end
-                    mask_alt = tpctemp2 < -20;
                 case 'ssh'
-                    if warned(3)
+                    mask_alt = tpctemp2 < -20;
+                    if min(mask_alt(:)) == 1 &&  warned(3)
                         warned(3) = false;
                         warning('Removing sea surface height values below -20m from the HYCOM data.')
                     end
-                    mask_alt = tpctemp2 < -20;
                 otherwise
                     % Some other variable we won't mask.
                     mask_alt = true(size(tpctemp2));
