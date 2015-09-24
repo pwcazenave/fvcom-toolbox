@@ -73,6 +73,8 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %   of rivers to the relevant field.
 %   2014-05-29 - Fix issues with the climatology vs. timeseries allocation
 %   of the output arrays.
+%   2015-09-24 Add check for whether we actually have any rivers to
+%   process.
 %
 %==========================================================================
 
@@ -290,6 +292,22 @@ ehype_nt = size(fv_flow, 1);
 % larger of the two discharge values assigned to those nodes and ditch the
 % smaller one. The output is stored in a new fv_uniq_flow array (names and
 % nodes are similarly stored in their unique format).
+if any(isnan(fv_obc))
+    % We don't actually have any rivers, so return all the relevant fields
+    % in Mobj as empty arrays.
+    Mobj.river_flux = [];
+    Mobj.river_nodes = [];
+    Mobj.river_names = [];
+    Mobj.have_rivers = false;
+    Mobj.nRivers = 0;
+
+    if ftbverbose
+        fprintf('end   : %s \n', subname)
+    end
+
+    return
+end
+
 fv_uniq_obc = unique(fv_obc);
 fv_uniq_flow = nan(ehype_nt, length(fv_uniq_obc));
 fv_uniq_names = cell(length(fv_uniq_obc), 1);

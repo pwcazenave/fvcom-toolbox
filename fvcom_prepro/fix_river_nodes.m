@@ -35,6 +35,7 @@ function Mobj = fix_river_nodes(Mobj, max_discharge, dist_thresh)
 %       lon, lat - nodal positions in spherical coordinates
 %       tri - unstructured grid triangulation table
 %       read_obc_nodes - open boundary node IDs
+%       nRivers - number of rivers in the model domain
 %       river_nodes - currently identified river nodes
 %       river_names - currently identified river names
 %       river_flux - river discharge time series
@@ -62,6 +63,8 @@ function Mobj = fix_river_nodes(Mobj, max_discharge, dist_thresh)
 %   one river exceeded that threshold. Also add better exclusion of
 %   candidate river nodes (those with two land boundaries only are now
 %   excluded, as well as open ocean nodes and existing river nodes).
+%   2015-09-24 Add check for whether we actually have any rivers to
+%   process.
 %
 %==========================================================================
 
@@ -70,6 +73,16 @@ subname = 'fix_river_nodes';
 global ftbverbose
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
+end
+
+% Check we actually have some rivers to process.
+if Mobj.nRivers < 1
+    warning('No rivers specified in the domain.')
+
+    if ftbverbose
+        fprintf('end   : %s\n', subname)
+    end
+    return
 end
 
 % Remove nodes close to the open boundary joint with the coastline.

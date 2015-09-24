@@ -36,12 +36,24 @@ function Mobj = get_EA_river_climatology(Mobj, ea, dist_thresh)
 %   2014-07-08 Think I've fixed the issue with leap years and incorrectly
 %   sized output temperature arrays with multiple years.
 %   2014-09-02 Nope, I hadn't fixed leap years, but I might have now.
+%   2015-09-24 Add check for whether we actually have any rivers to
+%   process.
 
 subname = 'get_EA_river_climatology';
 
-global ftbverbose;
+global ftbverbose
 if ftbverbose
     fprintf('\nbegin : %s \n', subname)
+end
+
+if isempty(Mobj.river_nodes)
+    warning('No rivers specified in the domain.')
+    Mobj.river_temp = [];
+
+    if ftbverbose
+        fprintf('end   : %s\n', subname)
+    end
+    return
 end
 
 % Load the position (lon/lat), time, climatology and SiteType variables
