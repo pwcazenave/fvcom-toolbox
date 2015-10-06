@@ -19,8 +19,10 @@ function write_FVCOM_cor(Mobj,filename)
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Rory O'Hara Murray (Marine Scotland Science)
 %
 % Revision history
+%    2014-10-07 Removed loops to speed up writing the file
 %   
 %==============================================================================
 subname = 'write_FVCOM_cor';
@@ -50,9 +52,10 @@ if(Mobj.have_cor)
 	if(ftbverbose); fprintf('writing FVCOM coriolis file %s\n',filename); end;
 	fid = fopen(filename,'w');
 	fprintf(fid,'Node Number = %d\n',Mobj.nVerts);
-	for i=1:Mobj.nVerts
-	  fprintf(fid,'%f %f %f\n',x(i),y(i),Mobj.f(i));
-	end;
+% 	for i=1:Mobj.nVerts
+% 	  fprintf(fid,'%f %f %f\n',x(i),y(i),Mobj.f(i));
+% 	end;
+    fprintf(fid, '%f %f %f\n', [x, y, Mobj.f]');
 	fclose(fid);
 else
 	error('can''t write coriolis to file, coriolis is not setup, see add_coriolis')

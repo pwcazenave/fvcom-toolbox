@@ -19,15 +19,17 @@ function write_FVCOM_bath(Mobj,filename)
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Rory O'Hara Murray (Marine Scotland Science)
 %
 % Revision history
+%    2014-10-07 Removed loops to speed up writing the file
 %   
 %==============================================================================
 subname = 'write_FVCOM_bath';
 global ftbverbose
 if(ftbverbose)
   fprintf('\n'); fprintf(['begin : ' subname '\n']);
-end
+end;
 
 %------------------------------------------------------------------------------
 % Parse input arguments
@@ -45,21 +47,22 @@ if(lower(Mobj.nativeCoords(1:3)) == 'car')
 else
 	x = Mobj.lon;
 	y = Mobj.lat;
-end
+end;
 if(Mobj.have_bath)
 	if(ftbverbose); fprintf('writing FVCOM bathymetry file %s\n',filename); end;
 	fid = fopen(filename,'w');
 	fprintf(fid,'Node Number = %d\n',Mobj.nVerts);
-	for i=1:Mobj.nVerts
-	  fprintf(fid,'%f %f %f\n',x(i),y(i),Mobj.h(i));
-    end
+% 	for i=1:Mobj.nVerts
+% 	  fprintf(fid,'%f %f %f\n',x(i),y(i),Mobj.h(i));
+% 	end;
+    fprintf(fid, '%f %f %f\n', [x y Mobj.h]');
 	fclose(fid);
 else
 	error('can''t write bathymetry to file, mesh object has no bathymetry')
-end
+end;
 
 if(ftbverbose)
   fprintf(['end   : ' subname '\n'])
-end
+end;
 
 
