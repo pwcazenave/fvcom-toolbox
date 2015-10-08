@@ -12,6 +12,8 @@ function [M] = read_netcdf_vars(varargin)
 %   Pass the variable names that you want to extract
 %   [optional pair] filename, the netCDF filename
 %   [optional triple] dimrange, the dimension name, the dimension range
+%                     the dimension range si of the form [start end
+%                     stride], where stride is optional (default 1).
 %
 % EXAMPLE USAGE
 %   Extract variables time, x, y
@@ -33,9 +35,12 @@ function [M] = read_netcdf_vars(varargin)
 %
 % Revision history
 %   v0 July 2013
+% 2014-05-27 dimension ids are now added to attributes (ROM)
+% 2014-06-02 added the ability to specify the stride/sample rate
 %==========================================================================
 
 dimrange = false;
+extract_all_flag = false;
 
 % look for some keywords with some setting after them and remember which
 % index of varargin are 'taken' in freeI.
@@ -52,8 +57,17 @@ for ii=1:1:length(varargin)
             dimrange = true;
             subsample_num = subsample_num + 1;
             subsample_dim(subsample_num) = {varargin{ii+1}};
-            subsample_ran(:,subsample_num) = varargin{ii+2};
+            range_tmp = varargin{ii+2};
+            subsample_ran(1:2,subsample_num) = range_tmp(1:2);
+            if length(range_tmp)>2
+                subsample_ran(3,subsample_num) = range_tmp(3);
+            else
+                subsample_ran(3,subsample_num) = 1;
+            end
             freeI([ii ii+1 ii+2]) = 0;
+        case 'all_vars'
+            freeI([ii]) = 0;
+            extract_all_flag = true;
     end
 end
 
@@ -73,6 +87,7 @@ ncid = netcdf.open(netcdf_filename, 'NC_NOWRITE');
 [ndims,nvars,ngatts,unlimdimid] = netcdf.inq(ncid);
 
 % get a list of the variables avaliable and check the inputs
+variable_names_avaliable = {};
 for ii=0:nvars-1
     variable_names_avaliable{ii+1} = netcdf.inqVar(ncid, ii);
 end
@@ -82,7 +97,9 @@ for ii=1:size(varnames,2);
     if size(test1,1)==0 test = [test ii]; end
 end
 
-if sum(test)>0
+if extract_all_flag
+    varnames = variable_names_avaliable;
+elseif sum(test)>0
     disp([varnames(test) ' could not be found']);
     disp(['variables avaliable are: ' variable_names_avaliable]);
     M = 0; netcdf.close(ncid);
@@ -109,7 +126,8 @@ if dimrange
     end
 end
 
-for ii=1:size(varnames,2) % loop through all the variables to extract
+% Loop through all the variables to extract
+for ii=1:size(varnames,2) 
     varid(ii) = netcdf.inqVarID(ncid,varnames{ii});
     
     % Get the attributes of the variables listed        
@@ -129,6 +147,9 @@ for ii=1:size(varnames,2) % loop through all the variables to extract
 
     % get info about the variable in question
 	[varname xtype dimids atts] = netcdf.inqVar(ncid,varid(ii));
+    
+    % add dimids to the attributes
+    eval(['M.' varnames{ii} '_att.dimids = dimids;']);
 
     % Take a subset if variable is dependent on the subsample variable
     if dimrange
@@ -149,16 +170,23 @@ for ii=1:size(varnames,2) % loop through all the variables to extract
         % get all the dimension lengths and make a starts one (zeros)
         dim_range(2,:) = dimsize(dimids+1); % the sizes
         dim_range(1,:) = zeros(1, size(dim_range,2));   % the start positions, i.e. zeros
+        dim_range(3,:) = ones(1, size(dim_range,2));    % default stride of 1
         
         % redefine the dim_starts and dim array
         for jj=1:length(I)
-        	if I(jj) dim_range(:,jj) = [subsample_ran(1,I(jj)); subsample_ran(end,I(jj))-subsample_ran(1,I(jj))]; end
+        	if I(jj)
+                dim_range(:,jj) = [subsample_ran(1,I(jj)); ...
+                    round([subsample_ran(2,I(jj))-subsample_ran(1,I(jj))]./subsample_ran(3,I(jj))); ...
+                    subsample_ran(3,I(jj))];
+            end
         end
-                
-        M.(varnames{ii}) = double(netcdf.getVar(ncid, varid(ii), dim_range(1,:), dim_range(2,:)));
+        
+        %M.(varnames{ii}) = double(netcdf.getVar(ncid, varid(ii), dim_range(1,:), dim_range(2,:), dim_range(3,:)));
+        M.(varnames{ii}) = (netcdf.getVar(ncid, varid(ii), dim_range(1,:), dim_range(2,:), dim_range(3,:)));
     else
         % Do not subsample if 'I' doens't exist or we are not subsampling
-        M.(varnames{ii}) = double(netcdf.getVar(ncid, varid(ii)));
+        %M.(varnames{ii}) = double(netcdf.getVar(ncid, varid(ii)));
+        M.(varnames{ii}) = (netcdf.getVar(ncid, varid(ii)));
     end
 end
 
