@@ -20,10 +20,11 @@ function [Mobj] = read_fvcom_mesh(gridfile)
 % Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
+%    Rory O'Hara Murray (Marien Scotland Science)
 %
 % Revision history
 %    2014-04-23 Minor formatting fixes and add the global ftbverbose flag.
-%
+%    2014-08-19 Remove loops to speed up reading in the file.
 %==============================================================================
 
 subname = 'read_fvcom_mesh';
@@ -71,15 +72,13 @@ if ftbverbose
     fprintf('# nodes %d\n',nVerts);
     fprintf('# elems %d\n',nElems);
 end
-for i=1:nElems
-  C = textscan(fid,' %d %d %d %d %d\n',1);
-  tri(i,1) = C{2};  tri(i,2) = C{3}; tri(i,3) = C{4};
-end;
-for i=1:nVerts
-  C = textscan(fid, '%d %f %f %f', 1);
-  x(i) = C{2};
-  y(i) = C{3};
-end;
+C = textscan(fid,' %d %d %d %d %d',nElems);
+tri(:,1) = C{2};  tri(:,2) = C{3}; tri(:,3) = C{4};
+
+C = textscan(fid, '%d %f %f %f', nVerts);
+x(:) = C{2};
+y(:) = C{3};
+
 if ftbverbose; fprintf('mesh read in\n'); end
 fclose(fid);
 
