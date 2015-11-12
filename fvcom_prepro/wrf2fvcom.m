@@ -75,12 +75,6 @@ grid_name = 'wrf_grid';
 grid_source = 'wrf grid (structured) surface forcing';
 CoordVar = 'lat lon';
 
-fv.xlon = zeros(wrf.south_north, wrf.west_east);
-fv.xlat = zeros(wrf.south_north, wrf.west_east);
-fv.fmask = zeros(wrf.south_north, wrf.west_east);
-
-[fv.xlon, fv.xlat] = deal(wrf.XLONG, wrf.XLAT);
-
 % -------------------------------------------------------------------------
 % Define the netCDF parameters
 %--------------------------------------------------------------------------
@@ -193,6 +187,9 @@ for i = 1:wrf.ntimes
     cc = datestr(wrf.mtime(i), 31);
     netcdf.putVar(ncid, varid_Times, [0, i-1], [19, 1], cc);
 end
+
+netcdf.putVar(ncid, varid_XLONG, [0, 0], size(wrf.XLONG), wrf.XLONG)
+netcdf.putVar(ncid, varid_XLAT, [0, 0], size(wrf.XLAT), wrf.XLAT)
 
 netcdf.putVar(ncid, varid_Shortwave, [0, 0, 0], size(wrf.Shortwave), wrf.Shortwave); % shortwave W/m^2
 netcdf.putVar(ncid, varid_Net_Heat, [0, 0, 0], size(wrf.Net_Heat), wrf.Net_Heat); % net W/m^2
