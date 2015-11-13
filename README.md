@@ -22,13 +22,13 @@ Notes:
 
 The PML version of the toolbox includes tagged releases, which can be downloaded as standalone (and thus relatively stable) versions. See the PML_ChangeLog.txt for details. Links to the direct downloads are:
 
-- v20140423: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20140423
-- v20140131: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20140131
-- v20130917: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20130917
-- v20130719: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20130719
-- v20130521: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20130521
-- v20130403: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20130403
-- v20130204: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20130204
+- 20140423
+- 20140131
+- 20130917
+- 20130719
+- 20130521
+- 20130403
+- 20130204
 
 To download the version included in the FVCOM source code, go to https://github.com/GeoffCowles/fvcom-toolbox.
 
