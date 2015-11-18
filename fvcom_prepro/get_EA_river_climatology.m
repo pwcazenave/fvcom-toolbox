@@ -31,7 +31,7 @@ function Mobj = get_EA_river_climatology(Mobj, ea, dist_thresh)
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %
-% Reivision history
+% Revision history
 %   2013-11-05 First version.
 %   2014-07-08 Think I've fixed the issue with leap years and incorrectly
 %   sized output temperature arrays with multiple years.
