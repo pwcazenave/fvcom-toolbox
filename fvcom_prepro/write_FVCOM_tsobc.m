@@ -204,7 +204,7 @@ nc = netcdf.create(tsOBCFile, 'clobber');
 % define global attributes
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','Open boundary temperature and salinity nudging')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM TIME SERIES OBC TS FILE')
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','File generated using write_FVCOM_tsobc.m from the MATLAB fvcom-toolbox')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
 
 
 % define dimensions

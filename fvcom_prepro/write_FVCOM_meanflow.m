@@ -44,7 +44,7 @@ nc = netcdf.create(ncfile, 'clobber');
 % define global attributes
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'type', 'FVCOM MEANFLOW TIME SERIES FILE')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'title', 'FVCOM MEANFLOW TIME SERIES data for open boundary')
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'history', 'File created using write_FVCOM_meanflow.m from the MATLAB fvcom-toolbox')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'filename', ncfile)
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'Conventions', 'CF-1.0')
 

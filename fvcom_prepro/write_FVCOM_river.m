@@ -76,7 +76,7 @@ nc = netcdf.create(RiverFile, 'clobber');
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'type', 'FVCOM RIVER FORCING FILE')
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'title', RiverInfo1)
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'info', RiverInfo2)
-netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'history', 'File created using write_FVCOM_river.m from the MATLAB fvcom-toolbox')
+netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'history', sprintf('File created using %s from the MATLAB fvcom-toolbox', subname))
 
 % dimensions
 namelen_dimid = netcdf.defDim(nc, 'namelen', 80);

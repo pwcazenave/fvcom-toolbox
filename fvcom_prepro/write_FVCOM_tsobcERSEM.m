@@ -176,7 +176,7 @@ nc = netcdf.create(tsOBCFile, 'clobber');
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM RIVER FORCING FILE')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','simple open boundary hydrography test')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM TIME SERIES OBC BIO FILE') %% THIS IS IMPORTANT
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','File generated using write_FVCOM_tsobcERSEM.m from the MATLAB fvcom-toolbox')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
 
 
 % define dimensions

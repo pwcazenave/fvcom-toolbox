@@ -34,6 +34,12 @@ function write_FVCOM_obs_TS(time,zsl,nverts,tsl,ssl,filename,mytitle)
 %
 %==============================================================================
 
+global ftbverbose
+
+subname = 'write_FVCOM_obc_TS'
+if ftbverbose
+    fprintf('\nbegin : %s \n', subname);
+end
 
 % check dimensions
 ksl = numel(zsl);
@@ -54,7 +60,7 @@ fprintf('Size of T/S array: %d\n',ksl);
 nc = netcdf.create(filename,'clobber');
 
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title',mytitle)
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','File created with the write_FVCOM_obs_TS.m from the MATLAB fvcom-toolbox')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
 
 % define dimensions
 ksl_dimid=netcdf.defDim(nc,'ksl',ksl);
@@ -115,6 +121,9 @@ netcdf.putVar(nc,ssl_varid,ssl);
 % Close the NetCDF file(s)
 netcdf.close(nc);
 
+if ftbverbose
+    fprintf('end   : %s \n',  subname)
+end
 
 
 

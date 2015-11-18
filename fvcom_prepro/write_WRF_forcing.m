@@ -82,7 +82,7 @@ nc = netcdf.create(filename, 'clobber');
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'type', 'FVCOM METEO FORCING FILE')
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'title', [filename, ' forcing'])
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'gauge', 'Met Office Unified Model forcing')
-netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'history', ['File created on ', datestr(now, 'yyyy-mm-dd HH:MM:SS'), ' with write_WRF_forcing.m from the MATLAB fvcom-toolbox (https://github.com/pwcazenave/fvcom-toolbox)'])
+netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'history', sprintf('File with %s from the MATLAB fvcom-toolbox', subname))
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'source', 'wrf grid (structured) surface forcing')
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'START_DATE', datestr(datenum(sgYr, sgMon, sgDay, sgHr, sgMin, sgSec), 'yyyy-mm-dd HH:MM:SS'))
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'END_DATE', datestr(datenum(egYr, egMon, egDay, egHr, egMin, egSec), 'yyyy-mm-dd HH:MM:SS'))

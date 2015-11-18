@@ -51,7 +51,7 @@ end;
 nc = netcdf.create(filename,'clobber');
 
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title',mytitle)
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', 'File created using write_FVCOM_TT.m from the MATLAB fvcom-toolbox')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
 
 % dimensions
 nele_dimid=netcdf.defDim(nc,'nele',nElems);

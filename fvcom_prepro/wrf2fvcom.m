@@ -86,7 +86,7 @@ end
 % Define global attributes.
 nc.type = 'FVCOM METEO FORCING FILE';
 nc.title = 'WRF model forcing';
-nc.history = sprintf('FILE CREATED using wrf2fvcom.m from the MATLAB fvcom-toolbox on %s', datestr(now, 31));
+nc.history = sprintf('File created with %s from the MATLAB fvcom-toolbox', subname);
 nc.source =  grid_source;
 nc.START_DATE = datestr(wrf.mtime(1, 1), 31);
 nc.END_DATE = datestr(wrf.mtime(end, 1), 31);

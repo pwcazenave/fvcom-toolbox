@@ -117,7 +117,7 @@ nc=netcdf.create(ElevationFile,'clobber');
 % define global attributes
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM TIME SERIES ELEVATION FORCING FILE')
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title',MyTitle)
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history','File created using write_FVCOM_elevtide from the MATLAB fvcom-toolbox')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
 
 % define dimensions
 nobc_dimid=netcdf.defDim(nc,'nobc',nObcs);
