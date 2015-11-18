@@ -43,7 +43,7 @@ subname = 'init_lag';
 
 global ftbverbose;
 if ftbverbose
-	fprintf('\nbegin : %s \n', subname)
+    fprintf('\nbegin : %s \n', subname)
 end
 
 tbeg = timerange(1);

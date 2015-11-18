@@ -59,7 +59,7 @@ if nargin == 5
     else
         disp(['We are adding nutrients to the BC file!!!',Nutrients{1:NNuts}])
         tsOBCFile = [basename, '_Nutsobc.nc'];
-        
+
     end
 end
 
@@ -126,7 +126,7 @@ nTimes = numel(time);
 nSiglev = nSiglay + 1;
 for nuts=1:NNuts
     in_temp=Mobj.(Nutrients{nuts});
-    
+
     % Create or process the temperature and salinity arrays.
     if max(size(in_temp)) == 1
         inc = 1/real(nSiglay);
@@ -137,8 +137,8 @@ for nuts=1:NNuts
         end
         eval([Nutrients{nuts},'= zeros(nObc,nSiglay,nTimes);'])
         eval(['obc_',Nutrients{nuts},' = repmat(Mobj.(',Nutrients{nuts},'), 1, nTimes);'])
-        
-        
+
+
         for i=1:nObc
             for j=1:nSiglay
                 eval([Nutrients{nuts},'(i,j,:)=obc_',Nutrients{nuts},';'])
@@ -147,7 +147,7 @@ for nuts=1:NNuts
     else
         % We have a 3D array already so we just need a couple of stats.
         eval([Nutrients{nuts},'= Mobj.',Nutrients{nuts},';'])
-        
+
         if nargin >= 4 && isfield(Mobj, 'siglay') && isfield(Mobj, 'siglev')
             siglev = Mobj.siglev;
             siglay = Mobj.siglay;
@@ -157,7 +157,7 @@ for nuts=1:NNuts
             siglev = 0:-inc:-1;
             siglay = nan(1, nSiglay);
         end
-        
+
         in_test= Mobj.(Nutrients{nuts});
         if nSiglay ~= size(in_test, 2) || length(siglay) ~= size(in_test, 2)
             error('Specified number of sigma layers does not match supplied data')

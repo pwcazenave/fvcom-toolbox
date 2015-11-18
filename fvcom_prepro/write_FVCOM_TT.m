@@ -38,7 +38,7 @@ end;
 nElems = numel(turbine.numbers);
 nSiglay = size(turbine.sigma_layer,2);
 if(nElems == 0)
-	error('dimension of turbine_numbers is 0, something is wrong ')
+    error('dimension of turbine_numbers is 0, something is wrong ')
 end;
 
 %------------------------------------------------------------------------------

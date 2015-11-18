@@ -20,7 +20,7 @@ function write_FVCOM_meanflow(Mobj, ncfile, data)
 % Author(s):
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
-% TODO: 
+% TODO:
 %    Add support for multiple open boundaries (currently hard limit of
 %    one).
 %

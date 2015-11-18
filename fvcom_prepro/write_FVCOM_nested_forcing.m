@@ -288,7 +288,7 @@ if nesttype > 2
     netcdf.putAtt(nc, cweights_varid, 'units', 'no units');
     netcdf.putAtt(nc, cweights_varid, 'grid', 'fvcom_grid');
     netcdf.putAtt(nc, cweights_varid, 'type', 'data');
-    
+
     nweights_varid = netcdf.defVar(nc, 'weight_node', 'NC_FLOAT', ...
     [node_dimid, time_dimid]);
     netcdf.putAtt(nc, nweights_varid, 'long_name', ...

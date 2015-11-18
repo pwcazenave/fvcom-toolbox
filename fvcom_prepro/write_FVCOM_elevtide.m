@@ -38,10 +38,10 @@ function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle,varargin)
 %       write_FVCOM_elevtide(Mobj, MJD, '/tmp/elevtide.nc, ...
 %           'Shelf tides', 'floattime', true)
 %
-% Author(s):  
+% Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %   Karen Amoudry (National Oceanography Centre Liverpool)
-% 
+%
 % Revision history
 %   2012-08-08 (PWC) First version.
 %   2012-11-14 (PWC) Updated to expect Modified Julian Day rather than
@@ -59,7 +59,7 @@ function write_FVCOM_elevtide(Mobj,MJD,ElevationFile,MyTitle,varargin)
 %   to 'Itime' and 'Itime2' and finally 'time'. Also reinstate the original
 %   version of the calculation of Itime2 as the rounding effect was
 %   smoothing out the data too much, affecting its precision.
-%   
+%
 %==========================================================================
 
 global ftbverbose
@@ -104,7 +104,7 @@ if nObcs ~= chk1 || nTimes ~= chk2
     fprintf('Surface elevation nodes and time sizes: (%d, %d)\n', chk1, chk2)
     fprintf('Boundary nodes size: %d\n', nObcs)
     fprintf('Times size: %d\n', nTimes)
-	error('Input data sizes do not match. Check and try again.');
+    error('Input data sizes do not match. Check and try again.');
 end
 
 %%

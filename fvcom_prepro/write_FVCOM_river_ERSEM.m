@@ -26,7 +26,7 @@ function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n
 %    write_FVCOM_river('tst_riv.nc', {'Penobscot'}, time, flux, temp, ...
 %         salt, 'Penobscot Flux', 'source: USGS')
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
