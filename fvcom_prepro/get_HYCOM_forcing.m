@@ -310,9 +310,6 @@ end
 % Clear out the full lon/lat arrays.
 data = rmfield(data, {'X', 'Y'});
 
-% Set the fields to iterate through to be the varlist plus those which are
-% essential (time, positions and depth).
-% fields = fieldnames(hycom);
 fields = varlist;
 
 for aa = 1:length(fields)
