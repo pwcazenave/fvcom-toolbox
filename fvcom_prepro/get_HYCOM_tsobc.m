@@ -224,8 +224,8 @@ for v = 1:length(fields)
 
                 % Get the variables into static variables for the
                 % parallelisation.
-                plon = tlon(ixy);
-                plat = tlat(ixy);
+                plon = double(tlon(ixy));
+                plat = double(tlat(ixy));
                 ptemp = tpctemp2(ixy);
 
                 % Use a triangulation to do the horizontal interpolation if
