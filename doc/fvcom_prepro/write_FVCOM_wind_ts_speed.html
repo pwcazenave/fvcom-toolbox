@@ -144,7 +144,7 @@ This function is called by:
 0061 <span class="comment">% netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','single-point time-dependent surface forcing')</span>
 0062 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'source'</span>,<span class="string">'fvcom grid (unstructured) surface forcing'</span>)
 0063 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'institution'</span>,<span class="string">'Plymouth Marine Laboratory'</span>)
-0064 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'File generated using the write_FVCOM_wind_ts_speed.m from the MATLAB fvcom-toolbox'</span>)
+0064 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
 0065 
 0066 <span class="comment">% dimensions</span>
 0067 nele_dimid=netcdf.defDim(nc,<span class="string">'nele'</span>,nElems);
@@ -200,6 +200,6 @@ This function is called by:
 0117 
 0118 
 0119</pre></div>
-<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -29,7 +29,6 @@ digraph m2html {
   do_residual_plot -> m_ll2ll;
   do_transect_plot -> m_ll2ll;
   do_vector_plot -> m_ll2ll;
-  do_volume_change -> get_runs;
   get_polcoms_fixed_vars -> calc_scoord;
   get_polcoms_fixed_vars -> read_polcoms_params;
   get_polcoms_fixed_vars -> read_scoord_params;
@@ -66,10 +65,6 @@ digraph m2html {
   connectivity [URL="connectivity.html"];
   deg2utm [URL="deg2utm.html"];
   distance_to_coast [URL="distance_to_coast.html"];
-  do_ph_change_plot [URL="do_ph_change_plot.html"];
-  do_ph_change_points_plot [URL="do_ph_change_points_plot.html"];
-  do_ph_max_change_plot [URL="do_ph_max_change_plot.html"];
-  do_ph_vertical_profile [URL="do_ph_vertical_profile.html"];
   do_residual [URL="do_residual.html"];
   do_residual_plot [URL="do_residual_plot.html"];
   do_surface_plot [URL="do_surface_plot.html"];
@@ -79,9 +74,6 @@ digraph m2html {
   do_transect_plot [URL="do_transect_plot.html"];
   do_vector_plot [URL="do_vector_plot.html"];
   do_vector_plot_MatlabMap [URL="do_vector_plot_MatlabMap.html"];
-  do_volume [URL="do_volume.html"];
-  do_volume_change [URL="do_volume_change.html"];
-  do_volume_change2 [URL="do_volume_change2.html"];
   find_boundary_elements [URL="find_boundary_elements.html"];
   find_relaxation_boundary [URL="find_relaxation_boundary.html"];
   fix_inside_boundary [URL="fix_inside_boundary.html"];
@@ -116,6 +108,7 @@ digraph m2html {
   plot_fvcom_field [URL="plot_fvcom_field.html"];
   pp2nc [URL="pp2nc.html"];
   pp2nc_subset [URL="pp2nc_subset.html"];
+  qair2rh [URL="qair2rh.html"];
   read_fvcom_mesh [URL="read_fvcom_mesh.html"];
   read_kml [URL="read_kml.html"];
   read_netCDF_FVCOM [URL="read_netCDF_FVCOM.html"];
@@ -132,6 +125,7 @@ digraph m2html {
   surrounders [URL="surrounders.html"];
   transect_nodes_screen [URL="transect_nodes_screen.html"];
   tri_from_bndry [URL="tri_from_bndry.html"];
+  turbine_area_sigma [URL="turbine_area_sigma.html"];
   utm2deg [URL="utm2deg.html"];
   wave_fric [URL="wave_fric.html"];
   wgs2utm [URL="wgs2utm.html"];

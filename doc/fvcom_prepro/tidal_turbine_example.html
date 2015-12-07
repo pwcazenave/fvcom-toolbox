@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of tidal_turbine_example</title>
+  <meta name="keywords" content="tidal_turbine_example">
+  <meta name="description" content="Example code showing how to make a tidal turbine parameter input netCDF">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; tidal_turbine_example.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>tidal_turbine_example
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Example code showing how to make a tidal turbine parameter input netCDF</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+ Example code showing how to make a tidal turbine parameter input netCDF
+ file for FVCOM.
+
+ Rory O'Hara Murray
+ 6 Oct 2015</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>	Transfer a field from vertices to elements</li><li><a href="read_fvcom_bath.html" class="code" title="function [h] = read_fvcom_bath(bathfile)">read_fvcom_bath</a>	Read fvcom bathymetry file</li><li><a href="write_FVCOM_TT.html" class="code" title="function write_FVCOM_TT3(turbine,filename,mytitle)">write_FVCOM_TT</a>	Dump tidal turbine parameters to FVCOM forcing file.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">%</span>
+0002 <span class="comment">% Example code showing how to make a tidal turbine parameter input netCDF</span>
+0003 <span class="comment">% file for FVCOM.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% Rory O'Hara Murray</span>
+0006 <span class="comment">% 6 Oct 2015</span>
+0007 <span class="comment">%</span>
+0008 clear, close all
+0009 
+0010 <span class="comment">% load in PFOW model grid and bathymetry</span>
+0011 Mobj = read_fvcom_mesh([<span class="string">'\\isilonml\Shelf_Model\PFOW\1_HD Model\4_Climatology Results\input\PFOW_SMS_1_grd.dat'</span>]);
+0012 Mobj.h =  <a href="read_fvcom_bath.html" class="code" title="function [h] = read_fvcom_bath(bathfile)">read_fvcom_bath</a>(<span class="string">'\\isilonml\Shelf_Model\PFOW\1_HD Model\4_Climatology Results\input\PFOW_SMS_1_dep.dat'</span>);
+0013 
+0014 lonc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.x,Mobj); <span class="comment">% calculate approximate x-coordinate at the centre of each element</span>
+0015 latc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.y,Mobj); <span class="comment">% calculate approximate y-coordinate at the centre of each element</span>
+0016 [xc yc] = ll2utm(lonc, latc, 30);
+0017 
+0018 <span class="comment">% calculate depth at the centre of each element</span>
+0019 Mobj.hc = mean(Mobj.h(Mobj.tri),2);
+0020 
+0021 <span class="comment">% setup empty turbine array</span>
+0022 turbine.numbers     = single(zeros(Mobj.nElems,1));
+0023 turbine.sigma_layer = single(zeros(Mobj.nElems,10));
+0024 turbine.area        = single(zeros(Mobj.nElems,1));
+0025 <span class="comment">% turbine.thrust      = single(zeros(Mobj.nElems,1));</span>
+0026 <span class="comment">% turbine.drag        = single(zeros(Mobj.nElems,1));</span>
+0027 
+0028 <span class="comment">% Example turbine positions in the Inner Sound of Stroma</span>
+0029 TurbinePositionsll = [-3.137,58.661; <span class="keyword">...</span>
+0030 -3.12945337127092,58.6596303572796; <span class="keyword">...</span>
+0031 -3.12960283663035,58.6600269324843; <span class="keyword">...</span>
+0032 -3.13193517522843,58.658758560404; <span class="keyword">...</span>
+0033 -3.1320846649985,58.659155132772];
+0034 
+0035 [TurbinePositions(:,1) TurbinePositions(:,2)] = ll2utm(TurbinePositionsll(:,1), TurbinePositionsll(:,2), 30);
+0036 
+0037 <span class="comment">% For each turbine find which element it is in and count the number of</span>
+0038 <span class="comment">% turbines in each element</span>
+0039 I = fun_nearest2D(TurbinePositions(:,1), TurbinePositions(:,2), xc, yc);
+0040 <span class="keyword">for</span> ii=1:length(I)
+0041     turbine.numbers(I(ii)) = turbine.numbers(I(ii)) + 1;
+0042 <span class="keyword">end</span>
+0043 turbinesI = turbine.numbers&gt;0;
+0044 numTurbineElems = sum(turbinesI);       <span class="comment">% total number of elements with turbines in</span>
+0045 numTurbines = sum(turbine.numbers);     <span class="comment">% total number of turbines</span>
+0046 
+0047 
+0048 <span class="comment">% loop through each turbine and work out the fraction spread over each sigma layer</span>
+0049 <span class="keyword">for</span> ii=find(turbinesI)'
+0050     turbine.sigma_layer(ii,:) = turbine_area_sigma(Mobj.hc(ii), 15, 10);
+0051 <span class="keyword">end</span>
+0052 
+0053 <span class="comment">% an alternative (simpler) way of specifying the fractional split across</span>
+0054 <span class="comment">% sigma layers</span>
+0055 <span class="comment">% turbine.sigma_layer(turbinesI,:) = ones(numTurbineElems,1)*[0 0 0 0 0 0.25 0.25 0.25 0.25 0];</span>
+0056 
+0057 <span class="comment">% turbine rotor swept area - 10 m radius.</span>
+0058 turbine.area(turbinesI) = 10*10*pi;
+0059 
+0060 <span class="comment">% The thrust curve is currently not inputted into FVCOM, this could be</span>
+0061 <span class="comment">% added in the future though.</span>
+0062 <span class="comment">% turbine.thrust_curve = [0.99 1 1.25 1.5 1.75 2 2.25 2.5 2.75 3 3.25 3.5 3.75 4 4.01; 0 0.85 0.85 0.85 0.85 0.85 0.85 0.85 0.635 0.490 0.385 0.308 0.250 0.205 0];</span>
+0063 
+0064 <span class="comment">% write the netcdf input file</span>
+0065 <a href="write_FVCOM_TT.html" class="code" title="function write_FVCOM_TT3(turbine,filename,mytitle)">write_FVCOM_TT</a>(turbine,[<span class="string">'Tidal_Turbines_Example.nc'</span>],<span class="string">'Example Scenario with 5 tidal turbines in the inner sound'</span>);
+0066 
+0067 <span class="comment">%% plot the location of the turbines</span>
+0068 <span class="comment">%plot_fvcom_field(Mobj,elems2nodes(turbine.numbers,Mobj), 'grd', 'w')</span>
+0069 plot_fvcom_field(Mobj,single(turbinesI), <span class="string">'grd'</span>, <span class="string">'w'</span>) 
+0070 colormap( jet(2) );
+0071 daspect([1 1 1])
+0072 
+0073</pre></div>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

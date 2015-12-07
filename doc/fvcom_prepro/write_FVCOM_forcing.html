@@ -68,11 +68,11 @@
      - 'Et' or 'evap'      - evaporation
      - 'prate' or 'P_E'    - precipitation
      - 'nlwrs'             - net longwave radiation*,**
-     - 'nswrs'             - net shortwave radiation*,**
+     - 'nswrs'             - net shortwave radiation*,**,***
      - 'shtfl'             - sensible heat net flux*,**
      - 'lhtfl'             - latent heat net flux*,**
      - 'slp' or 'pres'     - mean sea level pressure***
-     - 'dswrf'             - downward shortwave flux***
+     - 'dswrf'             - downward shortwave flux
      - 'dlwrf'             - downward longwave flux***
      - 'rhum'              - relative humidity***
      - 'air'               - air temperature***
@@ -211,11 +211,11 @@ This function is called by:
 0040 <span class="comment">%     - 'Et' or 'evap'      - evaporation</span>
 0041 <span class="comment">%     - 'prate' or 'P_E'    - precipitation</span>
 0042 <span class="comment">%     - 'nlwrs'             - net longwave radiation*,**</span>
-0043 <span class="comment">%     - 'nswrs'             - net shortwave radiation*,**</span>
+0043 <span class="comment">%     - 'nswrs'             - net shortwave radiation*,**,***</span>
 0044 <span class="comment">%     - 'shtfl'             - sensible heat net flux*,**</span>
 0045 <span class="comment">%     - 'lhtfl'             - latent heat net flux*,**</span>
 0046 <span class="comment">%     - 'slp' or 'pres'     - mean sea level pressure***</span>
-0047 <span class="comment">%     - 'dswrf'             - downward shortwave flux***</span>
+0047 <span class="comment">%     - 'dswrf'             - downward shortwave flux</span>
 0048 <span class="comment">%     - 'dlwrf'             - downward longwave flux***</span>
 0049 <span class="comment">%     - 'rhum'              - relative humidity***</span>
 0050 <span class="comment">%     - 'air'               - air temperature***</span>
@@ -370,7 +370,7 @@ This function is called by:
 0199     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,<span class="string">'FVCOM Forcing File'</span>)
 0200     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'institution'</span>,<span class="string">'Plymouth Marine Laboratory'</span>)
 0201     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'source'</span>,<span class="string">'FVCOM grid (unstructured) surface forcing'</span>)
-0202     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,[<span class="string">'File created on '</span>, datestr(now, <span class="string">'yyyy-mm-dd HH:MM:SS'</span>), <span class="string">' with write_FVCOM_forcing.m from the MATLAB fvcom-toolbox (https://github.com/pwcazenave/fvcom-toolbox)'</span>])
+0202     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
 0203     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'references'</span>,<span class="string">'http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu'</span>)
 0204     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'Conventions'</span>,<span class="string">'CF-1.0'</span>)
 0205 <span class="comment">%     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'infos',infos)</span>
@@ -834,6 +834,6 @@ This function is called by:
 0663 <span class="keyword">if</span> ftbverbose
 0664     fprintf(<span class="string">'end   : %s \n'</span>, subname)
 0665 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

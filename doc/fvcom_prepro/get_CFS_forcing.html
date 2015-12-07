@@ -1,0 +1,757 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_CFS_forcing</title>
+  <meta name="keywords" content="get_CFS_forcing">
+  <meta name="description" content="Get the required parameters from CFSv2 reanalysis products to force">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_CFS_forcing.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_CFS_forcing
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Get the required parameters from CFSv2 reanalysis products to force</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function data = get_CFS_forcing(Mobj, modelTime, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Get the required parameters from CFSv2 reanalysis products to force
+ FVCOM.
+
+ data = get_CFS_forcing(Mobj, modelTime)
+
+ DESCRIPTION:
+   Using the NOAA OPeNDAP server, extract the necessary parameters to
+   create an FVCOM forcing file. Data are available for 1979-2009
+   inclusive.
+
+ INPUT:
+   Mobj - MATLAB mesh object. Must contain fields:
+       lon, lat    - array of longitude and latitudes.
+       have_lonlat - boolean to signify whether coordinates are spherical
+                   or cartesian.
+   modelTime - Modified Julian Date start and end times
+   varargin - optional parameter/value pairs:
+       - list of variables to extract:
+           'varlist', {'tmp2m', 'uwnd', 'vwnd'}
+
+ OUTPUT:
+   data - struct of the data necessary to force FVCOM. These can be
+   interpolated onto an unstructured grid in Mobj using grid2fvcom.m.
+   Contains vectors of the longitude and latitude data (lon, lat).
+
+ The parameters which can be obtained from the NCEP data are:
+     - Net shortwave radiation (nswsfc = uswsfc - dswsfc) [surface] [W/m^2]
+     - Downward longwave radiation (dlwrf) [surface] [W/m^2]
+     - Pressure (pressfc) [surface] [Pa]
+     - u wind component (uwnd) [10m] [m/s]
+     - v wind component (vwnd) [10m] [m/s]
+     - Air temperature (tmp2m) [2m] [celsius]
+     - Precipitation rate (prate) [surface] [m/s]
+     - Specific humidity (q2m) [2m] [%]
+     - Relative humidity (rhum) [2m] [%] - calculated from q2m.
+     - Latent heat flux (lhtfl) [surface] [m/s]
+     - Evaporation rate (Et) [surface] [m/s]
+
+ Relative humidity is calculated from specific humidity with the QAIR2RH
+ function (see fvcom-toolbox/utilities). Precipitation is converted from
+ kg/m^2/s to m/s. Evaporation (Et) is calculated from the mean daily
+ latent heat net flux (lhtfl) at the surface. Precipitation-evaporation is
+ also created (P_E).
+
+ EXAMPLE USAGE:
+   To download the default set of data (see list above):
+
+       forcing = get_CFS_forcing(Mobj, [51345, 51376]);
+
+   To only download wind data:
+
+       forcing = get_CFS_forcing(Mobj, [51345, 51376], 'varlist', {'uwnd', 'vwnd'});
+
+ Author(s)
+   Pierre Cazenave (Plymouth Marine Laboratory)
+   Ricardo Torres (Plymouth Marine Laboratory)
+   Rory O'Hara Murray (Marine Scotland Science)
+
+ Revision history:
+   2015-05-19 First version loosely based on get_NCEP_forcing.m.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function data = get_CFS_forcing(Mobj, modelTime, varargin)</a>
+0002 <span class="comment">% Get the required parameters from CFSv2 reanalysis products to force</span>
+0003 <span class="comment">% FVCOM.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% data = get_CFS_forcing(Mobj, modelTime)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%   Using the NOAA OPeNDAP server, extract the necessary parameters to</span>
+0009 <span class="comment">%   create an FVCOM forcing file. Data are available for 1979-2009</span>
+0010 <span class="comment">%   inclusive.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% INPUT:</span>
+0013 <span class="comment">%   Mobj - MATLAB mesh object. Must contain fields:</span>
+0014 <span class="comment">%       lon, lat    - array of longitude and latitudes.</span>
+0015 <span class="comment">%       have_lonlat - boolean to signify whether coordinates are spherical</span>
+0016 <span class="comment">%                   or cartesian.</span>
+0017 <span class="comment">%   modelTime - Modified Julian Date start and end times</span>
+0018 <span class="comment">%   varargin - optional parameter/value pairs:</span>
+0019 <span class="comment">%       - list of variables to extract:</span>
+0020 <span class="comment">%           'varlist', {'tmp2m', 'uwnd', 'vwnd'}</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% OUTPUT:</span>
+0023 <span class="comment">%   data - struct of the data necessary to force FVCOM. These can be</span>
+0024 <span class="comment">%   interpolated onto an unstructured grid in Mobj using grid2fvcom.m.</span>
+0025 <span class="comment">%   Contains vectors of the longitude and latitude data (lon, lat).</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% The parameters which can be obtained from the NCEP data are:</span>
+0028 <span class="comment">%     - Net shortwave radiation (nswsfc = uswsfc - dswsfc) [surface] [W/m^2]</span>
+0029 <span class="comment">%     - Downward longwave radiation (dlwrf) [surface] [W/m^2]</span>
+0030 <span class="comment">%     - Pressure (pressfc) [surface] [Pa]</span>
+0031 <span class="comment">%     - u wind component (uwnd) [10m] [m/s]</span>
+0032 <span class="comment">%     - v wind component (vwnd) [10m] [m/s]</span>
+0033 <span class="comment">%     - Air temperature (tmp2m) [2m] [celsius]</span>
+0034 <span class="comment">%     - Precipitation rate (prate) [surface] [m/s]</span>
+0035 <span class="comment">%     - Specific humidity (q2m) [2m] [%]</span>
+0036 <span class="comment">%     - Relative humidity (rhum) [2m] [%] - calculated from q2m.</span>
+0037 <span class="comment">%     - Latent heat flux (lhtfl) [surface] [m/s]</span>
+0038 <span class="comment">%     - Evaporation rate (Et) [surface] [m/s]</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% Relative humidity is calculated from specific humidity with the QAIR2RH</span>
+0041 <span class="comment">% function (see fvcom-toolbox/utilities). Precipitation is converted from</span>
+0042 <span class="comment">% kg/m^2/s to m/s. Evaporation (Et) is calculated from the mean daily</span>
+0043 <span class="comment">% latent heat net flux (lhtfl) at the surface. Precipitation-evaporation is</span>
+0044 <span class="comment">% also created (P_E).</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">% EXAMPLE USAGE:</span>
+0047 <span class="comment">%   To download the default set of data (see list above):</span>
+0048 <span class="comment">%</span>
+0049 <span class="comment">%       forcing = get_CFS_forcing(Mobj, [51345, 51376]);</span>
+0050 <span class="comment">%</span>
+0051 <span class="comment">%   To only download wind data:</span>
+0052 <span class="comment">%</span>
+0053 <span class="comment">%       forcing = get_CFS_forcing(Mobj, [51345, 51376], 'varlist', {'uwnd', 'vwnd'});</span>
+0054 <span class="comment">%</span>
+0055 <span class="comment">% Author(s)</span>
+0056 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0057 <span class="comment">%   Ricardo Torres (Plymouth Marine Laboratory)</span>
+0058 <span class="comment">%   Rory O'Hara Murray (Marine Scotland Science)</span>
+0059 <span class="comment">%</span>
+0060 <span class="comment">% Revision history:</span>
+0061 <span class="comment">%   2015-05-19 First version loosely based on get_NCEP_forcing.m.</span>
+0062 <span class="comment">%</span>
+0063 <span class="comment">%==========================================================================</span>
+0064 
+0065 subname = <span class="string">'get_CFS_forcing'</span>;
+0066 
+0067 <span class="keyword">global</span> ftbverbose;
+0068 <span class="keyword">if</span> ftbverbose
+0069     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0070 <span class="keyword">end</span>
+0071 
+0072 <span class="comment">% Parse the input arguments</span>
+0073 varlist = [];
+0074 <span class="keyword">if</span> nargin &gt; 2
+0075     <span class="keyword">for</span> a = 1:2:nargin - 2
+0076         <span class="keyword">switch</span> varargin{a}
+0077             <span class="keyword">case</span> <span class="string">'varlist'</span>
+0078                 varlist = varargin{a + 1};
+0079         <span class="keyword">end</span>
+0080     <span class="keyword">end</span>
+0081 <span class="keyword">end</span>
+0082 <span class="keyword">if</span> ftbverbose
+0083     fprintf(<span class="string">'Extracting CFSv2 data.\n'</span>)
+0084 <span class="keyword">end</span>
+0085 
+0086 <span class="comment">% Get the extent of the model domain (in spherical)</span>
+0087 <span class="keyword">if</span> ~Mobj.have_lonlat
+0088     error(<span class="string">'Need spherical coordinates to extract the forcing data'</span>)
+0089 <span class="keyword">else</span>
+0090     <span class="comment">% Add a buffer of one grid cell in latitude and two in longitude to</span>
+0091     <span class="comment">% make sure the model domain is fully covered by the extracted data.</span>
+0092     [dx, dy] = deal(0.5, 0.5); <span class="comment">% approximate CFSv2 resolution in degrees</span>
+0093     extents = [min(Mobj.lon(:)) - (2 * dx), <span class="keyword">...</span>
+0094         max(Mobj.lon(:)) + (2 * dx), <span class="keyword">...</span>
+0095         min(Mobj.lat(:)) - dy, <span class="keyword">...</span>
+0096         max(Mobj.lat(:)) + dy];
+0097 <span class="keyword">end</span>
+0098 
+0099 <span class="comment">% Create year and month arrays for the period we've been given.</span>
+0100 [yyyy, mm, dd, HH, MM, SS] = mjulian2greg(modelTime);
+0101 assert(min(yyyy) &gt;= 1979, <span class="string">'CFSv2 data not available prior to 1979'</span>)
+0102 assert(max(yyyy) &lt;= 2009, <span class="string">'CFSv2 data not available after 2009'</span>)
+0103 dates = datenum([yyyy; mm; dd; HH; MM; SS]');
+0104 serial = dates(1):dates(2);
+0105 [years, months, ~, ~, ~, ~] = datevec(serial);
+0106 [months, idx] = unique(months, <span class="string">'stable'</span>);
+0107 years = years(idx);
+0108 nt = length(months);
+0109 
+0110 <span class="keyword">for</span> t = 1:nt
+0111     month = months(t);
+0112     year = years(t);
+0113     <span class="keyword">if</span> ftbverbose
+0114         fprintf(<span class="string">'Downloading for %04d/%02d\n'</span>, year, month)
+0115     <span class="keyword">end</span>
+0116 
+0117     <span class="comment">% Set up a struct of the remote locations in which we're</span>
+0118     <span class="comment">% interested.</span>
+0119     url = <span class="string">'http://nomads.ncdc.noaa.gov/thredds/dodsC/cfsr1hr/'</span>;
+0120     ncep.dlwsfc  = [url, <span class="keyword">...</span>
+0121         sprintf(<span class="string">'%04d%02d/dlwsfc.gdas.%04d%02d.grb2'</span>, year, month, <span class="keyword">...</span>
+0122         year, month)];
+0123     ncep.dswsfc  = [url, <span class="keyword">...</span>
+0124         sprintf(<span class="string">'%04d%02d/dswsfc.gdas.%04d%02d.grb2'</span>, year, month, <span class="keyword">...</span>
+0125         year, month)];
+0126     ncep.lhtfl   = [url, <span class="keyword">...</span>
+0127         sprintf(<span class="string">'%04d%02d/lhtfl.gdas.%04d%02d.grb2'</span>, year, month, <span class="keyword">...</span>
+0128         year, month)];
+0129     ncep.prate   = [url, <span class="keyword">...</span>
+0130         sprintf(<span class="string">'%04d%02d/prate.gdas.%04d%02d.grb2'</span>, year, month, <span class="keyword">...</span>
+0131         year, month)];
+0132     ncep.pressfc = [url, <span class="keyword">...</span>
+0133         sprintf(<span class="string">'%04d%02d/pressfc.gdas.%04d%02d.grb2'</span>, year, month, <span class="keyword">...</span>
+0134         year, month)];
+0135     ncep.q2m     = [url, <span class="keyword">...</span>
+0136         sprintf(<span class="string">'%04d%02d/q2m.gdas.%04d%02d.grb2'</span>, year, month, <span class="keyword">...</span>
+0137         year, month)];
+0138     ncep.tmp2m   = [url, <span class="keyword">...</span>
+0139         sprintf(<span class="string">'%04d%02d/tmp2m.gdas.%04d%02d.grb2'</span>, year, month, <span class="keyword">...</span>
+0140         year, month)];
+0141     ncep.uswsfc  = [url, <span class="keyword">...</span>
+0142         sprintf(<span class="string">'%04d%02d/uswsfc.gdas.%04d%02d.grb2'</span>, year, month, <span class="keyword">...</span>
+0143         year, month)];
+0144     ncep.uwnd    = [url, <span class="keyword">...</span>
+0145         sprintf(<span class="string">'%04d%02d/wnd10m.gdas.%04d%02d.grb2'</span>, year, month, <span class="keyword">...</span>
+0146         year, month)];
+0147     ncep.vwnd    = [url, <span class="keyword">...</span>
+0148         sprintf(<span class="string">'%04d%02d/wnd10m.gdas.%04d%02d.grb2'</span>, year, month, <span class="keyword">...</span>
+0149         year, month)];
+0150 
+0151     <span class="comment">% We need variable names too since we can't store them as the keys in</span>
+0152     <span class="comment">% ncep due to characters which MATLAB won't allow in fields (mainly -).</span>
+0153     names.dlwsfc = <span class="string">'Downward_Long-Wave_Rad_Flux'</span>;
+0154     names.dswsfc = <span class="string">'Downward_Short-Wave_Rad_Flux'</span>;
+0155     names.lhtfl = <span class="string">'Latent_heat_net_flux'</span>;
+0156     names.prate = <span class="string">'Precipitation_rate'</span>;
+0157     names.pressfc = <span class="string">'Pressure'</span>;
+0158     names.q2m = <span class="string">'Specific_humidity'</span>;
+0159     names.tmp2m = <span class="string">'Temperature'</span>;
+0160     names.uswsfc = <span class="string">'Upward_Short-Wave_Rad_Flux'</span>;
+0161     names.uwnd = <span class="string">'U-component_of_wind'</span>;
+0162     names.vwnd = <span class="string">'V-component_of_wind'</span>;
+0163 
+0164     fields = fieldnames(ncep);
+0165 
+0166     <span class="keyword">for</span> aa = 1:length(fields)
+0167         <span class="comment">% We've been given a list of variables to do, so skip those that</span>
+0168         <span class="comment">% aren't in the list.</span>
+0169         <span class="keyword">if</span> ~isempty(varlist) &amp;&amp; max(strcmp(fields{aa}, varlist)) ~= 1
+0170             <span class="keyword">continue</span>
+0171         <span class="keyword">end</span>
+0172 
+0173         <span class="keyword">if</span> ftbverbose
+0174             fprintf(<span class="string">'getting ''%s'' data... '</span>, fields{aa})
+0175         <span class="keyword">end</span>
+0176 
+0177         <span class="comment">% These are needed when catting the arrays together.</span>
+0178         <span class="keyword">if</span> t == 1
+0179             data.(fields{aa}).data = [];
+0180             data.(fields{aa}).time = [];
+0181             data.(fields{aa}).lat = [];
+0182             data.(fields{aa}).lon = [];
+0183             data.time = [];
+0184         <span class="keyword">end</span>
+0185         scratch.(fields{aa}).data = [];
+0186         scratch.(fields{aa}).time = [];
+0187         scratch.(fields{aa}).lat = [];
+0188         scratch.(fields{aa}).lon = [];
+0189 
+0190         <span class="comment">% ncid_info = ncinfo(ncep.(fields{aa}));</span>
+0191         ncid = netcdf.open(ncep.(fields{aa}));
+0192 
+0193         <span class="comment">% If you don't know what it contains, start by using the</span>
+0194         <span class="comment">% 'netcdf.inq' operation:</span>
+0195         <span class="comment">%[numdims, numvars, numglobalatts, unlimdimid] = netcdf.inq(ncid);</span>
+0196         <span class="comment">% Time is in hours since the start of the month. We want</span>
+0197         <span class="comment">% sensible times, so we'll have to offset at some point.</span>
+0198         varid = netcdf.inqVarID(ncid, <span class="string">'time'</span>);
+0199         data_time = netcdf.getVar(ncid, varid, <span class="string">'double'</span>);
+0200         <span class="keyword">if</span> max(data_time) == 6
+0201             <span class="comment">% Precipitation data has times as 0-6 repeated for n days.</span>
+0202             <span class="comment">% We need a sensible set of hours since the start of the</span>
+0203             <span class="comment">% month for subsequent subsampling in time.</span>
+0204             data_time = 0:length(data_time) - 1;
+0205         <span class="keyword">end</span>
+0206 
+0207         varid = netcdf.inqVarID(ncid,<span class="string">'lon'</span>);
+0208         data_lon.lon = netcdf.getVar(ncid,varid,<span class="string">'double'</span>);
+0209         varid = netcdf.inqVarID(ncid,<span class="string">'lat'</span>);
+0210         data_lat.lat = netcdf.getVar(ncid,varid,<span class="string">'double'</span>);
+0211         <span class="comment">% Some of the NCEP Reanalysis 2 data are 4D, but with a single</span>
+0212         <span class="comment">% vertical level (e.g. uwnd, vwnd, air, rhum).</span>
+0213         data_level_idx = [];
+0214         <span class="keyword">try</span> <span class="comment">% not all data have a 'level', so fail gracefully here.</span>
+0215             varid = netcdf.inqVarID(ncid, <span class="string">'level'</span>);
+0216             data_level.level = netcdf.getVar(ncid, varid, <span class="string">'double'</span>);
+0217             <span class="keyword">if</span> length(data_level.level) &gt; 1
+0218                 <span class="comment">% Assume we've got rhum and we want humidity at the sea</span>
+0219                 <span class="comment">% surface (1013 millibars (or hPa)). As such, ZQQ must be</span>
+0220                 <span class="comment">% 0.0 in the FVCOM model namelist. Find the closest level</span>
+0221                 <span class="comment">% to pressure at 1 standard atmosphere.</span>
+0222                 [~, data_level_idx] = min(abs(data_level.level - 1013));
+0223             <span class="keyword">end</span>
+0224         <span class="keyword">catch</span>
+0225             true;
+0226         <span class="keyword">end</span>
+0227         <span class="keyword">if</span> isempty(data_level_idx) <span class="comment">% default to the first</span>
+0228             data_level_idx = 1;
+0229         <span class="keyword">end</span>
+0230 
+0231         <span class="comment">% Time is in hours relative to the start of the month for CFSv2.</span>
+0232         timevec = datevec((data_time / 24) + datenum(year, month, 1, 0, 0, 0));
+0233 
+0234         <span class="comment">% Get the data time and convert to Modified Julian Day.</span>
+0235         scratch.time = greg2mjulian(<span class="keyword">...</span>
+0236             timevec(:, 1), <span class="keyword">...</span>
+0237             timevec(:, 2), <span class="keyword">...</span>
+0238             timevec(:, 3), <span class="keyword">...</span>
+0239             timevec(:, 4), <span class="keyword">...</span>
+0240             timevec(:, 5), <span class="keyword">...</span>
+0241             timevec(:, 6));
+0242         <span class="comment">% Clip the time to the given range. Because of some oddness with</span>
+0243         <span class="comment">% some variables giving data beyond the end of the month whilst</span>
+0244         <span class="comment">% others don't, set the limits in time for each month to be the</span>
+0245         <span class="comment">% first/last day of the month or the modelTime start/end, whichever</span>
+0246         <span class="comment">% is larger/smaller.</span>
+0247         startTime = max([modelTime(1), <span class="keyword">...</span>
+0248             greg2mjulian(year, month, 1, 0, 0, 0)]);
+0249         <span class="comment">% Offset end by one day to capture the right number of days</span>
+0250         <span class="comment">% (midnight falls at the beginning of the specified day).</span>
+0251         endTime = min([modelTime(end), <span class="keyword">...</span>
+0252             greg2mjulian(year, month, eomday(year, month), 0, 0, 0) + 1]);
+0253         data_time_mask = scratch.time &gt;= startTime &amp; scratch.time &lt; endTime;
+0254         data_time_idx = 1:size(scratch.time, 1);
+0255         data_time_idx = data_time_idx(data_time_mask);
+0256         <span class="keyword">if</span> ~isempty(data_time_idx)
+0257             scratch.time = scratch.time(data_time_mask);
+0258         <span class="keyword">else</span>
+0259             <span class="comment">% Reset the index to its original size. This is for data</span>
+0260             <span class="comment">% with only a single time stamp which falls outside the</span>
+0261             <span class="comment">% model time.</span>
+0262             <span class="keyword">if</span> length(scratch.time) == 1
+0263                 data_time_idx = 1:size(scratch.time, 1);
+0264             <span class="keyword">end</span>
+0265         <span class="keyword">end</span>
+0266 
+0267         <span class="comment">% Check the times.</span>
+0268         <span class="comment">% [y, m, d, hh, mm, ss] = mjulian2greg(scratch.time);</span>
+0269         <span class="comment">% fprintf('(%s - %s) ', ...</span>
+0270         <span class="comment">%     datestr([y(1),m(1),d(1),hh(1),mm(1),ss(1)], ...</span>
+0271         <span class="comment">%         'yyyy-mm-dd HH:MM:SS'), ...</span>
+0272         <span class="comment">%     datestr([y(end),m(end),d(end),hh(end),mm(end),ss(end)], ...</span>
+0273         <span class="comment">%         'yyyy-mm-dd HH:MM:SS'))</span>
+0274         <span class="comment">% clearvars y m d hh mm ss oftv</span>
+0275 
+0276         <span class="comment">% Get the data in two goes, once for the end of the grid (west of</span>
+0277         <span class="comment">% Greenwich), once for the beginning (east of Greenwich), and then</span>
+0278         <span class="comment">% stick the two bits together.</span>
+0279         clear index_lon index_lat
+0280         <span class="keyword">if</span> extents(1) &lt; 0 &amp;&amp; extents(2) &lt; 0
+0281             <span class="comment">% This is OK, we can just shunt the values by 360.</span>
+0282             extents(1) = extents(1) + 360;
+0283             extents(2) = extents(2) + 360;
+0284             index_lon = find(data_lon.lon &gt; extents(1) &amp; <span class="keyword">...</span>
+0285                 data_lon.lon &lt; extents(2));
+0286         <span class="keyword">elseif</span> extents(1) &lt; 0 &amp;&amp; extents(2) &gt; 0
+0287             <span class="comment">% This is the tricky one. We'll do two passes to extract the</span>
+0288             <span class="comment">% western chunk first (extents(1) + 360 to 360), then the</span>
+0289             <span class="comment">% eastern chunk (0 - extents(2)).</span>
+0290             index_lon{1} = find(data_lon.lon &gt;= extents(1) + 360);
+0291             index_lon{2} = find(data_lon.lon &lt;= extents(2));
+0292         <span class="keyword">else</span>
+0293             <span class="comment">% Dead easy, we're in the eastern hemisphere, so nothing too</span>
+0294             <span class="comment">% strenuous here.</span>
+0295             index_lon = find(data_lon.lon &gt; extents(1) &amp; <span class="keyword">...</span>
+0296                 data_lon.lon &lt; extents(2));
+0297         <span class="keyword">end</span>
+0298 
+0299         <span class="comment">% Latitude is much more straightforward</span>
+0300         index_lat = find(data_lat.lat &gt; extents(3) &amp; data_lat.lat &lt; extents(4));
+0301         scratch.(fields{aa}).lat = data_lat.lat(index_lat);
+0302 
+0303         <span class="comment">% Get the data</span>
+0304         <span class="keyword">if</span> iscell(index_lon)
+0305             scratch.(fields{aa}).lon = data_lon.lon(cat(1, index_lon{:}));
+0306 
+0307             varid = netcdf.inqVarID(ncid, names.(fields{aa}));
+0308 
+0309             [~, ~, dimids, ~] = netcdf.inqVar(ncid,varid);
+0310             <span class="keyword">if</span> length(dimids) == 4
+0311                 start = [<span class="keyword">...</span>
+0312                     min(index_lon{1}), <span class="keyword">...</span>
+0313                     min(index_lat), <span class="keyword">...</span>
+0314                     data_level_idx, <span class="keyword">...</span>
+0315                     min(data_time_idx)] - 1;
+0316                 count = [<span class="keyword">...</span>
+0317                     length(index_lon{1}), <span class="keyword">...</span>
+0318                     length(index_lat), <span class="keyword">...</span>
+0319                     length(data_level_idx), <span class="keyword">...</span>
+0320                     length(data_time_idx)];
+0321             <span class="keyword">elseif</span> length(dimids) == 3
+0322                 start = [<span class="keyword">...</span>
+0323                     min(index_lon{1}), <span class="keyword">...</span>
+0324                     min(index_lat), <span class="keyword">...</span>
+0325                     min(data_time_idx)] - 1;
+0326                 count = [<span class="keyword">...</span>
+0327                     length(index_lon{1}), <span class="keyword">...</span>
+0328                     length(index_lat), <span class="keyword">...</span>
+0329                     length(data_time_idx)];
+0330             <span class="keyword">end</span>
+0331 
+0332             data_west.(fields{aa}).(fields{aa}) = <span class="keyword">...</span>
+0333                 netcdf.getVar(ncid, varid, start, count, <span class="string">'double'</span>);
+0334 
+0335             <span class="keyword">if</span> length(dimids) == 4
+0336                 start = [<span class="keyword">...</span>
+0337                     min(index_lon{2}), <span class="keyword">...</span>
+0338                     min(index_lat), <span class="keyword">...</span>
+0339                     data_level_idx, <span class="keyword">...</span>
+0340                     min(data_time_idx)] - 1;
+0341                 count = [<span class="keyword">...</span>
+0342                     length(index_lon{2}), <span class="keyword">...</span>
+0343                     length(index_lat), <span class="keyword">...</span>
+0344                     length(data_level_idx), <span class="keyword">...</span>
+0345                     length(data_time_idx)];
+0346             <span class="keyword">elseif</span> length(dimids) == 3
+0347                 start = [<span class="keyword">...</span>
+0348                     min(index_lon{2}), <span class="keyword">...</span>
+0349                     min(index_lat), <span class="keyword">...</span>
+0350                     min(data_time_idx)] - 1;
+0351                 count = [<span class="keyword">...</span>
+0352                     length(index_lon{2}), <span class="keyword">...</span>
+0353                     length(index_lat), <span class="keyword">...</span>
+0354                     length(data_time_idx)];
+0355             <span class="keyword">end</span>
+0356             data_east.(fields{aa}).(fields{aa}) = <span class="keyword">...</span>
+0357                 netcdf.getVar(ncid, varid, start, count, <span class="string">'double'</span>);
+0358 
+0359             scratch.(fields{aa}).(fields{aa}).(fields{aa}) = <span class="keyword">...</span>
+0360                 cat(1, <span class="keyword">...</span>
+0361                 data_west.(fields{aa}).(fields{aa}), <span class="keyword">...</span>
+0362                 data_east.(fields{aa}).(fields{aa}));
+0363 
+0364             <span class="comment">% Merge the two sets of data together</span>
+0365             structfields = fieldnames(data_west.(fields{aa}));
+0366             <span class="keyword">for</span> ii = 1:length(structfields)
+0367                 <span class="keyword">switch</span> structfields{ii}
+0368                     <span class="keyword">case</span> <span class="string">'lon'</span>
+0369                         <span class="comment">% Only the longitude and the actual data need</span>
+0370                         <span class="comment">% sticking together, but each must be done</span>
+0371                         <span class="comment">% along a different axis (lon is a vector, the</span>
+0372                         <span class="comment">% data is an array).</span>
+0373                         scratch.(fields{aa}).(structfields{ii}) = <span class="keyword">...</span>
+0374                             [data_west.(fields{aa}).(structfields{ii}); <span class="keyword">...</span>
+0375                             data_east.(fields{aa}).(structfields{ii})];
+0376                     <span class="keyword">case</span> fields{aa}
+0377                         <span class="comment">% This is the actual data.</span>
+0378                         scratch.(fields{aa}).(structfields{ii}) = <span class="keyword">...</span>
+0379                             [data_west.(fields{aa}).(structfields{ii}); <span class="keyword">...</span>
+0380                             data_east.(fields{aa}).(structfields{ii})];
+0381                     <span class="keyword">otherwise</span>
+0382                         <span class="comment">% Assume the data are the same in both arrays.</span>
+0383                         <span class="comment">% A simple check of the range of values in the</span>
+0384                         <span class="comment">% difference between the two arrays should show</span>
+0385                         <span class="comment">% whether they're the same or not. If they are,</span>
+0386                         <span class="comment">% use the western values, otherwise, warn about</span>
+0387                         <span class="comment">% the differences. It might be the data are</span>
+0388                         <span class="comment">% relatively unimportant anyway (i.e. not used</span>
+0389                         <span class="comment">% later on).</span>
+0390                         <span class="keyword">try</span>
+0391                             tdata = <span class="keyword">...</span>
+0392                                 data_west.(fields{aa}).(structfields{ii}) - <span class="keyword">...</span>
+0393                                 data_east.(fields{aa}).(structfields{ii});
+0394                             <span class="keyword">if</span> range(tdata(:)) == 0
+0395                                 <span class="comment">% They're the same data</span>
+0396                                 scratch.(fields{aa}).(structfields{ii}) = <span class="keyword">...</span>
+0397                                     data_west.(fields{aa}).(structfields{ii});
+0398                             <span class="keyword">else</span>
+0399                                 warning([<span class="string">'Unexpected data field and the'</span>, <span class="keyword">...</span>
+0400                                     <span class="string">' west and east halves don''t match.'</span>, <span class="keyword">...</span>
+0401                                     <span class="string">' Skipping.'</span>])
+0402                             <span class="keyword">end</span>
+0403                         <span class="keyword">catch</span>
+0404                             warning([<span class="string">'Unexpected data field and the'</span>, <span class="keyword">...</span>
+0405                                 <span class="string">' west and east halves don''t match.'</span>, <span class="keyword">...</span>
+0406                                 <span class="string">' Skipping.'</span>])
+0407                         <span class="keyword">end</span>
+0408                         clearvars tdata
+0409                 <span class="keyword">end</span>
+0410             <span class="keyword">end</span>
+0411             clearvars data_west data_east
+0412         <span class="keyword">else</span>
+0413             <span class="comment">% We have a straightforward data extraction</span>
+0414             scratch.(fields{aa}).lon = data_lon.lon(index_lon);
+0415 
+0416             varid = netcdf.inqVarID(ncid, (fields{aa}));
+0417             <span class="comment">% [varname,xtype,dimids,natts] = netcdf.inqVar(ncid,varid);</span>
+0418             <span class="comment">% [~, length1] = netcdf.inqDim(ncid, dimids(1))</span>
+0419             <span class="comment">% [~, length2] = netcdf.inqDim(ncid, dimids(2))</span>
+0420             <span class="comment">% [~, length3] = netcdf.inqDim(ncid, dimids(3))</span>
+0421             start = [<span class="keyword">...</span>
+0422                 min(index_lon), <span class="keyword">...</span>
+0423                 min(index_lat), <span class="keyword">...</span>
+0424                 min(data_time_idx)] - 1;
+0425             count = [<span class="keyword">...</span>
+0426                 length(index_lon), <span class="keyword">...</span>
+0427                 length(index_lat), <span class="keyword">...</span>
+0428                 length(data_time_idx)];
+0429             <span class="comment">% The air data (NCEP version of this script) was failing</span>
+0430             <span class="comment">% with a three long start and count array, so try first</span>
+0431             <span class="comment">% without (to retain original behaviour for other</span>
+0432             <span class="comment">% potentially unaffected variables) but fall back to</span>
+0433             <span class="comment">% getting the data_level_idx one instead (should be the first</span>
+0434             <span class="comment">% level).</span>
+0435             <span class="keyword">try</span>
+0436                 scratch.(fields{aa}).(fields{aa}).(fields{aa}) = <span class="keyword">...</span>
+0437                     netcdf.getVar(ncid,varid,start,count,<span class="string">'double'</span>);
+0438             <span class="keyword">catch</span>
+0439                 start = [<span class="keyword">...</span>
+0440                     min(index_lon), <span class="keyword">...</span>
+0441                     min(index_lat), <span class="keyword">...</span>
+0442                     data_level_idx, <span class="keyword">...</span>
+0443                     min(data_time_idx)] - 1;
+0444                 count = [<span class="keyword">...</span>
+0445                     length(index_lon), <span class="keyword">...</span>
+0446                     length(index_lat), <span class="keyword">...</span>
+0447                     1, <span class="keyword">...</span>
+0448                     length(data_time_idx)];
+0449                 scratch.(fields{aa}).(fields{aa}) = <span class="keyword">...</span>
+0450                     netcdf.getVar(ncid, varid, start, count, <span class="string">'double'</span>);
+0451             <span class="keyword">end</span>
+0452 
+0453         <span class="keyword">end</span>
+0454         clearvars data_time* data_level_idx
+0455 
+0456         scratch.(fields{aa}).lon(scratch.(fields{aa}).lon &gt; 180) = <span class="keyword">...</span>
+0457             scratch.(fields{aa}).lon(scratch.(fields{aa}).lon &gt; 180) - 360;
+0458 
+0459         datatmp = squeeze(scratch.(fields{aa}).(fields{aa}));
+0460 
+0461         <span class="comment">% data.(fields{aa}).data = datatmp;</span>
+0462         data.(fields{aa}).data = cat(3, data.(fields{aa}).data, datatmp);
+0463         <span class="comment">% data.(fields{aa}).time = data.time;</span>
+0464         data.(fields{aa}).time = cat(1, data.(fields{aa}).time, scratch.time);
+0465         <span class="comment">% data.(fields{aa}).time = cat(1, data.(fields{aa}).time, ...</span>
+0466         <span class="comment">%     squeeze(scratch.(fields{aa}).(fields{aa}).time));</span>
+0467         data.(fields{aa}).lat = scratch.(fields{aa}).lat;
+0468         data.(fields{aa}).lon = scratch.(fields{aa}).lon;
+0469 
+0470         <span class="comment">% Save the time to the main data struct. This is just the time from</span>
+0471         <span class="comment">% the first variable. Since they should all be the same, this isn't</span>
+0472         <span class="comment">% a particular problem. Famous last words...</span>
+0473         <span class="keyword">if</span> aa == 1
+0474             data.time = data.(fields{aa}).time;
+0475         <span class="keyword">else</span>
+0476             clearvars scratch
+0477         <span class="keyword">end</span>
+0478 
+0479         <span class="keyword">if</span> ftbverbose
+0480             <span class="keyword">if</span> isfield(data, fields{aa})
+0481                 fprintf(<span class="string">'done.\n'</span>)
+0482             <span class="keyword">else</span>
+0483                 fprintf(<span class="string">'error!\n'</span>)
+0484             <span class="keyword">end</span>
+0485         <span class="keyword">end</span>
+0486     <span class="keyword">end</span>
+0487 <span class="keyword">end</span>
+0488 
+0489 <span class="comment">% Now we have the data, we need to fix the averaging to be hourly instead</span>
+0490 <span class="comment">% of n-hourly, where n varies from 0 to 6. See</span>
+0491 <span class="comment">% http://rda.ucar.edu/datasets/ds094.1/#docs/FAQs_hrly_timeseries.html with</span>
+0492 <span class="comment">% the question &quot;How can the individual one-hour averages be computed?&quot;.</span>
+0493 fields = fieldnames(data);
+0494 <span class="keyword">for</span> f = 1:length(fields)
+0495     <span class="keyword">if</span> isfield(data.(fields{f}), <span class="string">'data'</span>)
+0496         <span class="comment">% Some fields are instantaneous, so don't de-average them. See:</span>
+0497         <span class="comment">% http://nomads.ncdc.noaa.gov/docs/CFSR-Hourly-Timeseries.pdf for</span>
+0498         <span class="comment">% details.</span>
+0499         <span class="keyword">if</span> any(strcmpi(fields{f}, {<span class="string">'pressfc'</span>, <span class="string">'tmp2m'</span>, <span class="string">'uwnd'</span>, <span class="string">'vwnd'</span>}))
+0500             <span class="keyword">continue</span>
+0501         <span class="keyword">end</span>
+0502         [~, ~, nt] = size(data.(fields{f}).data);
+0503         fixed = data.(fields{f}).data;
+0504         <span class="keyword">if</span> ftbverbose
+0505             fprintf(<span class="string">'De-averaging the n-hourly %s data to hourly... '</span>, <span class="keyword">...</span><span class="comment">.</span>
+0506                 fields{f})
+0507         <span class="keyword">end</span>
+0508 
+0509         <span class="keyword">for</span> t = 1:6:nt
+0510             <span class="comment">% Fix the next 5 hours of data. Assume 0th hour is just the</span>
+0511             <span class="comment">% original data - since the formula multiplies by the n-1 hour,</span>
+0512             <span class="comment">% if we want the first hour's worth of data, then the second</span>
+0513             <span class="comment">% term in the formula with multiply by zero, so the formula is</span>
+0514             <span class="comment">% essentially only using the first term, which is just the data</span>
+0515             <span class="comment">% at n = 0.</span>
+0516             <span class="keyword">for</span> n = 1:5
+0517                 <span class="keyword">if</span> t + n &lt;= nt
+0518                     fixed(:, :, t + n) = <span class="keyword">...</span>
+0519                         (n * data.(fields{f}).data(:, :, t + n)) - <span class="keyword">...</span>
+0520                         ((n - 1) * data.(fields{f}).data(:, :, t + n - 1));
+0521                 <span class="keyword">end</span>
+0522             <span class="keyword">end</span>
+0523         <span class="keyword">end</span>
+0524         data.(fields{f}).data = fixed;
+0525         clearvars fixed
+0526         <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'done.\n'</span>); <span class="keyword">end</span>
+0527     <span class="keyword">end</span>
+0528 <span class="keyword">end</span>
+0529 
+0530 <span class="comment">% Calculate the net long and shortwave radiation fluxes.</span>
+0531 <span class="keyword">if</span> isfield(data, <span class="string">'uswsfc'</span>) &amp;&amp; isfield(data, <span class="string">'dswsfc'</span>)
+0532     data.nswsfc.data = data.dswsfc.data - data.uswsfc.data;
+0533     data.nswsfc.time = data.uswsfc.time;
+0534     data.nswsfc.lon = data.uswsfc.lon;
+0535     data.nswsfc.lat = data.uswsfc.lat;
+0536 <span class="keyword">end</span>
+0537 
+0538 <span class="comment">% Convert precipitation from kg/m^2/s to m/s (required by FVCOM) by</span>
+0539 <span class="comment">% dividing by freshwater density (kg/m^3).</span>
+0540 <span class="keyword">if</span> isfield(data, <span class="string">'prate'</span>)
+0541     data.prate.data = data.prate.data / 1000;
+0542 <span class="keyword">end</span>
+0543 
+0544 <span class="comment">% Evaporation can be approximated by:</span>
+0545 <span class="comment">%</span>
+0546 <span class="comment">%   E(m/s) = lhtfl/Llv/rho</span>
+0547 <span class="comment">%</span>
+0548 <span class="comment">% where:</span>
+0549 <span class="comment">%</span>
+0550 <span class="comment">%   lhtfl   = &quot;Mean daily latent heat net flux at the surface&quot;</span>
+0551 <span class="comment">%   Llv     = Latent heat of vaporization (approx to 2.5*10^6 J kg^-1)</span>
+0552 <span class="comment">%   rho     = 1025 kg/m^3</span>
+0553 <span class="comment">%</span>
+0554 <span class="keyword">if</span> isfield(data, <span class="string">'prate'</span>) &amp;&amp; isfield(data, <span class="string">'lhtfl'</span>)
+0555     Llv = 2.5 * 10^6;
+0556     rho = 1025; <span class="comment">% using a typical value for seawater.</span>
+0557     Et = data.lhtfl.data / Llv / rho;
+0558     data.P_E.data = data.prate.data - Et;
+0559     <span class="comment">% Evaporation and precipitation need to have the same sign for FVCOM</span>
+0560     <span class="comment">% (ocean losing water is negative in both instances). So, flip the</span>
+0561     <span class="comment">% evaporation here.</span>
+0562     data.Et.data = -Et;
+0563 <span class="keyword">end</span>
+0564 
+0565 <span class="comment">% Get the fields we need for the subsequent interpolation. Find the</span>
+0566 <span class="comment">% position of a sensibly sized array (i.e. not 'topo', 'rhum' or 'pres').</span>
+0567 <span class="keyword">for</span> vv = 1:length(fields)
+0568     <span class="keyword">if</span> ~isempty(varlist) &amp;&amp; max(strcmp(fields{vv}, varlist)) ~= 1
+0569         <span class="keyword">continue</span>
+0570     <span class="keyword">end</span>
+0571 
+0572     <span class="keyword">switch</span> fields{vv}
+0573         <span class="comment">% Set ii in each instance in case we've been told to only use one</span>
+0574         <span class="comment">% of the three (four including pres and press) alternatively</span>
+0575         <span class="comment">% gridded data.</span>
+0576         <span class="keyword">case</span> {<span class="string">'topo'</span>, <span class="string">'rhum'</span>, <span class="string">'pres'</span>, <span class="string">'press'</span>}
+0577             ii = vv;
+0578             <span class="keyword">continue</span>
+0579         <span class="keyword">otherwise</span>
+0580             <span class="comment">% We've got one, so stop looking.</span>
+0581             ii = vv;
+0582             <span class="keyword">break</span>
+0583     <span class="keyword">end</span>
+0584 <span class="keyword">end</span>
+0585 data.lon = data.(fields{ii}).lon;
+0586 data.lon(data.lon &gt; 180) = data.lon(data.lon &gt; 180) - 360;
+0587 data.lat = data.(fields{ii}).lat;
+0588 
+0589 <span class="comment">% Convert temperature to degrees Celsius (from Kelvin)</span>
+0590 <span class="keyword">if</span> isfield(data, <span class="string">'tmp2m'</span>)
+0591     data.tmp2m.data = data.tmp2m.data - 273.15;
+0592 <span class="keyword">end</span>
+0593 
+0594 <span class="comment">% Convert specific humidity to relative humidity.</span>
+0595 <span class="keyword">if</span> isfield(data, <span class="string">'q2m'</span>) &amp;&amp; isfield(data, <span class="string">'tmp2m'</span>) &amp;&amp; isfield(data, <span class="string">'pressfc'</span>)
+0596     <span class="comment">% Convert pressure from Pascals to millibars. Save relative humidity as</span>
+0597     <span class="comment">% percentage. Convert specific humidity to percent too.</span>
+0598     data.rhum.data = 100 * qair2rh(data.q2m.data, data.tmp2m.data, data.pressfc.data / 100);
+0599 <span class="keyword">end</span>
+0600 <span class="keyword">if</span> isfield(data, <span class="string">'q2m'</span>)
+0601     data.q2m.data = 100 * data.q2m.data;
+0602 <span class="keyword">end</span>
+0603 
+0604 <span class="comment">% Make sure all the data we have downloaded are the same shape as the</span>
+0605 <span class="comment">% longitude and latitude arrays.</span>
+0606 <span class="keyword">for</span> aa = 1:length(fields)
+0607     <span class="keyword">if</span> (~isempty(varlist) &amp;&amp; max(strcmp(fields{aa}, varlist)) ~= 1) || strcmpi(fields{aa}, <span class="string">'time'</span>)
+0608         <span class="comment">% We've been given a list of variables to extract, so skip those</span>
+0609         <span class="comment">% that aren't in that list</span>
+0610         <span class="keyword">continue</span>
+0611     <span class="keyword">else</span>
+0612         <span class="keyword">if</span> isfield(data, fields{aa})
+0613             [px, py] = deal(length(data.(fields{aa}).lon), <span class="keyword">...</span>
+0614                 length(data.(fields{aa}).lat));
+0615             [ncx, ncy, ~] = size(data.(fields{aa}).data);
+0616             <span class="keyword">if</span> ncx ~= px || ncy ~= py
+0617                 data.(fields{aa}).data = <span class="keyword">...</span>
+0618                     permute(data.(fields{aa}).data, [2, 1, 3]);
+0619 
+0620                 <span class="comment">% Check everything's OK now.</span>
+0621                 [ncx, ncy, ~] = size(data.(fields{aa}).data);
+0622                 <span class="keyword">if</span> ncx ~= px || ncy ~= py
+0623                     error([<span class="string">'Unable to resize data arrays to match '</span>, <span class="keyword">...</span>
+0624                         <span class="string">'position data orientation. Are these on a '</span>, <span class="keyword">...</span>
+0625                         <span class="string">'different horizontal grid?'</span>])
+0626                 <span class="keyword">end</span>
+0627             <span class="keyword">end</span>
+0628         <span class="keyword">else</span>
+0629             warning(<span class="string">'Variable %s requested but not downloaded.'</span>, fields{aa})
+0630         <span class="keyword">end</span>
+0631     <span class="keyword">end</span>
+0632 <span class="keyword">end</span>
+0633 
+0634 <span class="comment">% Have a look at some data.</span>
+0635 <span class="comment">% [X, Y] = meshgrid(data.lon, data.lat);</span>
+0636 <span class="comment">% for i = 1:size(data.uwnd.data, 3)</span>
+0637 <span class="comment">%     figure(1)</span>
+0638 <span class="comment">%     clf</span>
+0639 <span class="comment">%     uv = sqrt(data.uwnd.data(:, :, i).^2 + data.vwnd.data(:, :, i).^2);</span>
+0640 <span class="comment">%     pcolor(X, Y, uv')</span>
+0641 <span class="comment">%     shading flat</span>
+0642 <span class="comment">%     axis('equal','tight')</span>
+0643 <span class="comment">%     pause(0.1)</span>
+0644 <span class="comment">% end</span>
+0645 
+0646 <span class="keyword">if</span> ftbverbose
+0647     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0648 <span class="keyword">end</span>
+0649</pre></div>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

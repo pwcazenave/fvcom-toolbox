@@ -146,7 +146,7 @@ This function is called by:
 0059     <span class="keyword">else</span>
 0060         disp([<span class="string">'We are adding nutrients to the BC file!!!'</span>,Nutrients{1:NNuts}])
 0061         tsOBCFile = [basename, <span class="string">'_Nutsobc.nc'</span>];
-0062         
+0062 
 0063     <span class="keyword">end</span>
 0064 <span class="keyword">end</span>
 0065 
@@ -213,7 +213,7 @@ This function is called by:
 0126 nSiglev = nSiglay + 1;
 0127 <span class="keyword">for</span> nuts=1:NNuts
 0128     in_temp=Mobj.(Nutrients{nuts});
-0129     
+0129 
 0130     <span class="comment">% Create or process the temperature and salinity arrays.</span>
 0131     <span class="keyword">if</span> max(size(in_temp)) == 1
 0132         inc = 1/real(nSiglay);
@@ -224,8 +224,8 @@ This function is called by:
 0137         <span class="keyword">end</span>
 0138         eval([Nutrients{nuts},<span class="string">'= zeros(nObc,nSiglay,nTimes);'</span>])
 0139         eval([<span class="string">'obc_'</span>,Nutrients{nuts},<span class="string">' = repmat(Mobj.('</span>,Nutrients{nuts},<span class="string">'), 1, nTimes);'</span>])
-0140         
-0141         
+0140 
+0141 
 0142         <span class="keyword">for</span> i=1:nObc
 0143             <span class="keyword">for</span> j=1:nSiglay
 0144                 eval([Nutrients{nuts},<span class="string">'(i,j,:)=obc_'</span>,Nutrients{nuts},<span class="string">';'</span>])
@@ -234,7 +234,7 @@ This function is called by:
 0147     <span class="keyword">else</span>
 0148         <span class="comment">% We have a 3D array already so we just need a couple of stats.</span>
 0149         eval([Nutrients{nuts},<span class="string">'= Mobj.'</span>,Nutrients{nuts},<span class="string">';'</span>])
-0150         
+0150 
 0151         <span class="keyword">if</span> nargin &gt;= 4 &amp;&amp; isfield(Mobj, <span class="string">'siglay'</span>) &amp;&amp; isfield(Mobj, <span class="string">'siglev'</span>)
 0152             siglev = Mobj.siglev;
 0153             siglay = Mobj.siglay;
@@ -244,7 +244,7 @@ This function is called by:
 0157             siglev = 0:-inc:-1;
 0158             siglay = nan(1, nSiglay);
 0159         <span class="keyword">end</span>
-0160         
+0160 
 0161         in_test= Mobj.(Nutrients{nuts});
 0162         <span class="keyword">if</span> nSiglay ~= size(in_test, 2) || length(siglay) ~= size(in_test, 2)
 0163             error(<span class="string">'Specified number of sigma layers does not match supplied data'</span>)
@@ -263,7 +263,7 @@ This function is called by:
 0176 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM RIVER FORCING FILE'</span>)
 0177 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,<span class="string">'simple open boundary hydrography test'</span>)
 0178 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM TIME SERIES OBC BIO FILE'</span>) <span class="comment">%% THIS IS IMPORTANT</span>
-0179 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'File generated using write_FVCOM_tsobcERSEM.m from the MATLAB fvcom-toolbox'</span>)
+0179 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
 0180 
 0181 
 0182 <span class="comment">% define dimensions</span>
@@ -350,6 +350,6 @@ This function is called by:
 0263 netcdf.close(nc);
 0264 
 0265 <span class="keyword">if</span>(ftbverbose); fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>]);<span class="keyword">end</span>;</pre></div>
-<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

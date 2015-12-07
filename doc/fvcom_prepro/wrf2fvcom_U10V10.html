@@ -37,7 +37,7 @@ warning off</pre></div>
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="my_project.html" class="code" title="function [out_east,out_north] = my_project(in_east,in_north,direction)">my_project</a>	Sample user-defined projection and inverse projection of (lon,lat) to (x,y)</li></ul>
+</ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -80,7 +80,7 @@ This function is called by:
 0032 <span class="comment">% project wrf grid to Euclidean for interpolation</span>
 0033 <span class="keyword">for</span> i=1:nlat
 0034   [wrflon(i,:),wrflat(i,:),wrfx(i,:),wrfy(i,:)] = <span class="keyword">...</span>
-0035       <a href="my_project.html" class="code" title="function [out_east,out_north] = my_project(in_east,in_north,direction)">my_project</a>(wrflon(i,:),wrflat(i,:),wrfx(i,:),wrfy(i,:),<span class="string">'forward'</span>);
+0035       my_project(wrflon(i,:),wrflat(i,:),wrfx(i,:),wrfy(i,:),<span class="string">'forward'</span>);
 0036 <span class="keyword">end</span>;
 0037 
 0038 <span class="comment">% load FVCOM mesh</span>
@@ -211,6 +211,6 @@ This function is called by:
 0163 
 0164 ierr = close(nc);
 0165 ierr = close(nc2);</pre></div>
-<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

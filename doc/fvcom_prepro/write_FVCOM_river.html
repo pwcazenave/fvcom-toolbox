@@ -54,7 +54,7 @@
     write_FVCOM_river('tst_riv.nc', {'Penobscot'}, time, flux, temp, ...
          salt, 'Penobscot Flux', 'source: USGS')
 
- Author(s):  
+ Author(s):
     Geoff Cowles (University of Massachusetts Dartmouth)
     Pierre Cazenave (Plymouth Marine Laboratory)
 
@@ -79,7 +79,7 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="example_FVCOM_river.html" class="code" title="function example_FVCOM_river()">example_FVCOM_river</a>	example file for dumping an FVCOM river file and adding sediment concentration</li></ul>
+</ul>
 <!-- crossreference -->
 
 
@@ -163,7 +163,7 @@ This function is called by:
 0076 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'type'</span>, <span class="string">'FVCOM RIVER FORCING FILE'</span>)
 0077 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'title'</span>, RiverInfo1)
 0078 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'info'</span>, RiverInfo2)
-0079 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, <span class="string">'File created using write_FVCOM_river.m from the MATLAB fvcom-toolbox'</span>)
+0079 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, sprintf(<span class="string">'File created using %s from the MATLAB fvcom-toolbox'</span>, subname))
 0080 
 0081 <span class="comment">% dimensions</span>
 0082 namelen_dimid = netcdf.defDim(nc, <span class="string">'namelen'</span>, 80);
@@ -238,6 +238,6 @@ This function is called by:
 0151     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
 0152 <span class="keyword">end</span>
 0153</pre></div>
-<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

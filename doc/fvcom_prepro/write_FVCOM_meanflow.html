@@ -48,7 +48,7 @@
  Author(s):
     Pierre Cazenave (Plymouth Marine Laboratory)
 
- TODO: 
+ TODO:
     Add support for multiple open boundaries (currently hard limit of
     one).
 
@@ -118,7 +118,7 @@ This function is called by:
 0044 <span class="comment">% define global attributes</span>
 0045 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'type'</span>, <span class="string">'FVCOM MEANFLOW TIME SERIES FILE'</span>)
 0046 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'title'</span>, <span class="string">'FVCOM MEANFLOW TIME SERIES data for open boundary'</span>)
-0047 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, <span class="string">'File created using write_FVCOM_meanflow.m from the MATLAB fvcom-toolbox'</span>)
+0047 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
 0048 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'filename'</span>, ncfile)
 0049 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'Conventions'</span>, <span class="string">'CF-1.0'</span>)
 0050 
@@ -181,6 +181,6 @@ This function is called by:
 0107     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
 0108 <span class="keyword">end</span>
 0109</pre></div>
-<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

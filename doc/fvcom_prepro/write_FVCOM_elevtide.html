@@ -66,10 +66,10 @@
        write_FVCOM_elevtide(Mobj, MJD, '/tmp/elevtide.nc, ...
            'Shelf tides', 'floattime', true)
 
- Author(s):  
+ Author(s):
    Pierre Cazenave (Plymouth Marine Laboratory)
    Karen Amoudry (National Oceanography Centre Liverpool)
- 
+
  Revision history
    2012-08-08 (PWC) First version.
    2012-11-14 (PWC) Updated to expect Modified Julian Day rather than
@@ -87,7 +87,7 @@
    to 'Itime' and 'Itime2' and finally 'time'. Also reinstate the original
    version of the calculation of Itime2 as the rounding effect was
    smoothing out the data too much, affecting its precision.
-   
+
 ==========================================================================</pre></div>
 
 <!-- crossreference -->
@@ -222,7 +222,7 @@ This function is called by:
 0117 <span class="comment">% define global attributes</span>
 0118 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM TIME SERIES ELEVATION FORCING FILE'</span>)
 0119 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,MyTitle)
-0120 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'File created using write_FVCOM_elevtide from the MATLAB fvcom-toolbox'</span>)
+0120 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
 0121 
 0122 <span class="comment">% define dimensions</span>
 0123 nobc_dimid=netcdf.defDim(nc,<span class="string">'nobc'</span>,nObcs);
@@ -294,6 +294,6 @@ This function is called by:
 0189 
 0190 <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'end   : %s \n'</span>, subname); <span class="keyword">end</span>
 0191</pre></div>
-<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

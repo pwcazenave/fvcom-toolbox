@@ -110,90 +110,99 @@ This function is called by:
 0034 <span class="comment">%</span>
 0035 <span class="comment">%==============================================================================</span>
 0036 
-0037 
-0038 <span class="comment">% check dimensions</span>
-0039 ksl = numel(zsl);
-0040 
-0041 <span class="comment">% if(numel(tsl) ~= ksl)</span>
-0042 <span class="comment">%   error('dimensions of ssl do not match zsl')</span>
-0043 <span class="comment">% end;</span>
-0044 <span class="comment">% if(numel(ssl) ~= ksl)</span>
-0045 <span class="comment">%   error('dimensions of ssl do not match zsl')</span>
-0046 <span class="comment">% end;</span>
-0047 
-0048 <span class="comment">%------------------------------------------------------------------------------</span>
-0049 <span class="comment">% Dump to S/T profile to NetCDF file</span>
-0050 <span class="comment">%------------------------------------------------------------------------------</span>
-0051 fprintf([<span class="string">'Dumping to NetCDF file: '</span>,filename,<span class="string">'\n'</span>]);
-0052 fprintf(<span class="string">'Size of T/S array: %d\n'</span>,ksl);
+0037 <span class="keyword">global</span> ftbverbose
+0038 
+0039 subname = <span class="string">'write_FVCOM_obc_TS'</span>
+0040 <span class="keyword">if</span> ftbverbose
+0041     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname);
+0042 <span class="keyword">end</span>
+0043 
+0044 <span class="comment">% check dimensions</span>
+0045 ksl = numel(zsl);
+0046 
+0047 <span class="comment">% if(numel(tsl) ~= ksl)</span>
+0048 <span class="comment">%   error('dimensions of ssl do not match zsl')</span>
+0049 <span class="comment">% end;</span>
+0050 <span class="comment">% if(numel(ssl) ~= ksl)</span>
+0051 <span class="comment">%   error('dimensions of ssl do not match zsl')</span>
+0052 <span class="comment">% end;</span>
 0053 
-0054 nc = netcdf.create(filename,<span class="string">'clobber'</span>);
-0055 
-0056 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,mytitle)
-0057 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>,<span class="string">'File created with the write_FVCOM_obs_TS.m from the MATLAB fvcom-toolbox'</span>)
-0058 
-0059 <span class="comment">% define dimensions</span>
-0060 ksl_dimid=netcdf.defDim(nc,<span class="string">'ksl'</span>,ksl);
-0061 node_dimid=netcdf.defDim(nc,<span class="string">'node'</span>,nverts);
-0062 time_dimid=netcdf.defDim(nc,<span class="string">'time'</span>,netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
-0063 
-0064 <span class="comment">% define variables and attributes</span>
-0065 time_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,time_dimid);
-0066 netcdf.putAtt(nc,time_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
-0067 netcdf.putAtt(nc,time_varid,<span class="string">'units'</span>,<span class="string">'days since 0.0'</span>);
-0068 netcdf.putAtt(nc,time_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
+0054 <span class="comment">%------------------------------------------------------------------------------</span>
+0055 <span class="comment">% Dump to S/T profile to NetCDF file</span>
+0056 <span class="comment">%------------------------------------------------------------------------------</span>
+0057 fprintf([<span class="string">'Dumping to NetCDF file: '</span>,filename,<span class="string">'\n'</span>]);
+0058 fprintf(<span class="string">'Size of T/S array: %d\n'</span>,ksl);
+0059 
+0060 nc = netcdf.create(filename,<span class="string">'clobber'</span>);
+0061 
+0062 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,mytitle)
+0063 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
+0064 
+0065 <span class="comment">% define dimensions</span>
+0066 ksl_dimid=netcdf.defDim(nc,<span class="string">'ksl'</span>,ksl);
+0067 node_dimid=netcdf.defDim(nc,<span class="string">'node'</span>,nverts);
+0068 time_dimid=netcdf.defDim(nc,<span class="string">'time'</span>,netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
 0069 
-0070 itime_varid=netcdf.defVar(nc,<span class="string">'Itime'</span>,<span class="string">'NC_INT'</span>,time_dimid);
-0071 netcdf.putAtt(nc,itime_varid,<span class="string">'units'</span>,<span class="string">'days since 0.0'</span>);
-0072 netcdf.putAtt(nc,itime_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
-0073 
-0074 itime2_varid=netcdf.defVar(nc,<span class="string">'Itime2'</span>,<span class="string">'NC_INT'</span>,time_dimid);
-0075 netcdf.putAtt(nc,itime2_varid,<span class="string">'units'</span>,<span class="string">'msec since 00:00:00'</span>);
-0076 netcdf.putAtt(nc,itime2_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
-0077 
-0078 zsl_varid=netcdf.defVar(nc,<span class="string">'zsl'</span>,<span class="string">'NC_FLOAT'</span>,ksl_dimid);
-0079 netcdf.putAtt(nc,zsl_varid,<span class="string">'long_name'</span>,<span class="string">'standard z levels positive up'</span>);
-0080 netcdf.putAtt(nc,zsl_varid,<span class="string">'units'</span>,<span class="string">'m'</span>);
-0081 
-0082 ssl_varid=netcdf.defVar(nc,<span class="string">'ssl'</span>,<span class="string">'NC_FLOAT'</span>,[node_dimid,ksl_dimid,time_dimid]);
-0083 netcdf.putAtt(nc,ssl_varid,<span class="string">'long_name'</span>,<span class="string">'observed_salinity_profile'</span>);
-0084 netcdf.putAtt(nc,ssl_varid,<span class="string">'units'</span>,<span class="string">'PSU'</span>);
-0085 
-0086 tsl_varid=netcdf.defVar(nc,<span class="string">'tsl'</span>,<span class="string">'NC_FLOAT'</span>,[node_dimid,ksl_dimid,time_dimid]);
-0087 netcdf.putAtt(nc,tsl_varid,<span class="string">'long_name'</span>,<span class="string">'observed_temperature_profile'</span>);
-0088 netcdf.putAtt(nc,tsl_varid,<span class="string">'units'</span>,<span class="string">'C'</span>);
-0089 
-0090 <span class="comment">% end definitions</span>
-0091 netcdf.endDef(nc);
-0092 
-0093 
-0094 <span class="comment">% write vars</span>
-0095 netcdf.putVar(nc,time_varid,0,numel(time),time);
-0096 netcdf.putVar(nc,itime_varid,floor(time));
-0097 netcdf.putVar(nc,itime2_varid,0,numel(time),(mod(time,1)*24*3600*1000));
-0098 netcdf.putVar(nc,zsl_varid,zsl);
-0099 netcdf.putVar(nc,tsl_varid,tsl);
-0100 netcdf.putVar(nc,ssl_varid,ssl);
-0101 
-0102 
-0103 <span class="comment">% for i=1:numel(time)</span>
-0104 <span class="comment">%     for k=1:ksl</span>
-0105 <span class="comment">%         nc{'tsl'}(i,k,:) = tsl(k);</span>
-0106 <span class="comment">%     end;</span>
-0107 <span class="comment">% end;</span>
-0108 <span class="comment">%</span>
+0070 <span class="comment">% define variables and attributes</span>
+0071 time_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,time_dimid);
+0072 netcdf.putAtt(nc,time_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
+0073 netcdf.putAtt(nc,time_varid,<span class="string">'units'</span>,<span class="string">'days since 0.0'</span>);
+0074 netcdf.putAtt(nc,time_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
+0075 
+0076 itime_varid=netcdf.defVar(nc,<span class="string">'Itime'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0077 netcdf.putAtt(nc,itime_varid,<span class="string">'units'</span>,<span class="string">'days since 0.0'</span>);
+0078 netcdf.putAtt(nc,itime_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
+0079 
+0080 itime2_varid=netcdf.defVar(nc,<span class="string">'Itime2'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0081 netcdf.putAtt(nc,itime2_varid,<span class="string">'units'</span>,<span class="string">'msec since 00:00:00'</span>);
+0082 netcdf.putAtt(nc,itime2_varid,<span class="string">'time_zone'</span>,<span class="string">'none'</span>);
+0083 
+0084 zsl_varid=netcdf.defVar(nc,<span class="string">'zsl'</span>,<span class="string">'NC_FLOAT'</span>,ksl_dimid);
+0085 netcdf.putAtt(nc,zsl_varid,<span class="string">'long_name'</span>,<span class="string">'standard z levels positive up'</span>);
+0086 netcdf.putAtt(nc,zsl_varid,<span class="string">'units'</span>,<span class="string">'m'</span>);
+0087 
+0088 ssl_varid=netcdf.defVar(nc,<span class="string">'ssl'</span>,<span class="string">'NC_FLOAT'</span>,[node_dimid,ksl_dimid,time_dimid]);
+0089 netcdf.putAtt(nc,ssl_varid,<span class="string">'long_name'</span>,<span class="string">'observed_salinity_profile'</span>);
+0090 netcdf.putAtt(nc,ssl_varid,<span class="string">'units'</span>,<span class="string">'PSU'</span>);
+0091 
+0092 tsl_varid=netcdf.defVar(nc,<span class="string">'tsl'</span>,<span class="string">'NC_FLOAT'</span>,[node_dimid,ksl_dimid,time_dimid]);
+0093 netcdf.putAtt(nc,tsl_varid,<span class="string">'long_name'</span>,<span class="string">'observed_temperature_profile'</span>);
+0094 netcdf.putAtt(nc,tsl_varid,<span class="string">'units'</span>,<span class="string">'C'</span>);
+0095 
+0096 <span class="comment">% end definitions</span>
+0097 netcdf.endDef(nc);
+0098 
+0099 
+0100 <span class="comment">% write vars</span>
+0101 netcdf.putVar(nc,time_varid,0,numel(time),time);
+0102 netcdf.putVar(nc,itime_varid,floor(time));
+0103 netcdf.putVar(nc,itime2_varid,0,numel(time),(mod(time,1)*24*3600*1000));
+0104 netcdf.putVar(nc,zsl_varid,zsl);
+0105 netcdf.putVar(nc,tsl_varid,tsl);
+0106 netcdf.putVar(nc,ssl_varid,ssl);
+0107 
+0108 
 0109 <span class="comment">% for i=1:numel(time)</span>
 0110 <span class="comment">%     for k=1:ksl</span>
-0111 <span class="comment">%         nc{'ssl'}(i,k,:) = ssl(k);</span>
+0111 <span class="comment">%         nc{'tsl'}(i,k,:) = tsl(k);</span>
 0112 <span class="comment">%     end;</span>
 0113 <span class="comment">% end;</span>
 0114 <span class="comment">%</span>
-0115 <span class="comment">% Close the NetCDF file(s)</span>
-0116 netcdf.close(nc);
-0117 
-0118 
-0119 
-0120</pre></div>
-<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0115 <span class="comment">% for i=1:numel(time)</span>
+0116 <span class="comment">%     for k=1:ksl</span>
+0117 <span class="comment">%         nc{'ssl'}(i,k,:) = ssl(k);</span>
+0118 <span class="comment">%     end;</span>
+0119 <span class="comment">% end;</span>
+0120 <span class="comment">%</span>
+0121 <span class="comment">% Close the NetCDF file(s)</span>
+0122 netcdf.close(nc);
+0123 
+0124 <span class="keyword">if</span> ftbverbose
+0125     fprintf(<span class="string">'end   : %s \n'</span>,  subname)
+0126 <span class="keyword">end</span>
+0127 
+0128 
+0129</pre></div>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -65,7 +65,7 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="example.html" class="code" title="">example</a>	example demonstrating reading in a 2DM file and constructing a model</li></ul>
+</ul>
 <!-- crossreference -->
 
 
@@ -138,7 +138,7 @@ This function is called by:
 0065 nc = netcdf.create(filename,<span class="string">'clobber'</span>);
 0066 
 0067 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,mytitle)
-0068 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, <span class="string">'File created using write_FVCOM_z0.m from the MATLAB fvcom-toolbox'</span>)
+0068 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
 0069 
 0070 <span class="comment">% dimensions</span>
 0071 nele_dimid=netcdf.defDim(nc,<span class="string">'nele'</span>,nElems);
@@ -162,6 +162,6 @@ This function is called by:
 0089 <span class="keyword">end</span>;
 0090 
 0091</pre></div>
-<hr><address>Generated on Thu 19-Mar-2015 12:20:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
