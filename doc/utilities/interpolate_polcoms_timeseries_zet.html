@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of interpolate_polcoms_timeseries_zet</title>
+  <meta name="keywords" content="interpolate_polcoms_timeseries_zet">
+  <meta name="description" content="% Testing for parallel matlab toolbox">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; interpolate_polcoms_timeseries_zet.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>interpolate_polcoms_timeseries_zet
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>% Testing for parallel matlab toolbox</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Mobj]=interpolate_polcoms_timeseries_zet(Mobj,polcoms,relaxLine) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">% Testing for parallel matlab toolbox</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="interpolate_near_coast.html" class="code" title="function [data]=interpolate_near_coast(distbc,tempzet,doExtrap)">interpolate_near_coast</a>	we should be using the law of the wall here s</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj]=interpolate_polcoms_timeseries_zet(Mobj,polcoms,relaxLine)</a>
+0002 <span class="comment">%% Testing for parallel matlab toolbox</span>
+0003 wasOpened = false;
+0004 <span class="keyword">if</span> license(<span class="string">'test'</span>, <span class="string">'Distrib_Computing_Toolbox'</span>)
+0005     <span class="comment">% We have the Parallel Computing Toolbox, so launch a bunch of workers.</span>
+0006     <span class="keyword">if</span> matlabpool(<span class="string">'size'</span>) == 0
+0007         <span class="comment">% Force pool to be local in case we have remote pools available.</span>
+0008         matlabpool open local
+0009         wasOpened = true;
+0010     <span class="keyword">end</span>
+0011 <span class="keyword">end</span>
+0012 <span class="comment">%% Get info on nodes and elements involved in the nesting layers</span>
+0013 oNodes = Mobj.relaxBC_nodes{relaxLine};
+0014 ntimes=polcoms.ntimes;
+0015 ndepths=polcoms.ndepths;
+0016 <span class="comment">% interpolate bathymetry from polcoms onto the FVCOM nodes and elements of</span>
+0017 <span class="comment">% the nest layer</span>
+0018 fdb = TriScatteredInterp(polcoms.xb(:), polcoms.yb(:), polcoms.bathy(:), <span class="string">'natural'</span>);
+0019 polcoms.hb=fdb(Mobj.x(oNodes),Mobj.y(oNodes));
+0020 
+0021 <span class="comment">%%</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Extract distance to coast at BC points</span>
+0024 <span class="comment">% distance has been calculated on the nodes</span>
+0025 distbc=Mobj.dist(oNodes);
+0026 
+0027 tic
+0028 parfor di = 1:ntimes
+0029 <span class="comment">% for di = 1:ntimes</span>
+0030     <span class="comment">% Set up the interpolation objects.</span>
+0031     fzet = TriScatteredInterp(polcoms.bcxb(:), polcoms.bcyb(:), polcoms.zet(di,:)', <span class="string">'natural'</span>);
+0032     <span class="comment">% Interpolate variables onto the unstructured grid.</span>
+0033     tempzet = fzet(Mobj.x(oNodes),Mobj.y(oNodes));
+0034     
+0035     <span class="comment">% fvcom will generally have values outside polcoms domain at the</span>
+0036     <span class="comment">% coast... we need to extrapolate ... use distance to coast?</span>
+0037     <span class="keyword">if</span> any(isnan(tempzet))
+0038         <span class="comment">% split bc into two sides (assumes Boundary is surrounded by coast</span>
+0039         <span class="comment">% on both sides.</span>
+0040         <span class="comment">% Find max distance from coast (i.e. middle point)</span>
+0041         <span class="comment">% Interpolate as a function of distance from coast</span>
+0042         <span class="comment">% this can go horribly wrong and results should be checked</span>
+0043         [tempzet]=<a href="interpolate_near_coast.html" class="code" title="function [data]=interpolate_near_coast(distbc,tempzet,doExtrap)">interpolate_near_coast</a>(distbc,tempzet,Mobj.doExtrap);
+0044         
+0045     <span class="keyword">end</span>
+0046     
+0047     <span class="comment">% Interpolate single level variables onto the unstructured grid.</span>
+0048     fvzet(:, di) =tempzet; <span class="comment">% surface elevation on b points</span>
+0049     <span class="comment">% do depth resolving variable timeseries here</span>
+0050 <span class="keyword">end</span>
+0051 <span class="comment">% for tt=1:5:ntimes</span>
+0052 <span class="comment">% figure(1)</span>
+0053 <span class="comment">% pcolor(repmat(cumsum(distbc),1,size(Mobj.siglayz, 2))',Mobj.siglayz(oNodes, :)',fvtemp(:,:,tt)');colorbar</span>
+0054 <span class="comment">% pause (0.2)</span>
+0055 <span class="comment">% end</span>
+0056 <span class="comment">%</span>
+0057 <span class="comment">% figure(2)</span>
+0058 <span class="comment">% pcolor(repmat(cumsum(distbc),1,polcoms.params.n-2)',fvzb(:,:,20)',fvT(:,:,20)');colorbar</span>
+0059 <span class="keyword">if</span> wasOpened
+0060     matlabpool close
+0061 <span class="keyword">end</span>
+0062 toc
+0063 
+0064 Mobj.zet=fvzet;
+0065 
+0066 <span class="keyword">return</span>
+0067 
+0068</pre></div>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

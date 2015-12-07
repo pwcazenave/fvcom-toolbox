@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_FVCOM_groundwater</title>
+  <meta name="keywords" content="write_FVCOM_groundwater">
+  <meta name="description" content="Write an FVCOM groundwater time series forcing file.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_FVCOM_groundwater.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_FVCOM_groundwater
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Write an FVCOM groundwater time series forcing file.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_FVCOM_groundwater(Mobj, grndwtr_file, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Write an FVCOM groundwater time series forcing file.
+
+ write_FVCOM_groundwater(Mobj, grndwtr_file, varargin)
+
+ DESCRIPTION:
+   Write an FVCOM groundwater time series forcing file.
+
+ INPUT:
+   Mobj = Matlab mesh object with fields:
+       obc_nodes - array of boundary node IDs.
+       surfaceElevation - array of surface elevation values (shaped [space,
+       time]).
+   grndwtr_file = name of netCDF file.
+
+   Optional keyword-argument pairs. These control the time variables. This
+   script defaults to writing 'Times' only.
+   FVCOM needs only one of:
+       1. Times: character string of times
+       2. Itime and Itime2: integer days and milliseconds since midnight
+       3. time: float days.
+   FVCOM checks for these in the order above and this script defaults to
+   writing Times only. Adjust the keyword-argument pairs to your liking:
+
+   'strtime' = set to true to output the 'Times' variable
+   'inttime' = set to true to output the 'Itime' and 'Itime2' variables
+   'floattime' = set to true to output the 'time' variable
+
+ OUTPUT:
+   grndwtr_file = a netCDF FVCOM surface elevations tide forcing file.
+
+ EXAMPLE USAGE
+   With default settings:
+       write_FVCOM_groundwater(Mobj, '/tmp/grndwtr.nc)
+   Enable the 'time' variable in the netCDF.
+       write_FVCOM_groundwater(Mobj, '/tmp/grndwtr.nc, ...
+           'floattime', true)
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+   2015-11-18 First version.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_groundwater(Mobj, grndwtr_file, varargin)</a>
+0002 <span class="comment">% Write an FVCOM groundwater time series forcing file.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% write_FVCOM_groundwater(Mobj, grndwtr_file, varargin)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Write an FVCOM groundwater time series forcing file.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT:</span>
+0010 <span class="comment">%   Mobj = Matlab mesh object with fields:</span>
+0011 <span class="comment">%       obc_nodes - array of boundary node IDs.</span>
+0012 <span class="comment">%       surfaceElevation - array of surface elevation values (shaped [space,</span>
+0013 <span class="comment">%       time]).</span>
+0014 <span class="comment">%   grndwtr_file = name of netCDF file.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">%   Optional keyword-argument pairs. These control the time variables. This</span>
+0017 <span class="comment">%   script defaults to writing 'Times' only.</span>
+0018 <span class="comment">%   FVCOM needs only one of:</span>
+0019 <span class="comment">%       1. Times: character string of times</span>
+0020 <span class="comment">%       2. Itime and Itime2: integer days and milliseconds since midnight</span>
+0021 <span class="comment">%       3. time: float days.</span>
+0022 <span class="comment">%   FVCOM checks for these in the order above and this script defaults to</span>
+0023 <span class="comment">%   writing Times only. Adjust the keyword-argument pairs to your liking:</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%   'strtime' = set to true to output the 'Times' variable</span>
+0026 <span class="comment">%   'inttime' = set to true to output the 'Itime' and 'Itime2' variables</span>
+0027 <span class="comment">%   'floattime' = set to true to output the 'time' variable</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% OUTPUT:</span>
+0030 <span class="comment">%   grndwtr_file = a netCDF FVCOM surface elevations tide forcing file.</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% EXAMPLE USAGE</span>
+0033 <span class="comment">%   With default settings:</span>
+0034 <span class="comment">%       write_FVCOM_groundwater(Mobj, '/tmp/grndwtr.nc)</span>
+0035 <span class="comment">%   Enable the 'time' variable in the netCDF.</span>
+0036 <span class="comment">%       write_FVCOM_groundwater(Mobj, '/tmp/grndwtr.nc, ...</span>
+0037 <span class="comment">%           'floattime', true)</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">% Author(s):</span>
+0040 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">% Revision history</span>
+0043 <span class="comment">%   2015-11-18 First version.</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">%==========================================================================</span>
+0046 
+0047 <span class="keyword">global</span> ftbverbose
+0048 
+0049 subname = <span class="string">'write_FVCOM_groundwater'</span>;
+0050 <span class="keyword">if</span> ftbverbose
+0051     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname);
+0052 <span class="keyword">end</span>
+0053 
+0054 <span class="comment">% Default to string times as FVCOM looks for these first.</span>
+0055 strtime = true;
+0056 inttime = false;
+0057 floattime = false;
+0058 <span class="keyword">for</span> vv = 1:2:length(varargin)
+0059     <span class="keyword">switch</span> varargin{vv}
+0060         <span class="keyword">case</span> <span class="string">'strtime'</span>
+0061             strtime = true;
+0062         <span class="keyword">case</span> <span class="string">'inttime'</span>
+0063             inttime = true;
+0064         <span class="keyword">case</span> <span class="string">'floattime'</span>
+0065             floattime = true;
+0066     <span class="keyword">end</span>
+0067 <span class="keyword">end</span>
+0068 
+0069 <span class="comment">%%</span>
+0070 <span class="comment">%--------------------------------------------------------------------------</span>
+0071 <span class="comment">% Dump the file</span>
+0072 <span class="comment">%--------------------------------------------------------------------------</span>
+0073 
+0074 nc = netcdf.create(grndwtr_file, <span class="string">'clobber'</span>);
+0075 
+0076 <span class="comment">% Define global attributes</span>
+0077 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'type'</span>, <span class="string">'FVCOM GROUNDWATER FORCING FILE'</span>)
+0078 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'source'</span>, <span class="string">'FVCOM grid (unstructured) surface forcing'</span>)
+0079 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
+0080 
+0081 <span class="comment">% Dfine dimensions</span>
+0082 node_dimid = netcdf.defDim(nc, <span class="string">'node'</span>, Mobj.nVerts);
+0083 <span class="comment">% Although the nele dimension isn't used, FVCOM checks for its existence</span>
+0084 <span class="comment">% and FATAL_ERRORs if it's missing, so we need to add it here.</span>
+0085 nele_dimid = netcdf.defDim(nc, <span class="string">'nele'</span>, Mobj.nElems); <span class="comment">%#ok&lt;NASGU&gt;</span>
+0086 time_dimid = netcdf.defDim(nc, <span class="string">'time'</span>, netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0087 date_str_len_dimid = netcdf.defDim(nc, <span class="string">'DateStrLen'</span>, 26);
+0088 
+0089 <span class="comment">% Define variables and attributes</span>
+0090 gflux_varid = netcdf.defVar(nc, <span class="string">'groundwater_flux'</span>, <span class="string">'NC_FLOAT'</span>, [node_dimid, time_dimid]);
+0091 netcdf.putAtt(nc, gflux_varid, <span class="string">'long_name'</span>, <span class="string">'groundwater volume flux'</span>);
+0092 netcdf.putAtt(nc, gflux_varid, <span class="string">'units'</span>, <span class="string">'m3 s-1'</span>);
+0093 netcdf.putAtt(nc, gflux_varid, <span class="string">'grid'</span>, <span class="string">'fvcom_grid'</span>);
+0094 netcdf.putAtt(nc, gflux_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0095 
+0096 gtemp_varid = netcdf.defVar(nc, <span class="string">'groundwater_temp'</span>, <span class="string">'NC_FLOAT'</span>, [node_dimid, time_dimid]);
+0097 netcdf.putAtt(nc, gtemp_varid, <span class="string">'long_name'</span>, <span class="string">'groundwater inflow temperature'</span>);
+0098 netcdf.putAtt(nc, gtemp_varid, <span class="string">'units'</span>, <span class="string">'degrees_C'</span>);
+0099 netcdf.putAtt(nc, gtemp_varid, <span class="string">'grid'</span>, <span class="string">'fvcom_grid'</span>);
+0100 netcdf.putAtt(nc, gtemp_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0101 
+0102 gsalt_varid = netcdf.defVar(nc, <span class="string">'groundwater_salt'</span>, <span class="string">'NC_FLOAT'</span>, [node_dimid, time_dimid]);
+0103 netcdf.putAtt(nc, gsalt_varid, <span class="string">'long_name'</span>, <span class="string">'groundwater inflow salinity'</span>);
+0104 netcdf.putAtt(nc, gsalt_varid, <span class="string">'units'</span>, <span class="string">'1e-3'</span>);
+0105 netcdf.putAtt(nc, gsalt_varid, <span class="string">'grid'</span>, <span class="string">'fvcom_grid'</span>);
+0106 netcdf.putAtt(nc, gsalt_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0107 
+0108 iint_varid = netcdf.defVar(nc, <span class="string">'iint'</span>, <span class="string">'NC_INT'</span>, time_dimid);
+0109 netcdf.putAtt(nc, iint_varid, <span class="string">'long_name'</span>, <span class="string">'internal mode iteration number'</span>);
+0110 
+0111 <span class="keyword">if</span> floattime
+0112     time_varid = netcdf.defVar(nc, <span class="string">'time'</span>, <span class="string">'NC_FLOAT'</span>, time_dimid);
+0113     netcdf.putAtt(nc, time_varid, <span class="string">'long_name'</span>, <span class="string">'time'</span>);
+0114     netcdf.putAtt(nc, time_varid, <span class="string">'units'</span>, <span class="string">'days since 1858-11-17 00:00:00'</span>);
+0115     netcdf.putAtt(nc, time_varid, <span class="string">'format'</span>, <span class="string">'modified julian day (MJD)'</span>);
+0116     netcdf.putAtt(nc, time_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
+0117 <span class="keyword">end</span>
+0118 
+0119 <span class="keyword">if</span> inttime
+0120     itime_varid = netcdf.defVar(nc, <span class="string">'Itime'</span>, <span class="string">'NC_INT'</span>, time_dimid);
+0121     netcdf.putAtt(nc, itime_varid, <span class="string">'units'</span>, <span class="string">'days since 1858-11-17 00:00:00'</span>);
+0122     netcdf.putAtt(nc, itime_varid, <span class="string">'format'</span>, <span class="string">'modified julian day (MJD)'</span>);
+0123     netcdf.putAtt(nc, itime_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
+0124 
+0125     itime2_varid = netcdf.defVar(nc, <span class="string">'Itime2'</span>, <span class="string">'NC_INT'</span>, time_dimid);
+0126     netcdf.putAtt(nc, itime2_varid, <span class="string">'units'</span>, <span class="string">'msec since 00:00:00'</span>);
+0127     netcdf.putAtt(nc, itime2_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
+0128 <span class="keyword">end</span>
+0129 
+0130 <span class="keyword">if</span> strtime
+0131     Times_varid = netcdf.defVar(nc, <span class="string">'Times'</span>, <span class="string">'NC_CHAR'</span>, [date_str_len_dimid, time_dimid]);
+0132     netcdf.putAtt(nc, Times_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
+0133 <span class="keyword">end</span>
+0134 
+0135 <span class="comment">% End definitions</span>
+0136 netcdf.endDef(nc);
+0137 
+0138 <span class="comment">% Write data</span>
+0139 nTimes = length(Mobj.groundwater.times);
+0140 netcdf.putVar(nc, iint_varid, 0, nTimes, 1:nTimes);
+0141 <span class="keyword">if</span> floattime
+0142     netcdf.putVar(nc, time_varid, 0, nTimes, Mobj.groundwater.times);
+0143 <span class="keyword">end</span>
+0144 <span class="keyword">if</span> inttime
+0145     netcdf.putVar(nc, itime_varid, floor(Mobj.groundwater.times));
+0146     netcdf.putVar(nc, itime2_varid, 0, nTimes, round(mod(Mobj.groundwater.times, 1) * 24 * 60 * 60 * 1000));
+0147 <span class="keyword">end</span>
+0148 <span class="keyword">if</span> strtime
+0149     nStringOut = char();
+0150     [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(Mobj.groundwater.times);
+0151     <span class="keyword">for</span> i = 1:nTimes
+0152         nDate = [nYr(i),  nMon(i),  nDay(i),  nHour(i),  nMin(i),  nSec(i)];
+0153         nStringOut = [nStringOut, sprintf(<span class="string">'%04i/%02i/%02i %02i:%02i:%09.6f'</span>,  nDate)];
+0154     <span class="keyword">end</span>
+0155     netcdf.putVar(nc, Times_varid, nStringOut);
+0156 <span class="keyword">end</span>
+0157 netcdf.putVar(nc, gflux_varid, Mobj.groundwater.flux);
+0158 netcdf.putVar(nc, gtemp_varid, Mobj.groundwater.temp);
+0159 netcdf.putVar(nc, gsalt_varid, Mobj.groundwater.salt);
+0160 
+0161 <span class="comment">% Close file</span>
+0162 netcdf.close(nc);
+0163 
+0164 <span class="keyword">if</span> ftbverbose
+0165     fprintf(<span class="string">'end   : %s \n'</span>,  subname)
+0166 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

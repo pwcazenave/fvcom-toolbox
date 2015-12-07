@@ -43,6 +43,8 @@ function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)
 %    the new interp1 call and it's identical to the old version. Also
 %    update the parallel toolbox stuff for the same reason (future
 %    removal).
+%    2015-05-21 Remove the old parallel processing bits and replace with
+%    the current versions.
 %
 %==========================================================================
 
@@ -50,26 +52,14 @@ subname = 'get_HYCOM_tsobc';
 
 global ftbverbose;
 if ftbverbose
-    fprintf('\n')
-    fprintf(['begin : ' subname '\n'])
+    fprintf('\nbegin : %s\n', subname)
 end
 
-wasOpened = false;
 if license('test', 'Distrib_Computing_Toolbox')
     % We have the Parallel Computing Toolbox, so launch a bunch of workers.
-    try
-        % New version for MATLAB 2014a (I think) onwards.
-        if isempty(gcp('nocreate'))
-            pool = parpool('local');
-            wasOpened = true;
-        end
-    catch
-        % Version for pre-2014a MATLAB.
-        if matlabpool('size') == 0
-            % Force pool to be local in case we have remote pools available.
-            matlabpool open local
-            wasOpened = true;
-        end
+    if isempty(gcp('nocreate'))
+        % Force pool to be local in case we have remote pools available.
+        parpool('local');
     end
 end
 
@@ -124,6 +114,9 @@ mask = hycom.(fields{ff}).data(:, :, :, 1) > 1.26e29;
 if ftbverbose
     tic
 end
+% Only do warnings about removing values outside some ranges once per
+% variable.
+warned = true(3, 1);
 for v = 1:length(fields)
 
     if ~(isfield(hycom.(fields{v}), 'data') && ndims(hycom.(fields{v}).data) > 3)
@@ -152,19 +145,49 @@ for v = 1:length(fields)
             tlon = lon(:);
             tlat = lat(:);
 
-            % Create and apply a mask to remove values outside the domain. This
-            % inevitably flattens the arrays, but it shouldn't be a problem
-            % since we'll be searching for the closest values in such a manner
-            % as is appropriate for an unstructured grid (i.e. we're assuming
-            % the HYCOM data is irregularly sampled and interpolation with a
-            % triangulation).
+            % Create and apply a mask to remove values outside the domain.
+            % This inevitably flattens the arrays, but it shouldn't be a
+            % problem since we'll be searching for the closest values in
+            % such a manner as is appropriate for an unstructured grid
+            % (i.e. we're assuming the HYCOM data is irregularly sampled
+            % and interpolating with a triangulation).
             mask = tpctemp2 > 1.26e29;
+
+            % We need to do some more checks for the data which has been
+            % saved via Python. This is a sort of bounds check to
+            % eliminate unrealistic data. Warn if we actually delete
+            % anything.
+            switch fields{v}
+                case 'salinity'
+                    mask_alt = tpctemp2 < 0;
+                    if min(mask_alt(:)) == 1 && warned(1)
+                        warned(1) = false;
+                        warning('Removing negative salinities from the HYCOM data.')
+                    end
+                case 'temperature'
+                    mask_alt = tpctemp2 < -20;
+                    if min(mask_alt(:)) == 1 && warned(2)
+                        warned(2) = false;
+                        warning('Removing temperature values below -20 celsius from the HYCOM data.')
+                    end
+                case 'ssh'
+                    mask_alt = tpctemp2 < -20;
+                    if min(mask_alt(:)) == 1 &&  warned(3)
+                        warned(3) = false;
+                        warning('Removing sea surface height values below -20m from the HYCOM data.')
+                    end
+                otherwise
+                    % Some other variable we won't mask.
+                    mask_alt = true(size(tpctemp2));
+            end
+            mask = logical(~(~mask .* ~mask_alt));
+            clear mask_alt
             tpctemp2(mask) = [];
 
-            % Also apply the masks to the position arrays so we can't even find
-            % positions outside the domain, effectively meaning if a value is
-            % outside the domain, the nearest value to the boundary node will
-            % be used.
+            % Also apply the masks to the position arrays so we can't even
+            % find positions outside the domain, effectively meaning if a
+            % value is outside the domain, the nearest value to the
+            % boundary node will be used.
             tlon(mask) = [];
             tlat(mask) = [];
 
@@ -201,8 +224,8 @@ for v = 1:length(fields)
 
                 % Get the variables into static variables for the
                 % parallelisation.
-                plon = tlon(ixy);
-                plat = tlat(ixy);
+                plon = double(tlon(ixy));
+                plat = double(tlat(ixy));
                 ptemp = tpctemp2(ixy);
 
                 % Use a triangulation to do the horizontal interpolation if
@@ -374,17 +397,10 @@ if isfield(hycom, 'time')
     Mobj.ts_times = hycom.time;
 end
 
-% Close the MATLAB pool if we opened it.
-if wasOpened
-    try
-        pool.delete
-    catch
-        matlabpool close
-    end
-end
+cleaner = onCleanup(@() delete(gcp('nocreate')));
 
 if ftbverbose
-    fprintf(['end   : ' subname '\n'])
+    fprintf('end   : %s\n', subname)
 end
 
 

@@ -40,11 +40,11 @@ function write_FVCOM_forcing(Mobj, fileprefix, data, infos, fver, varargin)
 %     - 'Et' or 'evap'      - evaporation
 %     - 'prate' or 'P_E'    - precipitation
 %     - 'nlwrs'             - net longwave radiation*,**
-%     - 'nswrs'             - net shortwave radiation*,**
+%     - 'nswrs'             - net shortwave radiation*,**,***
 %     - 'shtfl'             - sensible heat net flux*,**
 %     - 'lhtfl'             - latent heat net flux*,**
 %     - 'slp' or 'pres'     - mean sea level pressure***
-%     - 'dswrf'             - downward shortwave flux***
+%     - 'dswrf'             - downward shortwave flux
 %     - 'dlwrf'             - downward longwave flux***
 %     - 'rhum'              - relative humidity***
 %     - 'air'               - air temperature***
@@ -199,7 +199,7 @@ for i=1:length(suffixes)
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','FVCOM Forcing File')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'institution','Plymouth Marine Laboratory')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'source','FVCOM grid (unstructured) surface forcing')
-    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history',['File created on ', datestr(now, 'yyyy-mm-dd HH:MM:SS'), ' with write_FVCOM_forcing.m from the MATLAB fvcom-toolbox (https://github.com/pwcazenave/fvcom-toolbox)'])
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'references','http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'Conventions','CF-1.0')
 %     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'infos',infos)

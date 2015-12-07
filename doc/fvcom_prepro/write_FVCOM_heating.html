@@ -170,7 +170,7 @@ This function is called by:
 0083 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'title'</span>, <span class="string">'FVCOM Forcing File'</span>)
 0084 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'institution'</span>, <span class="string">'Plymouth Marine Laboratory'</span>)
 0085 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'source'</span>, <span class="string">'FVCOM grid (unstructured) surface forcing'</span>)
-0086 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, [<span class="string">'File created on '</span>, datestr(now, <span class="string">'yyyy-mm-dd HH:MM:SS'</span>), <span class="string">' with write_FVCOM_forcing.m from the MATLAB fvcom-toolbox (https://github.com/pwcazenave/fvcom-toolbox)'</span>])
+0086 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
 0087 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'references'</span>, <span class="string">'http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu'</span>)
 0088 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'Conventions'</span>, <span class="string">'CF-1.0'</span>)
 0089 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'CoordinateSystem'</span>, Mobj.nativeCoords)
@@ -332,6 +332,6 @@ This function is called by:
 0245 <span class="keyword">if</span> ftbverbose
 0246     fprintf(<span class="string">'end   : %s \n'</span>, subname)
 0247 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

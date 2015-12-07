@@ -1,4 +1,4 @@
-function tfiles = get_BADC_data(site, filepath, files, credentials)
+function tfiles = get_BADC_data(site, filepath, files, varargin)
 % Child function to do the actual downloading from the BADC site via FTP.
 % If the remote file doesn't exist, the function continues to the next file
 % warning that the file couldn't be found. You may end up with gaps if the
@@ -9,7 +9,7 @@ function tfiles = get_BADC_data(site, filepath, files, credentials)
 %   site - FTP server name (e.g. ftp.ceda.ac.uk')
 %   filepath - path to the files to download
 %   files - cell array of a file or files to download
-%   credentials - cell array of {'username', 'password'}.
+%   credentials - optional cell array of {'username', 'password'}.
 % 
 % OUTPUTS:
 %   tfiles = cell array of files downloaded. NaN = failed to download.
@@ -17,7 +17,7 @@ function tfiles = get_BADC_data(site, filepath, files, credentials)
 % WARNING:
 %   This function will indiscriminately overwrite files in the destination
 %   directory (which is the system temporary directory appended with
-%   'metum'). Really, the files in 
+%   'metum').
 
 global ftbverbose
 
@@ -37,8 +37,11 @@ for j = 1:nf
     % Open a remote connection to the FTP site. I found that the timeout on
     % the FTP connection to ftp.ceda.ac.uk is pretty low, so it's best to
     % explicitly re-open it each time we want a bunch of new files.
-    remote = ftp(site, credentials(1), credentials(2));
-
+    if nargin == 3
+        remote = ftp(site);
+    elseif nargin == 4
+        remote = ftp(site, credentials(1), credentials(2));
+    end
     S = whos('remote');
     assert(strcmpi(S.class, 'ftp'), 'remote is not an FTP class. See HELP FTP.')
     clear S

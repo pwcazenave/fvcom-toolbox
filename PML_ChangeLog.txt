@@ -1,5 +1,165 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20151207
+--------
+
+Fairly significant change this time. Added new functions to work with the tidal
+turbine parameterisation added to the UK FVCOM code by Rory O'Hara Murray
+(Marine Scotland Science). Also added initial support for ECMWF ERA-20C forcing
+data. Includes numerous bug fixes and miscellaneous code improvements
+(standardising history variables in netCDFs generated with the toolbox, for
+example).
+
+README.md
+    * Update the list of releases of this toolbox.
+
+doc:
+    Update all the documentation for this release.
+
+examples:
+    example.m
+        * Move existing example scripts into the examples directory to clean up
+        the toolbox a bit.
+    example2.m
+        * Move existing example scripts into the examples directory to clean up
+        the toolbox a bit.
+    example_FVCOM_river.m
+        * Move existing example scripts into the examples directory to clean up
+        the toolbox a bit.
+    example_FVCOM_tsobc.m
+        * Move existing example scripts into the examples directory to clean up
+        the toolbox a bit.
+    example_FVCOM_wind_ts.m
+        * Move existing example scripts into the examples directory to clean up
+        the toolbox a bit.
+    example_FVCOM_wind_ts_speed.m
+        * Move existing example scripts into the examples directory to clean up
+        the toolbox a bit.
+    example_init_lag.m
+        * Move existing example scripts into the examples directory to clean up
+        the toolbox a bit.
+    example_my_project.m
+        * Move existing example scripts into the examples directory to clean up
+        the toolbox a bit.
+    tidal_turbine_example.m
+        * Example script showing how to use Rory O'Hara Murray's tidal turbine
+        parameterisation changes in the UK FVCOM code.
+
+fvcom_prepro:
+    README.m
+        * Add the additional authors to the list of authors.
+    add_coriolis.m
+        * Fix bug in the variabel to check when setting the Coriolis. The code
+        now checks for spherical coordinates rather than checking whether the
+        Coriolis has been set. The broken behaviour was a bit recursive.
+    estimate_ts.m
+        * Set the initial values to infinite rather than ones to make the test
+        more robust.
+    fix_river_nodes.m
+        * New function to check the river nodes assigned to your model are
+        valid.
+        * Split rivers over multiple nodes if the discharge exceeds
+        a user-defined threshold value.
+    generate_mjd.m
+        * REMOVED (uses the old mexnc netCDF interface).
+    get_CFS_forcing.m
+        * Updated significantly to download and process the NCEP CFSv2
+        reanalysis data. Data are available for use from 1979-2009 (inclusive).
+    get_EA_river_climatology.m
+        * Add check for whether any rivers have actually been added to prevent
+        crashes.
+    get_EHYPE_rivers.m
+        * Add check for whether any rivers have actually been added to prevent
+        crashes.
+        * Fix handling of duplicate river nodes.
+    get_ERA_forcing.m
+        * New function to add and process ECMWF ERA-20C forcing data. Requires
+        netCDFs to have been previously downloaded.
+    get_HYCOM_forcing.m
+        * Add support for the Global Reanalysis data which extends coverage
+        back to 1992 (previously limited to 2008 with the Global Analysis
+        data). The Global Analysis data is used from 2008 onwards even though
+        the reanalysis exists up to 2012.
+    get_HYCOM_tsobc.m
+        * Remove the old parallel processing bits and replace with the modern
+        versions.
+        * Also add bounds checking for data downloaded using Python.
+    get_NCEP_forcing.m
+        * Add support for multi-year downloads.
+        * Fix some of the variables to download too.
+    init_lag.m
+        * Add consistent history variable to the generated netCDF.
+    read_sms_mesh.m
+        * Populate the alternative coordinate system with zeros rather
+        than repeating the values. Also add element centre coordinates for
+        cartesian coordinates. This is somewhat redundant given setup_metrics
+        does this anyway.
+    wrf2fvcom.m
+        * Function to convert WRF output to FVCOM formatted netCDFs. Thanks to
+        Dmitry Aleynik for his example script upon which this script is based.
+    write_FVCOM_TT.m
+        * New function to generate a netCDF file containing the tidal turbine
+        parameters for FVCOM.
+    write_FVCOM_elevtide.m
+        * Add consistent history variable to the generated netCDF.
+    write_FVCOM_forcing.m
+        * Add consistent history variable to the generated netCDF.
+    write_FVCOM_groundwater.m
+        * New function to generate a groundwater forcing file for FVCOM.
+    write_FVCOM_heating.m
+        * Add consistent history variable to the generated netCDF.
+    write_FVCOM_meanflow.m
+        * Add consistent history variable to the generated netCDF.
+    write_FVCOM_nested_forcing.m
+        * Add consistent history variable to the generated netCDF.
+    write_FVCOM_obs_TS.m
+        * Add consistent history variable to the generated netCDF.
+    write_FVCOM_river.m
+        * Add consistent history variable to the generated netCDF.
+    write_FVCOM_river_ERSEM.m
+        * Add consistent history variable to the generated netCDF.
+    write_FVCOM_spectide.m
+        * Add consistent history variable to the generated netCDF.
+    write_FVCOM_tsobc.m
+        * Add consistent history variable to the generated netCDF.
+        * Tidy the help too.
+    write_FVCOM_tsobcERSEM.m
+        * Add consistent history variable to the generated netCDF.
+    write_FVCOM_wind_ts_speed.m
+        * Add consistent history variable to the generated netCDF.
+    write_FVCOM_z0.m
+        * Add consistent history variable to the generated netCDF.
+    write_WRF_forcing.m
+        * Add consistent history variable to the generated netCDF.
+
+utilities:
+    do_ph_change_plot.m
+        * Clear out old useless scripts.
+    do_ph_change_points_plot.m
+        * Clear out old useless scripts.
+    do_ph_max_change_plot.m
+        * Clear out old useless scripts.
+    do_volume.m
+        * Clear out old useless scripts.
+    do_volume_change.m
+        * Clear out old useless scripts.
+    do_volume_change2.m
+        * Clear out old useless scripts.
+    get_BADC_data.m
+        * Add optional arguments for username and password for the BADC
+        servers.
+    grid2fvcom.m
+        * Update the parallel processing commands.
+        * Add option to enable output on element centres to save memory. The
+        default has changed to only be on nodes now. Only u and v data need to
+        be output to element centres (e.g. wind, stress).
+    qair2rh.m
+        * Formatting changes mostly.
+    turbine_area_sigma.m
+        * Calculate the fraction of the tidal turbine rotor swept area
+        occupying each sigma layer.
+
+
 20150319
 --------
 

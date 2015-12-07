@@ -43,7 +43,7 @@ subname = 'init_lag';
 
 global ftbverbose;
 if ftbverbose
-	fprintf('\nbegin : %s \n', subname)
+    fprintf('\nbegin : %s \n', subname)
 end
 
 tbeg = timerange(1);
@@ -67,7 +67,7 @@ nc = netcdf.create(file, 'clobber');
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'references', 'http://fvcom.smast.umassd.edu, http://pml.ac.uk')
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'source', 'init_lag.m')
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'info', 'debugging')
-netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'history', 'File generated using init_lag.m from the MATLAB fvcom-toolbox')
+netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
 
 % Dimensions
 nlag_dimid = netcdf.defDim(nc, 'nparticles', nLag);

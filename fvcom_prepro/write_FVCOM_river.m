@@ -26,7 +26,7 @@ function write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,RiverInfo1,Ri
 %    write_FVCOM_river('tst_riv.nc', {'Penobscot'}, time, flux, temp, ...
 %         salt, 'Penobscot Flux', 'source: USGS')
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %
@@ -76,7 +76,7 @@ nc = netcdf.create(RiverFile, 'clobber');
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'type', 'FVCOM RIVER FORCING FILE')
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'title', RiverInfo1)
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'info', RiverInfo2)
-netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'history', 'File created using write_FVCOM_river.m from the MATLAB fvcom-toolbox')
+netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'history', sprintf('File created using %s from the MATLAB fvcom-toolbox', subname))
 
 % dimensions
 namelen_dimid = netcdf.defDim(nc, 'namelen', 80);

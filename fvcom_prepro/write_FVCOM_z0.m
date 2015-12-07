@@ -40,19 +40,19 @@ end;
 % Parse input arguments
 %------------------------------------------------------------------------------
 if(~exist('z0','var'))
-	error('incorrect usage of write_FVCOM_z0, must provide z0 field')
+    error('incorrect usage of write_FVCOM_z0, must provide z0 field')
 end;
 if(~exist('filename','var'))
-	error('incorrect usage of write_FVCOM_z0, must provide filename')
+    error('incorrect usage of write_FVCOM_z0, must provide filename')
 end;
 if(~exist('mytitle','var'))
-	error('incorrect usage of write_FVCOM_z0, must provide title field')
+    error('incorrect usage of write_FVCOM_z0, must provide title field')
 end;
 
 % check dimensions
 nElems = numel(z0);
 if(nElems == 0)
-	error('dimension of z0 is 0, something is wrong ')
+    error('dimension of z0 is 0, something is wrong ')
 end;
 
 %------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ end;
 nc = netcdf.create(filename,'clobber');
 
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title',mytitle)
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', 'File created using write_FVCOM_z0.m from the MATLAB fvcom-toolbox')
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
 
 % dimensions
 nele_dimid=netcdf.defDim(nc,'nele',nElems);

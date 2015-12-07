@@ -1,0 +1,216 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_ERA_forcing</title>
+  <meta name="keywords" content="get_ERA_forcing">
+  <meta name="description" content="Reads in ERA-20C netCDF files and outputs a struct containing the">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_ERA_forcing.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_ERA_forcing
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Reads in ERA-20C netCDF files and outputs a struct containing the</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function era = get_ERA_forcing(Mobj, files, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Reads in ERA-20C netCDF files and outputs a struct containing the
+ requested variables for a given spatial domain and time period.
+
+ ERA = get_ERA_forcing(Mobj, files, 'varlist', {'lon', 'lat', 'ssr'})
+
+ DESCRIPTION:
+   For the given netCDF(s), load the data into a struct for the variables
+   in varlist. If varlist is omitted, all variables are loaded.
+
+ INPUT:
+   Mobj - Mesh object containing the following fields:
+       * nativeCoords - 'spherical' or 'cartesian'
+       * lon, lat or x, y - node coordinates (depending on nativeCoords)
+   files - array of paths to the ERA-20C netCDF files
+   Optional keyword/value pairs:
+   'varlist' - give an array of variables to extract from the netCDF
+       files. Missing variables will cause an error.
+   'clip' - set to true for clipping the data to the model domain, false
+       to load the full data in the netCDFs.
+
+ OUTPUT:
+   era - struct containing the variables specified in varlist.
+
+ NOTES:
+   This script has been written against the netCDFs of the ECMWF-ERA20C
+   data created by the python script ecmwf-era20c.py.
+
+ Author(s)
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history:
+   2015-08-13 First version based loosely on read_ERA_wind.m in the
+   fvcom-toolbox.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function era = get_ERA_forcing(Mobj, files, varargin)</a>
+0002 <span class="comment">% Reads in ERA-20C netCDF files and outputs a struct containing the</span>
+0003 <span class="comment">% requested variables for a given spatial domain and time period.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% ERA = get_ERA_forcing(Mobj, files, 'varlist', {'lon', 'lat', 'ssr'})</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%   For the given netCDF(s), load the data into a struct for the variables</span>
+0009 <span class="comment">%   in varlist. If varlist is omitted, all variables are loaded.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT:</span>
+0012 <span class="comment">%   Mobj - Mesh object containing the following fields:</span>
+0013 <span class="comment">%       * nativeCoords - 'spherical' or 'cartesian'</span>
+0014 <span class="comment">%       * lon, lat or x, y - node coordinates (depending on nativeCoords)</span>
+0015 <span class="comment">%   files - array of paths to the ERA-20C netCDF files</span>
+0016 <span class="comment">%   Optional keyword/value pairs:</span>
+0017 <span class="comment">%   'varlist' - give an array of variables to extract from the netCDF</span>
+0018 <span class="comment">%       files. Missing variables will cause an error.</span>
+0019 <span class="comment">%   'clip' - set to true for clipping the data to the model domain, false</span>
+0020 <span class="comment">%       to load the full data in the netCDFs.</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% OUTPUT:</span>
+0023 <span class="comment">%   era - struct containing the variables specified in varlist.</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% NOTES:</span>
+0026 <span class="comment">%   This script has been written against the netCDFs of the ECMWF-ERA20C</span>
+0027 <span class="comment">%   data created by the python script ecmwf-era20c.py.</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Author(s)</span>
+0030 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% Revision history:</span>
+0033 <span class="comment">%   2015-08-13 First version based loosely on read_ERA_wind.m in the</span>
+0034 <span class="comment">%   fvcom-toolbox.</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">%==========================================================================</span>
+0037 
+0038 subname = <span class="string">'get_ERA_forcing'</span>;
+0039 
+0040 <span class="keyword">global</span> ftbverbose
+0041 <span class="keyword">if</span> ftbverbose
+0042     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0043 <span class="keyword">end</span>
+0044 
+0045 assert(nargin &gt;= 2, <span class="string">'Incorrect number of input arguments (2 minimum).'</span>)
+0046 
+0047 varlist = [];
+0048 clip = false;
+0049 <span class="keyword">for</span> var = 1:2:length(varargin)
+0050     <span class="keyword">switch</span> varargin{var}
+0051         <span class="keyword">case</span> <span class="string">'varlist'</span>
+0052             varlist = varargin{var + 1};
+0053         <span class="keyword">case</span> <span class="string">'clip'</span>
+0054             clip = varargin{var + 1};
+0055     <span class="keyword">end</span>
+0056 <span class="keyword">end</span>
+0057 
+0058 nf = length(files);
+0059 
+0060 <span class="keyword">for</span> f = 1:nf
+0061     
+0062     assert(exist(files{f}, <span class="string">'file'</span>) == 2, <span class="string">'file: %s does not exist'</span>, files{f})
+0063     
+0064     <span class="keyword">if</span> ftbverbose
+0065         fprintf(<span class="string">'Loading file %s (%i of %i)\n'</span>, files{f}, f, nf)
+0066     <span class="keyword">end</span>
+0067 
+0068     <span class="keyword">if</span> isempty(varlist)
+0069         ncdetails = ncinfo(files{f});
+0070         varlist = {ncdetails.Variables.Name};
+0071     <span class="keyword">end</span>
+0072 
+0073     <span class="comment">% Only do the spatial data on the first file (the data are global).</span>
+0074     <span class="keyword">if</span> f == 1
+0075         lon = double(ncread(files{f}, <span class="string">'lon'</span>));
+0076         lat = double(ncread(files{f}, <span class="string">'lat'</span>));
+0077         lonvector = unique(lon);
+0078         latvector = unique(lat);
+0079         dx = unique(diff(lonvector));
+0080         dy = mean(unique(diff(latvector)));
+0081 
+0082         <span class="keyword">if</span> clip
+0083             <span class="comment">% To save on memory, cull the data which doesn't come from the</span>
+0084             <span class="comment">% domain we've specified (with a 2 element buffer).</span>
+0085             <span class="keyword">if</span> min(Mobj.lon) &lt; 0 &amp;&amp; max(Mobj.lon) &lt; 0
+0086                 <span class="comment">% Easy, just shift by 360.</span>
+0087                 idx_lon = find(lonvector &gt; (min(Mobj.lon) - (2 * dx)) + 360 <span class="keyword">...</span>
+0088                     &amp; lonvector &lt; (max(Mobj.lon) + (2 * dx)) + 360);
+0089             <span class="keyword">elseif</span> min(Mobj.lon) &lt; 0 &amp;&amp; max(Mobj.lon) &gt; 0
+0090                 <span class="comment">% This is the tricky one. We'll do two passes to extract</span>
+0091                 <span class="comment">% the western chunk first (min(Mobj.lon) + 360 to 360),</span>
+0092                 <span class="comment">% then the eastern chunk (0 - max(Mobj.lon))</span>
+0093                 idx_lon{1} = find(lonvector &gt;= (min(Mobj.lon) - (2 * dx)) + 360)';
+0094                 idx_lon{2} = find(lonvector &lt; (max(Mobj.lon) + (2 * dx)))';
+0095                 idx_lon = [idx_lon{:}];
+0096             <span class="keyword">else</span>
+0097                 <span class="comment">% Dead easy, we're in the eastern hemisphere, so nothing</span>
+0098                 <span class="comment">% too strenuous here.</span>
+0099                 idx_lon = find(lonvector &gt; (min(Mobj.lon) - (2 * dx)) <span class="keyword">...</span>
+0100                     &amp; lonvector &lt; (max(Mobj.lon) + (2 * dx)));
+0101             <span class="keyword">end</span>
+0102             <span class="comment">% Latitudes are easy because there's only one system.</span>
+0103             idx_lat = find(latvector &gt; (min(Mobj.lat) - (2 * dy)) &amp; latvector &lt; (max(Mobj.lat) + (2 * dy)));
+0104 
+0105         <span class="keyword">else</span>
+0106             idx_lon = 1:length(lonvector);
+0107             idx_lat = 1:length(latvector);
+0108         <span class="keyword">end</span>
+0109         <span class="comment">% Make a grid of the domain</span>
+0110         [era.lon, era.lat] = deal(lonvector(idx_lon), latvector(idx_lat));
+0111         era.lon(era.lon &gt; 180) = era.lon(era.lon &gt; 180) - 360;
+0112     <span class="keyword">end</span>
+0113 
+0114     <span class="keyword">if</span> ftbverbose
+0115         fprintf(<span class="string">'Variables:\n'</span>)
+0116     <span class="keyword">end</span>
+0117     <span class="keyword">for</span> v = 1:length(varlist)
+0118         <span class="keyword">if</span> ftbverbose
+0119             fprintf(<span class="string">'\t%s... '</span>, varlist{v})
+0120         <span class="keyword">end</span>
+0121         vardump = double(ncread(files{f}, varlist{v}));
+0122         era.(varlist{v}).data = vardump(idx_lon, idx_lat, :);
+0123         era.(varlist{v}).lat = latvector(idx_lat);
+0124         era.(varlist{v}).lon = lonvector(idx_lon);
+0125         era.(varlist{v}).time = double(ncread(files{f}, <span class="string">'time'</span>));
+0126         clear vardump
+0127         <span class="keyword">if</span> ftbverbose
+0128             fprintf(<span class="string">'done.\n'</span>)
+0129         <span class="keyword">end</span>
+0130     <span class="keyword">end</span>
+0131 <span class="keyword">end</span>
+0132 
+0133 <span class="keyword">if</span> ftbverbose
+0134     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0135 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

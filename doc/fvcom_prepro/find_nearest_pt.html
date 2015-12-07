@@ -35,11 +35,14 @@
     Find nearest point to (xloc,yloc) in the domain of Mobj
     using native coordinates of Mobj
 
- INPUT: 
+ INPUT:
    xloc   = x location of point (in native Mobj coordinates)
    yloc   = y location of point (in native Mobj coordinates)
-   Mobj   = Mesh object
-           
+   Mobj   = Mesh object with the following fields:
+               - nativeCoords = grid type (cartesian or spherical)
+               - x, y and/or lon, lat = coordinates (dependent on
+               nativeCoords).
+
  OUTPUT:
    Point = index of nearest vertex in the mesh
    Distance = Distance from x,y to Point in Mobj native coordinates
@@ -49,9 +52,12 @@
 
  Author(s):  
     Geoff Cowles (University of Massachusetts Dartmouth)
+    Pierre Cazenave (Plymouth Marine Laboratory)
 
  Revision history
-   
+    2015-01-14 Tidy up the code a bit and add extra information to the
+    help.
+
 ==============================================================================</pre></div>
 
 <!-- crossreference -->
@@ -68,66 +74,75 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj) </a>
-0002 
-0003 <span class="comment">% Find nearest point in Mesh structure to (x,y)</span>
-0004 <span class="comment">%</span>
-0005 <span class="comment">% function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj)</span>
-0006 <span class="comment">%</span>
-0007 <span class="comment">% DESCRIPTION:</span>
-0008 <span class="comment">%    Find nearest point to (xloc,yloc) in the domain of Mobj</span>
-0009 <span class="comment">%    using native coordinates of Mobj</span>
-0010 <span class="comment">%</span>
-0011 <span class="comment">% INPUT:</span>
-0012 <span class="comment">%   xloc   = x location of point (in native Mobj coordinates)</span>
-0013 <span class="comment">%   yloc   = y location of point (in native Mobj coordinates)</span>
-0014 <span class="comment">%   Mobj   = Mesh object</span>
-0015 <span class="comment">%</span>
-0016 <span class="comment">% OUTPUT:</span>
-0017 <span class="comment">%   Point = index of nearest vertex in the mesh</span>
-0018 <span class="comment">%   Distance = Distance from x,y to Point in Mobj native coordinates</span>
-0019 <span class="comment">%</span>
-0020 <span class="comment">% EXAMPLE USAGE</span>
-0021 <span class="comment">%    [Point,Distance] = find_nearest_point(50.1,100.2,Mobj)</span>
-0022 <span class="comment">%</span>
-0023 <span class="comment">% Author(s):</span>
-0024 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0025 <span class="comment">%</span>
-0026 <span class="comment">% Revision history</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">%==============================================================================</span>
-0029 
-0030 subname = <span class="string">'find_nearest_pt'</span>;
-0031 <span class="comment">%fprintf('\n')</span>
-0032 <span class="comment">%fprintf(['begin : ' subname '\n'])</span>
-0033 
-0034 <span class="comment">%------------------------------------------------------------------------------</span>
-0035 <span class="comment">% Parse input arguments</span>
-0036 <span class="comment">%------------------------------------------------------------------------------</span>
-0037 <span class="keyword">if</span>(exist(<span class="string">'xloc'</span>)*exist(<span class="string">'yloc'</span>)*exist(<span class="string">'Mobj'</span>) == 0)
-0038     error(<span class="string">'arguments to find_nearest_pt are missing'</span>)
-0039 <span class="keyword">end</span>;
+0002 <span class="comment">% Find nearest point in Mesh structure to (x,y)</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function [Point,Distance] = find_nearest_pt(xloc,yloc,Mobj)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Find nearest point to (xloc,yloc) in the domain of Mobj</span>
+0008 <span class="comment">%    using native coordinates of Mobj</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   xloc   = x location of point (in native Mobj coordinates)</span>
+0012 <span class="comment">%   yloc   = y location of point (in native Mobj coordinates)</span>
+0013 <span class="comment">%   Mobj   = Mesh object with the following fields:</span>
+0014 <span class="comment">%               - nativeCoords = grid type (cartesian or spherical)</span>
+0015 <span class="comment">%               - x, y and/or lon, lat = coordinates (dependent on</span>
+0016 <span class="comment">%               nativeCoords).</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% OUTPUT:</span>
+0019 <span class="comment">%   Point = index of nearest vertex in the mesh</span>
+0020 <span class="comment">%   Distance = Distance from x,y to Point in Mobj native coordinates</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% EXAMPLE USAGE</span>
+0023 <span class="comment">%    [Point,Distance] = find_nearest_point(50.1,100.2,Mobj)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% Author(s):</span>
+0026 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0027 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Revision history</span>
+0030 <span class="comment">%    2015-01-14 Tidy up the code a bit and add extra information to the</span>
+0031 <span class="comment">%    help.</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">%==============================================================================</span>
+0034 
+0035 <span class="comment">% global ftbverbose</span>
+0036 subname = <span class="string">'find_nearest_pt'</span>;
+0037 <span class="comment">% if ftbverbose</span>
+0038 <span class="comment">%     fprintf('\nbegin : %s\n', subname)</span>
+0039 <span class="comment">% end</span>
 0040 
 0041 <span class="comment">%------------------------------------------------------------------------------</span>
-0042 <span class="comment">% Set native coordinates</span>
+0042 <span class="comment">% Parse input arguments</span>
 0043 <span class="comment">%------------------------------------------------------------------------------</span>
-0044 <span class="keyword">if</span>(lower(Mobj.nativeCoords(1:3)) == <span class="string">'car'</span>)
-0045     x = Mobj.x;
-0046     y = Mobj.y;
-0047 <span class="keyword">else</span>
-0048     x = Mobj.lon;
-0049     y = Mobj.lat;
-0050 <span class="keyword">end</span>;
-0051 
-0052 <span class="comment">%------------------------------------------------------------------------------</span>
-0053 <span class="comment">% Find the nearest point</span>
-0054 <span class="comment">%------------------------------------------------------------------------------</span>
-0055 radvec = sqrt( (xloc-x).^2 + (yloc-y).^2);
-0056 [Distance,Point] = min(radvec);
-0057 
-0058 
-0059 <span class="comment">%fprintf(['end   : ' subname '\n'])</span>
+0044 <span class="keyword">if</span> ~exist(<span class="string">'xloc'</span>, <span class="string">'var'</span>) || ~exist(<span class="string">'yloc'</span>, <span class="string">'var'</span>) || ~exist(<span class="string">'Mobj'</span>, <span class="string">'var'</span>)
+0045     error(<span class="string">'arguments to %s are missing'</span>, subname)
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="comment">%------------------------------------------------------------------------------</span>
+0049 <span class="comment">% Set native coordinates</span>
+0050 <span class="comment">%------------------------------------------------------------------------------</span>
+0051 <span class="keyword">if</span> strcmpi(Mobj.nativeCoords, <span class="string">'cartesian'</span>)
+0052     x = Mobj.x;
+0053     y = Mobj.y;
+0054 <span class="keyword">elseif</span> strcmpi(Mobj.nativeCoords, <span class="string">'spherical'</span>)
+0055     x = Mobj.lon;
+0056     y = Mobj.lat;
+0057 <span class="keyword">else</span>
+0058     error(<span class="string">'Unrecognised coordinate type.'</span>)
+0059 <span class="keyword">end</span>
 0060 
-0061</pre></div>
-<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0061 <span class="comment">%------------------------------------------------------------------------------</span>
+0062 <span class="comment">% Find the nearest point</span>
+0063 <span class="comment">%------------------------------------------------------------------------------</span>
+0064 [Distance, Point] = min(sqrt((xloc - x).^2 + (yloc - y).^2));
+0065 
+0066 <span class="comment">% if ftbverbose</span>
+0067 <span class="comment">%     fprintf(['end   : ' subname '\n'])</span>
+0068 <span class="comment">% end</span>
+0069 
+0070</pre></div>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of interpolate_near_coast</title>
+  <meta name="keywords" content="interpolate_near_coast">
+  <meta name="description" content="we should be using the law of the wall here s">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; interpolate_near_coast.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>interpolate_near_coast
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>we should be using the law of the wall here s</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [data]=interpolate_near_coast(distbc,tempzet,doExtrap) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> we should be using the law of the wall here s
+ to interpolate the velocitie</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="interpolate_polcoms_timeseries_zet.html" class="code" title="function [Mobj]=interpolate_polcoms_timeseries_zet(Mobj,polcoms,relaxLine)">interpolate_polcoms_timeseries_zet</a>	% Testing for parallel matlab toolbox</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [data]=interpolate_near_coast(distbc,tempzet,doExtrap)</a>
+0002 <span class="comment">% we should be using the law of the wall here s</span>
+0003 <span class="comment">% to interpolate the velocitie</span>
+0004         [~,imaxd]=max(distbc);
+0005         tempzet1=tempzet(1:imaxd);
+0006         distbc1=distbc(1:imaxd);
+0007         <span class="comment">% find nans and non nans</span>
+0008         ibadz=find(isnan(tempzet1));
+0009         igoodz=find(~isnan(tempzet1));
+0010         <span class="keyword">if</span> doExtrap
+0011         <span class="comment">% Uses csaps as a smoothing spline interpolant</span>
+0012         pp=csaps(distbc1(igoodz),tempzet1(igoodz));
+0013         <span class="comment">% fnxtr allows usage of interpolan spline for extrapolation</span>
+0014         pp = fnxtr(pp);
+0015         tempzet1(ibadz)=fnval(pp,distbc1(ibadz));
+0016         <span class="keyword">else</span>
+0017             <span class="comment">% use good point closest to coast</span>
+0018             [~,use_idx]=min(distbc1(igoodz));
+0019            tempzet1(ibadz)= tempzet1(igoodz(use_idx));
+0020         <span class="keyword">end</span>
+0021         <span class="comment">% evaluate spline on nan points near the coast.</span>
+0022         <span class="comment">% Repeat for the second stretch of boundary</span>
+0023         tempzet2=tempzet(imaxd+1:end);
+0024         distbc2=distbc(imaxd+1:end);
+0025         ibadz=find(isnan(tempzet2));
+0026         igoodz=find(~isnan(tempzet2));
+0027                 <span class="keyword">if</span> doExtrap
+0028 
+0029         pp=csaps(distbc2(igoodz),tempzet2(igoodz));
+0030         pp = fnxtr(pp);
+0031         tempzet2(ibadz)=fnval(pp,distbc2(ibadz));
+0032         <span class="keyword">else</span>
+0033             <span class="comment">% use good point closest to coast</span>
+0034             [~,use_idx]=min(distbc2(igoodz));
+0035            tempzet2(ibadz)= tempzet2(igoodz(use_idx));
+0036         <span class="keyword">end</span>
+0037         data=[tempzet1(:);tempzet2(:)];
+0038 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

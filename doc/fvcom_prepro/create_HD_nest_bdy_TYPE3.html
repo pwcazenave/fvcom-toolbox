@@ -1,0 +1,409 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of create_HD_nest_bdy_TYPE3</title>
+  <meta name="keywords" content="create_HD_nest_bdy_TYPE3">
+  <meta name="description" content="Read in AMM data and interpolate onto the boundary of FVCOM model">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; create_HD_nest_bdy_TYPE3.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>create_HD_nest_bdy_TYPE3
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Read in AMM data and interpolate onto the boundary of FVCOM model</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Read in AMM data and interpolate onto the boundary of FVCOM model
+ subname = 'create_HD_nest_bdy_TYPE3'
+
+ DESCRIPTION:
+    READ in the following data:
+          - AMM data 
+        - FVCOM Grid file (connectivity + nodes)
+       - list of nesting nodes created using create_nesting_nodes.m 
+    Process data:
+       - Interpolate AMM data onto the FVCOM model nested boundary nodes
+       
+    Write output
+       - Write interpolated elevation, speeds, T and S data  to Netcdf  nesting file
+
+ INPUT [keyword pairs]:  
+   modify&gt;&gt;&gt;&gt;&gt; 'gridfile'  = fvcom mesh file
+
+ OUTPUT:
+   modify&gt;&gt;&gt;&gt;&gt;  Mobj = matlab structure containing mesh data
+
+ EXAMPLE USAGE
+    create_wave_bdy
+
+ Author(s):  
+    Darren Price (CH2MHILL, Warrington, UK)
+    Hakeem Johnson (CH2MHILL, Warrington, UK)
+
+ Revision history
+   Nov 2013: Initial version - not in the correct nesting file format
+   Jan 2014: Beta version including the correct nesting format
+   Mar 2014: HKJ
+       - Corrected various bugs in connection with wave direction calcs..
+       - Added 2 new functions: get_UxUy_DirFrom.m &amp; get_DirFrom_UxUy.m
+   2014:   DMP changed to use for HD nested boundaries
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_HD_OBC.html" class="code" title="function [ Mobj ] = get_HD_OBC(nnodes_file )">get_HD_OBC</a>	Extract open boundary nodes from open boundary cordinate file</li><li><a href="get_HD_nesting_nodes.html" class="code" title="function [ Mobj ] = get_HD_nesting_nodes(nnodes_file )">get_HD_nesting_nodes</a>	Extract open boundary nodes from open boundary cordinate file</li><li><a href="read_fvcom_bath.html" class="code" title="function [h] = read_fvcom_bath(bathfile)">read_fvcom_bath</a>	Read fvcom bathymetry file</li><li><a href="write_nesting_bdy_file.html" class="code" title="function write_nesting_bdy_file(Mobj, MJD, OutFile, MyTitle)">write_nesting_bdy_file</a>	Write an FVCOM time series forcing file</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 
+0002 <span class="comment">% Read in AMM data and interpolate onto the boundary of FVCOM model</span>
+0003 <span class="comment">% subname = 'create_HD_nest_bdy_TYPE3'</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% DESCRIPTION:</span>
+0006 <span class="comment">%    READ in the following data:</span>
+0007 <span class="comment">%          - AMM data</span>
+0008 <span class="comment">%        - FVCOM Grid file (connectivity + nodes)</span>
+0009 <span class="comment">%       - list of nesting nodes created using create_nesting_nodes.m</span>
+0010 <span class="comment">%    Process data:</span>
+0011 <span class="comment">%       - Interpolate AMM data onto the FVCOM model nested boundary nodes</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">%    Write output</span>
+0014 <span class="comment">%       - Write interpolated elevation, speeds, T and S data  to Netcdf  nesting file</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% INPUT [keyword pairs]:</span>
+0017 <span class="comment">%   modify&gt;&gt;&gt;&gt;&gt; 'gridfile'  = fvcom mesh file</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% OUTPUT:</span>
+0020 <span class="comment">%   modify&gt;&gt;&gt;&gt;&gt;  Mobj = matlab structure containing mesh data</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% EXAMPLE USAGE</span>
+0023 <span class="comment">%    create_wave_bdy</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% Author(s):</span>
+0026 <span class="comment">%    Darren Price (CH2MHILL, Warrington, UK)</span>
+0027 <span class="comment">%    Hakeem Johnson (CH2MHILL, Warrington, UK)</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Revision history</span>
+0030 <span class="comment">%   Nov 2013: Initial version - not in the correct nesting file format</span>
+0031 <span class="comment">%   Jan 2014: Beta version including the correct nesting format</span>
+0032 <span class="comment">%   Mar 2014: HKJ</span>
+0033 <span class="comment">%       - Corrected various bugs in connection with wave direction calcs..</span>
+0034 <span class="comment">%       - Added 2 new functions: get_UxUy_DirFrom.m &amp; get_DirFrom_UxUy.m</span>
+0035 <span class="comment">%   2014:   DMP changed to use for HD nested boundaries</span>
+0036 <span class="comment">%==============================================================================</span>
+0037 
+0038 
+0039 <span class="comment">% clear</span>
+0040 <span class="comment">%%</span>
+0041 <span class="comment">%create nesting nodes - commented out here as run seperately during</span>
+0042 <span class="comment">%debugging</span>
+0043 
+0044 <span class="comment">% create_nesting_nodes;</span>
+0045 <span class="comment">%%</span>
+0046 
+0047 clear all;
+0048 subname = <span class="string">'create_HD_nest_bdy'</span>;
+0049 
+0050 <span class="keyword">global</span> ftbverbose;
+0051 <span class="keyword">if</span>(ftbverbose);
+0052   fprintf(<span class="string">'\n'</span>)
+0053   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0054 <span class="keyword">end</span>
+0055 <span class="comment">%%</span>
+0056 <span class="comment">%---------------------------------------------------------</span>
+0057 <span class="comment">% user specify input data &amp; parameters ...</span>
+0058 <span class="comment">%---------------------------------------------------------</span>
+0059 <span class="comment">% work &amp; data folders ...</span>
+0060 <span class="comment">% directories default values</span>
+0061 FVCOM_root = <span class="string">'\\hand-fs-01\maritime\Projects\Scottish Waters\Calcs\Models\WLLS\mesh10\nesting\'</span>;
+0062 cd(FVCOM_root);
+0063 workDir=<span class="string">'\\hand-fs-01\maritime\Projects\Scottish Waters\Calcs\Models\WLLS\mesh10\nesting\'</span>;
+0064 dataDir=<span class="string">'\\hand-fs-01\maritime\Projects\Scottish Waters\Calcs\Models\WLLS\mesh10\mesh\'</span>;
+0065 <span class="comment">% AMMDir='C:\Users\iapostol\Documents\Miscellaneous_IGA\ApostolidouIG\Modelling\ScottishWaters\AMM_2011\';</span>
+0066 AMMDir=<span class="string">'\\uwa2v1th5j\Scottish_waters_mainbackup\Scottish_Waters\Scottish_Waters_AMM_2011\'</span>; <span class="comment">%external hard disk</span>
+0067 <span class="comment">%AMMDir='C:\PROJECTS\WLLS\AMM_2011\';</span>
+0068 <span class="comment">%AMMDir='X:\Scottish_Waters\Scottish_Waters_AMM_2011\';</span>
+0069 disp(<span class="string">'hard coded in time shift back 24.5 hours '</span>);
+0070 shift=-24.5/24;  <span class="comment">%shift found in results for ramWLLS_3</span>
+0071 
+0072 nsiglay=10;
+0073 
+0074 basename = <span class="string">'WLLS_v3smth'</span>;
+0075 
+0076 meshFile=[basename <span class="string">'_grd.dat'</span>];
+0077 bathFile=[basename <span class="string">'_dep.dat'</span>];
+0078 obcFile=[basename <span class="string">'_node_nest.dat'</span>];
+0079 bdyobcFile=[basename <span class="string">'_obc.dat'</span>];
+0080 
+0081 <span class="comment">% output file</span>
+0082 HDFile = [basename <span class="string">'2011May_10fshift24p5hours_coldstart_node_nest.nc'</span>];
+0083 MyTitle=[<span class="string">'WLLS model boundary conditions for mesh'</span> meshFile];
+0084 
+0085 
+0086     <span class="comment">% define weighting for type 3 nesting</span>
+0087     <span class="comment">% in this case we are only using one element width with weights on the</span>
+0088     <span class="comment">% nodes on boundary and on other nodes on the elements on boundary</span>
+0089     weight_node1=0.75; <span class="comment">%on boundary</span>
+0090     weight_node2=0.25; <span class="comment">%inside boundary</span>
+0091     weight_elem_val=0.5;
+0092     
+0093     NEST_TYPE=<span class="string">'TYPE3'</span>;
+0094 
+0095 
+0096 
+0097 <span class="comment">% set start &amp; end time</span>
+0098 
+0099 StartDate = [2011,05,01,1,0,0]; <span class="comment">%n.b start and end dates not used all data is written</span>
+0100 EndDate   = [2011,05,30,1,0,0];  <span class="comment">% changed from: [2009,12,31,21,00,0]</span>
+0101 <span class="comment">%EndDate   = [2011,05,3,8,0,0];  %---------------------------------------------------------</span>
+0102 
+0103 <span class="comment">%smooth introduction  (similar to iramp, but for velocities and temp/salinity - was required for initial shock due to velocity being introduced  not all models require this though)</span>
+0104  smoothtime= 12.0; <span class="comment">% number of hours in which to introduce forcing lineary</span>
+0105     speed_init=0;  <span class="comment">% initial conditions</span>
+0106     salinity_init=35.0;
+0107     temp_init=10.0;
+0108     surfaceElevation_init=0.0;
+0109 
+0110 
+0111 
+0112 <span class="comment">% set full file names ...</span>
+0113 <span class="comment">%---------------------------------------------------------</span>
+0114 meshFile     = [dataDir meshFile];
+0115 bathFile     = [dataDir bathFile];
+0116 obcFile      = [workDir obcFile];
+0117 bdyobcFile   = [dataDir bdyobcFile];
+0118 HDFile     = [workDir HDFile]; 
+0119 <span class="comment">%%</span>
+0120 <span class="comment">%---------------------------------------------------------</span>
+0121 <span class="comment">% Read data into matlab</span>
+0122 <span class="comment">% 1) grid mesh; 2)boundary nodes; 3) UKMO data files  ...</span>
+0123 <span class="comment">%---------------------------------------------------------</span>
+0124 <span class="comment">% get fvcom grid file in as mesh object ...</span>
+0125 FV_Mesh = read_fvcom_mesh_lonlat(meshFile);        <span class="comment">% ... from matlab toolbox</span>
+0126 FV_Mesh.have_bath = true;
+0127 FV_Mesh.h = <a href="read_fvcom_bath.html" class="code" title="function [h] = read_fvcom_bath(bathfile)">read_fvcom_bath</a>(bathFile);
+0128 
+0129 <span class="comment">% get  nesting nodes and associated lat/lon coord file</span>
+0130 FV_OBC = <a href="get_HD_nesting_nodes.html" class="code" title="function [ Mobj ] = get_HD_nesting_nodes(nnodes_file )">get_HD_nesting_nodes</a>(obcFile);
+0131 <span class="keyword">for</span> i=1:FV_OBC.nVerts
+0132     inode = FV_OBC.nnodesID(i);
+0133     FV_OBC.lon(i) = FV_Mesh.lon(inode);
+0134     FV_OBC.lat(i) = FV_Mesh.lat(inode);
+0135     FV_OBC.h(i) = FV_Mesh.h(inode);
+0136 <span class="keyword">end</span>
+0137 FV_OBC.x = FV_OBC.lon;   <span class="comment">% temp solution</span>
+0138 FV_OBC.y = FV_OBC.lat;   <span class="comment">% temp solution</span>
+0139 figure(1);
+0140 scatter(FV_OBC.lon,FV_OBC.lat,5,FV_OBC.h);shading flat;caxis([0 100]);colorbar;
+0141 
+0142 <span class="comment">%---------------------------------------------------------------------</span>
+0143 <span class="comment">% get elements at boundary &amp; element centres</span>
+0144 <span class="comment">%---------------------------------------------------------------------</span>
+0145 <span class="comment">% get elements at boundary</span>
+0146 T = FV_Mesh.tri;
+0147 X1 = FV_Mesh.lon;
+0148 Y1 = FV_Mesh.lat;
+0149 P = [X1,Y1];
+0150 TR = triangulation(T,P);
+0151 vi = FV_OBC.nnodesID;
+0152 ti = vertexAttachments(TR,vi);
+0153 <span class="comment">% arrange data in one row (i.e. several columns); since elements overlap, get unique elements</span>
+0154 temp1 = [ti{:}]';
+0155 <span class="comment">%bdcell = temp1(temp1~=0);</span>
+0156 bdcell = unique(temp1,<span class="string">'stable'</span>);  
+0157 nCells = length(bdcell);
+0158 
+0159 <span class="comment">% get elements at boundary that have nodes in the supplied wave node</span>
+0160 <span class="comment">% nesting file..</span>
+0161 kElem = 0;
+0162 <span class="keyword">for</span> i=1:nCells
+0163     ielem = bdcell(i);
+0164     v(1) = FV_Mesh.tri(ielem,1);
+0165     v(2) = FV_Mesh.tri(ielem,2);
+0166     v(3) = FV_Mesh.tri(ielem,3);
+0167     chk2 = ismember(v(1:3),vi);
+0168     <span class="keyword">if</span>(sum(chk2) == 3)
+0169         kElem = kElem +1;
+0170         bdElem(kElem,1) = ielem;
+0171     <span class="keyword">end</span>
+0172 <span class="keyword">end</span>
+0173 <span class="comment">%triplot(T, X1, Y1);</span>
+0174 <span class="comment">%hold on;</span>
+0175 disp(<span class="string">'finished getting elements at boundary'</span>);
+0176 
+0177 <span class="comment">%---------------------------------------------------------------------</span>
+0178 <span class="comment">% get co-ordinates at element centres</span>
+0179 <span class="comment">%---------------------------------------------------------------------</span>
+0180 nElems = length(bdElem);
+0181 FV_OBC.nElems  = nElems;
+0182 FV_OBC.nElemID = bdElem;
+0183 
+0184 <span class="comment">% get element centres</span>
+0185 IC = incenter(TR,bdElem);
+0186 lonc = IC(:,1)';        <span class="comment">% arrange in one row</span>
+0187 latc = IC(:,2)';        <span class="comment">% arrange in one row</span>
+0188 FV_OBC.lonc = lonc;
+0189 FV_OBC.latc = latc;
+0190 FV_OBC.xc = lonc;   <span class="comment">% temp solution</span>
+0191 FV_OBC.yc = latc;   <span class="comment">% temp solution</span>
+0192 
+0193 <span class="comment">% get element nodes &amp; arrange in required format</span>
+0194 nv = zeros(3,nElems);
+0195 <span class="keyword">for</span> i=1:nElems
+0196     ielem = bdElem(i);
+0197     nv(1,i) = FV_Mesh.tri(ielem,1);
+0198     nv(2,i) = FV_Mesh.tri(ielem,2);
+0199     nv(3,i) = FV_Mesh.tri(ielem,3);
+0200 <span class="keyword">end</span>
+0201 FV_OBC.nv = nv;
+0202 FV_OBC.tri=nv;
+0203 disp(<span class="string">'finished getting co-ordinates of element centres at boundary'</span>);
+0204 
+0205 
+0206 <span class="comment">%get number of layers</span>
+0207 
+0208 FV_OBC.nsiglay=nsiglay;
+0209 FV_OBC.nsiglev=nsiglay+1;
+0210 inc = 1/real(nsiglay);
+0211 siglev = 0:-inc:-1;
+0212 siglay = nan(1, nsiglay);
+0213 <span class="keyword">for</span> i=1:nsiglay
+0214     siglay(i) = mean(siglev(i:i+1));
+0215 <span class="keyword">end</span>
+0216 
+0217 FV_OBC.siglay=siglay;
+0218 FV_OBC.siglev=siglev;
+0219 
+0220 <span class="comment">%---------------------------------------------------------</span>
+0221 <span class="comment">% Interpolate AMM data onto mesh</span>
+0222 <span class="comment">%---------------------------------------------------------</span>
+0223 
+0224 <span class="comment">%call get_AMM to read in elevation, UV and T/S (via call to another</span>
+0225 <span class="comment">%function) data and store in FV_OBC</span>
+0226 FV_OBC = get_AMM_ZUV(FV_OBC,StartDate,EndDate,AMMDir);
+0227 
+0228 
+0229 
+0230   
+0231 <span class="comment">%plot output</span>
+0232 
+0233 <span class="comment">% plot boundary values ??</span>
+0234 <span class="keyword">if</span>(0)
+0235     figure(1);
+0236     hold on;
+0237     <span class="keyword">for</span> j = 1:100 <span class="comment">% time</span>
+0238         clf;
+0239         scatter(FV_OBC.lon,FV_OBC.lat,5,Hs(j,:)');
+0240         pause;<span class="comment">%(3);</span>
+0241     <span class="keyword">end</span>    
+0242 <span class="keyword">end</span>
+0243   
+0244 <span class="comment">%%</span>
+0245 <span class="keyword">if</span>(1)    <span class="comment">%Due to a shock at the beginning when introducing the nesting from a hot</span>
+0246     <span class="comment">%start (obtained at the end of a cold start) the first x hours of velocity will be</span>
+0247     <span class="comment">%gradually built up.  Also ramp up temperature and salinity</span>
+0248     <span class="comment">%when running from cold you should have a constant temperature and salinity</span>
+0249     timeinterval=((FV_OBC.time(2)-FV_OBC.time(1))*24.);
+0250     numiters=ceil((smoothtime/timeinterval)+1);
+0251     shiftiter=-1*ceil(shift.*24/timeinterval);
+0252 <span class="comment">%smooth introduction of water level and speed</span>
+0253 FV_OBC.daUvel(FV_OBC.daUvel==0.00)=0.00001;
+0254 FV_OBC.daVvel(FV_OBC.daVvel==0.00)=0.00001;
+0255 FV_OBC.u(FV_OBC.u==0.00)=0.00001;
+0256 FV_OBC.v(FV_OBC.v==0.00)=0.00001;
+0257 FV_OBC.surfaceElevation(FV_OBC.surfaceElevation==0.00)=0.00001;
+0258     <span class="keyword">for</span> ielem=1:FV_OBC.nElems
+0259         
+0260         interpua=(speed_init:((FV_OBC.daUvel(ielem,numiters)-speed_init)/(numiters-1)):FV_OBC.daUvel(ielem,numiters));
+0261         interpva=(speed_init:((FV_OBC.daVvel(ielem,numiters)-speed_init)/(numiters-1)):FV_OBC.daVvel(ielem,numiters));
+0262         
+0263         FV_OBC.daUvel(ielem,1+shiftiter:numiters+shiftiter)=interpua;
+0264         FV_OBC.daVvel(ielem,1+shiftiter:numiters+shiftiter)=interpva;
+0265         
+0266         <span class="keyword">for</span> ilay=1:FV_OBC.nsiglay
+0267             interpu=(speed_init:((FV_OBC.u(ielem,ilay,numiters)-speed_init)/(numiters-1)):FV_OBC.u(ielem,ilay,numiters));
+0268             interpv=(speed_init:((FV_OBC.v(ielem,ilay,numiters)-speed_init)/(numiters-1)):FV_OBC.v(ielem,ilay,numiters));
+0269             
+0270             FV_OBC.u(ielem,ilay,1+shiftiter:numiters+shiftiter)=interpu;
+0271             FV_OBC.v(ielem,ilay,1+shiftiter:numiters+shiftiter)=interpv;
+0272         <span class="keyword">end</span>
+0273     <span class="keyword">end</span>
+0274     
+0275     <span class="keyword">for</span> inode=1:FV_OBC.nVerts
+0276         
+0277         interpsurfaceElevation=(surfaceElevation_init:((FV_OBC.surfaceElevation(inode,numiters)-surfaceElevation_init)/(numiters-1)):FV_OBC.surfaceElevation(inode,numiters));
+0278         FV_OBC.surfaceElevation(inode,1+shiftiter:numiters+shiftiter)=interpsurfaceElevation;
+0279         
+0280         <span class="keyword">for</span> ilay=1:FV_OBC.nsiglay
+0281             interpsalinity=(salinity_init:((FV_OBC.salinity(inode,ilay,numiters)-salinity_init)/(numiters-1)):FV_OBC.salinity(inode,ilay,numiters));
+0282             interptemperature=(temp_init:((FV_OBC.temperature(inode,ilay,numiters)-temp_init)/(numiters-1)):FV_OBC.temperature(inode,ilay,numiters));
+0283             
+0284             FV_OBC.salinity(inode,ilay,1+shiftiter:numiters+shiftiter)=interpsalinity;
+0285             FV_OBC.temperature(inode,ilay,1+shiftiter:numiters+shiftiter)=interptemperature;
+0286             
+0287                         
+0288         <span class="keyword">end</span>
+0289     <span class="keyword">end</span>
+0290 
+0291 <span class="keyword">end</span>
+0292 
+0293 
+0294 figure(150);
+0295 plot(squeeze(FV_OBC.surfaceElevation(23,:)));
+0296 figure(151);
+0297 plot(squeeze(FV_OBC.salinity(23,1,:)));
+0298 figure(152);
+0299 hold on;
+0300 plot(squeeze(FV_OBC.daUvel(23,:)),<span class="string">'k-'</span>);
+0301 plot(squeeze(FV_OBC.daVvel(23,:)),<span class="string">'r-'</span>);
+0302 <span class="comment">%%</span>
+0303 <span class="comment">%weighting for type 3 nesting</span>
+0304 OBCnodes= <a href="get_HD_OBC.html" class="code" title="function [ Mobj ] = get_HD_OBC(nnodes_file )">get_HD_OBC</a>(bdyobcFile);
+0305 nodes_on_bdy=OBCnodes.nnodesID;
+0306 
+0307 [I]=ismember(FV_OBC.nnodesID,nodes_on_bdy); <span class="comment">% nodes on boundary with weight 1</span>
+0308 [Jval, J]=setdiff(FV_OBC.nnodesID,nodes_on_bdy); <span class="comment">%need an array of nodes not on bdy for weight 2</span>
+0309 weight_node_val=ones(FV_OBC.nVerts,1);
+0310 weight_elem_val=weight_elem_val.*ones(FV_OBC.nElems,1);<span class="comment">% element weight</span>
+0311 
+0312 weight_node_val(I)=weight_node_val(I).*weight_node1;
+0313 weight_node_val(J)=weight_node_val(J).*weight_node2;
+0314 <span class="comment">%now repeat matrices for time dimension</span>
+0315 FV_OBC.weight_node_val=repmat(weight_node_val,1,numel(FV_OBC.time));
+0316 FV_OBC.weight_elem_val=repmat(weight_elem_val,1,numel(FV_OBC.time));
+0317 
+0318 
+0319 
+0320 FV_OBC.NEST_TYPE=NEST_TYPE;
+0321 
+0322 
+0323   
+0324 <span class="comment">% now output boundary data to the FVCOM netcdf format</span>
+0325   
+0326 <a href="write_nesting_bdy_file.html" class="code" title="function write_nesting_bdy_file(Mobj, MJD, OutFile, MyTitle)">write_nesting_bdy_file</a>(FV_OBC, FV_OBC.time-datenum(1858,11,17,0,0,0)+shift, HDFile, MyTitle);
+0327 
+0328 disp(<span class="string">'net cdf wave file written'</span>);</pre></div>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

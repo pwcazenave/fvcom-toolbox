@@ -60,7 +60,7 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="example.html" class="code" title="">example</a>	example demonstrating reading in a 2DM file and constructing a model</li></ul>
+</ul>
 <!-- crossreference -->
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -131,7 +131,7 @@ This function is called by:
 0061 nVerts = Mobj.nVerts;
 0062 nElems = Mobj.nElems;
 0063 
-0064 ts = ones(nVerts,1)*1e9;
+0064 ts = inf(nVerts,1);
 0065 lside = zeros(nVerts,1);
 0066 <span class="keyword">for</span> i=1:nElems
 0067     n1 = tri(i,1);
@@ -141,14 +141,14 @@ This function is called by:
 0071     <span class="comment">% Check whether we have x and y values and use great circle</span>
 0072     <span class="comment">% approximations if we don't.</span>
 0073     <span class="keyword">if</span> Mobj.have_xy
-0074         lside(i) = sqrt( (x(n1)-x(n2))^2 + (y(n1)-y(n2))^2);
+0074         lside(i) = sqrt((x(n1)-x(n2))^2 + (y(n1)-y(n2))^2);
 0075     <span class="keyword">else</span>
 0076         lside(i) = <a href="#_sub1" class="code" title="subfunction [km]=haversine(lat1,lon1,lat2,lon2)">haversine</a>(x(n1),y(n1),x(n2),y(n2));
 0077     <span class="keyword">end</span>
 0078     dpth  = max(h(nds))+zeta;
 0079     dpth  = max(dpth,1);
 0080     ts(nds) = min(ts(nds),lside(i)/(sqrt(g*dpth) + u));
-0081 <span class="keyword">end</span>;
+0081 <span class="keyword">end</span>
 0082 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'minimum time step: %f seconds\n'</span>,min(ts)); <span class="keyword">end</span>;
 0083 Mobj.ts = ts;
 0084 Mobj.have_ts = true;
@@ -171,6 +171,6 @@ This function is called by:
 0101 c = 2 * atan2(sqrt(a), sqrt(1-a));
 0102 km = R * c;                     <span class="comment">% distance in metres</span>
 0103</pre></div>
-<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

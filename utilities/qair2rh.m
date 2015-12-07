@@ -1,9 +1,9 @@
-function rh = qair2rh(qair, temp, varargin)
+function rh = qair2rh(qair, temp, press)
 % Convert specific humitidy to relative humidity.
 %
 % INPUTS:
 %   qair - Specific humidity. Dimensionless ratio of water mass /
-%       total air mass.
+%       total air mass (0-1).
 %   temp - Temperature. Celsius.
 %   press - Pressure, optional. Millibar. Assume as 1013.25 if
 %       missing.
@@ -22,8 +22,8 @@ function rh = qair2rh(qair, temp, varargin)
 if nargin == 2
     press = 1013.25;
 end
-es = 6.112 * exp((17.67 * temp) / (temp + 243.5));
-e = qair * press / (0.378 * qair + 0.622);
-rh = e / es;
+es = 6.112 .* exp((17.67 .* temp) ./ (temp + 243.5));
+e = qair .* press ./ (0.378 .* qair + 0.622);
+rh = e ./ es;
 rh(rh > 1) = 1;
 rh(rh < 0) = 0;

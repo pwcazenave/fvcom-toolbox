@@ -1,11 +1,13 @@
 function data = get_CFS_forcing(Mobj, modelTime, varargin)
-% Get the required parameters from CFSv2 products to force FVCOM.
+% Get the required parameters from CFSv2 reanalysis products to force
+% FVCOM.
 %
 % data = get_CFS_forcing(Mobj, modelTime)
 %
 % DESCRIPTION:
-%   Using OPeNDAP, extract the necessary parameters to create an FVCOM
-%   forcing file. Requires the air_sea toolbox.
+%   Using the NOAA OPeNDAP server, extract the necessary parameters to
+%   create an FVCOM forcing file. Data are available for 1979-2009
+%   inclusive.
 %
 % INPUT:
 %   Mobj - MATLAB mesh object. Must contain fields:
@@ -13,30 +15,33 @@ function data = get_CFS_forcing(Mobj, modelTime, varargin)
 %       have_lonlat - boolean to signify whether coordinates are spherical
 %                   or cartesian.
 %   modelTime - Modified Julian Date start and end times
-%   varargin - parameter/value pairs
+%   varargin - optional parameter/value pairs:
 %       - list of variables to extract:
-%           'varlist', {'nshf', 'uwnd', 'vwnd'}
+%           'varlist', {'tmp2m', 'uwnd', 'vwnd'}
 %
 % OUTPUT:
 %   data - struct of the data necessary to force FVCOM. These can be
 %   interpolated onto an unstructured grid in Mobj using grid2fvcom.m.
+%   Contains vectors of the longitude and latitude data (lon, lat).
 %
 % The parameters which can be obtained from the NCEP data are:
-%     - u wind component (uwnd)
-%     - v wind component (vwnd)
-%     - Downward longwave radiation surface (dlwrf)
-%     - Net shortwave radiation surface (nswrs = uswrf - dswrf)
-%     - Air temperature (air)
-%     - Relative humidity (rhum)
-%     - Precipitation rate (prate)
-%     - Surface pressure (pres or press)
-%     - Latent heat flux (lhtfl)
-%     - Potential evaporation rate (pevpr)
+%     - Net shortwave radiation (nswsfc = uswsfc - dswsfc) [surface] [W/m^2]
+%     - Downward longwave radiation (dlwrf) [surface] [W/m^2]
+%     - Pressure (pressfc) [surface] [Pa]
+%     - u wind component (uwnd) [10m] [m/s]
+%     - v wind component (vwnd) [10m] [m/s]
+%     - Air temperature (tmp2m) [2m] [celsius]
+%     - Precipitation rate (prate) [surface] [m/s]
+%     - Specific humidity (q2m) [2m] [%]
+%     - Relative humidity (rhum) [2m] [%] - calculated from q2m.
+%     - Latent heat flux (lhtfl) [surface] [m/s]
+%     - Evaporation rate (Et) [surface] [m/s]
 %
-% In addition to these, the momentum flux (tau) is calculated from wind
-% data. Precipitation is converted from kg/m^2/s to m/s. Evaporation (Et)
-% is calculated from the mean daily latent heat net flux (lhtfl) at the
-% surface. Precipitation-evaporation is also created (P_E).
+% Relative humidity is calculated from specific humidity with the QAIR2RH
+% function (see fvcom-toolbox/utilities). Precipitation is converted from
+% kg/m^2/s to m/s. Evaporation (Et) is calculated from the mean daily
+% latent heat net flux (lhtfl) at the surface. Precipitation-evaporation is
+% also created (P_E).
 %
 % EXAMPLE USAGE:
 %   To download the default set of data (see list above):
@@ -53,7 +58,7 @@ function data = get_CFS_forcing(Mobj, modelTime, varargin)
 %   Rory O'Hara Murray (Marine Scotland Science)
 %
 % Revision history:
-%   2015-05-19 First version based on get_NCEP_forcing.m.
+%   2015-05-19 First version loosely based on get_NCEP_forcing.m.
 %
 %==========================================================================
 
@@ -93,6 +98,8 @@ end
 
 % Create year and month arrays for the period we've been given.
 [yyyy, mm, dd, HH, MM, SS] = mjulian2greg(modelTime);
+assert(min(yyyy) >= 1979, 'CFSv2 data not available prior to 1979')
+assert(max(yyyy) <= 2009, 'CFSv2 data not available after 2009')
 dates = datenum([yyyy; mm; dd; HH; MM; SS]');
 serial = dates(1):dates(2);
 [years, months, ~, ~, ~, ~] = datevec(serial);
@@ -110,16 +117,36 @@ for t = 1:nt
     % Set up a struct of the remote locations in which we're
     % interested.
     url = 'http://nomads.ncdc.noaa.gov/thredds/dodsC/cfsr1hr/';
-    ncep.dlwsfc  = [url, sprintf('%04d%02d/dlwsfc.gdas.%04d%02d.grb2', year, month, year, month)];
-    ncep.dswsfc  = [url, sprintf('%04d%02d/dswsfc.gdas.%04d%02d.grb2', year, month, year, month)];
-    ncep.lhtfl   = [url, sprintf('%04d%02d/lhtfl.gdas.%04d%02d.grb2', year, month, year, month)];
-    ncep.prate   = [url, sprintf('%04d%02d/prate.gdas.%04d%02d.grb2', year, month, year, month)];
-    ncep.pressfc = [url, sprintf('%04d%02d/pressfc.gdas.%04d%02d.grb2', year, month, year, month)];
-    ncep.q2m     = [url, sprintf('%04d%02d/q2m.gdas.%04d%02d.grb2', year, month, year, month)];
-    ncep.tmp2m   = [url, sprintf('%04d%02d/tmp2m.gdas.%04d%02d.grb2', year, month, year, month)];
-    ncep.uswsfc  = [url, sprintf('%04d%02d/uswsfc.gdas.%04d%02d.grb2', year, month, year, month)];
-    ncep.uwnd    = [url, sprintf('%04d%02d/wnd10m.gdas.%04d%02d.grb2', year, month, year, month)];
-    ncep.vwnd    = [url, sprintf('%04d%02d/wnd10m.gdas.%04d%02d.grb2', year, month, year, month)];
+    ncep.dlwsfc  = [url, ...
+        sprintf('%04d%02d/dlwsfc.gdas.%04d%02d.grb2', year, month, ...
+        year, month)];
+    ncep.dswsfc  = [url, ...
+        sprintf('%04d%02d/dswsfc.gdas.%04d%02d.grb2', year, month, ...
+        year, month)];
+    ncep.lhtfl   = [url, ...
+        sprintf('%04d%02d/lhtfl.gdas.%04d%02d.grb2', year, month, ...
+        year, month)];
+    ncep.prate   = [url, ...
+        sprintf('%04d%02d/prate.gdas.%04d%02d.grb2', year, month, ...
+        year, month)];
+    ncep.pressfc = [url, ...
+        sprintf('%04d%02d/pressfc.gdas.%04d%02d.grb2', year, month, ...
+        year, month)];
+    ncep.q2m     = [url, ...
+        sprintf('%04d%02d/q2m.gdas.%04d%02d.grb2', year, month, ...
+        year, month)];
+    ncep.tmp2m   = [url, ...
+        sprintf('%04d%02d/tmp2m.gdas.%04d%02d.grb2', year, month, ...
+        year, month)];
+    ncep.uswsfc  = [url, ...
+        sprintf('%04d%02d/uswsfc.gdas.%04d%02d.grb2', year, month, ...
+        year, month)];
+    ncep.uwnd    = [url, ...
+        sprintf('%04d%02d/wnd10m.gdas.%04d%02d.grb2', year, month, ...
+        year, month)];
+    ncep.vwnd    = [url, ...
+        sprintf('%04d%02d/wnd10m.gdas.%04d%02d.grb2', year, month, ...
+        year, month)];
 
     % We need variable names too since we can't store them as the keys in
     % ncep due to characters which MATLAB won't allow in fields (mainly -).
@@ -147,12 +174,20 @@ for t = 1:nt
             fprintf('getting ''%s'' data... ', fields{aa})
         end
 
-        data.(fields{aa}).data = [];
-        data.(fields{aa}).time = [];
-        data.(fields{aa}).lat = [];
-        data.(fields{aa}).lon = [];
+        % These are needed when catting the arrays together.
+        if t == 1
+            data.(fields{aa}).data = [];
+            data.(fields{aa}).time = [];
+            data.(fields{aa}).lat = [];
+            data.(fields{aa}).lon = [];
+            data.time = [];
+        end
+        scratch.(fields{aa}).data = [];
+        scratch.(fields{aa}).time = [];
+        scratch.(fields{aa}).lat = [];
+        scratch.(fields{aa}).lon = [];
 
-        %ncid_info = ncinfo(ncep.(fields{aa}));
+        % ncid_info = ncinfo(ncep.(fields{aa}));
         ncid = netcdf.open(ncep.(fields{aa}));
 
         % If you don't know what it contains, start by using the
@@ -197,32 +232,47 @@ for t = 1:nt
         timevec = datevec((data_time / 24) + datenum(year, month, 1, 0, 0, 0));
 
         % Get the data time and convert to Modified Julian Day.
-        data.time = greg2mjulian(...
+        scratch.time = greg2mjulian(...
             timevec(:, 1), ...
             timevec(:, 2), ...
             timevec(:, 3), ...
             timevec(:, 4), ...
             timevec(:, 5), ...
             timevec(:, 6));
-        % Clip the time to the given range.
-        data_time_mask = data.time >= modelTime(1) & data.time <= modelTime(end);
-        data_time_idx = 1:size(data.time, 1);
+        % Clip the time to the given range. Because of some oddness with
+        % some variables giving data beyond the end of the month whilst
+        % others don't, set the limits in time for each month to be the
+        % first/last day of the month or the modelTime start/end, whichever
+        % is larger/smaller.
+        startTime = max([modelTime(1), ...
+            greg2mjulian(year, month, 1, 0, 0, 0)]);
+        % Offset end by one day to capture the right number of days
+        % (midnight falls at the beginning of the specified day).
+        endTime = min([modelTime(end), ...
+            greg2mjulian(year, month, eomday(year, month), 0, 0, 0) + 1]);
+        data_time_mask = scratch.time >= startTime & scratch.time < endTime;
+        data_time_idx = 1:size(scratch.time, 1);
         data_time_idx = data_time_idx(data_time_mask);
         if ~isempty(data_time_idx)
-            data.time = data.time(data_time_mask);
+            scratch.time = scratch.time(data_time_mask);
         else
             % Reset the index to its original size. This is for data
             % with only a single time stamp which falls outside the
-            % model time. Only reset it when the length of the
-            % input time is equal to 1.
-            if length(data.time) == 1
-                data_time_idx = 1:size(data.time, 1);
+            % model time.
+            if length(scratch.time) == 1
+                data_time_idx = 1:size(scratch.time, 1);
             end
         end
 
-        % Check the times
-        %[yyyy, mm, dd, hh, MM, ss] = mjulian2greg(data.time(1))
-        %[yyyy, mm, dd, hh, MM, ss] = mjulian2greg(data.time(end))
+        % Check the times.
+        % [y, m, d, hh, mm, ss] = mjulian2greg(scratch.time);
+        % fprintf('(%s - %s) ', ...
+        %     datestr([y(1),m(1),d(1),hh(1),mm(1),ss(1)], ...
+        %         'yyyy-mm-dd HH:MM:SS'), ...
+        %     datestr([y(end),m(end),d(end),hh(end),mm(end),ss(end)], ...
+        %         'yyyy-mm-dd HH:MM:SS'))
+        % clearvars y m d hh mm ss oftv
+
         % Get the data in two goes, once for the end of the grid (west of
         % Greenwich), once for the beginning (east of Greenwich), and then
         % stick the two bits together.
@@ -231,7 +281,8 @@ for t = 1:nt
             % This is OK, we can just shunt the values by 360.
             extents(1) = extents(1) + 360;
             extents(2) = extents(2) + 360;
-            index_lon = find(data_lon.lon > extents(1) & data_lon.lon < extents(2));
+            index_lon = find(data_lon.lon > extents(1) & ...
+                data_lon.lon < extents(2));
         elseif extents(1) < 0 && extents(2) > 0
             % This is the tricky one. We'll do two passes to extract the
             % western chunk first (extents(1) + 360 to 360), then the
@@ -241,16 +292,17 @@ for t = 1:nt
         else
             % Dead easy, we're in the eastern hemisphere, so nothing too
             % strenuous here.
-            index_lon = find(data_lon.lon > extents(1) & data_lon.lon < extents(2));
+            index_lon = find(data_lon.lon > extents(1) & ...
+                data_lon.lon < extents(2));
         end
 
         % Latitude is much more straightforward
         index_lat = find(data_lat.lat > extents(3) & data_lat.lat < extents(4));
-        data.(fields{aa}).lat = data_lat.lat(index_lat);
+        scratch.(fields{aa}).lat = data_lat.lat(index_lat);
 
         % Get the data
         if iscell(index_lon)
-            data.(fields{aa}).lon = data_lon.lon(cat(1,index_lon{:}));
+            scratch.(fields{aa}).lon = data_lon.lon(cat(1, index_lon{:}));
 
             varid = netcdf.inqVarID(ncid, names.(fields{aa}));
 
@@ -277,7 +329,8 @@ for t = 1:nt
                     length(data_time_idx)];
             end
 
-            data_west.(fields{aa}).(fields{aa}) = netcdf.getVar(ncid, varid, start, count, 'double');
+            data_west.(fields{aa}).(fields{aa}) = ...
+                netcdf.getVar(ncid, varid, start, count, 'double');
 
             if length(dimids) == 4
                 start = [...
@@ -323,8 +376,8 @@ for t = 1:nt
                     case fields{aa}
                         % This is the actual data.
                         scratch.(fields{aa}).(structfields{ii}) = ...
-                            [rot90(data_west.(fields{aa}).(structfields{ii})), ...
-                            rot90(data_east.(fields{aa}).(structfields{ii}))];
+                            [data_west.(fields{aa}).(structfields{ii}); ...
+                            data_east.(fields{aa}).(structfields{ii})];
                     otherwise
                         % Assume the data are the same in both arrays.
                         % A simple check of the range of values in the
@@ -343,14 +396,14 @@ for t = 1:nt
                                 scratch.(fields{aa}).(structfields{ii}) = ...
                                     data_west.(fields{aa}).(structfields{ii});
                             else
-                                warning({'Unexpected data field and the', ...
+                                warning(['Unexpected data field and the', ...
                                     ' west and east halves don''t match.', ...
-                                    ' Skipping.'})
+                                    ' Skipping.'])
                             end
                         catch
-                            warning({'Unexpected data field and the', ...
+                            warning(['Unexpected data field and the', ...
                                 ' west and east halves don''t match.', ...
-                                ' Skipping.'})
+                                ' Skipping.'])
                         end
                         clearvars tdata
                 end
@@ -358,7 +411,7 @@ for t = 1:nt
             clearvars data_west data_east
         else
             % We have a straightforward data extraction
-            data.(fields{aa}).lon = data_lon.lon(index_lon);
+            scratch.(fields{aa}).lon = data_lon.lon(index_lon);
 
             varid = netcdf.inqVarID(ncid, (fields{aa}));
             % [varname,xtype,dimids,natts] = netcdf.inqVar(ncid,varid);
@@ -393,24 +446,35 @@ for t = 1:nt
                     length(index_lat), ...
                     1, ...
                     length(data_time_idx)];
-                scratch.(fields{aa}).(fields{aa}) = netcdf.getVar(ncid, varid, start, count, 'double');
+                scratch.(fields{aa}).(fields{aa}) = ...
+                    netcdf.getVar(ncid, varid, start, count, 'double');
             end
 
         end
         clearvars data_time* data_level_idx
 
-        datatmp = squeeze(scratch.(fields{aa}).(fields{aa}));
+        scratch.(fields{aa}).lon(scratch.(fields{aa}).lon > 180) = ...
+            scratch.(fields{aa}).lon(scratch.(fields{aa}).lon > 180) - 360;
 
-        data.(fields{aa}).lon(data.(fields{aa}).lon > 180) = ...
-            data.(fields{aa}).lon(data.(fields{aa}).lon > 180) - 360;
+        datatmp = squeeze(scratch.(fields{aa}).(fields{aa}));
 
         % data.(fields{aa}).data = datatmp;
         data.(fields{aa}).data = cat(3, data.(fields{aa}).data, datatmp);
         % data.(fields{aa}).time = data.time;
-        data.(fields{aa}).time = cat(1, data.(fields{aa}).time, data.time);
-        % data.(fields{aa}).time = cat(1, data.(fields{aa}).time, squeeze(scratch.(fields{aa}).(fields{aa}).time));
-        % data.(fields{aa}).lat = squeeze(scratch.(fields{aa}).(fields{aa}).lat);
-        % data.(fields{aa}).lon = squeeze(scratch.(fields{aa}).(fields{aa}).lon);
+        data.(fields{aa}).time = cat(1, data.(fields{aa}).time, scratch.time);
+        % data.(fields{aa}).time = cat(1, data.(fields{aa}).time, ...
+        %     squeeze(scratch.(fields{aa}).(fields{aa}).time));
+        data.(fields{aa}).lat = scratch.(fields{aa}).lat;
+        data.(fields{aa}).lon = scratch.(fields{aa}).lon;
+
+        % Save the time to the main data struct. This is just the time from
+        % the first variable. Since they should all be the same, this isn't
+        % a particular problem. Famous last words...
+        if aa == 1
+            data.time = data.(fields{aa}).time;
+        else
+            clearvars scratch
+        end
 
         if ftbverbose
             if isfield(data, fields{aa})
@@ -419,112 +483,6 @@ for t = 1:nt
                 fprintf('error!\n')
             end
         end
-    end
-
-    % Calculate the net long and shortwave radiation fluxes.
-    if isfield(data, 'uswsfc') && isfield(data, 'dswsfc')
-        data.nswsfc.data = data.uswsfc.data - data.dswsfc.data;
-        data.nswsfc.time = data.uswsfc.time;
-        data.nswsfc.lon = data.uswsfc.lon;
-        data.nswsfc.lat = data.uswsfc.lat;
-    end
-
-    % Convert precipitation from kg/m^2/s to m/s (required by FVCOM) by
-    % dividing by freshwater density (kg/m^3).
-    if isfield(data, 'prate')
-        data.prate.data = data.prate.data / 1000;
-    end
-
-    % Evaporation can be approximated by:
-    %
-    %   E(m/s) = lhtfl/Llv/rho
-    %
-    % where:
-    %
-    %   lhtfl   = "Mean daily latent heat net flux at the surface"
-    %   Llv     = Latent heat of vaporization (approx to 2.5*10^6 J kg^-1)
-    %   rho     = 1025 kg/m^3
-    %
-    if isfield(data, 'prate') && isfield(data, 'lhtfl')
-        Llv = 2.5 * 10^6;
-        rho = 1025; % using a typical value for seawater.
-        Et = data.lhtfl.data / Llv / rho;
-        data.P_E.data = data.prate.data - Et;
-        % Evaporation and precipitation need to have the same sign for
-        % FVCOM (ocean losing water is negative in both instances). So,
-        % flip the evaporation here.
-        data.Et.data = -Et;
-    end
-
-    % Get the fields we need for the subsequent interpolation. Find the
-    % position of a sensibly sized array (i.e. not 'topo', 'rhum' or
-    % 'pres').
-    for vv = 1:length(fields)
-        if ~isempty(varlist) && max(strcmp(fields{vv}, varlist)) ~= 1
-            continue
-        end
-
-        switch fields{vv}
-            % Set ii in each instance in case we've been told to only
-            % use one of the three (four including pres and press)
-            % alternatively gridded data.
-            case {'topo', 'rhum', 'pres', 'press'}
-                ii = vv;
-                continue
-            otherwise
-                % We've got one, so stop looking.
-                ii = vv;
-                break
-        end
-    end
-    data.lon = data.(fields{ii}).lon;
-    data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
-    data.lat = data.(fields{ii}).lat;
-
-    % Convert temperature to degrees Celsius (from Kelvin)
-    if isfield(data, 'tmp2m')
-        data.tmp2m.data = data.tmp2m.data - 273.15;
-    end
-
-    % Make sure all the data we have downloaded are the same shape as
-    % the longitude and latitude arrays.
-    for aa = 1:length(fields)
-        if ~isempty(varlist) && max(strcmp(fields{aa}, varlist)) ~= 1
-            % We've been given a list of variables to extract, so skip those
-            % that aren't in that list
-            continue
-        else
-            if isfield(data, fields{aa})
-                [px, py] = deal(length(data.(fields{aa}).lon), length(data.(fields{aa}).lat));
-                [ncx, ncy, ~] = size(data.(fields{aa}).data);
-                if ncx ~= px || ncy ~= py
-                    data.(fields{aa}).data = permute(data.(fields{aa}).data, [2, 1, 3]);
-
-                    % Check everything's OK now.
-                    [ncx, ncy, ~] = size(data.(fields{aa}).data);
-                    if ncx ~= px || ncy ~= py
-                        error('Unable to resize data arrays to match position data orientation. Are these on a different horizontal grid?')
-                    else
-                        if ftbverbose
-                            fprintf('Matching %s data and position array dimensions\n', fields{aa})
-                        end
-                    end
-                end
-            else
-                warning('Variable %s requested but not downloaded.', fields{aa})
-            end
-        end
-    end
-end
-% Concatenate each year's worth of data.
-for aa = 1:length(fields)
-    if exist('forcing', 'var') && isfield(forcing, (fields{aa}))
-        forcing.(fields{aa}).data = cat(3, forcing.(fields{aa}).data, data.(fields{aa}).data);
-        forcing.(fields{aa}).time = cat(1, forcing.(fields{aa}).time, data.(fields{aa}).time);
-        forcing.(fields{aa}).lon = data.(fields{aa}).lon;
-        forcing.(fields{aa}).lat = data.(fields{aa}).lat;
-    else
-        forcing = data;
     end
 end
 
@@ -535,8 +493,18 @@ end
 fields = fieldnames(data);
 for f = 1:length(fields)
     if isfield(data.(fields{f}), 'data')
+        % Some fields are instantaneous, so don't de-average them. See:
+        % http://nomads.ncdc.noaa.gov/docs/CFSR-Hourly-Timeseries.pdf for
+        % details.
+        if any(strcmpi(fields{f}, {'pressfc', 'tmp2m', 'uwnd', 'vwnd'}))
+            continue
+        end
         [~, ~, nt] = size(data.(fields{f}).data);
         fixed = data.(fields{f}).data;
+        if ftbverbose
+            fprintf('De-averaging the n-hourly %s data to hourly... ', ....
+                fields{f})
+        end
 
         for t = 1:6:nt
             % Fix the next 5 hours of data. Assume 0th hour is just the
@@ -544,7 +512,7 @@ for f = 1:length(fields)
             % if we want the first hour's worth of data, then the second
             % term in the formula with multiply by zero, so the formula is
             % essentially only using the first term, which is just the data
-            % at n (i.e. 0).
+            % at n = 0.
             for n = 1:5
                 if t + n <= nt
                     fixed(:, :, t + n) = ...
@@ -555,6 +523,111 @@ for f = 1:length(fields)
         end
         data.(fields{f}).data = fixed;
         clearvars fixed
+        if ftbverbose; fprintf('done.\n'); end
+    end
+end
+
+% Calculate the net long and shortwave radiation fluxes.
+if isfield(data, 'uswsfc') && isfield(data, 'dswsfc')
+    data.nswsfc.data = data.dswsfc.data - data.uswsfc.data;
+    data.nswsfc.time = data.uswsfc.time;
+    data.nswsfc.lon = data.uswsfc.lon;
+    data.nswsfc.lat = data.uswsfc.lat;
+end
+
+% Convert precipitation from kg/m^2/s to m/s (required by FVCOM) by
+% dividing by freshwater density (kg/m^3).
+if isfield(data, 'prate')
+    data.prate.data = data.prate.data / 1000;
+end
+
+% Evaporation can be approximated by:
+%
+%   E(m/s) = lhtfl/Llv/rho
+%
+% where:
+%
+%   lhtfl   = "Mean daily latent heat net flux at the surface"
+%   Llv     = Latent heat of vaporization (approx to 2.5*10^6 J kg^-1)
+%   rho     = 1025 kg/m^3
+%
+if isfield(data, 'prate') && isfield(data, 'lhtfl')
+    Llv = 2.5 * 10^6;
+    rho = 1025; % using a typical value for seawater.
+    Et = data.lhtfl.data / Llv / rho;
+    data.P_E.data = data.prate.data - Et;
+    % Evaporation and precipitation need to have the same sign for FVCOM
+    % (ocean losing water is negative in both instances). So, flip the
+    % evaporation here.
+    data.Et.data = -Et;
+end
+
+% Get the fields we need for the subsequent interpolation. Find the
+% position of a sensibly sized array (i.e. not 'topo', 'rhum' or 'pres').
+for vv = 1:length(fields)
+    if ~isempty(varlist) && max(strcmp(fields{vv}, varlist)) ~= 1
+        continue
+    end
+
+    switch fields{vv}
+        % Set ii in each instance in case we've been told to only use one
+        % of the three (four including pres and press) alternatively
+        % gridded data.
+        case {'topo', 'rhum', 'pres', 'press'}
+            ii = vv;
+            continue
+        otherwise
+            % We've got one, so stop looking.
+            ii = vv;
+            break
+    end
+end
+data.lon = data.(fields{ii}).lon;
+data.lon(data.lon > 180) = data.lon(data.lon > 180) - 360;
+data.lat = data.(fields{ii}).lat;
+
+% Convert temperature to degrees Celsius (from Kelvin)
+if isfield(data, 'tmp2m')
+    data.tmp2m.data = data.tmp2m.data - 273.15;
+end
+
+% Convert specific humidity to relative humidity.
+if isfield(data, 'q2m') && isfield(data, 'tmp2m') && isfield(data, 'pressfc')
+    % Convert pressure from Pascals to millibars. Save relative humidity as
+    % percentage. Convert specific humidity to percent too.
+    data.rhum.data = 100 * qair2rh(data.q2m.data, data.tmp2m.data, data.pressfc.data / 100);
+end
+if isfield(data, 'q2m')
+    data.q2m.data = 100 * data.q2m.data;
+end
+
+% Make sure all the data we have downloaded are the same shape as the
+% longitude and latitude arrays.
+for aa = 1:length(fields)
+    if (~isempty(varlist) && max(strcmp(fields{aa}, varlist)) ~= 1) || strcmpi(fields{aa}, 'time')
+        % We've been given a list of variables to extract, so skip those
+        % that aren't in that list
+        continue
+    else
+        if isfield(data, fields{aa})
+            [px, py] = deal(length(data.(fields{aa}).lon), ...
+                length(data.(fields{aa}).lat));
+            [ncx, ncy, ~] = size(data.(fields{aa}).data);
+            if ncx ~= px || ncy ~= py
+                data.(fields{aa}).data = ...
+                    permute(data.(fields{aa}).data, [2, 1, 3]);
+
+                % Check everything's OK now.
+                [ncx, ncy, ~] = size(data.(fields{aa}).data);
+                if ncx ~= px || ncy ~= py
+                    error(['Unable to resize data arrays to match ', ...
+                        'position data orientation. Are these on a ', ...
+                        'different horizontal grid?'])
+                end
+            end
+        else
+            warning('Variable %s requested but not downloaded.', fields{aa})
+        end
     end
 end
 

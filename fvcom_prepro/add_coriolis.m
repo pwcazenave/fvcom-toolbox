@@ -41,7 +41,7 @@ CorType = 'uselatitude';
 if(exist('cortype'))
 	if(cortype(1:3)=='use')
 		CorType = 'uselatitude';
-		if(~Mobj.have_cor)
+		if(~Mobj.have_lonlat)
 			error('To set Coriolis with latitude, need (lon,lat) field in Mesh structure')
 		end;
 	else

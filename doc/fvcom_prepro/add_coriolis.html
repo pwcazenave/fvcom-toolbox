@@ -62,7 +62,7 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="example.html" class="code" title="">example</a>	example demonstrating reading in a 2DM file and constructing a model</li><li><a href="read_grid_mesh.html" class="code" title="function [Mobj] = read_grid_mesh(varargin)">read_grid_mesh</a>	Read .grid mesh files into Matlab mesh object</li></ul>
+<li><a href="read_grid_mesh.html" class="code" title="function [Mobj] = read_grid_mesh(varargin)">read_grid_mesh</a>	Read .grid mesh files into Matlab mesh object</li><li><a href="read_sms_mesh.html" class="code" title="function [Mobj] = read_sms_mesh(varargin)">read_sms_mesh</a>	Read sms mesh files into Matlab mesh object.</li></ul>
 <!-- crossreference -->
 
 
@@ -111,7 +111,7 @@ This function is called by:
 0041 <span class="keyword">if</span>(exist(<span class="string">'cortype'</span>))
 0042     <span class="keyword">if</span>(cortype(1:3)==<span class="string">'use'</span>)
 0043         CorType = <span class="string">'uselatitude'</span>;
-0044         <span class="keyword">if</span>(~Mobj.have_cor)
+0044         <span class="keyword">if</span>(~Mobj.have_lonlat)
 0045             error(<span class="string">'To set Coriolis with latitude, need (lon,lat) field in Mesh structure'</span>)
 0046         <span class="keyword">end</span>;
 0047     <span class="keyword">else</span>
@@ -144,6 +144,6 @@ This function is called by:
 0074 
 0075 
 0076</pre></div>
-<hr><address>Generated on Tue 29-Jul-2014 15:11:16 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

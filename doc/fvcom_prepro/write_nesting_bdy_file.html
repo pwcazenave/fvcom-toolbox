@@ -1,0 +1,556 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_nesting_bdy_file</title>
+  <meta name="keywords" content="write_nesting_bdy_file">
+  <meta name="description" content="Write an FVCOM time series forcing file">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_nesting_bdy_file.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_nesting_bdy_file
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Write an FVCOM time series forcing file</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_nesting_bdy_file(Mobj, MJD, OutFile, MyTitle) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Write an FVCOM time series forcing file
+
+ write_wave_bdy_file(Mobj, MJD, OutFile, MyTitle)
+
+ DESCRIPTION:
+    Write an FVCOM NetCDF  nesting boundary file
+
+ INPUT:
+   Mobj = Matlab mesh object.
+   MJD = list of modified Modified Julian Dates of size [times] (defined
+         as unlimited in the NetCDF file).
+   OutFile = name of NetCDF file.
+   MyTitle = casename title, written as global attribute of NetCDF file.
+
+
+ OUTPUT:
+    WaveFile, A NetCDF FVCOM-SWAVE wave forcing file
+
+ EXAMPLE USAGE
+    write_FVCOM_elevtide(Mobj, MJD, '/tmp/waves.nc, 'Shelf tides')
+
+ Author(s):
+    Pierre Cazenave (Plymouth Marine Laboratory)
+    Karen Thurston (National Oceanography Centre Liverpool)
+    DarrenPrice (based upon above authors)
+ Revision history
+    2012-08-08 (PWC) First version.
+    2012-11-14 (PWC) Updated to expect Modified Julian Day rather than
+    doing the conversion in here. Also put the pieces in set_elevtide in
+    here to simplify the process of writing out an elevation input file.
+    2012-12-04 (KJT) Updated to use surface elevation and open boundary
+    nodes from Mobj
+    2013-11-05 (DMP) Updated to use wave conditions and open boundary
+    2014-01-20 (HKJ) Corrected for wave conditions at open boundary
+    2014-06-03 (DMP) Updated to use Z, U,V,T,S conditions and open boundary
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="create_HD_nest_bdy_TYPE3.html" class="code" title="">create_HD_nest_bdy_TYPE3</a>	Read in AMM data and interpolate onto the boundary of FVCOM model</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_nesting_bdy_file(Mobj, MJD, OutFile, MyTitle)</a>
+0002 <span class="comment">% Write an FVCOM time series forcing file</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% write_wave_bdy_file(Mobj, MJD, OutFile, MyTitle)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Write an FVCOM NetCDF  nesting boundary file</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT:</span>
+0010 <span class="comment">%   Mobj = Matlab mesh object.</span>
+0011 <span class="comment">%   MJD = list of modified Modified Julian Dates of size [times] (defined</span>
+0012 <span class="comment">%         as unlimited in the NetCDF file).</span>
+0013 <span class="comment">%   OutFile = name of NetCDF file.</span>
+0014 <span class="comment">%   MyTitle = casename title, written as global attribute of NetCDF file.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% OUTPUT:</span>
+0018 <span class="comment">%    WaveFile, A NetCDF FVCOM-SWAVE wave forcing file</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% EXAMPLE USAGE</span>
+0021 <span class="comment">%    write_FVCOM_elevtide(Mobj, MJD, '/tmp/waves.nc, 'Shelf tides')</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Author(s):</span>
+0024 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0025 <span class="comment">%    Karen Thurston (National Oceanography Centre Liverpool)</span>
+0026 <span class="comment">%    DarrenPrice (based upon above authors)</span>
+0027 <span class="comment">% Revision history</span>
+0028 <span class="comment">%    2012-08-08 (PWC) First version.</span>
+0029 <span class="comment">%    2012-11-14 (PWC) Updated to expect Modified Julian Day rather than</span>
+0030 <span class="comment">%    doing the conversion in here. Also put the pieces in set_elevtide in</span>
+0031 <span class="comment">%    here to simplify the process of writing out an elevation input file.</span>
+0032 <span class="comment">%    2012-12-04 (KJT) Updated to use surface elevation and open boundary</span>
+0033 <span class="comment">%    nodes from Mobj</span>
+0034 <span class="comment">%    2013-11-05 (DMP) Updated to use wave conditions and open boundary</span>
+0035 <span class="comment">%    2014-01-20 (HKJ) Corrected for wave conditions at open boundary</span>
+0036 <span class="comment">%    2014-06-03 (DMP) Updated to use Z, U,V,T,S conditions and open boundary</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">%==========================================================================</span>
+0039 
+0040 <span class="keyword">global</span> ftbverbose
+0041 report = false;
+0042 <span class="keyword">if</span>(ftbverbose); report = true; <span class="keyword">end</span>
+0043 subname = <span class="string">'write_nesting_bdy_file'</span>;
+0044 <span class="keyword">if</span>(report); fprintf(<span class="string">'\n'</span>); <span class="keyword">end</span>
+0045 <span class="keyword">if</span>(report); fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>]); <span class="keyword">end</span>
+0046 
+0047 <span class="comment">%{</span>
+0048 <span class="comment">% ---  extract from ... write_elevation..</span>
+0049 <span class="comment">% Get a list of the open boundary nodes. Transpose Mobj.obc_nodes so the</span>
+0050 <span class="comment">% order of the boundary nodes is preserved.</span>
+0051 tmpObcNodes = Mobj.nnodesID';
+0052 <span class="comment">% Flip it back so it's the same shape as it would have been using the old</span>
+0053 <span class="comment">% code.</span>
+0054 ObcNodes = tmpObcNodes(tmpObcNodes~=0)';
+0055 <span class="comment">%}</span>
+0056 
+0057 ObcNodes = Mobj.nnodesID;
+0058 nElems  = Mobj.nElems;
+0059 
+0060 <span class="comment">%--------------------------------------------------------------------------</span>
+0061 <span class="comment">% Sanity check on input and dimensions</span>
+0062 <span class="comment">%--------------------------------------------------------------------------</span>
+0063 nTimes = numel(MJD);
+0064 <span class="keyword">if</span>(report); fprintf(<span class="string">'Number of time steps %d\n'</span>,nTimes); <span class="keyword">end</span>
+0065 
+0066 nObcs = numel(ObcNodes);
+0067 <span class="keyword">if</span>(report); fprintf(<span class="string">'Number of Open Boundary Nodes %d\n'</span>,nObcs); <span class="keyword">end</span>
+0068 
+0069 [chk1, chk2] = size(Mobj.surfaceElevation);
+0070 <span class="keyword">if</span> nObcs ~= chk1 || nTimes ~= chk2
+0071     fprintf(<span class="string">'surface Elevation dimensions do not match time series and number of boundary nodes.\n'</span>)
+0072     fprintf(<span class="string">'surface Elevation nodes and time sizes: (%d, %d)\n'</span>, chk1, chk2)
+0073     fprintf(<span class="string">'Boundary nodes size: %d\n'</span>, nObcs)
+0074     fprintf(<span class="string">'Times size: %d\n'</span>, nTimes)
+0075     error(<span class="string">'Input data sizes do not match. Check and try again.'</span>);
+0076 <span class="keyword">end</span>
+0077 
+0078 <span class="comment">%--------------------------------------------------------------------------</span>
+0079 <span class="comment">% Dump the file</span>
+0080 <span class="comment">%--------------------------------------------------------------------------</span>
+0081 
+0082 nc=netcdf.create(OutFile,<span class="string">'clobber'</span>);
+0083 
+0084 <span class="comment">% define global attributes</span>
+0085 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,MyTitle)
+0086 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM TIME SERIES NESTING FORCING FILE'</span>)
+0087 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created using %s from the MATLAB fvcom-toolbox'</span>, subname))
+0088 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'Conventions'</span>,<span class="string">'CF-1.0'</span>)
+0089 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'CoordinateSystem'</span>,<span class="string">'Spherical'</span>)
+0090 <span class="comment">%netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'CoordinateSystem','none')</span>
+0091 <span class="comment">%disp('need to sort out coordinate system in write_nesting_bdy_file.m');</span>
+0092 
+0093 
+0094 
+0095 
+0096 <span class="comment">% define dimensions</span>
+0097 <span class="comment">%hkj nobc_dimid=netcdf.defDim(nc,'nobc',nObcs);</span>
+0098 nlevels = Mobj.nsiglev;
+0099 nlayers = nlevels - 1;
+0100 nele_dimid  = netcdf.defDim(nc,<span class="string">'nele'</span>,nElems);
+0101 nobc_dimid  = netcdf.defDim(nc,<span class="string">'node'</span>,nObcs);
+0102 siglay_dimid= netcdf.defDim(nc,<span class="string">'siglay'</span>,nlayers);
+0103 siglev_dimid= netcdf.defDim(nc,<span class="string">'siglev'</span>,nlevels);
+0104 three_dimid = netcdf.defDim(nc,<span class="string">'three'</span>,3);
+0105 time_dimid  = netcdf.defDim(nc,<span class="string">'time'</span>,netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0106 one_dimid = netcdf.defDim(nc,<span class="string">'one'</span>,1);
+0107 date_str_len_dimid=netcdf.defDim(nc,<span class="string">'DateStrLen'</span>,26);
+0108 
+0109 
+0110 
+0111 <span class="comment">% define variables and attributes</span>
+0112 disp(<span class="string">'writing nprocs attributes'</span>);
+0113 nprocs_varid=netcdf.defVar(nc,<span class="string">'nprocs'</span>,<span class="string">'NC_INT'</span>,one_dimid);
+0114 netcdf.putAtt(nc,nprocs_varid,<span class="string">'long_name'</span>,<span class="string">'number of processors'</span>);
+0115 
+0116 disp(<span class="string">'writing npartition attributes'</span>);
+0117 npart_varid=netcdf.defVar(nc,<span class="string">'partition'</span>,<span class="string">'NC_INT'</span>,nele_dimid);
+0118 netcdf.putAtt(nc,npart_varid,<span class="string">'long_name'</span>,<span class="string">'partition'</span>);
+0119 
+0120 disp(<span class="string">'writing x attributes'</span>);
+0121 x_varid=netcdf.defVar(nc,<span class="string">'x'</span>,<span class="string">'NC_FLOAT'</span>,nobc_dimid);
+0122 netcdf.putAtt(nc,x_varid,<span class="string">'long_name'</span>,<span class="string">'nodal x-coordinate'</span>);
+0123 netcdf.putAtt(nc,x_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0124 
+0125 disp(<span class="string">'writing y attributes'</span>);
+0126 y_varid=netcdf.defVar(nc,<span class="string">'y'</span>,<span class="string">'NC_FLOAT'</span>,nobc_dimid);
+0127 netcdf.putAtt(nc,y_varid,<span class="string">'long_name'</span>,<span class="string">'nodal y-coordinate'</span>);
+0128 netcdf.putAtt(nc,y_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0129 
+0130 disp(<span class="string">'writing lon attributes'</span>);
+0131 lon_varid=netcdf.defVar(nc,<span class="string">'lon'</span>,<span class="string">'NC_FLOAT'</span>,nobc_dimid);
+0132 netcdf.putAtt(nc,lon_varid,<span class="string">'long_name'</span>,<span class="string">'nodal longitude'</span>);
+0133 netcdf.putAtt(nc,lon_varid,<span class="string">'standard_name'</span>,<span class="string">'longitude'</span>);
+0134 netcdf.putAtt(nc,lon_varid,<span class="string">'units'</span>,<span class="string">'degrees_east'</span>);
+0135 
+0136 disp(<span class="string">'writing lat attributes'</span>);
+0137 lat_varid=netcdf.defVar(nc,<span class="string">'lat'</span>,<span class="string">'NC_FLOAT'</span>,nobc_dimid);
+0138 netcdf.putAtt(nc,lat_varid,<span class="string">'long_name'</span>,<span class="string">'nodal latitude'</span>);
+0139 netcdf.putAtt(nc,lat_varid,<span class="string">'standard_name'</span>,<span class="string">'latitude'</span>);
+0140 netcdf.putAtt(nc,lat_varid,<span class="string">'units'</span>,<span class="string">'degrees_north'</span>);
+0141 
+0142 disp(<span class="string">'writing xc attributes'</span>);
+0143 xc_varid=netcdf.defVar(nc,<span class="string">'xc'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
+0144 netcdf.putAtt(nc,xc_varid,<span class="string">'long_name'</span>,<span class="string">'zonal x-coordinate'</span>);
+0145 netcdf.putAtt(nc,xc_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0146 
+0147 disp(<span class="string">'writing yc attributes'</span>);
+0148 yc_varid=netcdf.defVar(nc,<span class="string">'yc'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
+0149 netcdf.putAtt(nc,yc_varid,<span class="string">'long_name'</span>,<span class="string">'zonal y-coordinate'</span>);
+0150 netcdf.putAtt(nc,yc_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0151 
+0152 disp(<span class="string">'writing lonc attributes'</span>);
+0153 lonc_varid=netcdf.defVar(nc,<span class="string">'lonc'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
+0154 netcdf.putAtt(nc,lonc_varid,<span class="string">'long_name'</span>,<span class="string">'zonal longitude'</span>);
+0155 netcdf.putAtt(nc,lonc_varid,<span class="string">'standard_name'</span>,<span class="string">'longitude'</span>);
+0156 netcdf.putAtt(nc,lonc_varid,<span class="string">'units'</span>,<span class="string">'degrees_east'</span>);
+0157 
+0158 disp(<span class="string">'writing latc attributes'</span>);
+0159 latc_varid=netcdf.defVar(nc,<span class="string">'latc'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
+0160 netcdf.putAtt(nc,latc_varid,<span class="string">'long_name'</span>,<span class="string">'zonal latitude'</span>);
+0161 netcdf.putAtt(nc,latc_varid,<span class="string">'standard_name'</span>,<span class="string">'latitude'</span>);
+0162 netcdf.putAtt(nc,latc_varid,<span class="string">'units'</span>,<span class="string">'degrees_north'</span>);
+0163 
+0164 disp(<span class="string">'writing siglay attributes'</span>);
+0165 siglay_varid=netcdf.defVar(nc,<span class="string">'siglay'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid, siglay_dimid ]);
+0166 netcdf.putAtt(nc,siglay_varid,<span class="string">'long_name'</span>,<span class="string">'Sigma Layers'</span>);
+0167 netcdf.putAtt(nc,siglay_varid,<span class="string">'standard_name'</span>,<span class="string">'ocean_sigma/general_coordinate'</span>);
+0168 netcdf.putAtt(nc,siglay_varid,<span class="string">'positive'</span>,<span class="string">'up'</span>);
+0169 netcdf.putAtt(nc,siglay_varid,<span class="string">'valid_min'</span>,<span class="string">'-1.f'</span>);
+0170 netcdf.putAtt(nc,siglay_varid,<span class="string">'valid_max'</span>,<span class="string">'0.f'</span>);
+0171 netcdf.putAtt(nc,siglay_varid,<span class="string">'formula_terms'</span>,<span class="string">'sigma: siglay eta: zeta depth: h'</span>);
+0172 
+0173 disp(<span class="string">'writing siglev attributes'</span>);
+0174 siglev_varid=netcdf.defVar(nc,<span class="string">'siglev'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid,siglev_dimid ]);
+0175 netcdf.putAtt(nc,siglev_varid,<span class="string">'long_name'</span>,<span class="string">'Sigma Levels'</span>);
+0176 netcdf.putAtt(nc,siglev_varid,<span class="string">'standard_name'</span>,<span class="string">'ocean_sigma/general_coordinate'</span>);
+0177 netcdf.putAtt(nc,siglev_varid,<span class="string">'positive'</span>,<span class="string">'up'</span>);
+0178 netcdf.putAtt(nc,siglev_varid,<span class="string">'valid_min'</span>,<span class="string">'-1.f'</span>);
+0179 netcdf.putAtt(nc,siglev_varid,<span class="string">'valid_max'</span>,<span class="string">'0.f'</span>);
+0180 netcdf.putAtt(nc,siglev_varid,<span class="string">'formula_terms'</span>,<span class="string">'sigma: siglay eta: zeta depth: h'</span>);
+0181 
+0182 disp(<span class="string">'writing h attributes'</span>);
+0183 h_varid=netcdf.defVar(nc,<span class="string">'h'</span>,<span class="string">'NC_FLOAT'</span>,nobc_dimid);
+0184 netcdf.putAtt(nc,h_varid,<span class="string">'long_name'</span>,<span class="string">'Bathymetry'</span>);
+0185 netcdf.putAtt(nc,h_varid,<span class="string">'standard_name'</span>,<span class="string">'sea_floor_depth_below_geoid'</span>);
+0186 netcdf.putAtt(nc,h_varid,<span class="string">'units'</span>,<span class="string">'m'</span>);
+0187 netcdf.putAtt(nc,h_varid,<span class="string">'positive'</span>,<span class="string">'down'</span>);
+0188 netcdf.putAtt(nc,h_varid,<span class="string">'grid'</span>,<span class="string">'Bathymetry_Mesh'</span>);
+0189 netcdf.putAtt(nc,h_varid,<span class="string">'coordinates'</span>,<span class="string">'lat lon'</span>);
+0190 netcdf.putAtt(nc,h_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0191 
+0192 disp(<span class="string">'writing nv attributes'</span>);
+0193 <span class="comment">% nv_varid=netcdf.defVar(nc,'nv','NC_INT',[three_dimid, nele_dimid]);</span>
+0194 nv_varid=netcdf.defVar(nc,<span class="string">'nv'</span>,<span class="string">'NC_INT'</span>,[nele_dimid, three_dimid]);
+0195 netcdf.putAtt(nc,nv_varid,<span class="string">'long_name'</span>,<span class="string">'nodes surrounding element'</span>);
+0196 
+0197 <span class="comment">%hkj test - unsure if this is required</span>
+0198 disp(<span class="string">'writing obc_nodes attributes'</span>);
+0199 nobc_varid=netcdf.defVar(nc,<span class="string">'obc_nodes'</span>,<span class="string">'NC_INT'</span>,nobc_dimid);
+0200 netcdf.putAtt(nc,nobc_varid,<span class="string">'long_name'</span>,<span class="string">'Open Boundary Node Number'</span>);
+0201 netcdf.putAtt(nc,nobc_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
+0202 
+0203 disp(<span class="string">'writing iint attributes'</span>);
+0204 iint_varid=netcdf.defVar(nc,<span class="string">'iint'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0205 netcdf.putAtt(nc,iint_varid,<span class="string">'long_name'</span>,<span class="string">'internal mode iteration number'</span>);
+0206 
+0207 disp(<span class="string">'writing time attributes'</span>);
+0208 time_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,time_dimid);
+0209 netcdf.putAtt(nc,time_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
+0210 netcdf.putAtt(nc,time_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
+0211 netcdf.putAtt(nc,time_varid,<span class="string">'format'</span>,<span class="string">'modified julian day (MJD)'</span>);
+0212 netcdf.putAtt(nc,time_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0213 
+0214 disp(<span class="string">'writing Itime attributes'</span>);
+0215 itime_varid=netcdf.defVar(nc,<span class="string">'Itime'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0216 netcdf.putAtt(nc,itime_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
+0217 netcdf.putAtt(nc,itime_varid,<span class="string">'format'</span>,<span class="string">'modified julian day (MJD)'</span>);
+0218 netcdf.putAtt(nc,itime_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0219 
+0220 disp(<span class="string">'writing Itime2 attributes'</span>);
+0221 itime2_varid=netcdf.defVar(nc,<span class="string">'Itime2'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0222 netcdf.putAtt(nc,itime2_varid,<span class="string">'units'</span>,<span class="string">'msec since 00:00:00'</span>);
+0223 netcdf.putAtt(nc,itime2_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0224 
+0225 disp(<span class="string">'writing Times attributes'</span>);
+0226 Times_varid=netcdf.defVar(nc,<span class="string">'Times'</span>,<span class="string">'NC_CHAR'</span>,[date_str_len_dimid, time_dimid]);
+0227 netcdf.putAtt(nc,Times_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0228 
+0229 disp(<span class="string">'writing salinity attributes'</span>);
+0230 salinity_varid=netcdf.defVar(nc,<span class="string">'salinity'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid, siglay_dimid, time_dimid]);
+0231 netcdf.putAtt(nc,salinity_varid,<span class="string">'long_name'</span>,<span class="string">'salinity'</span>);
+0232 netcdf.putAtt(nc,salinity_varid,<span class="string">'standard_name'</span>,<span class="string">'sea_water_salinity'</span>);
+0233 netcdf.putAtt(nc,salinity_varid,<span class="string">'units'</span>,<span class="string">'1e-3'</span>);
+0234 netcdf.putAtt(nc,salinity_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0235 netcdf.putAtt(nc,salinity_varid,<span class="string">'coordinates'</span>,<span class="string">'lat lon'</span>);
+0236 netcdf.putAtt(nc,salinity_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0237 
+0238 disp(<span class="string">'writing temperature attributes'</span>);
+0239 temperature_varid=netcdf.defVar(nc,<span class="string">'temp'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid,siglay_dimid, time_dimid]);
+0240 netcdf.putAtt(nc,temperature_varid,<span class="string">'long_name'</span>,<span class="string">'temperature'</span>);
+0241 netcdf.putAtt(nc,temperature_varid,<span class="string">'standard_name'</span>,<span class="string">'sea_water_temperature'</span>);
+0242 netcdf.putAtt(nc,temperature_varid,<span class="string">'units'</span>,<span class="string">'degrees_C'</span>);
+0243 netcdf.putAtt(nc,temperature_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0244 netcdf.putAtt(nc,temperature_varid,<span class="string">'coordinates'</span>,<span class="string">'lat lon'</span>);
+0245 netcdf.putAtt(nc,temperature_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0246 
+0247 disp(<span class="string">'writing u velocity attributes'</span>);
+0248 u_varid=netcdf.defVar(nc,<span class="string">'u'</span>,<span class="string">'NC_FLOAT'</span>,[nele_dimid,siglay_dimid, time_dimid]);
+0249 netcdf.putAtt(nc,u_varid,<span class="string">'long_name'</span>,<span class="string">'Eastward Water Velocity'</span>);
+0250 netcdf.putAtt(nc,u_varid,<span class="string">'units'</span>,<span class="string">'meters s-1'</span>);
+0251 netcdf.putAtt(nc,u_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0252 netcdf.putAtt(nc,u_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0253 
+0254 disp(<span class="string">'writing v velocity attributes'</span>);
+0255 v_varid=netcdf.defVar(nc,<span class="string">'v'</span>,<span class="string">'NC_FLOAT'</span>,[nele_dimid,siglay_dimid, time_dimid]);
+0256 netcdf.putAtt(nc,v_varid,<span class="string">'long_name'</span>,<span class="string">'Northward Water Velocity'</span>);
+0257 netcdf.putAtt(nc,v_varid,<span class="string">'units'</span>,<span class="string">'meters s-1'</span>);
+0258 netcdf.putAtt(nc,v_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0259 netcdf.putAtt(nc,v_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0260 
+0261 disp(<span class="string">'writing vertical velocity attributes'</span>);
+0262 omega_varid=netcdf.defVar(nc,<span class="string">'omega'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid,siglev_dimid, time_dimid]);
+0263 netcdf.putAtt(nc,omega_varid,<span class="string">'long_name'</span>,<span class="string">'hydro static vertical velocity'</span>);
+0264 netcdf.putAtt(nc,omega_varid,<span class="string">'units'</span>,<span class="string">'meters s-1'</span>);
+0265 netcdf.putAtt(nc,omega_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0266 netcdf.putAtt(nc,omega_varid,<span class="string">'coordinates'</span>,<span class="string">'lat lon'</span>);
+0267 netcdf.putAtt(nc,omega_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0268 
+0269 disp(<span class="string">'writing vertical velocity attributes'</span>);
+0270 hyw_varid=netcdf.defVar(nc,<span class="string">'hyw'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid,siglev_dimid, time_dimid]);
+0271 netcdf.putAtt(nc,hyw_varid,<span class="string">'long_name'</span>,<span class="string">'hydro static vertical velocity'</span>);
+0272 netcdf.putAtt(nc,hyw_varid,<span class="string">'units'</span>,<span class="string">'meters s-1'</span>);
+0273 netcdf.putAtt(nc,hyw_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0274 netcdf.putAtt(nc,hyw_varid,<span class="string">'coordinates'</span>,<span class="string">'lat lon'</span>);
+0275 netcdf.putAtt(nc,hyw_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0276 
+0277 disp(<span class="string">'writing depth averaged u velocity attributes'</span>);
+0278 ua_varid=netcdf.defVar(nc,<span class="string">'ua'</span>,<span class="string">'NC_FLOAT'</span>,[nele_dimid, time_dimid]);
+0279 netcdf.putAtt(nc,ua_varid,<span class="string">'long_name'</span>,<span class="string">'Vertically Averaged x-velocity'</span>);
+0280 netcdf.putAtt(nc,ua_varid,<span class="string">'units'</span>,<span class="string">'meters s-1'</span>);
+0281 netcdf.putAtt(nc,ua_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0282 netcdf.putAtt(nc,ua_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0283 
+0284 disp(<span class="string">'writing depth averaged v velocity attributes'</span>);
+0285 va_varid=netcdf.defVar(nc,<span class="string">'va'</span>,<span class="string">'NC_FLOAT'</span>,[nele_dimid, time_dimid]);
+0286 netcdf.putAtt(nc,va_varid,<span class="string">'long_name'</span>,<span class="string">'Vertically Averaged y-velocity'</span>);
+0287 netcdf.putAtt(nc,va_varid,<span class="string">'units'</span>,<span class="string">'meters s-1'</span>);
+0288 netcdf.putAtt(nc,va_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0289 netcdf.putAtt(nc,va_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0290 
+0291 disp(<span class="string">'writing water level attributes'</span>);
+0292 zeta_varid=netcdf.defVar(nc,<span class="string">'zeta'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid, time_dimid]);
+0293 netcdf.putAtt(nc,zeta_varid,<span class="string">'long_name'</span>,<span class="string">'Water Surface Elevation'</span>);
+0294 netcdf.putAtt(nc,zeta_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0295 netcdf.putAtt(nc,zeta_varid,<span class="string">'positive'</span>,<span class="string">'up'</span>);
+0296 netcdf.putAtt(nc,zeta_varid,<span class="string">'standard_name'</span>,<span class="string">'sea_surface_elevation'</span>);
+0297 netcdf.putAtt(nc,zeta_varid,<span class="string">'grid'</span>,<span class="string">'SSH_Mesh'</span>);
+0298 netcdf.putAtt(nc,zeta_varid,<span class="string">'coordinates'</span>,<span class="string">'lat lon'</span>);
+0299 netcdf.putAtt(nc,zeta_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0300 
+0301 
+0302 <span class="comment">% for type 3 nesting need to include weighting</span>
+0303 <span class="keyword">if</span> (Mobj.NEST_TYPE==<span class="string">'TYPE3'</span>)
+0304 
+0305     disp(<span class="string">'writing node weighting attributes'</span>);
+0306     node_weight_varid=netcdf.defVar(nc,<span class="string">'weight_node'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid time_dimid]);
+0307     netcdf.putAtt(nc,node_weight_varid,<span class="string">'long_name'</span>,<span class="string">'nesting node weighting'</span>);
+0308     netcdf.putAtt(nc,node_weight_varid,<span class="string">'units'</span>,<span class="string">'none'</span>);
+0309     netcdf.putAtt(nc,node_weight_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0310     netcdf.putAtt(nc,node_weight_varid,<span class="string">'coordinates'</span>,<span class="string">'lat lon'</span>);
+0311     netcdf.putAtt(nc,node_weight_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0312 
+0313         disp(<span class="string">'writing element weighting attributes'</span>);
+0314     elem_weight_varid=netcdf.defVar(nc,<span class="string">'weight_cell'</span>,<span class="string">'NC_FLOAT'</span>,[nele_dimid time_dimid]);
+0315     netcdf.putAtt(nc,elem_weight_varid,<span class="string">'long_name'</span>,<span class="string">'nesting element weighting'</span>);
+0316     netcdf.putAtt(nc,elem_weight_varid,<span class="string">'units'</span>,<span class="string">'none'</span>);
+0317     netcdf.putAtt(nc,elem_weight_varid,<span class="string">'grid'</span>,<span class="string">'fvcom_grid'</span>);
+0318     netcdf.putAtt(nc,node_weight_varid,<span class="string">'coordinates'</span>,<span class="string">'latc lonc'</span>);
+0319     netcdf.putAtt(nc,elem_weight_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
+0320 
+0321 
+0322 <span class="keyword">end</span>
+0323 
+0324 <span class="comment">% end definitions</span>
+0325 netcdf.endDef(nc);
+0326 
+0327 <span class="comment">%------------------------------------------------------------</span>
+0328 <span class="comment">% write data</span>
+0329 <span class="comment">%------------------------------------------------------------</span>
+0330 disp(<span class="string">'writing nprocs - not used??'</span>);
+0331 nprocs(1)= 3;
+0332 netcdf.putVar(nc,nprocs_varid,nprocs);
+0333 
+0334 disp(<span class="string">'writing partition - not used??'</span>);
+0335 partition = ones(1,nElems);
+0336 netcdf.putVar(nc,npart_varid,partition);
+0337 
+0338 disp(<span class="string">'writing co-ordinate data at nodal points: x, y, lon, lat'</span>);
+0339 netcdf.putVar(nc,x_varid,Mobj.x)
+0340 netcdf.putVar(nc,y_varid,Mobj.y)
+0341 netcdf.putVar(nc,lon_varid,Mobj.lon)
+0342 netcdf.putVar(nc,lat_varid,Mobj.lat)
+0343 
+0344 disp(<span class="string">'writing co-ordinate data at element centres: xc, yc, lonc, latc'</span>);
+0345 netcdf.putVar(nc,xc_varid,Mobj.xc)
+0346 netcdf.putVar(nc,yc_varid,Mobj.yc)
+0347 netcdf.putVar(nc,lonc_varid,Mobj.lonc)
+0348 netcdf.putVar(nc,latc_varid,Mobj.latc)
+0349 
+0350 disp(<span class="string">'writing vertical schematization data: sigma layers, sigma levels'</span>);
+0351 inc = 1./real(nlayers);
+0352 siglev = 0:-inc:-1;
+0353 <span class="keyword">for</span> i=1:nlevels
+0354     Msiglev(i,1:nObcs) = siglev(i);
+0355 <span class="keyword">end</span>;
+0356 <span class="keyword">for</span> i=1:nlayers
+0357     Msiglay(i,1:nObcs) = mean(siglev(i:i+1));
+0358 <span class="keyword">end</span>;
+0359 <span class="comment">%{</span>
+0360 Msiglay = -1*ones(nlayers,nObcs);
+0361 tlayer = 1/nlayers;
+0362 temp   = 0.5*tlayer;
+0363 <span class="keyword">for</span> i=1:nlayers
+0364     Msiglay(i,:)= temp*Msiglay(i,:);
+0365     temp        = temp + tlayer;
+0366 <span class="keyword">end</span>
+0367 
+0368 Msiglev = -1*ones(nlevels,nObcs);
+0369 temp    = 0.0;
+0370 <span class="keyword">for</span> i=1:nlevels
+0371     Msiglev(i,:)= temp*Msiglev(i,:);
+0372     temp        = temp + tlayer;
+0373 <span class="keyword">end</span>
+0374 <span class="comment">%}</span>
+0375 netcdf.putVar(nc,siglay_varid,Msiglay)
+0376 netcdf.putVar(nc,siglev_varid,Msiglev)
+0377 
+0378 disp(<span class="string">'writing h_varid data'</span>);
+0379 netcdf.putVar(nc,h_varid,Mobj.h);
+0380 
+0381 disp(<span class="string">'writing nv_varid data'</span>);
+0382 Mobj.nv = Mobj.nv';
+0383 netcdf.putVar(nc,nv_varid,Mobj.nv);
+0384 
+0385 <span class="comment">%hkj test - doubtful if this is required</span>
+0386 disp(<span class="string">'writing nobc_varid data'</span>);
+0387 netcdf.putVar(nc,nobc_varid,ObcNodes);
+0388 
+0389 disp(<span class="string">'writing iint_varid data'</span>);
+0390 netcdf.putVar(nc,iint_varid,0,nTimes,1:nTimes);
+0391 
+0392 disp(<span class="string">'writing time_varid data'</span>);
+0393 netcdf.putVar(nc,time_varid,0,nTimes,MJD);
+0394 
+0395 disp(<span class="string">'writing itime_varid data'</span>);
+0396 netcdf.putVar(nc,itime_varid,floor(MJD));
+0397 
+0398 disp(<span class="string">'writing itime2_varid data'</span>);
+0399 netcdf.putVar(nc,itime2_varid,0,nTimes,mod(MJD,1)*24*3600*1000);  <span class="comment">%</span>
+0400 
+0401 nStringOut = char();
+0402 <span class="keyword">for</span> i=1:nTimes
+0403     [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(MJD(i));
+0404     <span class="keyword">if</span> strcmp(sprintf(<span class="string">'%02i'</span>, nSec), <span class="string">'60'</span>)
+0405         <span class="comment">% Fix some weirdness with mjulian2greg. I think this is caused by</span>
+0406         <span class="comment">% rounding errors. My testing suggests this is not a problem around</span>
+0407         <span class="comment">% midnight, so the number of days (and thus possibly months and</span>
+0408         <span class="comment">% years) is unaffected.</span>
+0409         <span class="keyword">if</span> mod(nMin + 1, 60) == 0
+0410             <span class="comment">% Up the hour by one too</span>
+0411             nHour = mod(nHour + 1, 24);
+0412         <span class="keyword">end</span>
+0413         nMin = mod(nMin + 1, 60);
+0414         nSec = 0;
+0415     <span class="keyword">end</span>
+0416     nDate = [nYr, nMon, nDay, nHour, nMin, nSec];
+0417     nStringOut = [nStringOut, sprintf(<span class="string">'%04i/%02i/%02i %02i:%02i:%02i       '</span>,nDate)];
+0418 <span class="keyword">end</span>
+0419 
+0420 disp(<span class="string">'writing Times_varid data'</span>);
+0421 netcdf.putVar(nc,Times_varid,nStringOut);
+0422 
+0423 <span class="comment">% disp('writing Times_varid data');</span>
+0424 <span class="comment">% netcdf.putVar(nc,Times_varid,Mobj.Times);  %Mobj.Times);</span>
+0425 
+0426 disp(<span class="string">'writing salinity_varid data'</span>);
+0427 netcdf.putVar(nc,salinity_varid,Mobj.salinity);
+0428 
+0429 disp(<span class="string">'writing temperature_varid data'</span>);
+0430 netcdf.putVar(nc,temperature_varid,Mobj.temperature);
+0431 
+0432 disp(<span class="string">'writing u_varid data'</span>);
+0433 netcdf.putVar(nc,u_varid,Mobj.u);
+0434 
+0435 disp(<span class="string">'writing v_varid data'</span>);
+0436 netcdf.putVar(nc,v_varid,Mobj.v);
+0437 
+0438 disp(<span class="string">'writing ua_varid data'</span>);
+0439 netcdf.putVar(nc,ua_varid,Mobj.daUvel);
+0440 
+0441 disp(<span class="string">'writing va_varid data'</span>);
+0442 netcdf.putVar(nc,va_varid,Mobj.daVvel);
+0443 
+0444 disp(<span class="string">'writing omega_varid data'</span>);
+0445 netcdf.putVar(nc,omega_varid,Mobj.w);
+0446 
+0447 disp(<span class="string">'writing hyw_varid data'</span>);
+0448 netcdf.putVar(nc,hyw_varid,Mobj.w);
+0449 
+0450 disp(<span class="string">'writing zeta_varid data'</span>);
+0451 netcdf.putVar(nc,zeta_varid,Mobj.surfaceElevation);
+0452 
+0453 <span class="comment">% for type 3 nesting need to include weighting</span>
+0454 <span class="keyword">if</span> (Mobj.NEST_TYPE==<span class="string">'TYPE3'</span>)
+0455 
+0456     disp(<span class="string">'writing node_weight_varid data'</span>);
+0457     netcdf.putVar(nc,node_weight_varid,Mobj.weight_node_val);
+0458 
+0459     disp(<span class="string">'writing element weighting attributes'</span>);
+0460     netcdf.putVar(nc,elem_weight_varid,Mobj.weight_elem_val);
+0461 
+0462 
+0463 
+0464 <span class="keyword">end</span>
+0465 
+0466 
+0467 <span class="comment">% close file</span>
+0468 netcdf.close(nc);
+0469 
+0470 <span class="keyword">if</span>(report); fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>]); <span class="keyword">end</span>;
+0471 
+0472 
+0473 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
