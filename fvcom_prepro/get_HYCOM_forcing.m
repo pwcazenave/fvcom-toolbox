@@ -121,6 +121,13 @@ if nargin > 2
                     if varargin{v + 1}
                         threehourly = '/3hrly';
                     end
+                    if modelTime(1) >= greg2mjulian(2008, 09, 19, 0, 0, 0)
+                        error(['The three hourly output is not ', ...
+                                'configured for the period beyond ', ...
+                                '2008/09/18 in this function. Please ', ...
+                                'disable three hourly downloads, or ', ...
+                                'edit this function to suit your needs.'])
+                    end
             end
         end
     end
