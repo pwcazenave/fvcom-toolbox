@@ -17,6 +17,9 @@ function data = get_HYCOM_forcing(Mobj, modelTime, varargin)
 %   varlist - [optional] cell array of variables to download. Use HYCOM
 %       names (e.g. ssh, salinity, temperature, u, v). If omitted,
 %       downloads salinity, temperature and ssh only.
+%   three - [optional] boolean. Set to true to download the 3 hourly data
+%       for the period 1992/10/2 to 2008/09/18 (inclusive). Defaults to
+%       false and downloads only the daily data.
 %
 % OUTPUT:
 %   data - struct of the data necessary to force FVCOM. These can be
@@ -63,6 +66,8 @@ function data = get_HYCOM_forcing(Mobj, modelTime, varargin)
 %   coverage back to 1992 (previously limited to 2008 with the Global
 %   Analysis data). The Global Analysis data is used from 2008 onwards even
 %   though the reanalysis exists up to 2012.
+%   2016-01-04 Add support for the three hourly output data for the 19.0
+%   and 19.1 experiments.
 %
 %==========================================================================
 
@@ -91,13 +96,34 @@ end
 
 % Check if we've been given a cell array of variables and set the varlist
 % to that, otherwise default to temperature, salinity and sea surface
-% height.
-if nargin == 2
+% height. For the three option, assume we want daily data unless three is
+% true, in which case set the threehourly parameter to be the string
+% required for the THREDDS URL (/3hrly), otherwise default to daily data.
+threehourly = '';
+if nargin == 2 || nargin > 3
     varlist = {'temperature', 'salinity', 'ssh'};
-else
-    assert(iscell(varargin{1}), ['List of variables to extract must', ...
-        ' be a cell array: {''var1'', ''var2''}'])
-    varlist = varargin{1};
+end
+if nargin > 2
+    % To maintain backwards compatibility, assume if we've been given a
+    % cell array as the third option, that's the variables to download.
+    % Otherwise, iterate through the argument as key-parameter pairs.
+    if nargin == 3
+        if iscell(varargin{1})
+            varlist = varargin{1};
+            assert(iscell(varargin{1}), [...
+                'List of variables to extract must', ...
+                ' be a cell array: {''var1'', ''var2''}'])
+        end
+    else
+        for v = 1:2:length(varargin)
+            switch varargin{v}
+                case 'three'
+                    if varargin{v + 1}
+                        threehourly = '/3hrly';
+                    end
+            end
+        end
+    end
 end
 
 % Get the extent of the model domain (in spherical).
@@ -112,10 +138,6 @@ else
         min(Mobj.lat(:)) - (2 * dy), max(Mobj.lat(:)) + (2 * dy)];
 end
 
-% For the grid stuff, we have to use the Global Analysis grid as the
-% Reanalysis one causes MATLAB to crash for me (R2015a).
-url = get_url(greg2mjulian(2011, 1, 1, 0, 0, 0));
-
 % List of URL suffixes so we can dynamically build the URL for each time
 % step.
 suffix.MT           = {'time', 'MT'};
@@ -128,88 +150,23 @@ suffix.u            = {'water_u', 'u'};
 suffix.v            = {'water_v', 'v'};
 suffix.ssh          = {'surf_el', 'ssh'};
 
-% For the grid stuff, assume we're using the Global Analysis. Loading the
-% Global Reanalysis lat and lon fields crashes MATLAB.
-hycom.MT            = [url, suffix.MT{2}];          % time [1D]
-hycom.Longitude     = [url, suffix.Longitude{2}];   % [2D]
-hycom.Latitude      = [url, suffix.Latitude{2}];    % [2D]
-hycom.Depth         = [url, suffix.Depth{2}];       % water depth [2D]
-hycom.temperature   = [url, suffix.temperature{2}]; % [4D]
-hycom.salinity      = [url, suffix.salinity{2}];    % [4D]
-hycom.ssh           = [url, suffix.ssh{2}];         % sea surface height [3D]
-hycom.u             = [url, suffix.u{2}];           % mean flow [4D]
-hycom.v             = [url, suffix.v{2}];           % mean flow [4D]
-
-data.time = [];
-
-% We have to use Longitude here because otherwise MATLAB crashes (for me -
-% version 2012b). Ideally this would be depend on the value of
-% Mobj.nativeCoords.
-ncid = netcdf.open(hycom.Longitude, 'NOWRITE');
-try
-    varid = netcdf.inqVarID(ncid, suffix.Longitude{1});
-catch
-    varid = netcdf.inqVarID(ncid, suffix.Longitude{2});
-end
-
-data.X.data = netcdf.getVar(ncid, varid, 'double');
-
-netcdf.close(ncid)
-
-% Make the longitude values in the range -180 to 180 (to match the
-% model inputs).
-data.X.data = mod(data.X.data, 360);
-data.X.data(data.X.data > 180) = data.X.data(data.X.data > 180) - 360;
-
-ncid = netcdf.open(hycom.Latitude, 'NOWRITE');
-try
-    varid = netcdf.inqVarID(ncid, suffix.Latitude{1});
-catch
-    varid = netcdf.inqVarID(ncid, suffix.Latitude{2});
-end
-
-data.Y.data = netcdf.getVar(ncid, varid, 'double');
-
-netcdf.close(ncid)
-
-% Create indices of the size of the arrays.
-data.X.idx = repmat(1:size(data.X.data, 1), [size(data.X.data, 2), 1])';
-data.Y.idx = repmat(1:size(data.Y.data, 2), [size(data.Y.data, 1), 1]);
-%data.Y.idx = 1:size(data.Y.data, 2) - 1;
-
-% Find the indices which cover the model domain then find the extremes to
-% request only a subset from the OPeNDAP server.
-idx = data.X.data > extents(1) & data.X.data < extents(2) & data.Y.data > extents(3) & data.Y.data < extents(4);
-xrange = [min(data.X.idx(idx)), max(data.X.idx(idx))];
-yrange = [min(data.Y.idx(idx)), max(data.Y.idx(idx))];
-
-data.lon = data.X.data(xrange(1):xrange(2), yrange(1):yrange(2));
-data.lat = data.Y.data(xrange(1):xrange(2), yrange(1):yrange(2));
-
 % Get the URL to use for the first time step.
-url = get_url(modelTime(1));
+url = get_url(modelTime(1), threehourly);
 
 if modelTime(1) < greg2mjulian(2008, 09, 19, 0, 0, 0)
-    hycom.MT            = [url, suffix.MT{1}];          % time [1D]
-    hycom.Longitude     = [url, suffix.Longitude{1}];   % [2D]
-    hycom.Latitude      = [url, suffix.Latitude{1}];    % [2D]
-    hycom.Depth         = [url, suffix.Depth{1}];       % water depth [2D]
-    hycom.temperature   = [url, suffix.temperature{1}]; % [4D]
-    hycom.salinity      = [url, suffix.salinity{1}];    % [4D]
-    hycom.ssh           = [url, suffix.ssh{1}];         % sea surface height [3D]
-    hycom.u             = [url, suffix.u{1}];           % mean flow [4D]
-    hycom.v             = [url, suffix.v{1}];           % mean flow [4D]
+    name_index = 1;
 elseif modelTime(1) >= greg2mjulian(2008, 09, 19, 0, 0, 0)
-    hycom.MT            = [url, suffix.MT{2}];          % time [1D]
-    hycom.Longitude     = [url, suffix.Longitude{2}];   % [2D]
-    hycom.Latitude      = [url, suffix.Latitude{2}];    % [2D]
-    hycom.Depth         = [url, suffix.Depth{2}];       % water depth [2D]
-    hycom.temperature   = [url, suffix.temperature{2}]; % [4D]
-    hycom.salinity      = [url, suffix.salinity{2}];    % [4D]
-    hycom.ssh           = [url, suffix.ssh{2}];         % sea surface height [3D]
-    hycom.u             = [url, suffix.u{2}];           % mean flow [4D]
-    hycom.v             = [url, suffix.v{2}];           % mean flow [4D]
+    name_index = 2;
 end
+hycom.MT            = [url, suffix.MT{name_index}];          % time [1D]
+hycom.Longitude     = [url, suffix.Longitude{name_index}];   % [2D]
+hycom.Latitude      = [url, suffix.Latitude{name_index}];    % [2D]
+hycom.Depth         = [url, suffix.Depth{name_index}];       % water depth [2D]
+hycom.temperature   = [url, suffix.temperature{name_index}]; % [4D]
+hycom.salinity      = [url, suffix.salinity{name_index}];    % [4D]
+hycom.ssh           = [url, suffix.ssh{name_index}];         % sea surface height [3D]
+hycom.u             = [url, suffix.u{name_index}];           % mean flow [4D]
+hycom.v             = [url, suffix.v{name_index}];           % mean flow [4D]
 
 % Load the depth data (1D vector).
 ncid = netcdf.open(hycom.Depth, 'NOWRITE');
@@ -229,7 +186,18 @@ netcdf.close(ncid)
 % Get the number of vertical levels.
 nz = length(data.Depth.data);
 
-times = modelTime(1):modelTime(2);
+% Set a time increment is we've got the three-hourly flag passed to the
+% function. At some point, this may have to be a string comparison such
+% that we can use different outputs (if the HYCOM folks add them), but for
+% now, we just assume non-empty strings means three-hourly data. This will
+% also break horribly if we request data from both daily and three-hourly
+% data sets.
+if ~isempty(threehourly)
+    time_increment = 3/24;
+else
+    time_increment = 1;
+end
+times = modelTime(1):time_increment:modelTime(2);
 nt = length(times);
 
 % Before we go off downloading data, check the variables we've been asked
@@ -240,6 +208,12 @@ for vv = 1:length(varlist)
     end
 end
 
+% Initialise the value of url so we can compare it each loop and only
+% reopen the connection to the server if we've crossed into a different
+% data set.
+url = get_url(modelTime(1), threehourly);
+
+data.time = [];
 c = 1; % counter for the tmjd cell array.
 for tt = 1:nt
 
@@ -249,29 +223,22 @@ for tt = 1:nt
 
     % Set up a struct of the HYCOM data sets in which we're interested.
     if times(tt) < greg2mjulian(2008, 09, 19, 0, 0, 0)
-        hycom.MT            = [url, suffix.MT{1}];          % time [1D]
-        hycom.Longitude     = [url, suffix.Longitude{1}];   % [2D]
-        hycom.Latitude      = [url, suffix.Latitude{1}];    % [2D]
-        hycom.Depth         = [url, suffix.Depth{1}];       % water depth [2D]
-        hycom.temperature   = [url, suffix.temperature{1}]; % [4D]
-        hycom.salinity      = [url, suffix.salinity{1}];    % [4D]
-        hycom.ssh           = [url, suffix.ssh{1}];         % sea surface height [3D]
-        hycom.u             = [url, suffix.u{1}];           % mean flow [4D]
-        hycom.v             = [url, suffix.v{1}];           % mean flow [4D]
+        name_index = 1;
     elseif times(tt) >= greg2mjulian(2008, 09, 19, 0, 0, 0)
-        hycom.MT            = [url, suffix.MT{2}];          % time [1D]
-        hycom.Longitude     = [url, suffix.Longitude{2}];   % [2D]
-        hycom.Latitude      = [url, suffix.Latitude{2}];    % [2D]
-        hycom.Depth         = [url, suffix.Depth{2}];       % water depth [2D]
-        hycom.temperature   = [url, suffix.temperature{2}]; % [4D]
-        hycom.salinity      = [url, suffix.salinity{2}];    % [4D]
-        hycom.ssh           = [url, suffix.ssh{2}];         % sea surface height [3D]
-        hycom.u             = [url, suffix.u{2}];           % mean flow [4D]
-        hycom.v             = [url, suffix.v{2}];           % mean flow [4D]
+        name_index = 2;
     end
+    hycom.MT            = [url, suffix.MT{name_index}];          % time [1D]
+    hycom.Longitude     = [url, suffix.Longitude{name_index}];   % [2D]
+    hycom.Latitude      = [url, suffix.Latitude{name_index}];    % [2D]
+    hycom.Depth         = [url, suffix.Depth{name_index}];       % water depth [2D]
+    hycom.temperature   = [url, suffix.temperature{name_index}]; % [4D]
+    hycom.salinity      = [url, suffix.salinity{name_index}];    % [4D]
+    hycom.ssh           = [url, suffix.ssh{name_index}];         % sea surface height [3D]
+    hycom.u             = [url, suffix.u{name_index}];           % mean flow [4D]
+    hycom.v             = [url, suffix.v{name_index}];           % mean flow [4D]
 
     oldurl = url;
-    url = get_url(times(tt));
+    url = get_url(times(tt), threehourly);
     % Only reopen the connection if the two URLs differ.
     if ~strcmpi(oldurl, url) || tt == 1
         if times(tt) < greg2mjulian(2008, 09, 19, 0, 0, 0)
@@ -307,9 +274,61 @@ for tt = 1:nt
     end
 end
 
-% Clear out the full lon/lat arrays.
-data = rmfield(data, {'X', 'Y'});
+% Open the relevant spatial variables on the remote server and download the
+% spatial data required to subset the HYCOM data.
+ncid = netcdf.open(hycom.Longitude, 'NOWRITE');
+try
+    varid = netcdf.inqVarID(ncid, suffix.Longitude{1});
+catch
+    varid = netcdf.inqVarID(ncid, suffix.Longitude{2});
+end
 
+data.X.data = netcdf.getVar(ncid, varid, 'double');
+
+netcdf.close(ncid)
+
+% Make the longitude values in the range -180 to 180 (to match the
+% model inputs).
+data.X.data = mod(data.X.data, 360);
+data.X.data(data.X.data > 180) = data.X.data(data.X.data > 180) - 360;
+
+ncid = netcdf.open(hycom.Latitude, 'NOWRITE');
+try
+    varid = netcdf.inqVarID(ncid, suffix.Latitude{1});
+catch
+    varid = netcdf.inqVarID(ncid, suffix.Latitude{2});
+end
+
+data.Y.data = netcdf.getVar(ncid, varid, 'double');
+
+netcdf.close(ncid)
+
+% If the spatial data are vectors, turn them in to matrices here.
+if isvector(data.X.data) && isvector(data.Y.data)
+    [data.X.data, data.Y.data] = meshgrid(data.X.data, data.Y.data);
+    % Orient the arrays as required for the calls to the remote server.
+    data.X.data = data.X.data';
+    data.Y.data = data.Y.data';
+end
+
+% Create indices of the size of the arrays.
+data.X.idx = repmat(1:size(data.X.data, 1), [size(data.X.data, 2), 1])';
+data.Y.idx = repmat(1:size(data.Y.data, 2), [size(data.Y.data, 1), 1]);
+%data.Y.idx = 1:size(data.Y.data, 2) - 1;
+
+% Find the indices which cover the model domain then find the extremes to
+% request only a subset from the OPeNDAP server.
+idx = data.X.data > extents(1) & data.X.data < extents(2) & data.Y.data > extents(3) & data.Y.data < extents(4);
+xrange = [min(data.X.idx(idx)), max(data.X.idx(idx))];
+yrange = [min(data.Y.idx(idx)), max(data.Y.idx(idx))];
+
+data.lon = data.X.data(xrange(1):xrange(2), yrange(1):yrange(2));
+data.lat = data.Y.data(xrange(1):xrange(2), yrange(1):yrange(2));
+
+% Clear out the full lon/lat arrays.
+% data = rmfield(data, {'X', 'Y'});
+
+% Now get the variables for which we've been asked.
 fields = varlist;
 
 for aa = 1:length(fields)
@@ -318,7 +337,7 @@ for aa = 1:length(fields)
     data.(fields{aa}).data = [];
 
     ncid = netcdf.open(hycom.(fields{aa}));
-    varid = netcdf.inqVarID(ncid, fields{aa});
+    varid = netcdf.inqVarID(ncid, suffix.(fields{aa}){name_index});
 
     % If you don't know what it contains, start by using the
     % 'netcdf.inq' and ncinfo operations:
@@ -368,7 +387,7 @@ for aa = 1:length(fields)
         % point we also need to get ourselves a new time index
         % using modelTime and the cell array tmjd.
         oldurl = url;
-        url = get_url(times(tt));
+        url = get_url(times(tt), threehourly);
 
         if ~strcmpi(oldurl, url) || tt == 1
             if times(tt) < greg2mjulian(2008, 09, 19, 0, 0, 0)
@@ -420,13 +439,16 @@ if ftbverbose
     fprintf('end   : %s\n', subname)
 end
 
-function url = get_url(time)
+function url = get_url(time, threehourly)
 % Child function to find the relevant URL to use for a given time step.
 %
-% url = get_url(time);
+% url = get_url(time, threehourly);
 %
 % INPUT:
 %   time - Modified Julian Day
+%   threehourly - additional string to append for optional three hourly
+%   outputs for the 1992/10/02 to 2008/09/18 period. Leave empty for daily
+%   data.
 %
 % OUTPUT:
 %   url - string of the approprate URL for the date supplied in time.
@@ -438,10 +460,10 @@ if time < greg2mjulian(1992, 10, 2, 0, 0, 0)
     error('No HYCOM data available prior to 1992-10-02. Select a start date from 1992-10-02 onwards.')
 elseif time >= greg2mjulian(1992, 10, 2, 0, 0, 0) && time < greg2mjulian(1995, 7, 31, 0, 0, 0)
     warning('Using the HYCOM Global Reanalysis data for dates up to 2008/09/16, thereafter the Global Analysis.')
-    url = 'http://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.0?';
+    url = sprintf('http://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.0%s?', threehourly);
 elseif time >= greg2mjulian(1995, 7, 31, 0, 0, 0) && time < greg2mjulian(2008, 09, 19, 0, 0, 0)
     warning('Using the HYCOM Global Reanalysis data for dates up to 2008/09/16, thereafter the Global Analysis.')
-    url = 'http://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1?';
+    url = sprintf('http://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1%s?', threehourly);
 elseif time >= greg2mjulian(2008, 9, 19, 0, 0, 0) && time < greg2mjulian(2009, 5, 7, 0, 0, 0)
     url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.6?';
 elseif time >= greg2mjulian(2009, 5, 7, 0, 0, 0) && time < greg2mjulian(2011, 1, 3, 0, 0, 0)
@@ -455,3 +477,4 @@ elseif time > greg2mjulian(t1, t2, t3, t4, t5, t6)
 else
     error('Date is outside of the known spacetime continuum. See help TARDIS.')
 end
+
