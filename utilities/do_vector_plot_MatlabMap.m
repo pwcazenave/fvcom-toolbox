@@ -134,7 +134,7 @@ switch ND
         end
 end
 for jj=1:nLayers
-    [Plots(plotOPTS.figure).handles{jj}]=quiverm(double(plotOPTS.mesh.latc(igood)),double(plotOPTS.mesh.lonc(igood)),u,v,'k',plotOPTS.vel_sca,'filled'),
+    [Plots(plotOPTS.figure).handles{jj}]=quiver(double(plotOPTS.mesh.lonc(igood)),double(plotOPTS.mesh.latc(igood)),u,v,plotOPTS.vel_sca,'k','filled'),
 %     [Plots(plotOPTS.figure).handles{jj}]=quiverm(double(FVCOM.latc(igood)),double(FVCOM.lonc(igood)),u./100,v./100,'k',0,'filled'),
 %     [Plots(plotOPTS.figure).handles(jj),~]=m_vec(plotOPTS.vel_sca,x(igood),y(igood),...
 %         u(:,jj),v(:,jj),colourSpec(jj,:),...

@@ -1,13 +1,11 @@
-function Mobj=distance_to_coast(Mobj)
+function Mobj=distance_along_BC(Mobj,BCnodes)
 CD=pwd;
 % setup HPJ solver to calculate the distance function for the SMS mesh
  [~,~,~,bnd] = connectivity([Mobj.x,Mobj.y],Mobj.tri);
 % remove nodestring from coast.
-    
-BCnodes=[Mobj.read_obc_nodes{:}];
+% BCnodes=[Mobj.read_obc_nodes{:}];
+coast_ind=(BCnodes);
 
-bnd(BCnodes)=0;
-coast_ind=find(bnd);
 
  % % calculate distance function 
 myParam.Max_Tri_per_Star = 20;
@@ -27,7 +25,7 @@ cd /users/modellers/rito/matlab/HJB_Solver_Package/HJB_Solver_Package
 % 
 SEmex  = SolveEikonalmex(myTM,myBdy,myParam,myMetric);
 tic
-Mobj.dist  =SEmex.Compute_Soln;
+Mobj.distOB  = SEmex.Compute_Soln;
 cd(CD)
 end
 
