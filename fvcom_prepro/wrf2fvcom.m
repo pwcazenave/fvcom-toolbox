@@ -1,21 +1,25 @@
 function wrf2fvcom(wrffile, fvfile)
-% Dumps all WRF output to FVCOM compatible netCDF.
+% Performs minor fixes to the output of wrf_to_fvcom in the FVCOM source
+% directory to netCDF.
 %
 % wrf2fvcom(ncfile, wrffile)
 %
 % DESCRIPTION:
-%   Take WRF netCDF output (e.g. from version 3.7.1 of WRF) and convert to
-%   the format FVCOM requires for netCDF forcing files.
+%   Take FVCOM routine wrf_to_fvcom netCDF output and apply minor fixes to
+%   the variables.
+%
+%   The fixes are:
+%       - convert pressure from millibars to Pascals
 %
 % INPUT:
-%   wrffile - path to the WRF netCDF file.
+%   wrffile - path to the wrf_to_fvcom netCDF file.
 %   fvfile - path to the FVCOM forcing file to create.
 %
 % OUTPUT:
 %   FVCOM forcing netCDF file (fvfile).
 %
 % EXAMPLE USAGE:
-%   wrf2fvcom('wrfout_d01_2000-01-01_00:00:00', 'casename_v01_wnd.nc')
+%   wrf2fvcom('wrf_to_fvcom_output.nc', 'casename_v01_wnd.nc')
 %
 % NOTES:
 %   This currently only supports regularly gridded output (i.e. WRF native
