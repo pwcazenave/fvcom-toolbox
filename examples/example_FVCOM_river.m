@@ -7,15 +7,19 @@ function example_FVCOM_river()
 %    Setup a sample FVCOM river file
 %
 % INPUT
-%   
+%
 % OUTPUT:
 %    FVCOM RiverFile with flux,temp,salt,sediment
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
-%   
+%    2016-02-18 TODO: This function uses add_var_FVCOM_river which in turn
+%    uses the old netCDF toolbox for MATLAB. That function needs to be
+%    updated to use the built in netCDF routines in MATLAB.
+%
 %==============================================================================
 
 t1 = greg2mjulian(2007,1,1,0,0,0);
@@ -45,20 +49,22 @@ RiverName = {'tstRiver'};
 write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,RiverInfo1,RiverInfo2)
 
 % add sediment to the file
-VarName = 'fine_sand';
-VarLongName = 'concentration of fine sand';
-VarUnits = 'kgm^-3';
-VarData = .333*sedload; 
-add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
+if exist('netcdf') == 2
+    VarName = 'fine_sand';
+    VarLongName = 'concentration of fine sand';
+    VarUnits = 'kgm^-3';
+    VarData = .333*sedload;
+    add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
 
-VarName = 'coarse_silt';
-VarLongName = 'concentration of coarse silt';
-VarUnits = 'kgm^-3';
-VarData = .333*sedload; 
-add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
+    VarName = 'coarse_silt';
+    VarLongName = 'concentration of coarse silt';
+    VarUnits = 'kgm^-3';
+    VarData = .333*sedload;
+    add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
 
-VarName = 'fine_silt';   
-VarLongName = 'concentration of fine silt';   
-VarUnits = 'kgm^-3';
-VarData = .333*sedload; 
-add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
+    VarName = 'fine_silt';
+    VarLongName = 'concentration of fine silt';
+    VarUnits = 'kgm^-3';
+    VarData = .333*sedload;
+    add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
+end
