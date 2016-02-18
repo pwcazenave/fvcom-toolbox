@@ -21,32 +21,34 @@ function write_FVCOM_bedflag(bedflag,filename,mytitle)
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
+%    2016-02-18 Updated the code to use the MATLAB netCDF routines.
 %   
 %==============================================================================
-%warning off
-global ftbverbose;
-if(ftbverbose);
-  subname = 'write_FVCOM_bedflag';
-  fprintf('\n'); fprintf(['begin : ' subname '\n']);
-end;
+
+global ftbverbose
+subname = 'write_FVCOM_bedflag';
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
 
 %------------------------------------------------------------------------------
 % Parse input arguments
 %------------------------------------------------------------------------------
 if(~exist('bedflag'))
 	error('incorrect usage of gen_bedflag_file, must provide bedflag field')
-end;
+end
 if(~exist('filename'))
 	error('incorrect usage of gen_bedflag_file, must provide filename')
-end;
+end
 if(~exist('title'))
 	error('incorrect usage of gen_bedflag_file, must provide title field')
-end;
+end
 
 % check dimensions
-nVerts = prod(size(bedflag));
+nVerts = numel(bedflag);
 if(nVerts == 0)
 	error('dimension of bedflag is 0, something is wrong ')
 end;
@@ -54,21 +56,30 @@ end;
 %------------------------------------------------------------------------------
 % Dump to bedflag NetCDF file
 %------------------------------------------------------------------------------
-if(ftbverbose);
-fprintf('Dumping to bedflag NetCDF file: \n',filename);
-fprintf('Size of bedflag array: \n',nVerts);
-end;
-nc = netcdf(filename,'clobber');
-nc.title = mytitle;
-nc('node') = prod(size(bedflag));
-nc{'bedflag'}  = ncfloat('node');
-nc{'bedflag'}.long_name = 'bed deposition flag';
-nc{'bedflag'}.units = '-';
-nc{'bedflag'}(1:nVerts) = bedflag(1:nVerts);
-ierr = close(nc);
+if ftbverbose
+    fprintf('Dumping to bedflag NetCDF file: %s\m', filename);
+    fprintf('Size of bedflag array: %d\n', nVerts);
+end
 
+nc = netcdf.create(filename, 'clobber');
 
+% define dimensions
+node_dimid=netcdf.defDim(nc, 'node', numel(bedflag));
 
-if(ftbverbose); fprintf(['end   : ' subname '\n']); end;
+% define variables and attributes
+node_varid=netcdf.defVar(nc, 'bedflag', 'NC_INT', node_dimid);
+netcdf.putAtt(nc,node_varid, 'long_name', 'bed deposition flag');
+netcdf.putAtt(nc,node_varid, 'units', '-');
 
+% end definitions
+netcdf.endDef(nc);
 
+% dump data
+netcdf.putVar(nc, node_varid, bedflag);
+
+% close netCDF
+netcdf.close(nc)
+
+if ftbverbose
+    fprintf('end   : %s', subname)
+end
