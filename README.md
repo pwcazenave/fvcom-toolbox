@@ -36,7 +36,9 @@ The PML version of the toolbox includes tagged releases, which can be downloaded
 
 To download the version included in the FVCOM source code, go to https://github.com/GeoffCowles/fvcom-toolbox.
 
-Todo:
+There are examples of how to use the toolbox in the examples subdirectory.
+
+TODO:
 
 If you are stuck for something to get started with on the toolbox, there are some parts which are in need of some attention:
 
