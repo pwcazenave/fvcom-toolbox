@@ -9,6 +9,8 @@ function [Mobj] = estimate_ts(Mobj,u,zeta)
 %
 % INPUT
 %    Mobj = matlab mesh object
+%    u = anticipated maximum current speed
+%    zeta = anticipated maximum surface elevation
 %
 % OUTPUT:
 %    Mobj = matlab structure containing mesh time step
@@ -18,11 +20,13 @@ function [Mobj] = estimate_ts(Mobj,u,zeta)
 %
 % Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
 %    2012-07-14 Add great circle approximation if only provided with
 %    latitude and longitudes. Also add arguments to the function to define
 %    current velocity and tidal amplitudes.
+%    2016-02018 Update the help to reflect the required variables.
 %
 %==============================================================================
 

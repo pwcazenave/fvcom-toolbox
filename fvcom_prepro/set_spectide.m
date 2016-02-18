@@ -1,19 +1,26 @@
 function set_spectide(Mobj,nComps,SpectralFile,MyTitle)
-
 % Setup spectral tides on the open boundary and dump a spectral file
 %
 % function set_spectide(Mobj,nComps,SpectralFile,MyTitle)
 %
 % DESCRIPTION:
 %    Setup spectral tides on the open boundary and dump a spectral file
-%    This is a USER DEFINED driver program for the FVCOM spectral tide
-%    It requires USER Modification to work
 %
 % INPUT
-%    Mobj         = Matlab mesh object
+%    Mobj         = Matlab mesh object with fields:
+%        Components = names of tidal constituents (e.g. M2).
+%        nObs       = number of open boundaries
+%        nObcNodes  = number of open boundary nodes
+%        obc_nodes  = open boundary node IDs
+%        period_obc = periods of tides at the open boundary nodes
+%        beta_love  = beta Love numbers of tides at the open boundary nodes
+%        equilibrium_amp = equilibrium amplitudes of tides at the open
+%                   boundary nodes
+%        amp_obc    = amplitude at the open boundary nodes
+%        phase_obc  = phase at the open boundary nodes
 %    nComps       = Number of tidal components
 %    SpectralFile = Output file name
-%    MyTitle     = Title in resulting NetCDF file.
+%    MyTitle      = Title in resulting NetCDF file.
 %
 % OUTPUT:
 %
@@ -26,15 +33,16 @@ function set_spectide(Mobj,nComps,SpectralFile,MyTitle)
 %
 % Revision history
 %    2012-06-15 Added support for variables when calling set_spectide.
-%	 2012-08-02 Can now write out equilibrium amplitudes and beta love numbers.
+%    2012-08-02 Can now write out equilibrium amplitudes and beta love
+%    numbers.
+%    2016-02-198 Clean up the help a bit.
 %
 %==============================================================================
 subname = 'set_spectide';
 global ftbverbose;
-if(ftbverbose);
-  fprintf('\n')
-  fprintf(['begin : ' subname '\n'])
-end;
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
 
 %------------------------------------------------------------------------------
 % Set Component Periods
@@ -54,8 +62,8 @@ if nComps > numel(Mobj.Components)
 end
 
 if(Mobj.nObs==0)
-	warning('cannot setup spectral open boundary, there is no open boundary in the mesh struct')
-	return
+    warning('cannot setup spectral open boundary, there is no open boundary in the mesh struct')
+    return
 end
 
 cnt = 0;
@@ -63,10 +71,10 @@ Amp = nan(sum(Mobj.nObcNodes),nComps);
 Phase = nan(sum(Mobj.nObcNodes),nComps);
 ObcNodes = nan(1,sum(Mobj.nObcNodes));
 for ob=1:Mobj.nObs
-	nObcs = Mobj.nObcNodes(ob);
-	for j=1:nObcs
-		cnt = cnt + 1;
-		ObcNodes(cnt) = Mobj.obc_nodes(ob,j);  % set the open boundary nodes
+    nObcs = Mobj.nObcNodes(ob);
+    for j=1:nObcs
+        cnt = cnt + 1;
+        ObcNodes(cnt) = Mobj.obc_nodes(ob,j);  % set the open boundary nodes
 
         Amp(cnt,:) = Mobj.amp_obc{ob}(:,j);
         Phase(cnt,:) = Mobj.phase_obc{ob}(:,j);
