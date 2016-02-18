@@ -73,8 +73,11 @@ function Mobj = get_EHYPE_rivers(Mobj, dist_thresh, varargin)
 %   of rivers to the relevant field.
 %   2014-05-29 - Fix issues with the climatology vs. timeseries allocation
 %   of the output arrays.
-%   2015-09-24 Add check for whether we actually have any rivers to
+%   2015-09-24 - Add check for whether we actually have any rivers to
 %   process.
+%   2016-01-15 - Fix exclude behaviour for more than a single river to
+%   exclude. Also summarised the number of included/skipped/ignored rivers
+%   instead of printing a new line for each river that's skipped.
 %
 %==========================================================================
 
@@ -126,7 +129,11 @@ ehype_flow = Mobj.rivers.river_flux;
 
 % If we've been given rivers to ignore, remove them now.
 if ~isempty(ignore_list)
-    ignore_mask = ehype_name ~= ignore_list;
+    ignore_mask = true(length(ehype_name), 1);
+    for ig = 1:length(ignore_list)
+        ignore_mask = ignore_mask .* (ehype_name ~= ignore_list(ig));
+    end
+    ignore_mask = logical(ignore_mask);
 
     ehype_name = ehype_name(ignore_mask);
     ehype_xy = ehype_xy(ignore_mask, :);
@@ -156,6 +163,7 @@ fvcom_names = cell(0);
 % Initialise the flow array with a 366 day long time series of nans. This
 % array will be appended to (unless all rivers are outside the domain).
 % Only do this if we're doing climatology (signified by a non-empty year).
+skipped = 0;
 if ~isempty(yr)
     fv_flow = nan(366, 1);
 end
@@ -166,9 +174,7 @@ for ff = 1:fv_nr
         (ehype_xy(ff, 2) - tlat).^2);
     [c, idx] = min(fv_dist);
     if c > dist_thresh
-        if ftbverbose
-            fprintf('\tskipping river %07d (%f, %f [%fdeg away])\n', ehype_name(ff), ehype_xy(ff, 1), ehype_xy(ff, 2), c)
-        end
+        skipped = skipped + 1;
         continue
     else
         if ftbverbose
@@ -515,6 +521,8 @@ else
 end
 
 if ftbverbose
+    fprintf('included %d of %d rivers (skipped %d, ignored %d)\n', ...
+        fv_nr - skipped, fv_nr, skipped, sum(~ignore_mask))
     fprintf('end   : %s \n', subname)
 end
 
