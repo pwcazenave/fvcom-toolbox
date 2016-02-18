@@ -1,11 +1,10 @@
 function write_FVCOM_bath(Mobj,filename) 
-
 % Write bathymetry to FVCOM format bathymetry file
 %
-% function write_FVCOM_bath(Mobj,filename)
+% function write_FVCOM_bath(Mobj, filename)
 %
 % DESCRIPTION:
-%    Generate an ascii FVCOM 3.x format bathymetry from Mesh object
+%    Generate a bathymetry file from a Mesh object
 %
 % INPUT 
 %   Mobj     = Mesh object
@@ -15,13 +14,13 @@ function write_FVCOM_bath(Mobj,filename)
 %    FVCOM bathymetry file: filename
 %
 % EXAMPLE USAGE
-%    write_FVCOM_bath(Mobj,'tst_cor.dat')   
+%    write_FVCOM_bath(Mobj,'tst_dep.dat')   
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %
 % Revision history
-%   
+%
 %==============================================================================
 subname = 'write_FVCOM_bath';
 global ftbverbose
