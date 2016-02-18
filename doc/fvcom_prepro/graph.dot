@@ -27,9 +27,6 @@ digraph m2html {
   read_sms_mesh -> nodes2elems;
   set_elevtide -> write_FVCOM_elevtide;
   set_spectide -> write_FVCOM_spectide;
-  tidal_turbine_example -> nodes2elems;
-  tidal_turbine_example -> read_fvcom_bath;
-  tidal_turbine_example -> write_FVCOM_TT;
   write_FVCOM_forcing -> nodes2elems;
   write_FVCOM_heating -> nodes2elems;
 
@@ -102,7 +99,6 @@ digraph m2html {
   setup_metrics [URL="setup_metrics.html"];
   smoothfield [URL="smoothfield.html"];
   smoothfield2 [URL="smoothfield2.html"];
-  tidal_turbine_example [URL="tidal_turbine_example.html"];
   truncfield [URL="truncfield.html"];
   wrf2fvcom [URL="wrf2fvcom.html"];
   wrf2fvcom_U10V10 [URL="wrf2fvcom_U10V10.html"];

@@ -101,8 +101,11 @@
    of rivers to the relevant field.
    2014-05-29 - Fix issues with the climatology vs. timeseries allocation
    of the output arrays.
-   2015-09-24 Add check for whether we actually have any rivers to
+   2015-09-24 - Add check for whether we actually have any rivers to
    process.
+   2016-01-15 - Fix exclude behaviour for more than a single river to
+   exclude. Also summarised the number of included/skipped/ignored rivers
+   instead of printing a new line for each river that's skipped.
 
 ==========================================================================</pre></div>
 
@@ -194,463 +197,471 @@ This function is called by:
 0073 <span class="comment">%   of rivers to the relevant field.</span>
 0074 <span class="comment">%   2014-05-29 - Fix issues with the climatology vs. timeseries allocation</span>
 0075 <span class="comment">%   of the output arrays.</span>
-0076 <span class="comment">%   2015-09-24 Add check for whether we actually have any rivers to</span>
+0076 <span class="comment">%   2015-09-24 - Add check for whether we actually have any rivers to</span>
 0077 <span class="comment">%   process.</span>
-0078 <span class="comment">%</span>
-0079 <span class="comment">%==========================================================================</span>
-0080 
-0081 subname = <span class="string">'get_EHYPE_rivers'</span>;
-0082 
-0083 <span class="keyword">global</span> ftbverbose;
-0084 <span class="keyword">if</span> ftbverbose
-0085     fprintf([<span class="string">'\nbegin : '</span> subname <span class="string">'\n'</span>])
-0086 <span class="keyword">end</span>
-0087 
-0088 <span class="comment">% Check inputs</span>
-0089 <span class="keyword">if</span> ~Mobj.have_lonlat
-0090     error(<span class="string">'Require unstructured grid positions in lon/lat format to compare against supplied river positions.'</span>)
-0091 <span class="keyword">end</span>
-0092 
-0093 <span class="comment">% Default to standard EHYPE formatted data and no ignored rivers.</span>
-0094 yr = [];
-0095 ignore_list = [];
-0096 ceh = false;
-0097 
-0098 <span class="comment">% If we have only three arguments, we have to assume we've been given a</span>
-0099 <span class="comment">% year for the climatology. Otherwise, we need to read the arguments based</span>
-0100 <span class="comment">% on keyword-value pairs. Really, we want keyword-value pairs all the time,</span>
-0101 <span class="comment">% so silently work when given three arguments and don't mention it in the</span>
-0102 <span class="comment">% help. This is going to bite me at some point in the future, I'm sure.</span>
-0103 <span class="keyword">if</span> nargin == 3
-0104     yr = varargin{1};
-0105 <span class="keyword">elseif</span> nargin &gt; 3
-0106     <span class="keyword">for</span> aa = 1:2:length(varargin)
-0107         <span class="keyword">switch</span> varargin{aa}
-0108             <span class="keyword">case</span> <span class="string">'model_year'</span>
-0109                 yr = varargin{aa + 1};
-0110             <span class="keyword">case</span> <span class="string">'exclude'</span>
-0111                 ignore_list = varargin{aa + 1};
-0112             <span class="keyword">case</span> <span class="string">'ceh'</span>
-0113                 ceh = varargin{aa + 1};
-0114         <span class="keyword">end</span>
-0115     <span class="keyword">end</span>
-0116 <span class="keyword">end</span>
-0117 
-0118 <span class="keyword">if</span> (isempty(yr) &amp;&amp; ceh) || (~isempty(yr) &amp;&amp; ~isnumeric(yr))
-0119     error(<span class="string">'Trying to do climatology, but don''t have an anchor year. Supply one via the ''model_year'' keyword-value pair.'</span>)
-0120 <span class="keyword">end</span>
-0121 
-0122 <span class="comment">% Separate the inputs into separate arrays.</span>
-0123 ehype_name = Mobj.rivers.names;
-0124 ehype_xy = Mobj.rivers.positions;
-0125 ehype_flow = Mobj.rivers.river_flux;
-0126 
-0127 <span class="comment">% If we've been given rivers to ignore, remove them now.</span>
-0128 <span class="keyword">if</span> ~isempty(ignore_list)
-0129     ignore_mask = ehype_name ~= ignore_list;
-0130 
-0131     ehype_name = ehype_name(ignore_mask);
-0132     ehype_xy = ehype_xy(ignore_mask, :);
-0133 <span class="keyword">end</span>
-0134 
-0135 fv_nr = length(ehype_name);
-0136 
-0137 <span class="comment">% Check each location in the EHYPE positions against the grid in Mobj and</span>
-0138 <span class="comment">% for the indices within the dist_thresh, load and extract the relevant</span>
-0139 <span class="comment">% time series data.</span>
-0140 
-0141 vc = 0; <span class="comment">% valid FVCOM boundary node counter</span>
-0142 
-0143 <span class="comment">% We need to find the unstructured grid boundary nodes and exclude the open</span>
-0144 <span class="comment">% boundary nodes from them. This will be our list of potential candidates</span>
-0145 <span class="comment">% for the river nodes (i.e. the land coastline).</span>
-0146 [~, ~, ~, bnd] = connectivity([Mobj.lon, Mobj.lat], Mobj.tri);
-0147 boundary_nodes = 1:Mobj.nVerts;
-0148 boundary_nodes = boundary_nodes(bnd);
-0149 coast_nodes = boundary_nodes(~ismember(boundary_nodes, [Mobj.read_obc_nodes{:}]));
-0150 tlon = Mobj.lon(coast_nodes);
-0151 tlat = Mobj.lat(coast_nodes);
-0152 
-0153 fv_obc = nan;
-0154 fvcom_names = cell(0);
-0155 
-0156 <span class="comment">% Initialise the flow array with a 366 day long time series of nans. This</span>
-0157 <span class="comment">% array will be appended to (unless all rivers are outside the domain).</span>
-0158 <span class="comment">% Only do this if we're doing climatology (signified by a non-empty year).</span>
-0159 <span class="keyword">if</span> ~isempty(yr)
-0160     fv_flow = nan(366, 1);
-0161 <span class="keyword">end</span>
-0162 <span class="keyword">for</span> ff = 1:fv_nr
-0163     <span class="comment">% Find the coastline node closest to this river.</span>
-0164     fv_dist = sqrt( <span class="keyword">...</span>
-0165         (ehype_xy(ff, 1) - tlon).^2 + <span class="keyword">...</span>
-0166         (ehype_xy(ff, 2) - tlat).^2);
-0167     [c, idx] = min(fv_dist);
-0168     <span class="keyword">if</span> c &gt; dist_thresh
-0169         <span class="keyword">if</span> ftbverbose
-0170             fprintf(<span class="string">'\tskipping river %07d (%f, %f [%fdeg away])\n'</span>, ehype_name(ff), ehype_xy(ff, 1), ehype_xy(ff, 2), c)
-0171         <span class="keyword">end</span>
-0172         <span class="keyword">continue</span>
-0173     <span class="keyword">else</span>
-0174         <span class="keyword">if</span> ftbverbose
-0175             fprintf(<span class="string">'candidate river %07d found (%f, %f)... '</span>, ehype_name(ff), ehype_xy(ff, 1), ehype_xy(ff, 2))
-0176         <span class="keyword">end</span>
-0177     <span class="keyword">end</span>
-0178 
-0179     vc = vc + 1;
-0180 
-0181     <span class="comment">% We need to make sure the element in which this node occurs does not</span>
-0182     <span class="comment">% have two land boundaries (otherwise the model sometimes just fills up</span>
-0183     <span class="comment">% that element without releasing the water into the adjacent element).</span>
+0078 <span class="comment">%   2016-01-15 - Fix exclude behaviour for more than a single river to</span>
+0079 <span class="comment">%   exclude. Also summarised the number of included/skipped/ignored rivers</span>
+0080 <span class="comment">%   instead of printing a new line for each river that's skipped.</span>
+0081 <span class="comment">%</span>
+0082 <span class="comment">%==========================================================================</span>
+0083 
+0084 subname = <span class="string">'get_EHYPE_rivers'</span>;
+0085 
+0086 <span class="keyword">global</span> ftbverbose;
+0087 <span class="keyword">if</span> ftbverbose
+0088     fprintf([<span class="string">'\nbegin : '</span> subname <span class="string">'\n'</span>])
+0089 <span class="keyword">end</span>
+0090 
+0091 <span class="comment">% Check inputs</span>
+0092 <span class="keyword">if</span> ~Mobj.have_lonlat
+0093     error(<span class="string">'Require unstructured grid positions in lon/lat format to compare against supplied river positions.'</span>)
+0094 <span class="keyword">end</span>
+0095 
+0096 <span class="comment">% Default to standard EHYPE formatted data and no ignored rivers.</span>
+0097 yr = [];
+0098 ignore_list = [];
+0099 ceh = false;
+0100 
+0101 <span class="comment">% If we have only three arguments, we have to assume we've been given a</span>
+0102 <span class="comment">% year for the climatology. Otherwise, we need to read the arguments based</span>
+0103 <span class="comment">% on keyword-value pairs. Really, we want keyword-value pairs all the time,</span>
+0104 <span class="comment">% so silently work when given three arguments and don't mention it in the</span>
+0105 <span class="comment">% help. This is going to bite me at some point in the future, I'm sure.</span>
+0106 <span class="keyword">if</span> nargin == 3
+0107     yr = varargin{1};
+0108 <span class="keyword">elseif</span> nargin &gt; 3
+0109     <span class="keyword">for</span> aa = 1:2:length(varargin)
+0110         <span class="keyword">switch</span> varargin{aa}
+0111             <span class="keyword">case</span> <span class="string">'model_year'</span>
+0112                 yr = varargin{aa + 1};
+0113             <span class="keyword">case</span> <span class="string">'exclude'</span>
+0114                 ignore_list = varargin{aa + 1};
+0115             <span class="keyword">case</span> <span class="string">'ceh'</span>
+0116                 ceh = varargin{aa + 1};
+0117         <span class="keyword">end</span>
+0118     <span class="keyword">end</span>
+0119 <span class="keyword">end</span>
+0120 
+0121 <span class="keyword">if</span> (isempty(yr) &amp;&amp; ceh) || (~isempty(yr) &amp;&amp; ~isnumeric(yr))
+0122     error(<span class="string">'Trying to do climatology, but don''t have an anchor year. Supply one via the ''model_year'' keyword-value pair.'</span>)
+0123 <span class="keyword">end</span>
+0124 
+0125 <span class="comment">% Separate the inputs into separate arrays.</span>
+0126 ehype_name = Mobj.rivers.names;
+0127 ehype_xy = Mobj.rivers.positions;
+0128 ehype_flow = Mobj.rivers.river_flux;
+0129 
+0130 <span class="comment">% If we've been given rivers to ignore, remove them now.</span>
+0131 <span class="keyword">if</span> ~isempty(ignore_list)
+0132     ignore_mask = true(length(ehype_name), 1);
+0133     <span class="keyword">for</span> ig = 1:length(ignore_list)
+0134         ignore_mask = ignore_mask .* (ehype_name ~= ignore_list(ig));
+0135     <span class="keyword">end</span>
+0136     ignore_mask = logical(ignore_mask);
+0137 
+0138     ehype_name = ehype_name(ignore_mask);
+0139     ehype_xy = ehype_xy(ignore_mask, :);
+0140 <span class="keyword">end</span>
+0141 
+0142 fv_nr = length(ehype_name);
+0143 
+0144 <span class="comment">% Check each location in the EHYPE positions against the grid in Mobj and</span>
+0145 <span class="comment">% for the indices within the dist_thresh, load and extract the relevant</span>
+0146 <span class="comment">% time series data.</span>
+0147 
+0148 vc = 0; <span class="comment">% valid FVCOM boundary node counter</span>
+0149 
+0150 <span class="comment">% We need to find the unstructured grid boundary nodes and exclude the open</span>
+0151 <span class="comment">% boundary nodes from them. This will be our list of potential candidates</span>
+0152 <span class="comment">% for the river nodes (i.e. the land coastline).</span>
+0153 [~, ~, ~, bnd] = connectivity([Mobj.lon, Mobj.lat], Mobj.tri);
+0154 boundary_nodes = 1:Mobj.nVerts;
+0155 boundary_nodes = boundary_nodes(bnd);
+0156 coast_nodes = boundary_nodes(~ismember(boundary_nodes, [Mobj.read_obc_nodes{:}]));
+0157 tlon = Mobj.lon(coast_nodes);
+0158 tlat = Mobj.lat(coast_nodes);
+0159 
+0160 fv_obc = nan;
+0161 fvcom_names = cell(0);
+0162 
+0163 <span class="comment">% Initialise the flow array with a 366 day long time series of nans. This</span>
+0164 <span class="comment">% array will be appended to (unless all rivers are outside the domain).</span>
+0165 <span class="comment">% Only do this if we're doing climatology (signified by a non-empty year).</span>
+0166 skipped = 0;
+0167 <span class="keyword">if</span> ~isempty(yr)
+0168     fv_flow = nan(366, 1);
+0169 <span class="keyword">end</span>
+0170 <span class="keyword">for</span> ff = 1:fv_nr
+0171     <span class="comment">% Find the coastline node closest to this river.</span>
+0172     fv_dist = sqrt( <span class="keyword">...</span>
+0173         (ehype_xy(ff, 1) - tlon).^2 + <span class="keyword">...</span>
+0174         (ehype_xy(ff, 2) - tlat).^2);
+0175     [c, idx] = min(fv_dist);
+0176     <span class="keyword">if</span> c &gt; dist_thresh
+0177         skipped = skipped + 1;
+0178         <span class="keyword">continue</span>
+0179     <span class="keyword">else</span>
+0180         <span class="keyword">if</span> ftbverbose
+0181             fprintf(<span class="string">'candidate river %07d found (%f, %f)... '</span>, ehype_name(ff), ehype_xy(ff, 1), ehype_xy(ff, 2))
+0182         <span class="keyword">end</span>
+0183     <span class="keyword">end</span>
 0184 
-0185     <span class="comment">% Find the other nodes which are joined to the node we've just found.</span>
-0186     <span class="comment">% We don't need the column to get the other nodes in the element, only</span>
-0187     <span class="comment">% the row is required.</span>
-0188     [row, ~] = find(Mobj.tri == coast_nodes(idx));
-0189 
-0190     <span class="keyword">if</span> length(row) == 1
-0191         <span class="comment">% This is a bad node because it is a part of only one element. The</span>
-0192         <span class="comment">% rivers need two adjacent elements to work reliably (?). So, we</span>
-0193         <span class="comment">% need to repeat the process above until we find a node that's</span>
-0194         <span class="comment">% connected to two elements. We'll try the other nodes in the</span>
-0195         <span class="comment">% current element before searching the rest of the coastline (which</span>
-0196         <span class="comment">% is computationally expensive).</span>
-0197 
-0198         <span class="comment">% Remove the current node index from the list of candidates (i.e.</span>
-0199         <span class="comment">% leave only the two other nodes in the element).</span>
-0200         mask = Mobj.tri(row, :) ~= coast_nodes(idx);
-0201         n_tri = Mobj.tri(row, mask);
-0202 
-0203         <span class="comment">% Remove values which aren't coastline values (we don't want to set</span>
-0204         <span class="comment">% the river node to an open water node).</span>
-0205         n_tri = intersect(n_tri, coast_nodes);
-0206 
-0207         <span class="comment">% Of the remaining nodes in the element, find the closest one to</span>
-0208         <span class="comment">% the original river location (in fvcom_xy).</span>
-0209         [~, n_idx] = sort(sqrt( <span class="keyword">...</span>
-0210             (ehype_xy(ff, 1) - Mobj.lon(n_tri)).^2 <span class="keyword">...</span>
-0211             + (ehype_xy(ff, 2) - Mobj.lon(n_tri)).^2));
+0185     vc = vc + 1;
+0186 
+0187     <span class="comment">% We need to make sure the element in which this node occurs does not</span>
+0188     <span class="comment">% have two land boundaries (otherwise the model sometimes just fills up</span>
+0189     <span class="comment">% that element without releasing the water into the adjacent element).</span>
+0190 
+0191     <span class="comment">% Find the other nodes which are joined to the node we've just found.</span>
+0192     <span class="comment">% We don't need the column to get the other nodes in the element, only</span>
+0193     <span class="comment">% the row is required.</span>
+0194     [row, ~] = find(Mobj.tri == coast_nodes(idx));
+0195 
+0196     <span class="keyword">if</span> length(row) == 1
+0197         <span class="comment">% This is a bad node because it is a part of only one element. The</span>
+0198         <span class="comment">% rivers need two adjacent elements to work reliably (?). So, we</span>
+0199         <span class="comment">% need to repeat the process above until we find a node that's</span>
+0200         <span class="comment">% connected to two elements. We'll try the other nodes in the</span>
+0201         <span class="comment">% current element before searching the rest of the coastline (which</span>
+0202         <span class="comment">% is computationally expensive).</span>
+0203 
+0204         <span class="comment">% Remove the current node index from the list of candidates (i.e.</span>
+0205         <span class="comment">% leave only the two other nodes in the element).</span>
+0206         mask = Mobj.tri(row, :) ~= coast_nodes(idx);
+0207         n_tri = Mobj.tri(row, mask);
+0208 
+0209         <span class="comment">% Remove values which aren't coastline values (we don't want to set</span>
+0210         <span class="comment">% the river node to an open water node).</span>
+0211         n_tri = intersect(n_tri, coast_nodes);
 0212 
-0213         [row_2, ~] = find(Mobj.tri == n_tri(n_idx(1)));
-0214         <span class="keyword">if</span> length(n_idx) &gt; 1
-0215             [row_3, ~] = find(Mobj.tri == n_tri(n_idx(2)));
-0216         <span class="keyword">end</span>
-0217         <span class="comment">% Closest first</span>
-0218         <span class="keyword">if</span> length(row_2) &gt; 1
-0219             idx = find(coast_nodes == n_tri(n_idx(1)));
-0220         <span class="comment">% The other one (only if we have more than one node to consider).</span>
-0221         <span class="keyword">elseif</span> length(n_idx) &gt; 1 &amp;&amp; length(row_3) &gt; 1
-0222             idx = find(coast_nodes == n_tri(n_idx(2)));
-0223         <span class="comment">% OK, we need to search across all the other coastline nodes.</span>
-0224         <span class="keyword">else</span>
-0225             <span class="comment">% TODO: Implement a search of all the other coastline nodes.</span>
-0226             <span class="comment">% My testing indicates that we never get here (at least for the</span>
-0227             <span class="comment">% grids I've tested). I'd be interested to see the mesh which</span>
-0228             <span class="comment">% does get here...</span>
-0229             <span class="keyword">continue</span>
-0230         <span class="keyword">end</span>
-0231         <span class="keyword">if</span> ftbverbose
-0232             fprintf(<span class="string">'alternate node '</span>)
-0233         <span class="keyword">end</span>
-0234     <span class="keyword">end</span>
-0235 
-0236     <span class="comment">% Add it to the list of valid rivers</span>
-0237     fv_obc(vc) = coast_nodes(idx);
-0238 
-0239     <span class="comment">% We are assuming that the river discharge data array y-dimension is</span>
-0240     <span class="comment">% ordered the same as the positions in fvcom_xy. If they are not, then</span>
-0241     <span class="comment">% the discharges for the rivers will be incorrect (i.e. you might put</span>
-0242     <span class="comment">% the Severn discharge somewhere in the Baltic).</span>
-0243     fvcom_names{vc} = sprintf(<span class="string">'%07d'</span>, ehype_name(ff));
-0244     fid = fopen(fullfile(ehype_flow, [fvcom_names{vc}, <span class="string">'.txt'</span>]));
-0245     assert(fid &gt;= 0, <span class="string">'Failed to open E-HYPE river flow data.'</span>)
-0246     <span class="keyword">if</span> isempty(yr) &amp;&amp; ~ceh
-0247         <span class="comment">% Time series have a 2 line header.</span>
-0248         eflow = textscan(fid, <span class="string">'%s %f %f %f %f %f %f %f %f %f'</span>, <span class="string">'delimiter'</span>, <span class="string">'\t'</span>, <span class="string">'HeaderLines'</span>, 2, <span class="string">'MultipleDelimsAsOne'</span>, 1);
-0249     <span class="keyword">elseif</span> ~isempty(yr) &amp;&amp; ceh
-0250         eflow = textscan(fid, <span class="string">'%s %f'</span>, <span class="string">'delimiter'</span>, <span class="string">' '</span>, <span class="string">'MultipleDelimsAsOne'</span>, 1);
-0251     <span class="keyword">elseif</span> ~isempty(yr)
-0252         <span class="comment">% Climatology, so we have no header. Are we using the original</span>
-0253         <span class="comment">% EHYPE data or some other &quot;time,flux&quot; data?</span>
-0254         eflow = textscan(fid, <span class="string">'%s %f %f %f %f %f %f %f %f %f'</span>, <span class="string">'delimiter'</span>, <span class="string">'\t'</span>, <span class="string">'MultipleDelimsAsOne'</span>, 1);
-0255     <span class="keyword">else</span>
-0256         error(<span class="string">'Incorrect time set up. Check the ''ceh'' or ''model_time'' keyword-value pairs.'</span>)
-0257     <span class="keyword">end</span>
-0258     fclose(fid);
-0259     <span class="comment">% Make sure we always have the right number of time steps. Truncate the</span>
-0260     <span class="comment">% new data to fit the existing array or wrap the start of the time</span>
-0261     <span class="comment">% series back to the end.</span>
-0262     new_t = length(eflow{2});
-0263     <span class="comment">% Check if we're doing climatology in which case we can have different</span>
-0264     <span class="comment">% length time series (for CEH vs. EHYPE derived climatologies, for</span>
-0265     <span class="comment">% example). If we're not doing climatology, we have to assume the</span>
-0266     <span class="comment">% modelled time series are all the same length, in which case just use</span>
-0267     <span class="comment">% the values in new_t.</span>
-0268     <span class="keyword">if</span> ~isempty(yr)
-0269         old_t = length(fv_flow(:, 1));
-0270     <span class="keyword">else</span>
-0271         old_t = new_t;
-0272     <span class="keyword">end</span>
-0273     diff_t = old_t - new_t;
-0274     <span class="keyword">if</span> new_t &gt; old_t
-0275         fv_flow(:, vc) = eflow{2}(1:old_t);
-0276     <span class="keyword">elseif</span> new_t &lt; old_t
-0277         fv_flow((1:new_t), vc) = eflow{2};
-0278         fv_flow(end - diff_t + 1:<span class="keyword">end</span>, vc) = eflow{2}(1:diff_t);
-0279     <span class="keyword">else</span>
-0280         fv_flow(:, vc) = eflow{2};
-0281     <span class="keyword">end</span>
-0282     <span class="keyword">if</span> ftbverbose
-0283         fprintf(<span class="string">'added (%f, %f)\n'</span>, Mobj.lon(fv_obc(vc)), Mobj.lat(fv_obc(vc)))
-0284     <span class="keyword">end</span>
-0285 
-0286 <span class="keyword">end</span>
-0287 
-0288 <span class="comment">% Get the length of the EHYPE time series.</span>
-0289 ehype_nt = size(fv_flow, 1);
-0290 
-0291 <span class="comment">% Now we've got a list and some of the nodes will be duplicates. Use the</span>
-0292 <span class="comment">% larger of the two discharge values assigned to those nodes and ditch the</span>
-0293 <span class="comment">% smaller one. The output is stored in a new fv_uniq_flow array (names and</span>
-0294 <span class="comment">% nodes are similarly stored in their unique format).</span>
-0295 <span class="keyword">if</span> any(isnan(fv_obc))
-0296     <span class="comment">% We don't actually have any rivers, so return all the relevant fields</span>
-0297     <span class="comment">% in Mobj as empty arrays.</span>
-0298     Mobj.river_flux = [];
-0299     Mobj.river_nodes = [];
-0300     Mobj.river_names = [];
-0301     Mobj.have_rivers = false;
-0302     Mobj.nRivers = 0;
-0303 
-0304     <span class="keyword">if</span> ftbverbose
-0305         fprintf(<span class="string">'end   : %s \n'</span>, subname)
-0306     <span class="keyword">end</span>
-0307 
-0308     <span class="keyword">return</span>
-0309 <span class="keyword">end</span>
-0310 
-0311 fv_uniq_obc = unique(fv_obc);
-0312 fv_uniq_flow = nan(ehype_nt, length(fv_uniq_obc));
-0313 fv_uniq_names = cell(length(fv_uniq_obc), 1);
-0314 
-0315 fv_idx = 1:length(fvcom_names);
-0316 <span class="keyword">for</span> nn = 1:length(fv_uniq_obc)
-0317 
-0318     dn = fv_idx(fv_obc == fv_uniq_obc(nn));
-0319 
-0320     <span class="comment">% Instead of summing the values (which causes very large discharges</span>
-0321     <span class="comment">% because of the way the E-HYPE river mouths are determined), use the</span>
-0322     <span class="comment">% river flux with the largest mean over the entire time series (~20</span>
-0323     <span class="comment">% years).</span>
-0324     flow_bar = mean(fv_flow(:, dn), 1); <span class="comment">% get a mean for each time series</span>
-0325     [~, max_idx] = max(flow_bar, [], 2);
-0326     fv_uniq_flow(:, nn) = fv_flow(:, dn(max_idx));
-0327     fv_uniq_names{nn} = fvcom_names{dn(max_idx)};
-0328 
-0329     <span class="comment">% % This is the old way where nodes which are grouped together are</span>
-0330     <span class="comment">% % summed. This yielded unrealistically high discharges, particularly at</span>
-0331     <span class="comment">% % the Fowey near Plymouth. It probably did elsewhere too.</span>
-0332     <span class="comment">%fv_uniq_flow(:, nn) = sum(fv_flow(:, dn), 2);</span>
-0333     <span class="comment">% % Concatenate the river names so we know at least which rivers'</span>
-0334     <span class="comment">% % discharges have been summed.</span>
-0335     <span class="comment">%s = fvcom_names(dn);</span>
-0336     <span class="comment">%s = [sprintf('%s-', s{1:end-1}, s{end})];</span>
-0337     <span class="comment">%fv_uniq_names{nn} = s(1:end-1); % lose the trailing -.</span>
-0338 
-0339 <span class="keyword">end</span>
-0340 
-0341 <span class="comment">% Some of the river fluxes are being assigned to adjacent coastal nodes.</span>
-0342 <span class="comment">% This is no good because we end up putting too much water in (similar</span>
-0343 <span class="comment">% problem to the multiple river inputs on a single node which is fixed in</span>
-0344 <span class="comment">% the loop above). So, we need to check each node and check its neighbours</span>
-0345 <span class="comment">% aren't also rivers. If one (or more?) is, then we need to pick the larger</span>
-0346 <span class="comment">% discharge (as defined by the mean over the entire time series) and use</span>
-0347 <span class="comment">% that, removing the other node from the list.</span>
-0348 
-0349 <span class="comment">% Finding the neighbouring nodes is not as straightforward as it might seem</span>
-0350 <span class="comment">% at first. Simply using poly2cw is no good because our coastline is too</span>
-0351 <span class="comment">% complicated for that (poly2cw assumes a convex hull). So, we'll find the</span>
-0352 <span class="comment">% 2 nearest coastline nodes to each river node. If any of those 2 is also a</span>
-0353 <span class="comment">% river, then merge the two rivers together (use the mean discharge).</span>
+0213         <span class="comment">% Of the remaining nodes in the element, find the closest one to</span>
+0214         <span class="comment">% the original river location (in fvcom_xy).</span>
+0215         [~, n_idx] = sort(sqrt( <span class="keyword">...</span>
+0216             (ehype_xy(ff, 1) - Mobj.lon(n_tri)).^2 <span class="keyword">...</span>
+0217             + (ehype_xy(ff, 2) - Mobj.lon(n_tri)).^2));
+0218 
+0219         [row_2, ~] = find(Mobj.tri == n_tri(n_idx(1)));
+0220         <span class="keyword">if</span> length(n_idx) &gt; 1
+0221             [row_3, ~] = find(Mobj.tri == n_tri(n_idx(2)));
+0222         <span class="keyword">end</span>
+0223         <span class="comment">% Closest first</span>
+0224         <span class="keyword">if</span> length(row_2) &gt; 1
+0225             idx = find(coast_nodes == n_tri(n_idx(1)));
+0226         <span class="comment">% The other one (only if we have more than one node to consider).</span>
+0227         <span class="keyword">elseif</span> length(n_idx) &gt; 1 &amp;&amp; length(row_3) &gt; 1
+0228             idx = find(coast_nodes == n_tri(n_idx(2)));
+0229         <span class="comment">% OK, we need to search across all the other coastline nodes.</span>
+0230         <span class="keyword">else</span>
+0231             <span class="comment">% TODO: Implement a search of all the other coastline nodes.</span>
+0232             <span class="comment">% My testing indicates that we never get here (at least for the</span>
+0233             <span class="comment">% grids I've tested). I'd be interested to see the mesh which</span>
+0234             <span class="comment">% does get here...</span>
+0235             <span class="keyword">continue</span>
+0236         <span class="keyword">end</span>
+0237         <span class="keyword">if</span> ftbverbose
+0238             fprintf(<span class="string">'alternate node '</span>)
+0239         <span class="keyword">end</span>
+0240     <span class="keyword">end</span>
+0241 
+0242     <span class="comment">% Add it to the list of valid rivers</span>
+0243     fv_obc(vc) = coast_nodes(idx);
+0244 
+0245     <span class="comment">% We are assuming that the river discharge data array y-dimension is</span>
+0246     <span class="comment">% ordered the same as the positions in fvcom_xy. If they are not, then</span>
+0247     <span class="comment">% the discharges for the rivers will be incorrect (i.e. you might put</span>
+0248     <span class="comment">% the Severn discharge somewhere in the Baltic).</span>
+0249     fvcom_names{vc} = sprintf(<span class="string">'%07d'</span>, ehype_name(ff));
+0250     fid = fopen(fullfile(ehype_flow, [fvcom_names{vc}, <span class="string">'.txt'</span>]));
+0251     assert(fid &gt;= 0, <span class="string">'Failed to open E-HYPE river flow data.'</span>)
+0252     <span class="keyword">if</span> isempty(yr) &amp;&amp; ~ceh
+0253         <span class="comment">% Time series have a 2 line header.</span>
+0254         eflow = textscan(fid, <span class="string">'%s %f %f %f %f %f %f %f %f %f'</span>, <span class="string">'delimiter'</span>, <span class="string">'\t'</span>, <span class="string">'HeaderLines'</span>, 2, <span class="string">'MultipleDelimsAsOne'</span>, 1);
+0255     <span class="keyword">elseif</span> ~isempty(yr) &amp;&amp; ceh
+0256         eflow = textscan(fid, <span class="string">'%s %f'</span>, <span class="string">'delimiter'</span>, <span class="string">' '</span>, <span class="string">'MultipleDelimsAsOne'</span>, 1);
+0257     <span class="keyword">elseif</span> ~isempty(yr)
+0258         <span class="comment">% Climatology, so we have no header. Are we using the original</span>
+0259         <span class="comment">% EHYPE data or some other &quot;time,flux&quot; data?</span>
+0260         eflow = textscan(fid, <span class="string">'%s %f %f %f %f %f %f %f %f %f'</span>, <span class="string">'delimiter'</span>, <span class="string">'\t'</span>, <span class="string">'MultipleDelimsAsOne'</span>, 1);
+0261     <span class="keyword">else</span>
+0262         error(<span class="string">'Incorrect time set up. Check the ''ceh'' or ''model_time'' keyword-value pairs.'</span>)
+0263     <span class="keyword">end</span>
+0264     fclose(fid);
+0265     <span class="comment">% Make sure we always have the right number of time steps. Truncate the</span>
+0266     <span class="comment">% new data to fit the existing array or wrap the start of the time</span>
+0267     <span class="comment">% series back to the end.</span>
+0268     new_t = length(eflow{2});
+0269     <span class="comment">% Check if we're doing climatology in which case we can have different</span>
+0270     <span class="comment">% length time series (for CEH vs. EHYPE derived climatologies, for</span>
+0271     <span class="comment">% example). If we're not doing climatology, we have to assume the</span>
+0272     <span class="comment">% modelled time series are all the same length, in which case just use</span>
+0273     <span class="comment">% the values in new_t.</span>
+0274     <span class="keyword">if</span> ~isempty(yr)
+0275         old_t = length(fv_flow(:, 1));
+0276     <span class="keyword">else</span>
+0277         old_t = new_t;
+0278     <span class="keyword">end</span>
+0279     diff_t = old_t - new_t;
+0280     <span class="keyword">if</span> new_t &gt; old_t
+0281         fv_flow(:, vc) = eflow{2}(1:old_t);
+0282     <span class="keyword">elseif</span> new_t &lt; old_t
+0283         fv_flow((1:new_t), vc) = eflow{2};
+0284         fv_flow(end - diff_t + 1:<span class="keyword">end</span>, vc) = eflow{2}(1:diff_t);
+0285     <span class="keyword">else</span>
+0286         fv_flow(:, vc) = eflow{2};
+0287     <span class="keyword">end</span>
+0288     <span class="keyword">if</span> ftbverbose
+0289         fprintf(<span class="string">'added (%f, %f)\n'</span>, Mobj.lon(fv_obc(vc)), Mobj.lat(fv_obc(vc)))
+0290     <span class="keyword">end</span>
+0291 
+0292 <span class="keyword">end</span>
+0293 
+0294 <span class="comment">% Get the length of the EHYPE time series.</span>
+0295 ehype_nt = size(fv_flow, 1);
+0296 
+0297 <span class="comment">% Now we've got a list and some of the nodes will be duplicates. Use the</span>
+0298 <span class="comment">% larger of the two discharge values assigned to those nodes and ditch the</span>
+0299 <span class="comment">% smaller one. The output is stored in a new fv_uniq_flow array (names and</span>
+0300 <span class="comment">% nodes are similarly stored in their unique format).</span>
+0301 <span class="keyword">if</span> any(isnan(fv_obc))
+0302     <span class="comment">% We don't actually have any rivers, so return all the relevant fields</span>
+0303     <span class="comment">% in Mobj as empty arrays.</span>
+0304     Mobj.river_flux = [];
+0305     Mobj.river_nodes = [];
+0306     Mobj.river_names = [];
+0307     Mobj.have_rivers = false;
+0308     Mobj.nRivers = 0;
+0309 
+0310     <span class="keyword">if</span> ftbverbose
+0311         fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0312     <span class="keyword">end</span>
+0313 
+0314     <span class="keyword">return</span>
+0315 <span class="keyword">end</span>
+0316 
+0317 fv_uniq_obc = unique(fv_obc);
+0318 fv_uniq_flow = nan(ehype_nt, length(fv_uniq_obc));
+0319 fv_uniq_names = cell(length(fv_uniq_obc), 1);
+0320 
+0321 fv_idx = 1:length(fvcom_names);
+0322 <span class="keyword">for</span> nn = 1:length(fv_uniq_obc)
+0323 
+0324     dn = fv_idx(fv_obc == fv_uniq_obc(nn));
+0325 
+0326     <span class="comment">% Instead of summing the values (which causes very large discharges</span>
+0327     <span class="comment">% because of the way the E-HYPE river mouths are determined), use the</span>
+0328     <span class="comment">% river flux with the largest mean over the entire time series (~20</span>
+0329     <span class="comment">% years).</span>
+0330     flow_bar = mean(fv_flow(:, dn), 1); <span class="comment">% get a mean for each time series</span>
+0331     [~, max_idx] = max(flow_bar, [], 2);
+0332     fv_uniq_flow(:, nn) = fv_flow(:, dn(max_idx));
+0333     fv_uniq_names{nn} = fvcom_names{dn(max_idx)};
+0334 
+0335     <span class="comment">% % This is the old way where nodes which are grouped together are</span>
+0336     <span class="comment">% % summed. This yielded unrealistically high discharges, particularly at</span>
+0337     <span class="comment">% % the Fowey near Plymouth. It probably did elsewhere too.</span>
+0338     <span class="comment">%fv_uniq_flow(:, nn) = sum(fv_flow(:, dn), 2);</span>
+0339     <span class="comment">% % Concatenate the river names so we know at least which rivers'</span>
+0340     <span class="comment">% % discharges have been summed.</span>
+0341     <span class="comment">%s = fvcom_names(dn);</span>
+0342     <span class="comment">%s = [sprintf('%s-', s{1:end-1}, s{end})];</span>
+0343     <span class="comment">%fv_uniq_names{nn} = s(1:end-1); % lose the trailing -.</span>
+0344 
+0345 <span class="keyword">end</span>
+0346 
+0347 <span class="comment">% Some of the river fluxes are being assigned to adjacent coastal nodes.</span>
+0348 <span class="comment">% This is no good because we end up putting too much water in (similar</span>
+0349 <span class="comment">% problem to the multiple river inputs on a single node which is fixed in</span>
+0350 <span class="comment">% the loop above). So, we need to check each node and check its neighbours</span>
+0351 <span class="comment">% aren't also rivers. If one (or more?) is, then we need to pick the larger</span>
+0352 <span class="comment">% discharge (as defined by the mean over the entire time series) and use</span>
+0353 <span class="comment">% that, removing the other node from the list.</span>
 0354 
-0355 <span class="comment">% This breaks down a bit when three rivers are adjacent to one another, but</span>
-0356 <span class="comment">% most of the time that shouldn't happen...</span>
-0357 
-0358 <span class="comment">% Build a list of the nodes we're considering as neighbouring in</span>
-0359 <span class="comment">% fv_dups_idx and fv_keep_idx. Store the meaned flow in fv_dups_flow (we'll</span>
-0360 <span class="comment">% remove the original un-meaned flows at the end). Also store the</span>
-0361 <span class="comment">% duplicated names in fv_dups_names. All these duplicate arrays will be</span>
-0362 <span class="comment">% sorted out after the loop to find the adjacent nodes has finished. This</span>
-0363 <span class="comment">% is less horrible than looping through and adjusting the values in the</span>
-0364 <span class="comment">% original arrays because the mean of a meaned value and a new value is not</span>
-0365 <span class="comment">% the same as the mean of the three original values, that is:</span>
-0366 <span class="comment">%   mean([mean([2, 5]), 10]) ~= mean([2, 5, 10]).</span>
-0367 
-0368 fv_dups_obc = cell(0);
-0369 fv_dups_idx = [];
-0370 fv_dups_flow = fv_uniq_flow;
-0371 fv_dups_names = cell(0);
-0372 fv_uniq_obc_orig = fv_uniq_obc;
-0373 c = 0;
-0374 <span class="keyword">for</span> nn = 1:length(fv_uniq_obc)
-0375     <span class="keyword">if</span> isnan(fv_uniq_obc(nn))
-0376         <span class="comment">% This was already flagged as a pair, so just skip it as we've</span>
-0377         <span class="comment">% already saved its index.</span>
-0378         <span class="keyword">continue</span>
-0379     <span class="keyword">end</span>
-0380     [~, idx] = sort(sqrt(<span class="keyword">...</span>
-0381         (Mobj.x(coast_nodes) - Mobj.x(fv_uniq_obc(nn))).^2 + <span class="keyword">...</span>
-0382         (Mobj.y(coast_nodes) - Mobj.y(fv_uniq_obc(nn))).^2));
-0383     <span class="keyword">if</span> any(ismember(fv_uniq_obc, coast_nodes(idx(2:3))))
-0384         <span class="comment">% Build a list of the indices which we want to merge.</span>
-0385         fv_dups_idx = [fv_dups_idx, nn];
-0386 
-0387         c = c + 1;
-0388         <span class="comment">% Remove the current nodes from the list of river nodes.</span>
-0389         fv_dups_obc{c, 1} = fv_uniq_obc(nn);
-0390         fv_dups_obc{c, 2} = fv_uniq_obc(ismember(fv_uniq_obc, coast_nodes(idx(2:3))));
-0391         fv_uniq_obc(nn) = nan;
-0392         fv_uniq_obc(ismember(fv_uniq_obc, coast_nodes(idx(2:3)))) = nan;
-0393 
-0394         <span class="comment">% We can sort out the names and discharges here too. We'll store</span>
-0395         <span class="comment">% the modified fluxes in a copy of the flux array so we can append</span>
-0396         <span class="comment">% them once we've cleaned out the duplicate IDs. This way we can</span>
-0397         <span class="comment">% still get accurate means if we need to reuse a particular node's</span>
-0398         <span class="comment">% flux. Similarly, merge river names into a separate array.</span>
-0399         fv_dups_flow(:, fv_uniq_obc_orig == fv_dups_obc{c, 1}) = <span class="keyword">...</span>
-0400             mean([fv_uniq_flow(:, fv_uniq_obc_orig == fv_dups_obc{c, 1}), <span class="keyword">...</span>
-0401             fv_uniq_flow(:, fv_uniq_obc_orig == fv_dups_obc{c, 2})], 2);
-0402         fv_dups_names{c} = sprintf(<span class="string">'%s-%s'</span>, fv_uniq_names{fv_uniq_obc_orig == fv_dups_obc{c, 1}}, <span class="keyword">...</span>
-0403             fv_uniq_names{fv_uniq_obc_orig == fv_dups_obc{c, 2}});
-0404     <span class="keyword">end</span>
-0405 <span class="keyword">end</span>
-0406 
-0407 clear c idx
-0408 
-0409 <span class="comment">% Now we can remove the duplicate data from the names, nodes and fluxes.</span>
-0410 fv_uniq_obc(fv_dups_idx) = [];
-0411 fv_uniq_flow(:, fv_dups_idx) = [];
-0412 fv_uniq_names(fv_dups_idx) = [];
-0413 fv_uniq_flow(:, isnan(fv_uniq_obc)) = [];
-0414 fv_uniq_names(isnan(fv_uniq_obc)) = [];
-0415 fv_uniq_obc(isnan(fv_uniq_obc)) = [];
-0416 
-0417 <span class="comment">% And append the averaged flow, names and nodes to the relevant arrays.</span>
-0418 fv_uniq_flow = cat(2, fv_uniq_flow, fv_dups_flow(:, fv_dups_idx));
-0419 fv_uniq_obc = [fv_uniq_obc, [fv_dups_obc{:, 1}]];
-0420 fv_uniq_names = [fv_uniq_names; fv_dups_names'];
-0421 
-0422 <span class="comment">% % Merge the river discharges for the rivers we've identified as adjacent to</span>
-0423 <span class="comment">% % one another on the coastline.</span>
-0424 <span class="comment">% assert(mod(numel(fv_dups_obc), 2) ~= 1, 'Odd number of river pairs.')</span>
-0425 <span class="comment">% assert(mod(length(unique(fv_dups_obc)), 2) ~= 1, 'Duplicate river node in being removed for two separate rivers.')</span>
-0426 <span class="comment">% nr = length(fv_dups_obc);</span>
-0427 <span class="comment">% for nn = 1:nr</span>
-0428 <span class="comment">%     % Find the indices for the flow data for the node to keep and remove.</span>
-0429 <span class="comment">%     [~, idx1] = find(fv_uniq_obc_orig == fv_dups_obc{nn, 1}); % keep</span>
-0430 <span class="comment">%     [~, idx2] = find(fv_uniq_obc_orig == fv_dups_obc{nn, 2}); % remove</span>
-0431 <span class="comment">%     idx = [idx1, idx2]; clear idx1 idx2</span>
-0432 <span class="comment">%     % Set the first column to the mean of the two rivers and set the other</span>
-0433 <span class="comment">%     % one to NaN. We'll clear out the NaNs afterwards.</span>
-0434 <span class="comment">%     fv_uniq_flow(:, idx(1)) = mean(fv_uniq_flow(:, idx), 2);</span>
-0435 <span class="comment">%     fv_uniq_flow(:, idx(2)) = nan;</span>
-0436 <span class="comment">%</span>
-0437 <span class="comment">%     fv_uniq_names{idx(1)} = sprintf('%s-%s', fv_uniq_names{idx(1)}, ...</span>
-0438 <span class="comment">%         fv_uniq_names{idx(2)});</span>
-0439 <span class="comment">%     fv_uniq_names{idx(2)} = '';</span>
-0440 <span class="comment">% end</span>
-0441 <span class="comment">%</span>
-0442 <span class="comment">% % Collapse the NaNs out of the flow data; rename the rivers to be</span>
-0443 <span class="comment">% % hyphenated based on the two source rivers that have been merged.</span>
-0444 <span class="comment">% nanidx = 1:size(fv_uniq_flow, 2);</span>
-0445 <span class="comment">% nanidx = nanidx(~isnan(fv_uniq_flow(1, :)));</span>
-0446 <span class="comment">% fv_uniq_flow = fv_uniq_flow(:, nanidx);</span>
-0447 <span class="comment">% % Clear out the empty names too.</span>
-0448 <span class="comment">% c = 0;</span>
-0449 <span class="comment">% names = cell(0);</span>
-0450 <span class="comment">% for i = 1:length(fv_uniq_names)</span>
-0451 <span class="comment">%     if ~isempty(fv_uniq_names{i})</span>
-0452 <span class="comment">%         c = c + 1;</span>
-0453 <span class="comment">%         names{c, 1} = fv_uniq_names{i};</span>
-0454 <span class="comment">%     end</span>
-0455 <span class="comment">% end</span>
-0456 <span class="comment">% fv_uniq_names = names;</span>
-0457 <span class="comment">% clear names</span>
-0458 
-0459 
-0460 <span class="comment">% Assign the relevant arrays to the Mobj. Flux is added in the section</span>
-0461 <span class="comment">% dealing with either climatology or time series data.</span>
-0462 Mobj.river_nodes = fv_uniq_obc;
-0463 Mobj.river_names = fv_uniq_names;
-0464 Mobj.have_rivers = true;
-0465 Mobj.nRivers = length(fv_uniq_obc);
-0466 
-0467 <span class="comment">% Create a Modified Julian Day time series of the EHYPE river data. Assume</span>
-0468 <span class="comment">% all the EHYPE model outputs are for the same period and have the same</span>
-0469 <span class="comment">% sampling interval. If the eflow{1} data is a number below 367, assume</span>
-0470 <span class="comment">% we've been given a climatology. In that case, find the model year we're</span>
-0471 <span class="comment">% using and generate the time string for a year each side of that year (to</span>
-0472 <span class="comment">% cover the period at each end of a year). For that to work, we need to be</span>
-0473 <span class="comment">% given the model year as an optional argument to the function.</span>
-0474 checkdate = cellfun(@str2num, eflow{1});
-0475 <span class="keyword">if</span> max(checkdate) &lt; 367
-0476     <span class="comment">% Climatology.</span>
-0477     <span class="keyword">if</span> isempty(yr) &amp;&amp; ~isnumeric(yr)
-0478         error(<span class="string">'For climatology, a year must be specified for the time series to be generated.'</span>)
-0479     <span class="keyword">elseif</span> ~isempty(yr) &amp;&amp; isnumeric(yr)
-0480         <span class="comment">% Get to Gregorian first.</span>
-0481 
-0482         <span class="comment">% Make three years of data starting from the year before the</span>
-0483         <span class="comment">% current one. Do so accounting for leap years.</span>
-0484         daysinyr = [sum(eomday(yr - 1, 1:12)), <span class="keyword">...</span>
-0485             sum(eomday(yr, 1:12)), <span class="keyword">...</span>
-0486             sum(eomday(yr + 1, 1:12))];
-0487         <span class="comment">% Offset the checkdate by one to add zero for the first day.</span>
-0488         <span class="comment">% Alternative would be to specify the day as the end of the</span>
-0489         <span class="comment">% previous month (or a day value of zero?).</span>
-0490         offsetdays = (1:sum(daysinyr)) - 1;
-0491         mtime = datevec(datenum(yr - 1, 1, 1, 0, 0, 0) + offsetdays);
-0492         Mobj.river_time = greg2mjulian(mtime(:, 1), mtime(:, 2), <span class="keyword">...</span>
-0493             mtime(:, 3), mtime(:, 4), mtime(:, 5), mtime(:, 6));
-0494 
-0495         <span class="comment">% Repeat the river flux for the climatology before adding to the</span>
-0496         <span class="comment">% Mobj.</span>
-0497         Mobj.river_flux = [<span class="keyword">...</span>
-0498             fv_uniq_flow(1:daysinyr(1), :); <span class="keyword">...</span>
-0499             fv_uniq_flow(1:daysinyr(2), :); <span class="keyword">...</span>
-0500             fv_uniq_flow(1:daysinyr(3), :)];
-0501     <span class="keyword">else</span>
-0502         error(<span class="string">'Non-numeric format for the climatology anchor year.'</span>)
-0503     <span class="keyword">end</span>
-0504 <span class="keyword">else</span>
-0505     <span class="comment">% Time series.</span>
-0506     rtimes = datevec(eflow{1});
-0507     Mobj.river_time = greg2mjulian(<span class="keyword">...</span>
-0508         rtimes(:, 1), rtimes(:, 2), rtimes(:, 3), <span class="keyword">...</span>
-0509         rtimes(:, 4), rtimes(:, 5), rtimes(:, 6) <span class="keyword">...</span>
-0510     );
-0511 
-0512     <span class="comment">% Add the river flux to the Mobj for the time series data.</span>
-0513     Mobj.river_flux = fv_uniq_flow;
-0514 
-0515 <span class="keyword">end</span>
-0516 
-0517 <span class="keyword">if</span> ftbverbose
-0518     fprintf(<span class="string">'end   : %s \n'</span>, subname)
-0519 <span class="keyword">end</span>
+0355 <span class="comment">% Finding the neighbouring nodes is not as straightforward as it might seem</span>
+0356 <span class="comment">% at first. Simply using poly2cw is no good because our coastline is too</span>
+0357 <span class="comment">% complicated for that (poly2cw assumes a convex hull). So, we'll find the</span>
+0358 <span class="comment">% 2 nearest coastline nodes to each river node. If any of those 2 is also a</span>
+0359 <span class="comment">% river, then merge the two rivers together (use the mean discharge).</span>
+0360 
+0361 <span class="comment">% This breaks down a bit when three rivers are adjacent to one another, but</span>
+0362 <span class="comment">% most of the time that shouldn't happen...</span>
+0363 
+0364 <span class="comment">% Build a list of the nodes we're considering as neighbouring in</span>
+0365 <span class="comment">% fv_dups_idx and fv_keep_idx. Store the meaned flow in fv_dups_flow (we'll</span>
+0366 <span class="comment">% remove the original un-meaned flows at the end). Also store the</span>
+0367 <span class="comment">% duplicated names in fv_dups_names. All these duplicate arrays will be</span>
+0368 <span class="comment">% sorted out after the loop to find the adjacent nodes has finished. This</span>
+0369 <span class="comment">% is less horrible than looping through and adjusting the values in the</span>
+0370 <span class="comment">% original arrays because the mean of a meaned value and a new value is not</span>
+0371 <span class="comment">% the same as the mean of the three original values, that is:</span>
+0372 <span class="comment">%   mean([mean([2, 5]), 10]) ~= mean([2, 5, 10]).</span>
+0373 
+0374 fv_dups_obc = cell(0);
+0375 fv_dups_idx = [];
+0376 fv_dups_flow = fv_uniq_flow;
+0377 fv_dups_names = cell(0);
+0378 fv_uniq_obc_orig = fv_uniq_obc;
+0379 c = 0;
+0380 <span class="keyword">for</span> nn = 1:length(fv_uniq_obc)
+0381     <span class="keyword">if</span> isnan(fv_uniq_obc(nn))
+0382         <span class="comment">% This was already flagged as a pair, so just skip it as we've</span>
+0383         <span class="comment">% already saved its index.</span>
+0384         <span class="keyword">continue</span>
+0385     <span class="keyword">end</span>
+0386     [~, idx] = sort(sqrt(<span class="keyword">...</span>
+0387         (Mobj.x(coast_nodes) - Mobj.x(fv_uniq_obc(nn))).^2 + <span class="keyword">...</span>
+0388         (Mobj.y(coast_nodes) - Mobj.y(fv_uniq_obc(nn))).^2));
+0389     <span class="keyword">if</span> any(ismember(fv_uniq_obc, coast_nodes(idx(2:3))))
+0390         <span class="comment">% Build a list of the indices which we want to merge.</span>
+0391         fv_dups_idx = [fv_dups_idx, nn];
+0392 
+0393         c = c + 1;
+0394         <span class="comment">% Remove the current nodes from the list of river nodes.</span>
+0395         fv_dups_obc{c, 1} = fv_uniq_obc(nn);
+0396         fv_dups_obc{c, 2} = fv_uniq_obc(ismember(fv_uniq_obc, coast_nodes(idx(2:3))));
+0397         fv_uniq_obc(nn) = nan;
+0398         fv_uniq_obc(ismember(fv_uniq_obc, coast_nodes(idx(2:3)))) = nan;
+0399 
+0400         <span class="comment">% We can sort out the names and discharges here too. We'll store</span>
+0401         <span class="comment">% the modified fluxes in a copy of the flux array so we can append</span>
+0402         <span class="comment">% them once we've cleaned out the duplicate IDs. This way we can</span>
+0403         <span class="comment">% still get accurate means if we need to reuse a particular node's</span>
+0404         <span class="comment">% flux. Similarly, merge river names into a separate array.</span>
+0405         fv_dups_flow(:, fv_uniq_obc_orig == fv_dups_obc{c, 1}) = <span class="keyword">...</span>
+0406             mean([fv_uniq_flow(:, fv_uniq_obc_orig == fv_dups_obc{c, 1}), <span class="keyword">...</span>
+0407             fv_uniq_flow(:, fv_uniq_obc_orig == fv_dups_obc{c, 2})], 2);
+0408         fv_dups_names{c} = sprintf(<span class="string">'%s-%s'</span>, fv_uniq_names{fv_uniq_obc_orig == fv_dups_obc{c, 1}}, <span class="keyword">...</span>
+0409             fv_uniq_names{fv_uniq_obc_orig == fv_dups_obc{c, 2}});
+0410     <span class="keyword">end</span>
+0411 <span class="keyword">end</span>
+0412 
+0413 clear c idx
+0414 
+0415 <span class="comment">% Now we can remove the duplicate data from the names, nodes and fluxes.</span>
+0416 fv_uniq_obc(fv_dups_idx) = [];
+0417 fv_uniq_flow(:, fv_dups_idx) = [];
+0418 fv_uniq_names(fv_dups_idx) = [];
+0419 fv_uniq_flow(:, isnan(fv_uniq_obc)) = [];
+0420 fv_uniq_names(isnan(fv_uniq_obc)) = [];
+0421 fv_uniq_obc(isnan(fv_uniq_obc)) = [];
+0422 
+0423 <span class="comment">% And append the averaged flow, names and nodes to the relevant arrays.</span>
+0424 fv_uniq_flow = cat(2, fv_uniq_flow, fv_dups_flow(:, fv_dups_idx));
+0425 fv_uniq_obc = [fv_uniq_obc, [fv_dups_obc{:, 1}]];
+0426 fv_uniq_names = [fv_uniq_names; fv_dups_names'];
+0427 
+0428 <span class="comment">% % Merge the river discharges for the rivers we've identified as adjacent to</span>
+0429 <span class="comment">% % one another on the coastline.</span>
+0430 <span class="comment">% assert(mod(numel(fv_dups_obc), 2) ~= 1, 'Odd number of river pairs.')</span>
+0431 <span class="comment">% assert(mod(length(unique(fv_dups_obc)), 2) ~= 1, 'Duplicate river node in being removed for two separate rivers.')</span>
+0432 <span class="comment">% nr = length(fv_dups_obc);</span>
+0433 <span class="comment">% for nn = 1:nr</span>
+0434 <span class="comment">%     % Find the indices for the flow data for the node to keep and remove.</span>
+0435 <span class="comment">%     [~, idx1] = find(fv_uniq_obc_orig == fv_dups_obc{nn, 1}); % keep</span>
+0436 <span class="comment">%     [~, idx2] = find(fv_uniq_obc_orig == fv_dups_obc{nn, 2}); % remove</span>
+0437 <span class="comment">%     idx = [idx1, idx2]; clear idx1 idx2</span>
+0438 <span class="comment">%     % Set the first column to the mean of the two rivers and set the other</span>
+0439 <span class="comment">%     % one to NaN. We'll clear out the NaNs afterwards.</span>
+0440 <span class="comment">%     fv_uniq_flow(:, idx(1)) = mean(fv_uniq_flow(:, idx), 2);</span>
+0441 <span class="comment">%     fv_uniq_flow(:, idx(2)) = nan;</span>
+0442 <span class="comment">%</span>
+0443 <span class="comment">%     fv_uniq_names{idx(1)} = sprintf('%s-%s', fv_uniq_names{idx(1)}, ...</span>
+0444 <span class="comment">%         fv_uniq_names{idx(2)});</span>
+0445 <span class="comment">%     fv_uniq_names{idx(2)} = '';</span>
+0446 <span class="comment">% end</span>
+0447 <span class="comment">%</span>
+0448 <span class="comment">% % Collapse the NaNs out of the flow data; rename the rivers to be</span>
+0449 <span class="comment">% % hyphenated based on the two source rivers that have been merged.</span>
+0450 <span class="comment">% nanidx = 1:size(fv_uniq_flow, 2);</span>
+0451 <span class="comment">% nanidx = nanidx(~isnan(fv_uniq_flow(1, :)));</span>
+0452 <span class="comment">% fv_uniq_flow = fv_uniq_flow(:, nanidx);</span>
+0453 <span class="comment">% % Clear out the empty names too.</span>
+0454 <span class="comment">% c = 0;</span>
+0455 <span class="comment">% names = cell(0);</span>
+0456 <span class="comment">% for i = 1:length(fv_uniq_names)</span>
+0457 <span class="comment">%     if ~isempty(fv_uniq_names{i})</span>
+0458 <span class="comment">%         c = c + 1;</span>
+0459 <span class="comment">%         names{c, 1} = fv_uniq_names{i};</span>
+0460 <span class="comment">%     end</span>
+0461 <span class="comment">% end</span>
+0462 <span class="comment">% fv_uniq_names = names;</span>
+0463 <span class="comment">% clear names</span>
+0464 
+0465 
+0466 <span class="comment">% Assign the relevant arrays to the Mobj. Flux is added in the section</span>
+0467 <span class="comment">% dealing with either climatology or time series data.</span>
+0468 Mobj.river_nodes = fv_uniq_obc;
+0469 Mobj.river_names = fv_uniq_names;
+0470 Mobj.have_rivers = true;
+0471 Mobj.nRivers = length(fv_uniq_obc);
+0472 
+0473 <span class="comment">% Create a Modified Julian Day time series of the EHYPE river data. Assume</span>
+0474 <span class="comment">% all the EHYPE model outputs are for the same period and have the same</span>
+0475 <span class="comment">% sampling interval. If the eflow{1} data is a number below 367, assume</span>
+0476 <span class="comment">% we've been given a climatology. In that case, find the model year we're</span>
+0477 <span class="comment">% using and generate the time string for a year each side of that year (to</span>
+0478 <span class="comment">% cover the period at each end of a year). For that to work, we need to be</span>
+0479 <span class="comment">% given the model year as an optional argument to the function.</span>
+0480 checkdate = cellfun(@str2num, eflow{1});
+0481 <span class="keyword">if</span> max(checkdate) &lt; 367
+0482     <span class="comment">% Climatology.</span>
+0483     <span class="keyword">if</span> isempty(yr) &amp;&amp; ~isnumeric(yr)
+0484         error(<span class="string">'For climatology, a year must be specified for the time series to be generated.'</span>)
+0485     <span class="keyword">elseif</span> ~isempty(yr) &amp;&amp; isnumeric(yr)
+0486         <span class="comment">% Get to Gregorian first.</span>
+0487 
+0488         <span class="comment">% Make three years of data starting from the year before the</span>
+0489         <span class="comment">% current one. Do so accounting for leap years.</span>
+0490         daysinyr = [sum(eomday(yr - 1, 1:12)), <span class="keyword">...</span>
+0491             sum(eomday(yr, 1:12)), <span class="keyword">...</span>
+0492             sum(eomday(yr + 1, 1:12))];
+0493         <span class="comment">% Offset the checkdate by one to add zero for the first day.</span>
+0494         <span class="comment">% Alternative would be to specify the day as the end of the</span>
+0495         <span class="comment">% previous month (or a day value of zero?).</span>
+0496         offsetdays = (1:sum(daysinyr)) - 1;
+0497         mtime = datevec(datenum(yr - 1, 1, 1, 0, 0, 0) + offsetdays);
+0498         Mobj.river_time = greg2mjulian(mtime(:, 1), mtime(:, 2), <span class="keyword">...</span>
+0499             mtime(:, 3), mtime(:, 4), mtime(:, 5), mtime(:, 6));
+0500 
+0501         <span class="comment">% Repeat the river flux for the climatology before adding to the</span>
+0502         <span class="comment">% Mobj.</span>
+0503         Mobj.river_flux = [<span class="keyword">...</span>
+0504             fv_uniq_flow(1:daysinyr(1), :); <span class="keyword">...</span>
+0505             fv_uniq_flow(1:daysinyr(2), :); <span class="keyword">...</span>
+0506             fv_uniq_flow(1:daysinyr(3), :)];
+0507     <span class="keyword">else</span>
+0508         error(<span class="string">'Non-numeric format for the climatology anchor year.'</span>)
+0509     <span class="keyword">end</span>
+0510 <span class="keyword">else</span>
+0511     <span class="comment">% Time series.</span>
+0512     rtimes = datevec(eflow{1});
+0513     Mobj.river_time = greg2mjulian(<span class="keyword">...</span>
+0514         rtimes(:, 1), rtimes(:, 2), rtimes(:, 3), <span class="keyword">...</span>
+0515         rtimes(:, 4), rtimes(:, 5), rtimes(:, 6) <span class="keyword">...</span>
+0516     );
+0517 
+0518     <span class="comment">% Add the river flux to the Mobj for the time series data.</span>
+0519     Mobj.river_flux = fv_uniq_flow;
 0520 
-0521 <span class="comment">% Figure to check what's going on with identifying river nodes</span>
-0522 <span class="comment">% figure</span>
-0523 <span class="comment">% plot(ehype_xy(:, 1), ehype_xy(:, 2), '.', 'MarkerFaceColor', 'b')</span>
-0524 <span class="comment">% hold on</span>
-0525 <span class="comment">% plot(Mobj.lon(bnd), Mobj.lat(bnd), 'g.', 'MarkerFaceColor', 'g')</span>
-0526 <span class="comment">% axis('square', 'tight')</span>
-0527 <span class="comment">% plot(Mobj.lon(coast_nodes), Mobj.lat(coast_nodes), 'r.')</span>
-0528 <span class="comment">% plot(Mobj.lon(Mobj.river_nodes), Mobj.lat(Mobj.river_nodes), 'k.', 'MarkerFaceColor', 'k')</span>
-0529 <span class="comment">% % text(Mobj.lon(Mobj.river_nodes) + 0.025, Mobj.lat(Mobj.river_nodes) + 0.025, Mobj.river_names)</span>
-0530 <span class="comment">% axis([min(Mobj.lon), max(Mobj.lon), min(Mobj.lat), max(Mobj.lat)])</span>
-0531 <span class="comment">% legend('EHYPE nodes', 'Grid boundary', 'Land nodes', 'Selected nodes', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')</span>
-0532 <span class="comment">% legend('BoxOff')</span></pre></div>
-<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0521 <span class="keyword">end</span>
+0522 
+0523 <span class="keyword">if</span> ftbverbose
+0524     fprintf(<span class="string">'included %d of %d rivers (skipped %d, ignored %d)\n'</span>, <span class="keyword">...</span>
+0525         fv_nr - skipped, fv_nr, skipped, sum(~ignore_mask))
+0526     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0527 <span class="keyword">end</span>
+0528 
+0529 <span class="comment">% Figure to check what's going on with identifying river nodes</span>
+0530 <span class="comment">% figure</span>
+0531 <span class="comment">% plot(ehype_xy(:, 1), ehype_xy(:, 2), '.', 'MarkerFaceColor', 'b')</span>
+0532 <span class="comment">% hold on</span>
+0533 <span class="comment">% plot(Mobj.lon(bnd), Mobj.lat(bnd), 'g.', 'MarkerFaceColor', 'g')</span>
+0534 <span class="comment">% axis('square', 'tight')</span>
+0535 <span class="comment">% plot(Mobj.lon(coast_nodes), Mobj.lat(coast_nodes), 'r.')</span>
+0536 <span class="comment">% plot(Mobj.lon(Mobj.river_nodes), Mobj.lat(Mobj.river_nodes), 'k.', 'MarkerFaceColor', 'k')</span>
+0537 <span class="comment">% % text(Mobj.lon(Mobj.river_nodes) + 0.025, Mobj.lat(Mobj.river_nodes) + 0.025, Mobj.river_names)</span>
+0538 <span class="comment">% axis([min(Mobj.lon), max(Mobj.lon), min(Mobj.lat), max(Mobj.lat)])</span>
+0539 <span class="comment">% legend('EHYPE nodes', 'Grid boundary', 'Land nodes', 'Selected nodes', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')</span>
+0540 <span class="comment">% legend('BoxOff')</span></pre></div>
+<hr><address>Generated on Thu 18-Feb-2016 11:26:24 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

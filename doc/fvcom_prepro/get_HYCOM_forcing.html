@@ -45,6 +45,9 @@
    varlist - [optional] cell array of variables to download. Use HYCOM
        names (e.g. ssh, salinity, temperature, u, v). If omitted,
        downloads salinity, temperature and ssh only.
+   three - [optional] boolean. Set to true to download the 3 hourly data
+       for the period 1992/10/2 to 2008/09/18 (inclusive). Defaults to
+       false and downloads only the daily data.
 
  OUTPUT:
    data - struct of the data necessary to force FVCOM. These can be
@@ -91,6 +94,8 @@
    coverage back to 1992 (previously limited to 2008 with the Global
    Analysis data). The Global Analysis data is used from 2008 onwards even
    though the reanalysis exists up to 2012.
+   2016-01-04 Add support for the three hourly output data for the 19.0
+   and 19.1 experiments.
 
 ==========================================================================</pre></div>
 
@@ -106,7 +111,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function url = get_url(time)</a></li></ul>
+<li><a href="#_sub1" class="code">function url = get_url(time, threehourly)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function data = get_HYCOM_forcing(Mobj, modelTime, varargin)</a>
@@ -128,444 +133,474 @@ This function is called by:
 0017 <span class="comment">%   varlist - [optional] cell array of variables to download. Use HYCOM</span>
 0018 <span class="comment">%       names (e.g. ssh, salinity, temperature, u, v). If omitted,</span>
 0019 <span class="comment">%       downloads salinity, temperature and ssh only.</span>
-0020 <span class="comment">%</span>
-0021 <span class="comment">% OUTPUT:</span>
-0022 <span class="comment">%   data - struct of the data necessary to force FVCOM. These can be</span>
-0023 <span class="comment">%   interpolated onto the unstructured grid in Mobj using grid2fvcom.m.</span>
-0024 <span class="comment">%</span>
-0025 <span class="comment">% The parameters (and the corresponding field names returned) which are</span>
-0026 <span class="comment">% obtained from the HYCOM data are:</span>
-0027 <span class="comment">%     - time [MT]</span>
-0028 <span class="comment">%     - temperature [temperature]</span>
-0029 <span class="comment">%     - salinity [salinity]</span>
-0030 <span class="comment">%     - u mean flow component [u]</span>
-0031 <span class="comment">%     - v mean flow component [v]</span>
-0032 <span class="comment">%     - daily mean sea surface height [ssh]</span>
-0033 <span class="comment">%</span>
-0034 <span class="comment">% EXAMPLE USAGE:</span>
-0035 <span class="comment">%   To download the default parameters (temperature, salinity and ssh):</span>
+0020 <span class="comment">%   three - [optional] boolean. Set to true to download the 3 hourly data</span>
+0021 <span class="comment">%       for the period 1992/10/2 to 2008/09/18 (inclusive). Defaults to</span>
+0022 <span class="comment">%       false and downloads only the daily data.</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% OUTPUT:</span>
+0025 <span class="comment">%   data - struct of the data necessary to force FVCOM. These can be</span>
+0026 <span class="comment">%   interpolated onto the unstructured grid in Mobj using grid2fvcom.m.</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% The parameters (and the corresponding field names returned) which are</span>
+0029 <span class="comment">% obtained from the HYCOM data are:</span>
+0030 <span class="comment">%     - time [MT]</span>
+0031 <span class="comment">%     - temperature [temperature]</span>
+0032 <span class="comment">%     - salinity [salinity]</span>
+0033 <span class="comment">%     - u mean flow component [u]</span>
+0034 <span class="comment">%     - v mean flow component [v]</span>
+0035 <span class="comment">%     - daily mean sea surface height [ssh]</span>
 0036 <span class="comment">%</span>
-0037 <span class="comment">%       modeltime = [55561, 55591]; % time period in Modified Julian Days</span>
-0038 <span class="comment">%       hycom = get_HYCOM_forcing(Mobj, modeltime);</span>
+0037 <span class="comment">% EXAMPLE USAGE:</span>
+0038 <span class="comment">%   To download the default parameters (temperature, salinity and ssh):</span>
 0039 <span class="comment">%</span>
-0040 <span class="comment">%   To download only sea surface height:</span>
-0041 <span class="comment">%</span>
-0042 <span class="comment">%       modeltime = [55561, 55591]; % time period in Modified Julian Days</span>
-0043 <span class="comment">%       hycom = get_HYCOM_forcing(Mobj, modeltime, {'ssh'})</span>
+0040 <span class="comment">%       modeltime = [55561, 55591]; % time period in Modified Julian Days</span>
+0041 <span class="comment">%       hycom = get_HYCOM_forcing(Mobj, modeltime);</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">%   To download only sea surface height:</span>
 0044 <span class="comment">%</span>
-0045 <span class="comment">% Author(s)</span>
-0046 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0045 <span class="comment">%       modeltime = [55561, 55591]; % time period in Modified Julian Days</span>
+0046 <span class="comment">%       hycom = get_HYCOM_forcing(Mobj, modeltime, {'ssh'})</span>
 0047 <span class="comment">%</span>
-0048 <span class="comment">% Revision history:</span>
-0049 <span class="comment">%   2013-01-31 First version.</span>
-0050 <span class="comment">%   2013-08-19 Make some more progress in getting this working. Mainly</span>
-0051 <span class="comment">%   change the way the dates are handled to form the relevant URL for</span>
-0052 <span class="comment">%   downloading the data.</span>
-0053 <span class="comment">%   2013-09-03 More incremetal changes to get the function working. At the</span>
-0054 <span class="comment">%   moment, I'm ignoring the old OPeNDAP toolbox for reading the data from</span>
-0055 <span class="comment">%   the HYCOM OPeNDAP server.</span>
-0056 <span class="comment">%   2013-09-05 It's working! Also add a data.time variable with the time</span>
-0057 <span class="comment">%   stamps from the HYCOM data.</span>
-0058 <span class="comment">%   2013-12-02 Add sea surface height to the list of variables that can be</span>
-0059 <span class="comment">%   downloaded.</span>
-0060 <span class="comment">%   2013-12-09 Add ability to specify particular variables to download.</span>
-0061 <span class="comment">%   2013-12-12 Fix the handling of the variable input list of field names.</span>
-0062 <span class="comment">%   2015-05-21 Add support for the Global Reanalysis data which extends</span>
-0063 <span class="comment">%   coverage back to 1992 (previously limited to 2008 with the Global</span>
-0064 <span class="comment">%   Analysis data). The Global Analysis data is used from 2008 onwards even</span>
-0065 <span class="comment">%   though the reanalysis exists up to 2012.</span>
-0066 <span class="comment">%</span>
-0067 <span class="comment">%==========================================================================</span>
-0068 
-0069 subname = <span class="string">'get_HYCOM_forcing'</span>;
-0070 
-0071 <span class="keyword">global</span> ftbverbose;
-0072 <span class="keyword">if</span> ftbverbose
-0073     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
-0074 <span class="keyword">end</span>
+0048 <span class="comment">% Author(s)</span>
+0049 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0050 <span class="comment">%</span>
+0051 <span class="comment">% Revision history:</span>
+0052 <span class="comment">%   2013-01-31 First version.</span>
+0053 <span class="comment">%   2013-08-19 Make some more progress in getting this working. Mainly</span>
+0054 <span class="comment">%   change the way the dates are handled to form the relevant URL for</span>
+0055 <span class="comment">%   downloading the data.</span>
+0056 <span class="comment">%   2013-09-03 More incremetal changes to get the function working. At the</span>
+0057 <span class="comment">%   moment, I'm ignoring the old OPeNDAP toolbox for reading the data from</span>
+0058 <span class="comment">%   the HYCOM OPeNDAP server.</span>
+0059 <span class="comment">%   2013-09-05 It's working! Also add a data.time variable with the time</span>
+0060 <span class="comment">%   stamps from the HYCOM data.</span>
+0061 <span class="comment">%   2013-12-02 Add sea surface height to the list of variables that can be</span>
+0062 <span class="comment">%   downloaded.</span>
+0063 <span class="comment">%   2013-12-09 Add ability to specify particular variables to download.</span>
+0064 <span class="comment">%   2013-12-12 Fix the handling of the variable input list of field names.</span>
+0065 <span class="comment">%   2015-05-21 Add support for the Global Reanalysis data which extends</span>
+0066 <span class="comment">%   coverage back to 1992 (previously limited to 2008 with the Global</span>
+0067 <span class="comment">%   Analysis data). The Global Analysis data is used from 2008 onwards even</span>
+0068 <span class="comment">%   though the reanalysis exists up to 2012.</span>
+0069 <span class="comment">%   2016-01-04 Add support for the three hourly output data for the 19.0</span>
+0070 <span class="comment">%   and 19.1 experiments.</span>
+0071 <span class="comment">%</span>
+0072 <span class="comment">%==========================================================================</span>
+0073 
+0074 subname = <span class="string">'get_HYCOM_forcing'</span>;
 0075 
-0076 <span class="comment">% For checking whether to use the third-party OPeNDAP toolbox or native</span>
-0077 <span class="comment">% MATLAB tools. OPeNDAP support is included in MATLAB version 7.14 onwards.</span>
-0078 <span class="comment">% Although this check is made, I haven't actually written the code for the</span>
-0079 <span class="comment">% third-party toolbox. If you need it, I be pleased if you wrote an</span>
-0080 <span class="comment">% equivalent to the native version.</span>
-0081 v714date = datenum(2012, 3, 1);
-0082 currdate = ver(<span class="string">'MATLAB'</span>);
-0083 currdate = datenum(currdate.Date);
-0084 
-0085 <span class="keyword">if</span> datenum(currdate) &lt; v714date
-0086     error([<span class="string">'This version of MATLAB does not have native OPeNDAP '</span>, <span class="keyword">...</span>
-0087         <span class="string">'support and this function relies on that support. If you '</span>, <span class="keyword">...</span>
-0088         <span class="string">'require this function, you will have to add the '</span>, <span class="keyword">...</span>
-0089         <span class="string">'functionality with the third-party OPeNDAP toolbox.'</span>])
-0090 <span class="keyword">end</span>
-0091 
-0092 <span class="comment">% Check if we've been given a cell array of variables and set the varlist</span>
-0093 <span class="comment">% to that, otherwise default to temperature, salinity and sea surface</span>
-0094 <span class="comment">% height.</span>
-0095 <span class="keyword">if</span> nargin == 2
-0096     varlist = {<span class="string">'temperature'</span>, <span class="string">'salinity'</span>, <span class="string">'ssh'</span>};
-0097 <span class="keyword">else</span>
-0098     assert(iscell(varargin{1}), [<span class="string">'List of variables to extract must'</span>, <span class="keyword">...</span>
-0099         <span class="string">' be a cell array: {''var1'', ''var2''}'</span>])
-0100     varlist = varargin{1};
-0101 <span class="keyword">end</span>
-0102 
-0103 <span class="comment">% Get the extent of the model domain (in spherical).</span>
-0104 <span class="keyword">if</span> ~Mobj.have_lonlat
-0105     error(<span class="string">'Need spherical coordinates to extract the forcing data'</span>)
-0106 <span class="keyword">else</span>
-0107     <span class="comment">% Add a buffer of two grid cells in latitude and two in longitude to</span>
-0108     <span class="comment">% make sure the model domain is fully covered by the extracted data.</span>
-0109     [dx, dy] = deal(1/12, 1/12); <span class="comment">% HYCOM resolution in degrees</span>
-0110     <span class="comment">% West, east, south, north</span>
-0111     extents = [min(Mobj.lon(:)) - (2 * dx), max(Mobj.lon(:)) + (2 * dx), <span class="keyword">...</span>
-0112         min(Mobj.lat(:)) - (2 * dy), max(Mobj.lat(:)) + (2 * dy)];
-0113 <span class="keyword">end</span>
-0114 
-0115 <span class="comment">% For the grid stuff, we have to use the Global Analysis grid as the</span>
-0116 <span class="comment">% Reanalysis one causes MATLAB to crash for me (R2015a).</span>
-0117 url = <a href="#_sub1" class="code" title="subfunction url = get_url(time)">get_url</a>(greg2mjulian(2011, 1, 1, 0, 0, 0));
-0118 
-0119 <span class="comment">% List of URL suffixes so we can dynamically build the URL for each time</span>
-0120 <span class="comment">% step.</span>
-0121 suffix.MT           = {<span class="string">'time'</span>, <span class="string">'MT'</span>};
-0122 suffix.Longitude    = {<span class="string">'lon'</span>, <span class="string">'Longitude'</span>};
-0123 suffix.Latitude     = {<span class="string">'lat'</span>, <span class="string">'Latitude'</span>};
-0124 suffix.Depth        = {<span class="string">'depth'</span>, <span class="string">'Depth'</span>};
-0125 suffix.temperature  = {<span class="string">'water_temp'</span>, <span class="string">'temperature'</span>};
-0126 suffix.salinity     = {<span class="string">'salinity'</span>, <span class="string">'salinity'</span>};
-0127 suffix.u            = {<span class="string">'water_u'</span>, <span class="string">'u'</span>};
-0128 suffix.v            = {<span class="string">'water_v'</span>, <span class="string">'v'</span>};
-0129 suffix.ssh          = {<span class="string">'surf_el'</span>, <span class="string">'ssh'</span>};
-0130 
-0131 <span class="comment">% For the grid stuff, assume we're using the Global Analysis. Loading the</span>
-0132 <span class="comment">% Global Reanalysis lat and lon fields crashes MATLAB.</span>
-0133 hycom.MT            = [url, suffix.MT{2}];          <span class="comment">% time [1D]</span>
-0134 hycom.Longitude     = [url, suffix.Longitude{2}];   <span class="comment">% [2D]</span>
-0135 hycom.Latitude      = [url, suffix.Latitude{2}];    <span class="comment">% [2D]</span>
-0136 hycom.Depth         = [url, suffix.Depth{2}];       <span class="comment">% water depth [2D]</span>
-0137 hycom.temperature   = [url, suffix.temperature{2}]; <span class="comment">% [4D]</span>
-0138 hycom.salinity      = [url, suffix.salinity{2}];    <span class="comment">% [4D]</span>
-0139 hycom.ssh           = [url, suffix.ssh{2}];         <span class="comment">% sea surface height [3D]</span>
-0140 hycom.u             = [url, suffix.u{2}];           <span class="comment">% mean flow [4D]</span>
-0141 hycom.v             = [url, suffix.v{2}];           <span class="comment">% mean flow [4D]</span>
-0142 
-0143 data.time = [];
-0144 
-0145 <span class="comment">% We have to use Longitude here because otherwise MATLAB crashes (for me -</span>
-0146 <span class="comment">% version 2012b). Ideally this would be depend on the value of</span>
-0147 <span class="comment">% Mobj.nativeCoords.</span>
-0148 ncid = netcdf.open(hycom.Longitude, <span class="string">'NOWRITE'</span>);
-0149 <span class="keyword">try</span>
-0150     varid = netcdf.inqVarID(ncid, suffix.Longitude{1});
-0151 <span class="keyword">catch</span>
-0152     varid = netcdf.inqVarID(ncid, suffix.Longitude{2});
-0153 <span class="keyword">end</span>
-0154 
-0155 data.X.data = netcdf.getVar(ncid, varid, <span class="string">'double'</span>);
-0156 
-0157 netcdf.close(ncid)
-0158 
-0159 <span class="comment">% Make the longitude values in the range -180 to 180 (to match the</span>
-0160 <span class="comment">% model inputs).</span>
-0161 data.X.data = mod(data.X.data, 360);
-0162 data.X.data(data.X.data &gt; 180) = data.X.data(data.X.data &gt; 180) - 360;
-0163 
-0164 ncid = netcdf.open(hycom.Latitude, <span class="string">'NOWRITE'</span>);
-0165 <span class="keyword">try</span>
-0166     varid = netcdf.inqVarID(ncid, suffix.Latitude{1});
-0167 <span class="keyword">catch</span>
-0168     varid = netcdf.inqVarID(ncid, suffix.Latitude{2});
-0169 <span class="keyword">end</span>
-0170 
-0171 data.Y.data = netcdf.getVar(ncid, varid, <span class="string">'double'</span>);
-0172 
-0173 netcdf.close(ncid)
-0174 
-0175 <span class="comment">% Create indices of the size of the arrays.</span>
-0176 data.X.idx = repmat(1:size(data.X.data, 1), [size(data.X.data, 2), 1])';
-0177 data.Y.idx = repmat(1:size(data.Y.data, 2), [size(data.Y.data, 1), 1]);
-0178 <span class="comment">%data.Y.idx = 1:size(data.Y.data, 2) - 1;</span>
-0179 
-0180 <span class="comment">% Find the indices which cover the model domain then find the extremes to</span>
-0181 <span class="comment">% request only a subset from the OPeNDAP server.</span>
-0182 idx = data.X.data &gt; extents(1) &amp; data.X.data &lt; extents(2) &amp; data.Y.data &gt; extents(3) &amp; data.Y.data &lt; extents(4);
-0183 xrange = [min(data.X.idx(idx)), max(data.X.idx(idx))];
-0184 yrange = [min(data.Y.idx(idx)), max(data.Y.idx(idx))];
+0076 <span class="keyword">global</span> ftbverbose;
+0077 <span class="keyword">if</span> ftbverbose
+0078     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0079 <span class="keyword">end</span>
+0080 
+0081 <span class="comment">% For checking whether to use the third-party OPeNDAP toolbox or native</span>
+0082 <span class="comment">% MATLAB tools. OPeNDAP support is included in MATLAB version 7.14 onwards.</span>
+0083 <span class="comment">% Although this check is made, I haven't actually written the code for the</span>
+0084 <span class="comment">% third-party toolbox. If you need it, I be pleased if you wrote an</span>
+0085 <span class="comment">% equivalent to the native version.</span>
+0086 v714date = datenum(2012, 3, 1);
+0087 currdate = ver(<span class="string">'MATLAB'</span>);
+0088 currdate = datenum(currdate.Date);
+0089 
+0090 <span class="keyword">if</span> datenum(currdate) &lt; v714date
+0091     error([<span class="string">'This version of MATLAB does not have native OPeNDAP '</span>, <span class="keyword">...</span>
+0092         <span class="string">'support and this function relies on that support. If you '</span>, <span class="keyword">...</span>
+0093         <span class="string">'require this function, you will have to add the '</span>, <span class="keyword">...</span>
+0094         <span class="string">'functionality with the third-party OPeNDAP toolbox.'</span>])
+0095 <span class="keyword">end</span>
+0096 
+0097 <span class="comment">% Check if we've been given a cell array of variables and set the varlist</span>
+0098 <span class="comment">% to that, otherwise default to temperature, salinity and sea surface</span>
+0099 <span class="comment">% height. For the three option, assume we want daily data unless three is</span>
+0100 <span class="comment">% true, in which case set the threehourly parameter to be the string</span>
+0101 <span class="comment">% required for the THREDDS URL (/3hrly), otherwise default to daily data.</span>
+0102 threehourly = <span class="string">''</span>;
+0103 <span class="keyword">if</span> nargin == 2 || nargin &gt; 3
+0104     varlist = {<span class="string">'temperature'</span>, <span class="string">'salinity'</span>, <span class="string">'ssh'</span>};
+0105 <span class="keyword">end</span>
+0106 <span class="keyword">if</span> nargin &gt; 2
+0107     <span class="comment">% To maintain backwards compatibility, assume if we've been given a</span>
+0108     <span class="comment">% cell array as the third option, that's the variables to download.</span>
+0109     <span class="comment">% Otherwise, iterate through the argument as key-parameter pairs.</span>
+0110     <span class="keyword">if</span> nargin == 3
+0111         <span class="keyword">if</span> iscell(varargin{1})
+0112             varlist = varargin{1};
+0113             assert(iscell(varargin{1}), [<span class="keyword">...</span>
+0114                 <span class="string">'List of variables to extract must'</span>, <span class="keyword">...</span>
+0115                 <span class="string">' be a cell array: {''var1'', ''var2''}'</span>])
+0116         <span class="keyword">end</span>
+0117     <span class="keyword">else</span>
+0118         <span class="keyword">for</span> v = 1:2:length(varargin)
+0119             <span class="keyword">switch</span> varargin{v}
+0120                 <span class="keyword">case</span> <span class="string">'three'</span>
+0121                     <span class="keyword">if</span> varargin{v + 1}
+0122                         threehourly = <span class="string">'/3hrly'</span>;
+0123                     <span class="keyword">end</span>
+0124                     <span class="keyword">if</span> modelTime(1) &gt;= greg2mjulian(2008, 09, 19, 0, 0, 0)
+0125                         error([<span class="string">'The three hourly output is not '</span>, <span class="keyword">...</span>
+0126                                 <span class="string">'configured for the period beyond '</span>, <span class="keyword">...</span>
+0127                                 <span class="string">'2008/09/18 in this function. Please '</span>, <span class="keyword">...</span>
+0128                                 <span class="string">'disable three hourly downloads, or '</span>, <span class="keyword">...</span>
+0129                                 <span class="string">'edit this function to suit your needs.'</span>])
+0130                     <span class="keyword">end</span>
+0131             <span class="keyword">end</span>
+0132         <span class="keyword">end</span>
+0133     <span class="keyword">end</span>
+0134 <span class="keyword">end</span>
+0135 
+0136 <span class="comment">% Get the extent of the model domain (in spherical).</span>
+0137 <span class="keyword">if</span> ~Mobj.have_lonlat
+0138     error(<span class="string">'Need spherical coordinates to extract the forcing data'</span>)
+0139 <span class="keyword">else</span>
+0140     <span class="comment">% Add a buffer of two grid cells in latitude and two in longitude to</span>
+0141     <span class="comment">% make sure the model domain is fully covered by the extracted data.</span>
+0142     [dx, dy] = deal(1/12, 1/12); <span class="comment">% HYCOM resolution in degrees</span>
+0143     <span class="comment">% West, east, south, north</span>
+0144     extents = [min(Mobj.lon(:)) - (2 * dx), max(Mobj.lon(:)) + (2 * dx), <span class="keyword">...</span>
+0145         min(Mobj.lat(:)) - (2 * dy), max(Mobj.lat(:)) + (2 * dy)];
+0146 <span class="keyword">end</span>
+0147 
+0148 <span class="comment">% List of URL suffixes so we can dynamically build the URL for each time</span>
+0149 <span class="comment">% step.</span>
+0150 suffix.MT           = {<span class="string">'time'</span>, <span class="string">'MT'</span>};
+0151 suffix.Longitude    = {<span class="string">'lon'</span>, <span class="string">'Longitude'</span>};
+0152 suffix.Latitude     = {<span class="string">'lat'</span>, <span class="string">'Latitude'</span>};
+0153 suffix.Depth        = {<span class="string">'depth'</span>, <span class="string">'Depth'</span>};
+0154 suffix.temperature  = {<span class="string">'water_temp'</span>, <span class="string">'temperature'</span>};
+0155 suffix.salinity     = {<span class="string">'salinity'</span>, <span class="string">'salinity'</span>};
+0156 suffix.u            = {<span class="string">'water_u'</span>, <span class="string">'u'</span>};
+0157 suffix.v            = {<span class="string">'water_v'</span>, <span class="string">'v'</span>};
+0158 suffix.ssh          = {<span class="string">'surf_el'</span>, <span class="string">'ssh'</span>};
+0159 
+0160 <span class="comment">% Get the URL to use for the first time step.</span>
+0161 url = <a href="#_sub1" class="code" title="subfunction url = get_url(time, threehourly)">get_url</a>(modelTime(1), threehourly);
+0162 
+0163 <span class="keyword">if</span> modelTime(1) &lt; greg2mjulian(2008, 09, 19, 0, 0, 0)
+0164     name_index = 1;
+0165 <span class="keyword">elseif</span> modelTime(1) &gt;= greg2mjulian(2008, 09, 19, 0, 0, 0)
+0166     name_index = 2;
+0167 <span class="keyword">end</span>
+0168 hycom.MT            = [url, suffix.MT{name_index}];          <span class="comment">% time [1D]</span>
+0169 hycom.Longitude     = [url, suffix.Longitude{name_index}];   <span class="comment">% [2D]</span>
+0170 hycom.Latitude      = [url, suffix.Latitude{name_index}];    <span class="comment">% [2D]</span>
+0171 hycom.Depth         = [url, suffix.Depth{name_index}];       <span class="comment">% water depth [2D]</span>
+0172 hycom.temperature   = [url, suffix.temperature{name_index}]; <span class="comment">% [4D]</span>
+0173 hycom.salinity      = [url, suffix.salinity{name_index}];    <span class="comment">% [4D]</span>
+0174 hycom.ssh           = [url, suffix.ssh{name_index}];         <span class="comment">% sea surface height [3D]</span>
+0175 hycom.u             = [url, suffix.u{name_index}];           <span class="comment">% mean flow [4D]</span>
+0176 hycom.v             = [url, suffix.v{name_index}];           <span class="comment">% mean flow [4D]</span>
+0177 
+0178 <span class="comment">% Load the depth data (1D vector).</span>
+0179 ncid = netcdf.open(hycom.Depth, <span class="string">'NOWRITE'</span>);
+0180 <span class="keyword">try</span>
+0181     varid = netcdf.inqVarID(ncid, <span class="string">'Depth'</span>);
+0182 <span class="keyword">catch</span>
+0183     varid = netcdf.inqVarID(ncid, <span class="string">'depth'</span>);
+0184 <span class="keyword">end</span>
 0185 
-0186 data.lon = data.X.data(xrange(1):xrange(2), yrange(1):yrange(2));
-0187 data.lat = data.Y.data(xrange(1):xrange(2), yrange(1):yrange(2));
-0188 
-0189 <span class="comment">% Get the URL to use for the first time step.</span>
-0190 url = <a href="#_sub1" class="code" title="subfunction url = get_url(time)">get_url</a>(modelTime(1));
-0191 
-0192 <span class="keyword">if</span> modelTime(1) &lt; greg2mjulian(2008, 09, 19, 0, 0, 0)
-0193     hycom.MT            = [url, suffix.MT{1}];          <span class="comment">% time [1D]</span>
-0194     hycom.Longitude     = [url, suffix.Longitude{1}];   <span class="comment">% [2D]</span>
-0195     hycom.Latitude      = [url, suffix.Latitude{1}];    <span class="comment">% [2D]</span>
-0196     hycom.Depth         = [url, suffix.Depth{1}];       <span class="comment">% water depth [2D]</span>
-0197     hycom.temperature   = [url, suffix.temperature{1}]; <span class="comment">% [4D]</span>
-0198     hycom.salinity      = [url, suffix.salinity{1}];    <span class="comment">% [4D]</span>
-0199     hycom.ssh           = [url, suffix.ssh{1}];         <span class="comment">% sea surface height [3D]</span>
-0200     hycom.u             = [url, suffix.u{1}];           <span class="comment">% mean flow [4D]</span>
-0201     hycom.v             = [url, suffix.v{1}];           <span class="comment">% mean flow [4D]</span>
-0202 <span class="keyword">elseif</span> modelTime(1) &gt;= greg2mjulian(2008, 09, 19, 0, 0, 0)
-0203     hycom.MT            = [url, suffix.MT{2}];          <span class="comment">% time [1D]</span>
-0204     hycom.Longitude     = [url, suffix.Longitude{2}];   <span class="comment">% [2D]</span>
-0205     hycom.Latitude      = [url, suffix.Latitude{2}];    <span class="comment">% [2D]</span>
-0206     hycom.Depth         = [url, suffix.Depth{2}];       <span class="comment">% water depth [2D]</span>
-0207     hycom.temperature   = [url, suffix.temperature{2}]; <span class="comment">% [4D]</span>
-0208     hycom.salinity      = [url, suffix.salinity{2}];    <span class="comment">% [4D]</span>
-0209     hycom.ssh           = [url, suffix.ssh{2}];         <span class="comment">% sea surface height [3D]</span>
-0210     hycom.u             = [url, suffix.u{2}];           <span class="comment">% mean flow [4D]</span>
-0211     hycom.v             = [url, suffix.v{2}];           <span class="comment">% mean flow [4D]</span>
-0212 <span class="keyword">end</span>
-0213 
-0214 <span class="comment">% Load the depth data (1D vector).</span>
-0215 ncid = netcdf.open(hycom.Depth, <span class="string">'NOWRITE'</span>);
-0216 <span class="keyword">try</span>
-0217     varid = netcdf.inqVarID(ncid, <span class="string">'Depth'</span>);
-0218 <span class="keyword">catch</span>
-0219     varid = netcdf.inqVarID(ncid, <span class="string">'depth'</span>);
-0220 <span class="keyword">end</span>
-0221 
-0222 <span class="comment">% HYCOM has fixed depths, so the array which returned here is just</span>
-0223 <span class="comment">% a list of those depths. We need them to interpolate the vertical</span>
-0224 <span class="comment">% structure onto the FVCOM sigma levels.</span>
-0225 data.Depth.data = netcdf.getVar(ncid, varid, <span class="string">'double'</span>);
+0186 <span class="comment">% HYCOM has fixed depths, so the array which returned here is just</span>
+0187 <span class="comment">% a list of those depths. We need them to interpolate the vertical</span>
+0188 <span class="comment">% structure onto the FVCOM sigma levels.</span>
+0189 data.Depth.data = netcdf.getVar(ncid, varid, <span class="string">'double'</span>);
+0190 
+0191 netcdf.close(ncid)
+0192 
+0193 <span class="comment">% Get the number of vertical levels.</span>
+0194 nz = length(data.Depth.data);
+0195 
+0196 <span class="comment">% Set a time increment is we've got the three-hourly flag passed to the</span>
+0197 <span class="comment">% function. At some point, this may have to be a string comparison such</span>
+0198 <span class="comment">% that we can use different outputs (if the HYCOM folks add them), but for</span>
+0199 <span class="comment">% now, we just assume non-empty strings means three-hourly data. This will</span>
+0200 <span class="comment">% also break horribly if we request data from both daily and three-hourly</span>
+0201 <span class="comment">% data sets.</span>
+0202 <span class="keyword">if</span> ~isempty(threehourly)
+0203     time_increment = 3/24;
+0204 <span class="keyword">else</span>
+0205     time_increment = 1;
+0206 <span class="keyword">end</span>
+0207 times = modelTime(1):time_increment:modelTime(2);
+0208 nt = length(times);
+0209 
+0210 <span class="comment">% Before we go off downloading data, check the variables we've been asked</span>
+0211 <span class="comment">% for are actually valid HYCOM names.</span>
+0212 <span class="keyword">for</span> vv = 1:length(varlist)
+0213     <span class="keyword">if</span> iscell(varlist) &amp;&amp; ~isfield(hycom, varlist{vv})
+0214         error(<span class="string">'Variable %s is not a valid HYCOM variable name.'</span>, varlist{vv})
+0215     <span class="keyword">end</span>
+0216 <span class="keyword">end</span>
+0217 
+0218 <span class="comment">% Initialise the value of url so we can compare it each loop and only</span>
+0219 <span class="comment">% reopen the connection to the server if we've crossed into a different</span>
+0220 <span class="comment">% data set.</span>
+0221 url = <a href="#_sub1" class="code" title="subfunction url = get_url(time, threehourly)">get_url</a>(modelTime(1), threehourly);
+0222 
+0223 data.time = [];
+0224 c = 1; <span class="comment">% counter for the tmjd cell array.</span>
+0225 <span class="keyword">for</span> tt = 1:nt
 0226 
-0227 netcdf.close(ncid)
-0228 
-0229 <span class="comment">% Get the number of vertical levels.</span>
-0230 nz = length(data.Depth.data);
-0231 
-0232 times = modelTime(1):modelTime(2);
-0233 nt = length(times);
-0234 
-0235 <span class="comment">% Before we go off downloading data, check the variables we've been asked</span>
-0236 <span class="comment">% for are actually valid HYCOM names.</span>
-0237 <span class="keyword">for</span> vv = 1:length(varlist)
-0238     <span class="keyword">if</span> iscell(varlist) &amp;&amp; ~isfield(hycom, varlist{vv})
-0239         error(<span class="string">'Variable %s is not a valid HYCOM variable name.'</span>, varlist{vv})
-0240     <span class="keyword">end</span>
-0241 <span class="keyword">end</span>
-0242 
-0243 c = 1; <span class="comment">% counter for the tmjd cell array.</span>
-0244 <span class="keyword">for</span> tt = 1:nt
-0245 
-0246     <span class="comment">% So we can use either the Reanalysis (pre-2008) or Analysis</span>
-0247     <span class="comment">% (post-2008) data, we need to build the request struct based on the</span>
-0248     <span class="comment">% current time.</span>
-0249 
-0250     <span class="comment">% Set up a struct of the HYCOM data sets in which we're interested.</span>
-0251     <span class="keyword">if</span> times(tt) &lt; greg2mjulian(2008, 09, 19, 0, 0, 0)
-0252         hycom.MT            = [url, suffix.MT{1}];          <span class="comment">% time [1D]</span>
-0253         hycom.Longitude     = [url, suffix.Longitude{1}];   <span class="comment">% [2D]</span>
-0254         hycom.Latitude      = [url, suffix.Latitude{1}];    <span class="comment">% [2D]</span>
-0255         hycom.Depth         = [url, suffix.Depth{1}];       <span class="comment">% water depth [2D]</span>
-0256         hycom.temperature   = [url, suffix.temperature{1}]; <span class="comment">% [4D]</span>
-0257         hycom.salinity      = [url, suffix.salinity{1}];    <span class="comment">% [4D]</span>
-0258         hycom.ssh           = [url, suffix.ssh{1}];         <span class="comment">% sea surface height [3D]</span>
-0259         hycom.u             = [url, suffix.u{1}];           <span class="comment">% mean flow [4D]</span>
-0260         hycom.v             = [url, suffix.v{1}];           <span class="comment">% mean flow [4D]</span>
-0261     <span class="keyword">elseif</span> times(tt) &gt;= greg2mjulian(2008, 09, 19, 0, 0, 0)
-0262         hycom.MT            = [url, suffix.MT{2}];          <span class="comment">% time [1D]</span>
-0263         hycom.Longitude     = [url, suffix.Longitude{2}];   <span class="comment">% [2D]</span>
-0264         hycom.Latitude      = [url, suffix.Latitude{2}];    <span class="comment">% [2D]</span>
-0265         hycom.Depth         = [url, suffix.Depth{2}];       <span class="comment">% water depth [2D]</span>
-0266         hycom.temperature   = [url, suffix.temperature{2}]; <span class="comment">% [4D]</span>
-0267         hycom.salinity      = [url, suffix.salinity{2}];    <span class="comment">% [4D]</span>
-0268         hycom.ssh           = [url, suffix.ssh{2}];         <span class="comment">% sea surface height [3D]</span>
-0269         hycom.u             = [url, suffix.u{2}];           <span class="comment">% mean flow [4D]</span>
-0270         hycom.v             = [url, suffix.v{2}];           <span class="comment">% mean flow [4D]</span>
-0271     <span class="keyword">end</span>
-0272 
-0273     oldurl = url;
-0274     url = <a href="#_sub1" class="code" title="subfunction url = get_url(time)">get_url</a>(times(tt));
-0275     <span class="comment">% Only reopen the connection if the two URLs differ.</span>
-0276     <span class="keyword">if</span> ~strcmpi(oldurl, url) || tt == 1
-0277         <span class="keyword">if</span> times(tt) &lt; greg2mjulian(2008, 09, 19, 0, 0, 0)
-0278             hycom.MT = [url, suffix.MT{1}];
-0279         <span class="keyword">elseif</span> times(tt) &gt;= greg2mjulian(2008, 09, 19, 0, 0, 0)
-0280             hycom.MT = [url, suffix.MT{2}];
-0281         <span class="keyword">end</span>
-0282         ncid = netcdf.open(hycom.MT, <span class="string">'NOWRITE'</span>);
-0283         <span class="keyword">try</span>
-0284             varid = netcdf.inqVarID(ncid, <span class="string">'MT'</span>);
-0285         <span class="keyword">catch</span>
-0286             varid = netcdf.inqVarID(ncid, <span class="string">'time'</span>);
-0287         <span class="keyword">end</span>
-0288 
-0289         <span class="comment">% Add the new data to the cell array. This should build up an</span>
-0290         <span class="comment">% array of unique time series. We can then use these to query</span>
-0291         <span class="comment">% for the time indices for each time step later.</span>
-0292         data.MT.data{c} = netcdf.getVar(ncid, varid, <span class="string">'double'</span>);
-0293 
-0294         netcdf.close(ncid)
-0295 
-0296         <span class="comment">% Convert to Gregorian date and then to Modified Julian Days. The</span>
-0297         <span class="comment">% Global Reanalysis stores time as hours since 2000-01-01, the</span>
-0298         <span class="comment">% Global Analysis as days since 1900-12-31.</span>
-0299         <span class="keyword">if</span> times(tt) &lt; greg2mjulian(2008, 09, 19, 0, 0, 0)
-0300             t{c} = datevec((data.MT.data{c} / 24) + datenum(2000, 1, 1, 0, 0, 0));
-0301         <span class="keyword">elseif</span> times(tt) &gt;= greg2mjulian(2008, 09, 19, 0, 0, 0)
-0302             t{c} = datevec(data.MT.data{c} + datenum(1900, 12, 31, 0, 0, 0));
-0303         <span class="keyword">end</span>
-0304         tmjd{c} = greg2mjulian(t{c}(:,1), t{c}(:,2), t{c}(:,3), t{c}(:,4), t{c}(:,5), t{c}(:,6));
-0305 
-0306         c = c + 1;
-0307     <span class="keyword">end</span>
-0308 <span class="keyword">end</span>
-0309 
-0310 <span class="comment">% Clear out the full lon/lat arrays.</span>
-0311 data = rmfield(data, {<span class="string">'X'</span>, <span class="string">'Y'</span>});
+0227     <span class="comment">% So we can use either the Reanalysis (pre-2008) or Analysis</span>
+0228     <span class="comment">% (post-2008) data, we need to build the request struct based on the</span>
+0229     <span class="comment">% current time.</span>
+0230 
+0231     <span class="comment">% Set up a struct of the HYCOM data sets in which we're interested.</span>
+0232     <span class="keyword">if</span> times(tt) &lt; greg2mjulian(2008, 09, 19, 0, 0, 0)
+0233         name_index = 1;
+0234     <span class="keyword">elseif</span> times(tt) &gt;= greg2mjulian(2008, 09, 19, 0, 0, 0)
+0235         name_index = 2;
+0236     <span class="keyword">end</span>
+0237     hycom.MT            = [url, suffix.MT{name_index}];          <span class="comment">% time [1D]</span>
+0238     hycom.Longitude     = [url, suffix.Longitude{name_index}];   <span class="comment">% [2D]</span>
+0239     hycom.Latitude      = [url, suffix.Latitude{name_index}];    <span class="comment">% [2D]</span>
+0240     hycom.Depth         = [url, suffix.Depth{name_index}];       <span class="comment">% water depth [2D]</span>
+0241     hycom.temperature   = [url, suffix.temperature{name_index}]; <span class="comment">% [4D]</span>
+0242     hycom.salinity      = [url, suffix.salinity{name_index}];    <span class="comment">% [4D]</span>
+0243     hycom.ssh           = [url, suffix.ssh{name_index}];         <span class="comment">% sea surface height [3D]</span>
+0244     hycom.u             = [url, suffix.u{name_index}];           <span class="comment">% mean flow [4D]</span>
+0245     hycom.v             = [url, suffix.v{name_index}];           <span class="comment">% mean flow [4D]</span>
+0246 
+0247     oldurl = url;
+0248     url = <a href="#_sub1" class="code" title="subfunction url = get_url(time, threehourly)">get_url</a>(times(tt), threehourly);
+0249     <span class="comment">% Only reopen the connection if the two URLs differ.</span>
+0250     <span class="keyword">if</span> ~strcmpi(oldurl, url) || tt == 1
+0251         <span class="keyword">if</span> times(tt) &lt; greg2mjulian(2008, 09, 19, 0, 0, 0)
+0252             hycom.MT = [url, suffix.MT{1}];
+0253         <span class="keyword">elseif</span> times(tt) &gt;= greg2mjulian(2008, 09, 19, 0, 0, 0)
+0254             hycom.MT = [url, suffix.MT{2}];
+0255         <span class="keyword">end</span>
+0256         ncid = netcdf.open(hycom.MT, <span class="string">'NOWRITE'</span>);
+0257         <span class="keyword">try</span>
+0258             varid = netcdf.inqVarID(ncid, <span class="string">'MT'</span>);
+0259         <span class="keyword">catch</span>
+0260             varid = netcdf.inqVarID(ncid, <span class="string">'time'</span>);
+0261         <span class="keyword">end</span>
+0262 
+0263         <span class="comment">% Add the new data to the cell array. This should build up an</span>
+0264         <span class="comment">% array of unique time series. We can then use these to query</span>
+0265         <span class="comment">% for the time indices for each time step later.</span>
+0266         data.MT.data{c} = netcdf.getVar(ncid, varid, <span class="string">'double'</span>);
+0267 
+0268         netcdf.close(ncid)
+0269 
+0270         <span class="comment">% Convert to Gregorian date and then to Modified Julian Days. The</span>
+0271         <span class="comment">% Global Reanalysis stores time as hours since 2000-01-01, the</span>
+0272         <span class="comment">% Global Analysis as days since 1900-12-31.</span>
+0273         <span class="keyword">if</span> times(tt) &lt; greg2mjulian(2008, 09, 19, 0, 0, 0)
+0274             t{c} = datevec((data.MT.data{c} / 24) + datenum(2000, 1, 1, 0, 0, 0));
+0275         <span class="keyword">elseif</span> times(tt) &gt;= greg2mjulian(2008, 09, 19, 0, 0, 0)
+0276             t{c} = datevec(data.MT.data{c} + datenum(1900, 12, 31, 0, 0, 0));
+0277         <span class="keyword">end</span>
+0278         tmjd{c} = greg2mjulian(t{c}(:,1), t{c}(:,2), t{c}(:,3), t{c}(:,4), t{c}(:,5), t{c}(:,6));
+0279 
+0280         c = c + 1;
+0281     <span class="keyword">end</span>
+0282 <span class="keyword">end</span>
+0283 
+0284 <span class="comment">% Open the relevant spatial variables on the remote server and download the</span>
+0285 <span class="comment">% spatial data required to subset the HYCOM data.</span>
+0286 ncid = netcdf.open(hycom.Longitude, <span class="string">'NOWRITE'</span>);
+0287 <span class="keyword">try</span>
+0288     varid = netcdf.inqVarID(ncid, suffix.Longitude{1});
+0289 <span class="keyword">catch</span>
+0290     varid = netcdf.inqVarID(ncid, suffix.Longitude{2});
+0291 <span class="keyword">end</span>
+0292 
+0293 data.X.data = netcdf.getVar(ncid, varid, <span class="string">'double'</span>);
+0294 
+0295 netcdf.close(ncid)
+0296 
+0297 <span class="comment">% Make the longitude values in the range -180 to 180 (to match the</span>
+0298 <span class="comment">% model inputs).</span>
+0299 data.X.data = mod(data.X.data, 360);
+0300 data.X.data(data.X.data &gt; 180) = data.X.data(data.X.data &gt; 180) - 360;
+0301 
+0302 ncid = netcdf.open(hycom.Latitude, <span class="string">'NOWRITE'</span>);
+0303 <span class="keyword">try</span>
+0304     varid = netcdf.inqVarID(ncid, suffix.Latitude{1});
+0305 <span class="keyword">catch</span>
+0306     varid = netcdf.inqVarID(ncid, suffix.Latitude{2});
+0307 <span class="keyword">end</span>
+0308 
+0309 data.Y.data = netcdf.getVar(ncid, varid, <span class="string">'double'</span>);
+0310 
+0311 netcdf.close(ncid)
 0312 
-0313 fields = varlist;
-0314 
-0315 <span class="keyword">for</span> aa = 1:length(fields)
-0316     <span class="comment">% Store the downloaded data in a struct. Assume the spatial</span>
-0317     <span class="comment">% data is identical to that in data.lon and data.lat.</span>
-0318     data.(fields{aa}).data = [];
-0319 
-0320     ncid = netcdf.open(hycom.(fields{aa}));
-0321     varid = netcdf.inqVarID(ncid, fields{aa});
-0322 
-0323     <span class="comment">% If you don't know what it contains, start by using the</span>
-0324     <span class="comment">% 'netcdf.inq' and ncinfo operations:</span>
-0325     <span class="comment">%[numdims, numvars, numglobalatts, unlimdimid] = netcdf.inq(ncid);</span>
-0326     <span class="comment">%ncid_info = ncinfo(hycom.(fields{aa}));</span>
-0327 
-0328     <span class="comment">% Typically these data are 4D, with dimensions of:</span>
-0329     <span class="comment">%   - x (X)</span>
-0330     <span class="comment">%   - y (Y)</span>
-0331     <span class="comment">%   - depth (Depth)</span>
-0332     <span class="comment">%   - time (MT)</span>
-0333     <span class="comment">% except in the case of sea surface height, where we lose</span>
-0334     <span class="comment">% the depth dimension. For all other variables, we want all</span>
-0335     <span class="comment">% depths but only a subset in time and space.</span>
-0336 
-0337     <span class="comment">% Since the HYCOM OPeNDAP server is so spectacularly slow,</span>
-0338     <span class="comment">% extract a day's data at a time and stick them together</span>
-0339     <span class="comment">% here. If nothing else, this at least means I can give</span>
-0340     <span class="comment">% some indication of progress, rather than just wait for</span>
-0341     <span class="comment">% something to eventually happen.</span>
-0342     nx = (xrange(2) - xrange(1)) + 1;
-0343     ny = (yrange(2) - yrange(1)) + 1;
-0344 
-0345     <span class="comment">% Preallocate the output so we don't append to an array</span>
-0346     <span class="comment">% (which is slow). Sea surface height is 3D only (all the</span>
-0347     <span class="comment">% other variables are 4D). So, it needs its own little</span>
-0348     <span class="comment">% check all to itself.</span>
-0349     <span class="keyword">if</span> strcmpi(fields{aa}, <span class="string">'ssh'</span>) == 1
-0350         was_zeta = true; <span class="comment">% set boolean for surface elevation</span>
-0351         data.(fields{aa}).data = nan(nx, ny, nt);
-0352     <span class="keyword">else</span>
-0353         was_zeta = false;
-0354         data.(fields{aa}).data = nan(nx, ny, nz, nt);
-0355     <span class="keyword">end</span>
-0356 
-0357     c = 0; <span class="comment">% counter for iterating through tmjd.</span>
-0358 
-0359     <span class="keyword">for</span> tt = 1:nt
-0360         <span class="keyword">if</span> ftbverbose
-0361             fprintf(<span class="string">'%s: time %i of %i... '</span>, fields{aa}, tt, nt)
-0362         <span class="keyword">end</span>
-0363 
-0364         <span class="comment">% Get the current url value for this time step. This</span>
-0365         <span class="comment">% approach means we can grab data which straddles a</span>
-0366         <span class="comment">% boundary between HYCOM outputs. Only reopen the</span>
-0367         <span class="comment">% connection if the url value has changed. At this</span>
-0368         <span class="comment">% point we also need to get ourselves a new time index</span>
-0369         <span class="comment">% using modelTime and the cell array tmjd.</span>
-0370         oldurl = url;
-0371         url = <a href="#_sub1" class="code" title="subfunction url = get_url(time)">get_url</a>(times(tt));
-0372 
-0373         <span class="keyword">if</span> ~strcmpi(oldurl, url) || tt == 1
-0374             <span class="keyword">if</span> times(tt) &lt; greg2mjulian(2008, 09, 19, 0, 0, 0)
-0375                 hycom.(fields{aa}) = [url, suffix.(fields{aa}){1}];
-0376             <span class="keyword">elseif</span> times(tt) &gt;= greg2mjulian(2008, 09, 19, 0, 0, 0)
-0377                 hycom.(fields{aa}) = [url, suffix.(fields{aa}){2}];
-0378             <span class="keyword">end</span>
-0379             <span class="comment">% Close any existing open connections and reopen with</span>
-0380             <span class="comment">% the new URL.</span>
-0381             netcdf.close(ncid)
-0382             ncid = netcdf.open(hycom.(fields{aa}));
-0383             <span class="keyword">try</span>
-0384                 varid = netcdf.inqVarID(ncid, suffix.(fields{aa}){1});
-0385             <span class="keyword">catch</span>
-0386                 varid = netcdf.inqVarID(ncid, suffix.(fields{aa}){2});
-0387             <span class="keyword">end</span>
-0388 
-0389             c = c + 1;
-0390         <span class="keyword">end</span>
-0391 
-0392         <span class="comment">% Find the time index closest to the current model</span>
-0393         <span class="comment">% time.</span>
-0394         [~, ts] = min(abs(tmjd{c} - times(tt)));
-0395 
-0396         <span class="keyword">if</span> was_zeta
-0397             <span class="comment">% netCDF starts at zero, hence -1.</span>
-0398             start = [xrange(1), yrange(1), ts] - 1;
-0399             count = [nx, ny, 1];
-0400             data.(fields{aa}).data(:, :, tt) = netcdf.getVar(ncid, varid, start, count, <span class="string">'double'</span>);
-0401         <span class="keyword">else</span>
-0402             <span class="comment">% netCDF starts at zero, hence -1.</span>
-0403             start = [xrange(1), yrange(1), 1, ts] - 1;
-0404             count = [nx, ny, nz, 1];
-0405             data.(fields{aa}).data(:, :, :, tt) = netcdf.getVar(ncid, varid, start, count, <span class="string">'double'</span>);
-0406         <span class="keyword">end</span>
-0407 
-0408         <span class="comment">% Build an array of the HYCOM times. Only do so once so</span>
-0409         <span class="comment">% we don't end up appending it multiple times.</span>
-0410         <span class="keyword">if</span> length(data.time) &lt; nt
-0411             data.time = [data.time; tmjd{c}(ts)];
-0412         <span class="keyword">end</span>
-0413 
-0414         <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'done.\n'</span>); <span class="keyword">end</span>
-0415     <span class="keyword">end</span>
-0416     netcdf.close(ncid);
-0417 <span class="keyword">end</span>
-0418 
-0419 <span class="keyword">if</span> ftbverbose
-0420     fprintf(<span class="string">'end   : %s\n'</span>, subname)
-0421 <span class="keyword">end</span>
-0422 
-0423 <a name="_sub1" href="#_subfunctions" class="code">function url = get_url(time)</a>
-0424 <span class="comment">% Child function to find the relevant URL to use for a given time step.</span>
-0425 <span class="comment">%</span>
-0426 <span class="comment">% url = get_url(time);</span>
-0427 <span class="comment">%</span>
-0428 <span class="comment">% INPUT:</span>
-0429 <span class="comment">%   time - Modified Julian Day</span>
-0430 <span class="comment">%</span>
-0431 <span class="comment">% OUTPUT:</span>
-0432 <span class="comment">%   url - string of the approprate URL for the date supplied in time.</span>
-0433 <span class="comment">%</span>
-0434 
-0435 [t1, t2, t3, t4, t5, t6] = datevec(datestr(now));
-0436 
-0437 <span class="keyword">if</span> time &lt; greg2mjulian(1992, 10, 2, 0, 0, 0)
-0438     error(<span class="string">'No HYCOM data available prior to 1992-10-02. Select a start date from 1992-10-02 onwards.'</span>)
-0439 <span class="keyword">elseif</span> time &gt;= greg2mjulian(1992, 10, 2, 0, 0, 0) &amp;&amp; time &lt; greg2mjulian(1995, 7, 31, 0, 0, 0)
-0440     warning(<span class="string">'Using the HYCOM Global Reanalysis data for dates up to 2008/09/16, thereafter the Global Analysis.'</span>)
-0441     url = <span class="string">'http://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.0?'</span>;
-0442 <span class="keyword">elseif</span> time &gt;= greg2mjulian(1995, 7, 31, 0, 0, 0) &amp;&amp; time &lt; greg2mjulian(2008, 09, 19, 0, 0, 0)
-0443     warning(<span class="string">'Using the HYCOM Global Reanalysis data for dates up to 2008/09/16, thereafter the Global Analysis.'</span>)
-0444     url = <span class="string">'http://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1?'</span>;
-0445 <span class="keyword">elseif</span> time &gt;= greg2mjulian(2008, 9, 19, 0, 0, 0) &amp;&amp; time &lt; greg2mjulian(2009, 5, 7, 0, 0, 0)
-0446     url = <span class="string">'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.6?'</span>;
-0447 <span class="keyword">elseif</span> time &gt;= greg2mjulian(2009, 5, 7, 0, 0, 0) &amp;&amp; time &lt; greg2mjulian(2011, 1, 3, 0, 0, 0)
-0448     url = <span class="string">'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.8?'</span>;
-0449 <span class="keyword">elseif</span> time &gt;= greg2mjulian(2011, 1, 3, 0, 0, 0) &amp;&amp; time &lt; greg2mjulian(2013, 8, 21, 0, 0, 0)
-0450     url = <span class="string">'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9?'</span>;
-0451 <span class="keyword">elseif</span> time &gt;= greg2mjulian(2013, 8, 21, 0, 0, 0) &amp;&amp; time &lt;= greg2mjulian(t1, t2, t3, t4, t5, t6)
-0452     url = <span class="string">'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_91.0?'</span>;
-0453 <span class="keyword">elseif</span> time &gt; greg2mjulian(t1, t2, t3, t4, t5, t6)
-0454     error(<span class="string">'Given date is in the future.'</span>)
-0455 <span class="keyword">else</span>
-0456     error(<span class="string">'Date is outside of the known spacetime continuum. See help TARDIS.'</span>)
-0457 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0313 <span class="comment">% If the spatial data are vectors, turn them in to matrices here.</span>
+0314 <span class="keyword">if</span> isvector(data.X.data) &amp;&amp; isvector(data.Y.data)
+0315     [data.X.data, data.Y.data] = meshgrid(data.X.data, data.Y.data);
+0316     <span class="comment">% Orient the arrays as required for the calls to the remote server.</span>
+0317     data.X.data = data.X.data';
+0318     data.Y.data = data.Y.data';
+0319 <span class="keyword">end</span>
+0320 
+0321 <span class="comment">% Create indices of the size of the arrays.</span>
+0322 data.X.idx = repmat(1:size(data.X.data, 1), [size(data.X.data, 2), 1])';
+0323 data.Y.idx = repmat(1:size(data.Y.data, 2), [size(data.Y.data, 1), 1]);
+0324 <span class="comment">%data.Y.idx = 1:size(data.Y.data, 2) - 1;</span>
+0325 
+0326 <span class="comment">% Find the indices which cover the model domain then find the extremes to</span>
+0327 <span class="comment">% request only a subset from the OPeNDAP server.</span>
+0328 idx = data.X.data &gt; extents(1) &amp; data.X.data &lt; extents(2) &amp; data.Y.data &gt; extents(3) &amp; data.Y.data &lt; extents(4);
+0329 xrange = [min(data.X.idx(idx)), max(data.X.idx(idx))];
+0330 yrange = [min(data.Y.idx(idx)), max(data.Y.idx(idx))];
+0331 
+0332 data.lon = data.X.data(xrange(1):xrange(2), yrange(1):yrange(2));
+0333 data.lat = data.Y.data(xrange(1):xrange(2), yrange(1):yrange(2));
+0334 
+0335 <span class="comment">% Clear out the full lon/lat arrays.</span>
+0336 <span class="comment">% data = rmfield(data, {'X', 'Y'});</span>
+0337 
+0338 <span class="comment">% Now get the variables for which we've been asked.</span>
+0339 fields = varlist;
+0340 
+0341 <span class="keyword">for</span> aa = 1:length(fields)
+0342     <span class="comment">% Store the downloaded data in a struct. Assume the spatial</span>
+0343     <span class="comment">% data is identical to that in data.lon and data.lat.</span>
+0344     data.(fields{aa}).data = [];
+0345 
+0346     ncid = netcdf.open(hycom.(fields{aa}));
+0347     varid = netcdf.inqVarID(ncid, suffix.(fields{aa}){name_index});
+0348 
+0349     <span class="comment">% If you don't know what it contains, start by using the</span>
+0350     <span class="comment">% 'netcdf.inq' and ncinfo operations:</span>
+0351     <span class="comment">%[numdims, numvars, numglobalatts, unlimdimid] = netcdf.inq(ncid);</span>
+0352     <span class="comment">%ncid_info = ncinfo(hycom.(fields{aa}));</span>
+0353 
+0354     <span class="comment">% Typically these data are 4D, with dimensions of:</span>
+0355     <span class="comment">%   - x (X)</span>
+0356     <span class="comment">%   - y (Y)</span>
+0357     <span class="comment">%   - depth (Depth)</span>
+0358     <span class="comment">%   - time (MT)</span>
+0359     <span class="comment">% except in the case of sea surface height, where we lose</span>
+0360     <span class="comment">% the depth dimension. For all other variables, we want all</span>
+0361     <span class="comment">% depths but only a subset in time and space.</span>
+0362 
+0363     <span class="comment">% Since the HYCOM OPeNDAP server is so spectacularly slow,</span>
+0364     <span class="comment">% extract a day's data at a time and stick them together</span>
+0365     <span class="comment">% here. If nothing else, this at least means I can give</span>
+0366     <span class="comment">% some indication of progress, rather than just wait for</span>
+0367     <span class="comment">% something to eventually happen.</span>
+0368     nx = (xrange(2) - xrange(1)) + 1;
+0369     ny = (yrange(2) - yrange(1)) + 1;
+0370 
+0371     <span class="comment">% Preallocate the output so we don't append to an array</span>
+0372     <span class="comment">% (which is slow). Sea surface height is 3D only (all the</span>
+0373     <span class="comment">% other variables are 4D). So, it needs its own little</span>
+0374     <span class="comment">% check all to itself.</span>
+0375     <span class="keyword">if</span> strcmpi(fields{aa}, <span class="string">'ssh'</span>) == 1
+0376         was_zeta = true; <span class="comment">% set boolean for surface elevation</span>
+0377         data.(fields{aa}).data = nan(nx, ny, nt);
+0378     <span class="keyword">else</span>
+0379         was_zeta = false;
+0380         data.(fields{aa}).data = nan(nx, ny, nz, nt);
+0381     <span class="keyword">end</span>
+0382 
+0383     c = 0; <span class="comment">% counter for iterating through tmjd.</span>
+0384 
+0385     <span class="keyword">for</span> tt = 1:nt
+0386         <span class="keyword">if</span> ftbverbose
+0387             fprintf(<span class="string">'%s: time %i of %i... '</span>, fields{aa}, tt, nt)
+0388         <span class="keyword">end</span>
+0389 
+0390         <span class="comment">% Get the current url value for this time step. This</span>
+0391         <span class="comment">% approach means we can grab data which straddles a</span>
+0392         <span class="comment">% boundary between HYCOM outputs. Only reopen the</span>
+0393         <span class="comment">% connection if the url value has changed. At this</span>
+0394         <span class="comment">% point we also need to get ourselves a new time index</span>
+0395         <span class="comment">% using modelTime and the cell array tmjd.</span>
+0396         oldurl = url;
+0397         url = <a href="#_sub1" class="code" title="subfunction url = get_url(time, threehourly)">get_url</a>(times(tt), threehourly);
+0398 
+0399         <span class="keyword">if</span> ~strcmpi(oldurl, url) || tt == 1
+0400             <span class="keyword">if</span> times(tt) &lt; greg2mjulian(2008, 09, 19, 0, 0, 0)
+0401                 hycom.(fields{aa}) = [url, suffix.(fields{aa}){1}];
+0402             <span class="keyword">elseif</span> times(tt) &gt;= greg2mjulian(2008, 09, 19, 0, 0, 0)
+0403                 hycom.(fields{aa}) = [url, suffix.(fields{aa}){2}];
+0404             <span class="keyword">end</span>
+0405             <span class="comment">% Close any existing open connections and reopen with</span>
+0406             <span class="comment">% the new URL.</span>
+0407             netcdf.close(ncid)
+0408             ncid = netcdf.open(hycom.(fields{aa}));
+0409             <span class="keyword">try</span>
+0410                 varid = netcdf.inqVarID(ncid, suffix.(fields{aa}){1});
+0411             <span class="keyword">catch</span>
+0412                 varid = netcdf.inqVarID(ncid, suffix.(fields{aa}){2});
+0413             <span class="keyword">end</span>
+0414 
+0415             c = c + 1;
+0416         <span class="keyword">end</span>
+0417 
+0418         <span class="comment">% Find the time index closest to the current model</span>
+0419         <span class="comment">% time.</span>
+0420         [~, ts] = min(abs(tmjd{c} - times(tt)));
+0421 
+0422         <span class="keyword">if</span> was_zeta
+0423             <span class="comment">% netCDF starts at zero, hence -1.</span>
+0424             start = [xrange(1), yrange(1), ts] - 1;
+0425             count = [nx, ny, 1];
+0426             data.(fields{aa}).data(:, :, tt) = netcdf.getVar(ncid, varid, start, count, <span class="string">'double'</span>);
+0427         <span class="keyword">else</span>
+0428             <span class="comment">% netCDF starts at zero, hence -1.</span>
+0429             start = [xrange(1), yrange(1), 1, ts] - 1;
+0430             count = [nx, ny, nz, 1];
+0431             data.(fields{aa}).data(:, :, :, tt) = netcdf.getVar(ncid, varid, start, count, <span class="string">'double'</span>);
+0432         <span class="keyword">end</span>
+0433 
+0434         <span class="comment">% Build an array of the HYCOM times. Only do so once so</span>
+0435         <span class="comment">% we don't end up appending it multiple times.</span>
+0436         <span class="keyword">if</span> length(data.time) &lt; nt
+0437             data.time = [data.time; tmjd{c}(ts)];
+0438         <span class="keyword">end</span>
+0439 
+0440         <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'done.\n'</span>); <span class="keyword">end</span>
+0441     <span class="keyword">end</span>
+0442     netcdf.close(ncid);
+0443 <span class="keyword">end</span>
+0444 
+0445 <span class="keyword">if</span> ftbverbose
+0446     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0447 <span class="keyword">end</span>
+0448 
+0449 <a name="_sub1" href="#_subfunctions" class="code">function url = get_url(time, threehourly)</a>
+0450 <span class="comment">% Child function to find the relevant URL to use for a given time step.</span>
+0451 <span class="comment">%</span>
+0452 <span class="comment">% url = get_url(time, threehourly);</span>
+0453 <span class="comment">%</span>
+0454 <span class="comment">% INPUT:</span>
+0455 <span class="comment">%   time - Modified Julian Day</span>
+0456 <span class="comment">%   threehourly - additional string to append for optional three hourly</span>
+0457 <span class="comment">%   outputs for the 1992/10/02 to 2008/09/18 period. Leave empty for daily</span>
+0458 <span class="comment">%   data.</span>
+0459 <span class="comment">%</span>
+0460 <span class="comment">% OUTPUT:</span>
+0461 <span class="comment">%   url - string of the approprate URL for the date supplied in time.</span>
+0462 <span class="comment">%</span>
+0463 
+0464 [t1, t2, t3, t4, t5, t6] = datevec(datestr(now));
+0465 
+0466 <span class="keyword">if</span> time &lt; greg2mjulian(1992, 10, 2, 0, 0, 0)
+0467     error(<span class="string">'No HYCOM data available prior to 1992-10-02. Select a start date from 1992-10-02 onwards.'</span>)
+0468 <span class="keyword">elseif</span> time &gt;= greg2mjulian(1992, 10, 2, 0, 0, 0) &amp;&amp; time &lt; greg2mjulian(1995, 7, 31, 0, 0, 0)
+0469     warning(<span class="string">'Using the HYCOM Global Reanalysis data for dates up to 2008/09/16, thereafter the Global Analysis.'</span>)
+0470     url = sprintf(<span class="string">'http://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.0%s?'</span>, threehourly);
+0471 <span class="keyword">elseif</span> time &gt;= greg2mjulian(1995, 7, 31, 0, 0, 0) &amp;&amp; time &lt; greg2mjulian(2008, 09, 19, 0, 0, 0)
+0472     warning(<span class="string">'Using the HYCOM Global Reanalysis data for dates up to 2008/09/16, thereafter the Global Analysis.'</span>)
+0473     url = sprintf(<span class="string">'http://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.1%s?'</span>, threehourly);
+0474 <span class="keyword">elseif</span> time &gt;= greg2mjulian(2008, 9, 19, 0, 0, 0) &amp;&amp; time &lt; greg2mjulian(2009, 5, 7, 0, 0, 0)
+0475     url = <span class="string">'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.6?'</span>;
+0476 <span class="keyword">elseif</span> time &gt;= greg2mjulian(2009, 5, 7, 0, 0, 0) &amp;&amp; time &lt; greg2mjulian(2011, 1, 3, 0, 0, 0)
+0477     url = <span class="string">'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.8?'</span>;
+0478 <span class="keyword">elseif</span> time &gt;= greg2mjulian(2011, 1, 3, 0, 0, 0) &amp;&amp; time &lt; greg2mjulian(2013, 8, 21, 0, 0, 0)
+0479     url = <span class="string">'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9?'</span>;
+0480 <span class="keyword">elseif</span> time &gt;= greg2mjulian(2013, 8, 21, 0, 0, 0) &amp;&amp; time &lt;= greg2mjulian(t1, t2, t3, t4, t5, t6)
+0481     url = <span class="string">'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_91.0?'</span>;
+0482 <span class="keyword">elseif</span> time &gt; greg2mjulian(t1, t2, t3, t4, t5, t6)
+0483     error(<span class="string">'Given date is in the future.'</span>)
+0484 <span class="keyword">else</span>
+0485     error(<span class="string">'Date is outside of the known spacetime continuum. See help TARDIS.'</span>)
+0486 <span class="keyword">end</span>
+0487</pre></div>
+<hr><address>Generated on Thu 18-Feb-2016 11:26:24 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

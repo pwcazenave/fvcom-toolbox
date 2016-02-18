@@ -29,10 +29,10 @@
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Write bathymetry to FVCOM format bathymetry file
 
- function write_FVCOM_bath(Mobj,filename)
+ function write_FVCOM_bath(Mobj, filename)
 
  DESCRIPTION:
-    Generate an ascii FVCOM 3.x format bathymetry from Mesh object
+    Generate a bathymetry file from a Mesh object
 
  INPUT 
    Mobj     = Mesh object
@@ -42,13 +42,13 @@
     FVCOM bathymetry file: filename
 
  EXAMPLE USAGE
-    write_FVCOM_bath(Mobj,'tst_cor.dat')   
+    write_FVCOM_bath(Mobj,'tst_dep.dat')   
 
  Author(s):  
     Geoff Cowles (University of Massachusetts Dartmouth)
 
  Revision history
-   
+
 ==============================================================================</pre></div>
 
 <!-- crossreference -->
@@ -65,70 +65,69 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_bath(Mobj,filename) </a>
-0002 
-0003 <span class="comment">% Write bathymetry to FVCOM format bathymetry file</span>
-0004 <span class="comment">%</span>
-0005 <span class="comment">% function write_FVCOM_bath(Mobj,filename)</span>
-0006 <span class="comment">%</span>
-0007 <span class="comment">% DESCRIPTION:</span>
-0008 <span class="comment">%    Generate an ascii FVCOM 3.x format bathymetry from Mesh object</span>
-0009 <span class="comment">%</span>
-0010 <span class="comment">% INPUT</span>
-0011 <span class="comment">%   Mobj     = Mesh object</span>
-0012 <span class="comment">%   filename = FVCOM bathymetry file name</span>
-0013 <span class="comment">%</span>
-0014 <span class="comment">% OUTPUT:</span>
-0015 <span class="comment">%    FVCOM bathymetry file: filename</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">% EXAMPLE USAGE</span>
-0018 <span class="comment">%    write_FVCOM_bath(Mobj,'tst_cor.dat')</span>
-0019 <span class="comment">%</span>
-0020 <span class="comment">% Author(s):</span>
-0021 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0022 <span class="comment">%</span>
-0023 <span class="comment">% Revision history</span>
-0024 <span class="comment">%</span>
-0025 <span class="comment">%==============================================================================</span>
-0026 subname = <span class="string">'write_FVCOM_bath'</span>;
-0027 <span class="keyword">global</span> ftbverbose
-0028 <span class="keyword">if</span>(ftbverbose)
-0029   fprintf(<span class="string">'\n'</span>); fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>]);
-0030 <span class="keyword">end</span>
-0031 
-0032 <span class="comment">%------------------------------------------------------------------------------</span>
-0033 <span class="comment">% Parse input arguments</span>
-0034 <span class="comment">%------------------------------------------------------------------------------</span>
-0035 <span class="keyword">if</span>(exist(<span class="string">'Mobj'</span>)*exist(<span class="string">'filename'</span>)==0)
-0036     error(<span class="string">'arguments to write_FVCOM_cor are incorrect'</span>)
-0037 <span class="keyword">end</span>;
-0038 
-0039 <span class="comment">%------------------------------------------------------------------------------</span>
-0040 <span class="comment">% Dump the file</span>
-0041 <span class="comment">%------------------------------------------------------------------------------</span>
-0042 <span class="keyword">if</span>(lower(Mobj.nativeCoords(1:3)) == <span class="string">'car'</span>)
-0043     x = Mobj.x;
-0044     y = Mobj.y;
-0045 <span class="keyword">else</span>
-0046     x = Mobj.lon;
-0047     y = Mobj.lat;
-0048 <span class="keyword">end</span>
-0049 <span class="keyword">if</span>(Mobj.have_bath)
-0050     <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'writing FVCOM bathymetry file %s\n'</span>,filename); <span class="keyword">end</span>;
-0051     fid = fopen(filename,<span class="string">'w'</span>);
-0052     fprintf(fid,<span class="string">'Node Number = %d\n'</span>,Mobj.nVerts);
-0053     <span class="keyword">for</span> i=1:Mobj.nVerts
-0054       fprintf(fid,<span class="string">'%f %f %f\n'</span>,x(i),y(i),Mobj.h(i));
-0055     <span class="keyword">end</span>
-0056     fclose(fid);
-0057 <span class="keyword">else</span>
-0058     error(<span class="string">'can''t write bathymetry to file, mesh object has no bathymetry'</span>)
-0059 <span class="keyword">end</span>
-0060 
-0061 <span class="keyword">if</span>(ftbverbose)
-0062   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0063 <span class="keyword">end</span>
-0064 
-0065</pre></div>
-<hr><address>Generated on Mon 07-Dec-2015 09:59:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0002 <span class="comment">% Write bathymetry to FVCOM format bathymetry file</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function write_FVCOM_bath(Mobj, filename)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Generate a bathymetry file from a Mesh object</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT</span>
+0010 <span class="comment">%   Mobj     = Mesh object</span>
+0011 <span class="comment">%   filename = FVCOM bathymetry file name</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">% OUTPUT:</span>
+0014 <span class="comment">%    FVCOM bathymetry file: filename</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% EXAMPLE USAGE</span>
+0017 <span class="comment">%    write_FVCOM_bath(Mobj,'tst_dep.dat')</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% Author(s):</span>
+0020 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Revision history</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">%==============================================================================</span>
+0025 subname = <span class="string">'write_FVCOM_bath'</span>;
+0026 <span class="keyword">global</span> ftbverbose
+0027 <span class="keyword">if</span>(ftbverbose)
+0028   fprintf(<span class="string">'\n'</span>); fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>]);
+0029 <span class="keyword">end</span>
+0030 
+0031 <span class="comment">%------------------------------------------------------------------------------</span>
+0032 <span class="comment">% Parse input arguments</span>
+0033 <span class="comment">%------------------------------------------------------------------------------</span>
+0034 <span class="keyword">if</span>(exist(<span class="string">'Mobj'</span>)*exist(<span class="string">'filename'</span>)==0)
+0035     error(<span class="string">'arguments to write_FVCOM_cor are incorrect'</span>)
+0036 <span class="keyword">end</span>;
+0037 
+0038 <span class="comment">%------------------------------------------------------------------------------</span>
+0039 <span class="comment">% Dump the file</span>
+0040 <span class="comment">%------------------------------------------------------------------------------</span>
+0041 <span class="keyword">if</span>(lower(Mobj.nativeCoords(1:3)) == <span class="string">'car'</span>)
+0042     x = Mobj.x;
+0043     y = Mobj.y;
+0044 <span class="keyword">else</span>
+0045     x = Mobj.lon;
+0046     y = Mobj.lat;
+0047 <span class="keyword">end</span>
+0048 <span class="keyword">if</span>(Mobj.have_bath)
+0049     <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'writing FVCOM bathymetry file %s\n'</span>,filename); <span class="keyword">end</span>;
+0050     fid = fopen(filename,<span class="string">'w'</span>);
+0051     fprintf(fid,<span class="string">'Node Number = %d\n'</span>,Mobj.nVerts);
+0052     <span class="keyword">for</span> i=1:Mobj.nVerts
+0053       fprintf(fid,<span class="string">'%f %f %f\n'</span>,x(i),y(i),Mobj.h(i));
+0054     <span class="keyword">end</span>
+0055     fclose(fid);
+0056 <span class="keyword">else</span>
+0057     error(<span class="string">'can''t write bathymetry to file, mesh object has no bathymetry'</span>)
+0058 <span class="keyword">end</span>
+0059 
+0060 <span class="keyword">if</span>(ftbverbose)
+0061   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0062 <span class="keyword">end</span>
+0063 
+0064</pre></div>
+<hr><address>Generated on Thu 18-Feb-2016 11:26:24 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
