@@ -1,5 +1,56 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20160218
+--------
+
+Mostly changes to the examples as they were woefully out of date.
+
+README.md
+    * Update the list of functions which need to be updated to use MATLAB's
+    netCDF routines.
+
+doc:
+    Update all the documentation for this release.
+
+examples:
+    All examples have been updated to work with the updated tools in the
+    toolbox.
+    example.m
+        * Renamed to example_forcing_setup.m.
+    example2.m
+        * Renamed to example_smooth_bathy.m.
+    example_FVCOM_river.m
+        * Updated to work with the toolbox.
+    example_FVCOM_tsobc.m
+        * Updated to work with the toolbox.
+    example_FVCOM_wind_ts_speed.m
+        * Updated to work with the toolbox.
+    example_init_lag.m
+        * Updated to work with the toolbox.
+    example_my_project.m
+        * Deleted.
+
+fvcom_prepro:
+    samples
+        * Moved to the examples directory.
+    estimate_ts.m
+        * Updated the help.
+    get_EHYPE_rivers.m
+        * Fix exclude behaviour for more than a single river to exclude.
+    get_HYCOM_forcing.m
+        * Add support for three-hourly data from the HYCOM server.
+    set_spectide.m
+        * Update the help.
+    wrf2fvcom.m
+        * Udate the help. Note, this function is unnecessary if you use
+        the PML updated version of the FORTRAN code wrf2fvcom in the main
+        FVCOM source code (http://gitlab.em.pml.ac.uk/fvcom/uk-fvcom).
+    write_FVCOM_bath.m
+        * Update the help.
+    write_FVCOM_bedflag.m
+        * Update to use MATLAB's native netCDF routines.
+
+
 20151207
 --------
 
