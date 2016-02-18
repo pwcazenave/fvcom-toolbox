@@ -43,7 +43,7 @@ end
 Mobj = add_coriolis(Mobj,'constant',31.0);
 
 % check the time step and plot
-Mobj = estimate_ts(Mobj);
+Mobj = estimate_ts(Mobj, 3, 11);
 plot_field(Mobj,Mobj.ts,'title','timestep (s)')
 fprintf('estimated max external mode time step in seconds %f\n',min(Mobj.ts));
 
@@ -87,12 +87,16 @@ plot_field(Mobj,Mobj.h,'title','domain','withextra',true,'showgrid',true);
 example_FVCOM_river()
 
 % add harmonic forcing to open boundary
-set_spectide(Mobj)
-
-% add Julian forcing to the open boundary using t_tide station
+Mobj.Components = {'M2', 'S2'};
+Mobj.period_obc = [44714.16, 43200];
+Mobj.beta_love = [0, 0];
+Mobj.equilibrium_amp = [0.1, 0.01];
+Mobj.amp_obc = {repmat([3, 1], 1, Mobj.nObcNodes)};
+Mobj.phase_obc = {repmat([3, 1], 1, Mobj.nObcNodes)};
+set_spectide(Mobj, 2, 'tst_spectide.nc', 'Spectral tidal forcing')
 
 % wind time series wind forcing example here
-example_FVCOM_wind_ts
+example_FVCOM_wind_ts_speed
 
 % dump mesh and connectivity
 write_FVCOM_grid(Mobj,'tst_grd.dat')

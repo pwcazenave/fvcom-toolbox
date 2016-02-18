@@ -1,6 +1,6 @@
 function example_FVCOM_wind_ts_speed
-
-% example file for FVCOM, time-varying/spatially constant wind forcing as speed
+% Example forcing file for FVCOM, time-varying/spatially constant wind forcing
+% as speed.
 %
 % function example_FVCOM_wind_ts_speed
 %
@@ -11,95 +11,55 @@ function example_FVCOM_wind_ts_speed
 %    It requires USER Modification to work 
 %
 % INPUT
-%   
+%
 % OUTPUT:
 %    NetCDF WindFile
 %
 % EXAMPLE USAGE
 %    example_FVCOM_wind_ts_speed
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
-%   
-%==============================================================================
-%warning off
-subname = 'example_FVCOM_wind_ts';
-fprintf('\n')
-fprintf(['begin : ' subname '\n'])
+%    2016-02-18 Updated to use the relevant functions from the toolbox.
+%
+%=============================================================================
 
-%------------------------------------------------------------------------------
+subname = 'example_FVCOM_wind_ts';
+global ftbverbose
+ftbverbose = true;
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
+
+%-----------------------------------------------------------------------------
+% read a grid in
+%-----------------------------------------------------------------------------
+
+Mobj = read_sms_mesh('2dm', './samples/tst.2dm');
+
+%-----------------------------------------------------------------------------
 % create a dataset
-%------------------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 
 % make a timeframe
-% tbeg = greg2julian(2009,1,1,0,0,0)-2400000.5;
-% tend = greg2julian(2010,1,1,0,0,0)-2400000.5;
-tbeg = 0;
-tend = 31;
-time = tbeg:1:tend;
-nTimes = numel(time);
+tbeg = greg2mjulian(2009,1,1,0,0,0);
+tend = greg2mjulian(2010,1,1,0,0,0);
+data.time = tbeg:1/2:tend;
+nTimes = numel(data.time);
 
 % make up a fake time varying wind in m/s at 10-m above the water surface
-u10 = 10*ones(nTimes,1); 
-v10 = zeros(nTimes,1); 
+data.u10.data = 10.*ones(nTimes, Mobj.nElems);
+data.v10.data = 5.*ones(nTimes, Mobj.nElems);
 
-%------------------------------------------------------------------------------
+%-----------------------------------------------------------------------------
 % write output to time-varying, spatially constant FVCOM wind file 
-%------------------------------------------------------------------------------
-fvcom_forcing_file = 'tst_wind.nc'; 
-nc = netcdf(fvcom_forcing_file, 'clobber');            
-nc.references = 'http://fvcom.smast.umassd.edu'; 
-nc.source = 'single-point time-dependent surface forcing'; 
-nc.institution = 'School for Marine Science and Technology' ;
-nc.history = 'generated using the fvcom-toolbox';
+%-----------------------------------------------------------------------------
 
+write_FVCOM_forcing(Mobj, 'tst', data, 'test forcing', '3.2.1')
 
-  
-% dimensions
-nc('time') = 0;
-
-% time vars
-nc{'time'} = ncfloat('time');
-nc{'time'}.long_name = 'time';
-nc{'time'}.units = 'days since 1858-11-17 00:00:00';
-nc{'time'}.format = 'modified julian day (MJD)';
-nc{'time'}.time_zone = 'UTC';
-  
-nc{'Itime'} = ncint('time');
-nc{'Itime'}.units = 'days since 1858-11-17 00:00:00';
-nc{'Itime'}.format = 'modified julian day (MJD)';
-nc{'Itime'}.time_zone = 'UTC';
-
-nc{'Itime2'} = ncint('time');
-nc{'Itime2'}.units = 'msec since 00:00:00';
-nc{'Itime2'}.time_zone = 'UTC';
-
-
-nc{'U10'} = ncfloat('time');
-nc{'U10'}.long_name = 'Eastward Wind Velocity';
-nc{'U10'}.standard_name = 'Wind Velocity';
-nc{'U10'}.units = 'm/s';
-nc{'U10'}.type = 'data';
-
-nc{'V10'} = ncfloat('time');
-nc{'V10'}.long_name = 'Northward Wind Velocity';
-nc{'V10'}.standard_name = 'Wind Velocity';
-nc{'V10'}.units = 'm/s';
-nc{'V10'}.type = 'data';
-
-% dump time
-nc{'time'}(1:nTimes) = time; 
-nc{'Itime'}(1:nTimes) = floor(time); 
-nc{'Itime2'}(1:nTimes) = mod(time,1)*24*3600*1000.;
-
-nc{'U10'}(1:nTimes) = u10;  
-nc{'V10'}(1:nTimes) = v10; 
-
-ierr = close(nc);
-
-fprintf(['end   : ' subname '\n'])
-
-
-
+if ftbverbose
+    fprintf('end   : %s\n', subname)
+end

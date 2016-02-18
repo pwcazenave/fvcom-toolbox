@@ -29,7 +29,7 @@ function example_FVCOM_tsobc(basename, time, nSiglay)
 %==============================================================================
 
 subname = 'example_FVCOM_tsobc';
-global ftbverbose;
+global ftbverbose
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
@@ -49,9 +49,8 @@ for i = 1:nSiglay
 end
 
 % Initialize temperature/salinity arrays
-temp = zeros(nObc,nSiglay,nTimes);
-salt = zeros(nObc,nSiglay,nTimes);
-
+% temp = zeros(nObc,nSiglay,nTimes);
+% salt = zeros(nObc,nSiglay,nTimes);
 % set variable temperature and salinity
 % for i=1:nTimes
 %     obc_temp(i) = 18. + 2.*real(i-1)/nTimes;
@@ -59,8 +58,8 @@ salt = zeros(nObc,nSiglay,nTimes);
 % end
 
 % set a constant temperature and salinity
-obc_temp = ones(1, nTimes) * 13;
-obc_salt = ones(1, nTimes) * 35;
+obc_temp = 13;
+obc_salt = 35;
 
 %--------------------------------------------------------------
 % dump to netcdf file
@@ -68,8 +67,8 @@ obc_salt = ones(1, nTimes) * 35;
 
 Mobj.siglev = siglev;
 Mobj.siglay = siglay;
-write_FVCOM_tsobc(basename,time,nSiglay,temp,salt,Mobj)
+write_FVCOM_tsobc(basename,time,nSiglay,obc_temp,obc_salt,Mobj)
 
-if ftbverbose;
+if ftbverbose
     fprintf('end   : %s\n', subname);
 end

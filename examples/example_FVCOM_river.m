@@ -18,15 +18,16 @@ function example_FVCOM_river()
 %   
 %==============================================================================
 
-t1 = 0; %greg2mjulian(2007,1,1,0,0,0);
-t2 = 31; %greg2mjulian(2007,2,1,0,0,0);
+t1 = greg2mjulian(2007,1,1,0,0,0);
+t2 = greg2mjulian(2007,2,1,0,0,0);
 time = t1:1:t2;
-nTimes = prod(size(time));
+nTimes = length(time);
 
 % setup an event using Gaussian function
 tmid = mean(time);
 c    = .1*(tmid-time(1));
-flux = 400+300*exp(-(time-tmid).^2/(2.*c^2));  
+flux = 400+300*exp(-(time-tmid).^2/(2.*c^2))';
+figure
 plot(time,flux);
 ylabel('flux m^3/s')
 xlabel('time')
@@ -36,13 +37,12 @@ sedload = .030*(flux.^1.40)/1000.; %sed conc in g/l
 temp = 20*ones(nTimes,1);
 salt = zeros(nTimes,1);
 RiverFile = 'tst_riv.nc';
-nRivnodes = 3;
 RiverInfo1 = 'idealized estuary river';
 RiverInfo2 = 'event profile';
-RiverName = 'tstRiver';
+RiverName = {'tstRiver'};
 
 
-write_FVCOM_river(RiverFile,RiverName,nRivnodes,time,flux,temp,salt,RiverInfo1,RiverInfo2)
+write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,RiverInfo1,RiverInfo2)
 
 % add sediment to the file
 VarName = 'fine_sand';

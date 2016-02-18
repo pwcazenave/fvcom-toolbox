@@ -4,6 +4,7 @@ BEGSCL
 ND  845 
 NC  1570 
 NAME "elevation (Z)_interp"
+TIMEUNITS seconds
 TS 0 0
 1.0000000e+01
 1.0000000e+01
