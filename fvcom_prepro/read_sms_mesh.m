@@ -183,11 +183,13 @@ lat = zeros(nVerts,1);
 ts  = zeros(nVerts,1);
 
 % Skip the header
-% C = textscan(fid, '%s', nHeader + 1,'Headerlines',nHeader); % why does it skip 3 lines when only two are in the header? Didn't use to throw errors though...
-% if Meshname is more than one word the above would fail... Using
-% headerlines as below is more safe proof.
+%C = textscan(fid, '%s', nHeader + 1);
+for ii=1:nHeader
+    hline = fgetl(fid);
+end
+
 % Read the triangulation table
-C = textscan(fid, '%s %d %d %d %d %d', nElems,'Headerlines',nHeader);
+C = textscan(fid, '%s %d %d %d %d %d', nElems);
 tri(:, 1) = C{3};
 tri(:, 2) = C{4};
 tri(:, 3) = C{5};
@@ -375,6 +377,10 @@ assert(isfield(Mobj, 'x'), 'No coordinate data provided. Check your inputs and t
 
 % Make a depth array for the element centres.
 Mobj.hc = nodes2elems(h, Mobj);
+
+% Add element spherical coordinates too.
+Mobj.lonc = nodes2elems(lon, Mobj);
+Mobj.latc = nodes2elems(lat, Mobj);
 
 %--------------------------------------------------------------------------
 % Add the Coriolis values
