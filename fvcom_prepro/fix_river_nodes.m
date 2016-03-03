@@ -39,6 +39,14 @@ function Mobj = fix_river_nodes(Mobj, max_discharge, dist_thresh)
 %       river_nodes - currently identified river nodes
 %       river_names - currently identified river names
 %       river_flux - river discharge time series
+%       Plus optionally nutrient data for ERSEM:
+%       river_nh4 - ammonia
+%       river_no3 - nitrate
+%       river_o - oxygen
+%       river_p - phosphate
+%       river_sio3 - silicate
+%       river_dic - dissolved inorganic carbon
+%       river_bioalk - bioalkalinity
 %   max_discharge - river discharge threshold above which rivers will be
 %       split over several nodes (in m^{3}s^{-1}).
 %   dist_thresh - distance from the open boundary nodes which connect with
@@ -85,6 +93,9 @@ if Mobj.nRivers < 1
     return
 end
 
+optional_fields = {'river_nh4', 'river_no3', 'river_o', 'river_p', ...
+    'river_sio3', 'river_dic', 'river_bioalk'};
+
 % Remove nodes close to the open boundary joint with the coastline.
 % Identifying the coastline/open boundary joining nodes is simply a case of
 % taking the first and last node ID for each open boundary. Using that
@@ -116,6 +127,11 @@ for n = 1:Mobj.nObs
             Mobj.river_nodes(idx(inds)) = [];
             Mobj.river_flux(:, idx(inds)) = [];
             Mobj.river_names(idx(inds)) = [];
+            for f = 1:length(optional_fields)
+                if isfield(Mobj, optional_fields{f})
+                    Mobj.(optional_fields{f})(idx(inds)) = [];
+                end
+            end
         end
     end
 end
