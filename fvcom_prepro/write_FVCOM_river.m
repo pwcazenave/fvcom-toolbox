@@ -10,12 +10,12 @@ function write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,RiverInfo1,Ri
 %    the NetCDF file.
 %
 % INPUT
-%    RiverFile  : FVCOM 3.x NetCDF river forcing file
-%    RiverName  : Name of the actual River
-%    time       : Timestamp array in modified Julian day
-%    flux       : Total river flux in m^3/s (dimensions [time, nRivernodes])
-%    temp       : Temperature in C (dimensions [time, nRivernodes])
-%    salt       : Salinity in PSU (dimensions [time, nRivernodes])
+%    RiverFile  : FVCOM 3.x netCDF river forcing file
+%    RiverName  : Names of the rivers
+%    time       : Time array in Modified Julian Days
+%    flux       : Total river flux in m^{3}/s ([time, nRivernodes])
+%    temp       : Temperature in Celsius ([time, nRivernodes])
+%    salt       : Salinity in PSU ([time, nRivernodes])
 %    RiverInfo1 : Global attribute title of file
 %    RiverInfo2 : Global attribute info of file
 %
@@ -41,6 +41,7 @@ function write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,RiverInfo1,Ri
 %   to NetCDF using MATLAB's native tools.
 %   2013-03-21 Transpose the river data arrays to the correct shape for the
 %   NetCDF file.
+%   2016-03-02 Minor changes to the help.
 %
 %==========================================================================
 
