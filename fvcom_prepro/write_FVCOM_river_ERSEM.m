@@ -1,7 +1,7 @@
-function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n,n4n,n5s,RiverInfo1,RiverInfo2)
-% Write FVCOM 3.x NetCDF river file
+function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,N1_p,N3_n,N4_n,N5_s,O3_c,O3_bioalk,RiverInfo1,RiverInfo2)
+% Write FVCOM-ERSEM 3.x netCDF river file
 %
-% function write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,RiverInfo1,RiverInfo2)
+% function write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,N1_p,N3_n,N4_n,N5_s,O3_c,O3_bioalk,RiverInfo1,RiverInfo2)
 %
 % DESCRIPTION:
 %    Write river flux, temperature, and salinity to an FVCOM river file.
@@ -16,6 +16,12 @@ function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n
 %    flux       : Total river flux in m^3/s (dimensions [time, nRivernodes])
 %    temp       : Temperature in C (dimensions [time, nRivernodes])
 %    salt       : Salinity in PSU (dimensions [time, nRivernodes])
+%    N1_p       : phosphate in umol/m^{3}
+%    N3_n       : nitrate in umol/m^{3}
+%    N4_n       : ammonia in umol/m^{3}
+%    N5_s       : silicate in umol/m^{3}
+%    O3_c       : dissolved inorganic carbon  in umol/m^{3}
+%    O3_bioalk  : carbonate bioalkalinity  in umol/m^{3}
 %    RiverInfo1 : Global attribute title of file
 %    RiverInfo2 : Global attribute info of file
 %
@@ -23,12 +29,15 @@ function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n
 %    FVCOM NetCDF river file with flux, temperature and salinity.
 %
 % EXAMPLE USAGE
-%    write_FVCOM_river('tst_riv.nc', {'Penobscot'}, time, flux, temp, ...
-%         salt, 'Penobscot Flux', 'source: USGS')
+%    write_FVCOM_river('tst_riv.nc', {'Penobscot'}, time, flux, ...
+%        temp, salt, ...
+%        N1_p, N3_n, N4_n, N5_s, O3_c, O3_bioalk, ...
+%        'Penobscot Flux', 'source: USGS')
 %
 % Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
+%    Ricard Torres (Plymouth Marine Laboratory)
 %
 % Revision history
 %   2013-03-21 Modified to take a list of river nodes rather than a single
@@ -41,10 +50,11 @@ function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n
 %   to NetCDF using MATLAB's native tools.
 %   2013-03-21 Transpose the river data arrays to the correct shape for the
 %   NetCDF file.
+%   2016-03-02 Update for use with FABM-ERSEM.
 %
 %==========================================================================
 
-subname = 'write_FVCOM_river';
+[~, subname] = fileparts(mfilename('fullpath'));
 
 global ftbverbose
 if ftbverbose
@@ -117,21 +127,29 @@ river_salt_varid = netcdf.defVar(nc, 'river_salt', 'NC_FLOAT', [rivers_dimid, ti
 netcdf.putAtt(nc, river_salt_varid, 'long_name', 'river runoff salinity');
 netcdf.putAtt(nc, river_salt_varid, 'units', 'PSU');
 
-river_n1p_varid = netcdf.defVar(nc, 'N1p', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+river_n1p_varid = netcdf.defVar(nc, 'N1_p', 'NC_FLOAT', [rivers_dimid, time_dimid]);
 netcdf.putAtt(nc, river_n1p_varid, 'long_name', 'river phosphate concentrations');
 netcdf.putAtt(nc, river_n1p_varid, 'units', 'mmolm^-3');
 
-river_n3n_varid = netcdf.defVar(nc, 'N3n', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+river_n3n_varid = netcdf.defVar(nc, 'N3_n', 'NC_FLOAT', [rivers_dimid, time_dimid]);
 netcdf.putAtt(nc, river_n3n_varid, 'long_name', 'river Nitrate concentrations');
 netcdf.putAtt(nc, river_n3n_varid, 'units', 'mmolm^-3');
 
-river_n4n_varid = netcdf.defVar(nc, 'N4n', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+river_n4n_varid = netcdf.defVar(nc, 'N4_n', 'NC_FLOAT', [rivers_dimid, time_dimid]);
 netcdf.putAtt(nc, river_n4n_varid, 'long_name', 'river ammonium concentrations');
 netcdf.putAtt(nc, river_n4n_varid, 'units', 'mmolm^-3');
 
-river_n5s_varid = netcdf.defVar(nc, 'N5s', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+river_n5s_varid = netcdf.defVar(nc, 'N5_s', 'NC_FLOAT', [rivers_dimid, time_dimid]);
 netcdf.putAtt(nc, river_n5s_varid, 'long_name', 'river silicate concentrations');
 netcdf.putAtt(nc, river_n5s_varid, 'units', 'mmolm^-3');
+
+river_o3c_varid = netcdf.defVar(nc, 'O3_c', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_o3c_varid, 'long_name', 'river dissolved inorganic carbon concentrations');
+netcdf.putAtt(nc, river_o3c_varid, 'units', 'mmolm^-3');
+
+river_o3bioalk_varid = netcdf.defVar(nc, 'O3_bioalk', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_o3bioalk_varid, 'long_name', 'river alkalinity');
+netcdf.putAtt(nc, river_o3bioalk_varid, 'units', 'mmolm^-3');
 
 % end definitions
 netcdf.endDef(nc);
@@ -151,11 +169,13 @@ netcdf.putVar(nc, itime2_varid, 0, nTimes, mod(time, 1)*24*3600*1000);
 netcdf.putVar(nc, river_flux_varid, flux');
 netcdf.putVar(nc, river_temp_varid, temp');
 netcdf.putVar(nc, river_salt_varid, salt');
-netcdf.putVar(nc, river_n1p_varid, n1p');
-netcdf.putVar(nc, river_n3n_varid, n3n');
-netcdf.putVar(nc, river_n4n_varid, n4n');
-netcdf.putVar(nc, river_n5s_varid, n5s');
-%n1p,n3n,n4n,n5s
+netcdf.putVar(nc, river_n1p_varid, N1_p');
+netcdf.putVar(nc, river_n3n_varid, N3_n');
+netcdf.putVar(nc, river_n4n_varid, N4_n');
+netcdf.putVar(nc, river_n5s_varid, N5_s');
+netcdf.putVar(nc, river_o3c_varid, O3_c');
+netcdf.putVar(nc, river_o3bioalk_varid, O3_bioalk');
+
 % build the time string and output to NetCDF.
 nStringOut = char();
 [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(time);
@@ -168,6 +188,6 @@ netcdf.putVar(nc, times_varid, nStringOut);
 netcdf.close(nc);
 
 if ftbverbose
-    fprintf(['end   : ' subname '\n'])
+    fprintf('end   : %s\n', subname)
 end
 
