@@ -45,6 +45,9 @@ function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)
 %    removal).
 %    2015-05-21 Remove the old parallel processing bits and replace with
 %    the current versions.
+%    2016-03-15 Add fallback interpolation to inverse distance weighted if
+%    the triangular interpolation fails (which can happen if the points
+%    supplied are all in a line, for example).
 %
 %==========================================================================
 
@@ -234,8 +237,27 @@ for v = 1:length(fields)
                 if length(plon) < 3
                     itempobc(i) = mean(ptemp);
                 else
-                    tritemp = TriScatteredInterp(plon, plat, ptemp, 'natural');
-                    itempobc(i) = tritemp(fx, fy);
+                    try
+                        tritemp = TriScatteredInterp(plon, plat, ptemp, 'natural');
+                        itempobc(i) = tritemp(fx, fy);
+                    catch err
+                        if strcmp(err.identifier, 'MATLAB:subsassignnumelmismatch')
+                            warning(['Scatter points failed the ', ...
+                                ' triangular interpolation. Falling ', ...
+                                ' back to inverse distance weighted ', ...
+                                ' interpolation.'])
+                            % Use the inverse distance weighted mean of the
+                            % values for the interpolated value (the values
+                            % are in a straight line and can't be
+                            % interpolated with a triangular
+                            % interpolation).
+                            w = 1 ./ sqrt((plon - fx).^2 + (plat - fy).^2);
+                            w = w / max(w);
+                            itempobc(i) = sum(ptemp .* w) ./ sum(w);
+                        else
+                            error(err.message)
+                        end
+                    end
                 end
 
                 if isnan(itempobc(i))
