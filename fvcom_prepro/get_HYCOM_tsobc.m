@@ -165,19 +165,19 @@ for v = 1:length(fields)
                     mask_alt = tpctemp2 < 0;
                     if min(mask_alt(:)) == 1 && warned(1)
                         warned(1) = false;
-                        warning('\nRemoving negative salinities from the HYCOM data.')
+                        warning('Removing negative salinities from the HYCOM data.')
                     end
                 case 'temperature'
                     mask_alt = tpctemp2 < -20;
                     if min(mask_alt(:)) == 1 && warned(2)
                         warned(2) = false;
-                        warning('\nRemoving temperature values below -20 celsius from the HYCOM data.')
+                        warning('Removing temperature values below -20 celsius from the HYCOM data.')
                     end
                 case 'ssh'
                     mask_alt = tpctemp2 < -20;
                     if min(mask_alt(:)) == 1 &&  warned(3)
                         warned(3) = false;
-                        warning('\nRemoving sea surface height values below -20m from the HYCOM data.')
+                        warning('Removing sea surface height values below -20m from the HYCOM data.')
                     end
                 otherwise
                     % Some other variable we won't mask.
