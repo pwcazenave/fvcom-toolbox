@@ -51,9 +51,9 @@ function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)
 %
 %==========================================================================
 
-subname = 'get_HYCOM_tsobc';
+[~, subname] = fileparts(mfilename('fullpath'));
 
-global ftbverbose;
+global ftbverbose
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
