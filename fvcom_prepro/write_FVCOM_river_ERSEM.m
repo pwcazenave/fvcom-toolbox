@@ -116,27 +116,29 @@ river_salt_varid = netcdf.defVar(nc, 'river_salt', 'NC_FLOAT', [rivers_dimid, ti
 netcdf.putAtt(nc, river_salt_varid, 'long_name', 'river runoff salinity');
 netcdf.putAtt(nc, river_salt_varid, 'units', 'PSU');
 
-river_n1p_varid = netcdf.defVar(nc, 'N1p', 'NC_FLOAT', [rivers_dimid, time_dimid]);
-netcdf.putAtt(nc, river_n1p_varid, 'long_name', 'river phosphate concentrations');
-netcdf.putAtt(nc, river_n1p_varid, 'units', 'mmolm^-3');
+river_n1p_varid = netcdf.defVar(nc, 'N1_p', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_n1p_varid, 'long_name', 'phosphate phosphorus');
+netcdf.putAtt(nc, river_n1p_varid, 'units', 'mmol P/m^3');
 
-river_n3n_varid = netcdf.defVar(nc, 'N3n', 'NC_FLOAT', [rivers_dimid, time_dimid]);
-netcdf.putAtt(nc, river_n3n_varid, 'long_name', 'river Nitrate concentrations');
-netcdf.putAtt(nc, river_n3n_varid, 'units', 'mmolm^-3');
+river_n3n_varid = netcdf.defVar(nc, 'N3_n', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_n3n_varid, 'long_name', 'nitrate nitrogen');
+netcdf.putAtt(nc, river_n3n_varid, 'units', 'mmol N/m^3');
+
+river_n4n_varid = netcdf.defVar(nc, 'N4_n', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_n4n_varid, 'long_name', 'ammonium nitrogen');
+netcdf.putAtt(nc, river_n4n_varid, 'units', 'mmol N/m^3');
+
+river_n5s_varid = netcdf.defVar(nc, 'N5_s', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_n5s_varid, 'long_name', 'silicate silicate');
+netcdf.putAtt(nc, river_n5s_varid, 'units', 'mmol Si/m^3');
 
 river_dic_varid = netcdf.defVar(nc, 'O3_c', 'NC_FLOAT', [rivers_dimid, time_dimid]);
 netcdf.putAtt(nc, river_dic_varid, 'long_name', 'carbonate total dissolved inorganic carbon');
 netcdf.putAtt(nc, river_dic_varid, 'units', 'mmol C/m^3');
-river_n4n_varid = netcdf.defVar(nc, 'N4n', 'NC_FLOAT', [rivers_dimid, time_dimid]);
-netcdf.putAtt(nc, river_n4n_varid, 'long_name', 'river ammonium concentrations');
-netcdf.putAtt(nc, river_n4n_varid, 'units', 'mmolm^-3');
 
 river_alk_varid = netcdf.defVar(nc, 'O3_bioalk', 'NC_FLOAT', [rivers_dimid, time_dimid]);
 netcdf.putAtt(nc, river_alk_varid, 'long_name', 'carbonate bioalkalinity');
 netcdf.putAtt(nc, river_alk_varid, 'units', 'umol/kg');
-river_n5s_varid = netcdf.defVar(nc, 'N5s', 'NC_FLOAT', [rivers_dimid, time_dimid]);
-netcdf.putAtt(nc, river_n5s_varid, 'long_name', 'river silicate concentrations');
-netcdf.putAtt(nc, river_n5s_varid, 'units', 'mmolm^-3');
 
 % end definitions
 netcdf.endDef(nc);
