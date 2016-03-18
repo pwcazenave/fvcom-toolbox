@@ -27,6 +27,8 @@ function Mobj = interp_HYCOM2FVCOM(Mobj, hycom, start_date, varlist)
 %   hycom       = Struct output by get_HYCOM_forcing. Must include fields:
 %                   - hycom.lon, hycom.lat - rectangular arrays.
 %                   - hycom.Depth - HYCOM depth levels.
+%                 The data fields (specified in varlist) must be shaped
+%                 (x, y, z, time).
 %   start_date  = Gregorian start date array (YYYY, MM, DD, hh, mm, ss).
 %   varlist     = cell array of fields to use from the HYCOM struct.
 %
@@ -55,6 +57,7 @@ function Mobj = interp_HYCOM2FVCOM(Mobj, hycom, start_date, varlist)
 %   onto which to interpolate. Also update the parallel pool code to use
 %   the new parpool function instead of matlabpool in anticipation of the
 %   latter's eventual removal from MATLAB.
+%   2016-03-18 Clarify help on the shape of the required input data arrays.
 %
 %==========================================================================
 
@@ -63,6 +66,10 @@ subname = 'interp_HYCOM2FVCOM';
 global ftbverbose;
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
+end
+
+if nargin == 0
+    error('Not enough input arguments. See HELP %s', subname)
 end
 
 % Run jobs on multiple workers if we have that functionality. Not sure if
