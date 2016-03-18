@@ -43,7 +43,7 @@ function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n
 %
 %==========================================================================
 
-subname = 'write_FVCOM_river';
+[~, subname] = fileparts(mfilename('fullpath'));
 
 global ftbverbose
 if ftbverbose
@@ -162,8 +162,7 @@ netcdf.putVar(nc, river_n4n_varid, n4n');
 netcdf.putVar(nc, river_n5s_varid, n5s');
 netcdf.putVar(nc, river_dic_varid, dic');
 netcdf.putVar(nc, river_alk_varid, alkalinity');
-%n1p,n3n,n4n,n5s
-% build the time string and output to NetCDF.
+% build the time string and output to netCDF.
 nStringOut = char();
 [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(time);
 for tt = 1:nTimes
@@ -175,6 +174,6 @@ netcdf.putVar(nc, times_varid, nStringOut);
 netcdf.close(nc);
 
 if ftbverbose
-    fprintf(['end   : ' subname '\n'])
+    fprintf('end   : %s\n', subname)
 end
 
