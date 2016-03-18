@@ -14,12 +14,12 @@ function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n
 %    flux       : Total river flux in m^3/s (dimensions [time, nRivernodes])
 %    temp       : Temperature in C (dimensions [time, nRivernodes])
 %    salt       : Salinity in PSU (dimensions [time, nRivernodes])
-%    n1p        : Phosphate (mmol P/m^3)
-%    n3n        : Nitrate (mmol N/m^3)
-%    n4n        : Ammonia (mmol N/m^3)
-%    n5s        : Silicate (mmol Si/m^3)
-%    dic        : Dissolved inorganic carbon (mmol C/m^3)
-%    alkalinity : Alkalinity (umol C/m^3)
+%    n1p        : Phosphate (mmol P/m^3) (dimensions [time, nRivernodes])
+%    n3n        : Nitrate (mmol N/m^3) (dimensions [time, nRivernodes])
+%    n4n        : Ammonia (mmol N/m^3) (dimensions [time, nRivernodes])
+%    n5s        : Silicate (mmol Si/m^3) (dimensions [time, nRivernodes])
+%    dic        : Dissolved inorganic carbon (mmol C/m^3) (dimensions [time, nRivernodes])
+%    alkalinity : Alkalinity (umol C/m^3) (dimensions [time, nRivernodes])
 %    RiverInfo1 : Global attribute title of file
 %    RiverInfo2 : Global attribute info of file
 %
