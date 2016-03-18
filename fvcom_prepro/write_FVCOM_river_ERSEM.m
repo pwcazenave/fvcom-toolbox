@@ -1,46 +1,45 @@
-function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n,n4n,n5s,RiverInfo1,RiverInfo2)
-% Write FVCOM 3.x NetCDF river file
+function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n,n4n,n5s,dic,alkalinity,RiverInfo1,RiverInfo2)
+% Write FVCOM 3.x netCDF river file
 %
-% function write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,RiverInfo1,RiverInfo2)
+% function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n,n4n,n5s,dic,alkalinity,RiverInfo1,RiverInfo2)
 %
 % DESCRIPTION:
-%    Write river flux, temperature, and salinity to an FVCOM river file.
-%    Flux, temperature and salinity must be calculated prior to being given
-%    here as the raw values in the arrays are simply written out as is to
-%    the NetCDF file.
+%    Write river flux, temperature, salinity and ERSEM nutrients to an
+%    FVCOM river file.
 %
 % INPUT
-%    RiverFile  : FVCOM 3.x NetCDF river forcing file
+%    RiverFile  : FVCOM 3.x netCDF river forcing file
 %    RiverName  : Name of the actual River
 %    time       : Timestamp array in modified Julian day
 %    flux       : Total river flux in m^3/s (dimensions [time, nRivernodes])
 %    temp       : Temperature in C (dimensions [time, nRivernodes])
 %    salt       : Salinity in PSU (dimensions [time, nRivernodes])
+%    n1p        : Phosphate (mmol P/m^3)
+%    n3n        : Nitrate (mmol N/m^3)
+%    n4n        : Ammonia (mmol N/m^3)
+%    n5s        : Silicate (mmol Si/m^3)
+%    dic        : Dissolved inorganic carbon (mmol C/m^3)
+%    alkalinity : Alkalinity (umol C/m^3)
 %    RiverInfo1 : Global attribute title of file
 %    RiverInfo2 : Global attribute info of file
 %
 % OUTPUT:
-%    FVCOM NetCDF river file with flux, temperature and salinity.
+%    FVCOM netCDF river file with flux, temperature, salinity and ERSEM
+%    nutrients.
 %
 % EXAMPLE USAGE
-%    write_FVCOM_river('tst_riv.nc', {'Penobscot'}, time, flux, temp, ...
-%         salt, 'Penobscot Flux', 'source: USGS')
+%    write_FVCOM_river('tst_riv.nc', {'Penobscot'}, time, flux, ...
+%         temp, salt, n1p, n3n, n4n, n5s, dic, alkalinity, ...
+%         'Penobscot Flux', 'source: USGS')
 %
 % Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
+%    Ricardo Torres (Plymouth Marine Laboratory)
 %
 % Revision history
-%   2013-03-21 Modified to take a list of river nodes rather than a single
-%   river spread over multiple nodes. This means you have to scale your
-%   inputs prior to using this function. This also means I have broken
-%   backwards compatibility with the old way of doing it (i.e. this
-%   function previously wrote only a single river's data but spread over a
-%   number of nodes). I removed the sediment stuff as the manual makes no
-%   mention of this in the river input file. Also added support for writing
-%   to NetCDF using MATLAB's native tools.
-%   2013-03-21 Transpose the river data arrays to the correct shape for the
-%   NetCDF file.
+%   2016-03-14 New version to export nutrients alongside the physical
+%   parameters for FVCOM-ERSEM. Based on write_FVCOM_river.
 %
 %==========================================================================
 
@@ -125,10 +124,16 @@ river_n3n_varid = netcdf.defVar(nc, 'N3n', 'NC_FLOAT', [rivers_dimid, time_dimid
 netcdf.putAtt(nc, river_n3n_varid, 'long_name', 'river Nitrate concentrations');
 netcdf.putAtt(nc, river_n3n_varid, 'units', 'mmolm^-3');
 
+river_dic_varid = netcdf.defVar(nc, 'O3_c', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_dic_varid, 'long_name', 'carbonate total dissolved inorganic carbon');
+netcdf.putAtt(nc, river_dic_varid, 'units', 'mmol C/m^3');
 river_n4n_varid = netcdf.defVar(nc, 'N4n', 'NC_FLOAT', [rivers_dimid, time_dimid]);
 netcdf.putAtt(nc, river_n4n_varid, 'long_name', 'river ammonium concentrations');
 netcdf.putAtt(nc, river_n4n_varid, 'units', 'mmolm^-3');
 
+river_alk_varid = netcdf.defVar(nc, 'O3_bioalk', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_alk_varid, 'long_name', 'carbonate bioalkalinity');
+netcdf.putAtt(nc, river_alk_varid, 'units', 'umol/kg');
 river_n5s_varid = netcdf.defVar(nc, 'N5s', 'NC_FLOAT', [rivers_dimid, time_dimid]);
 netcdf.putAtt(nc, river_n5s_varid, 'long_name', 'river silicate concentrations');
 netcdf.putAtt(nc, river_n5s_varid, 'units', 'mmolm^-3');
@@ -155,6 +160,8 @@ netcdf.putVar(nc, river_n1p_varid, n1p');
 netcdf.putVar(nc, river_n3n_varid, n3n');
 netcdf.putVar(nc, river_n4n_varid, n4n');
 netcdf.putVar(nc, river_n5s_varid, n5s');
+netcdf.putVar(nc, river_dic_varid, dic');
+netcdf.putVar(nc, river_alk_varid, alkalinity');
 %n1p,n3n,n4n,n5s
 % build the time string and output to NetCDF.
 nStringOut = char();
