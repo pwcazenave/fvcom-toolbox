@@ -60,6 +60,7 @@ axis_flag = false;
 title_flag = false;
 legend_text_flag = false;
 quiver_flag = false;
+quiver2_flag = false;
 
 for ii=1:1:length(varargin)
     keyword  = lower(varargin{ii});
@@ -91,6 +92,9 @@ for ii=1:1:length(varargin)
             legend_text = varargin{ii+1};
         case 'qui'
             quiver_flag = true;
+            quiverData = varargin{ii+1};
+        case 'qu2'
+            quiver2_flag = true;
             quiverData = varargin{ii+1};
     end
 end
@@ -143,7 +147,11 @@ for ii=1:size(plot_field,2)
     end
     if quiver_flag
         hold on
-        quiver(quiverData.X, quiverData.Y, quiverData.U(:,:,ii), quiverData.V(:,:,ii), 'k');
+        quiver(quiverData.X, quiverData.Y, quiverData.U(:,:,ii), quiverData.V(:,:,ii), 'w');
+        hold off
+    elseif quiver2_flag
+        hold on
+        quiver(quiverData.X, quiverData.Y, quiverData.U(:,ii), quiverData.V(:,ii), 'color', 'w')
         hold off
     end
 
