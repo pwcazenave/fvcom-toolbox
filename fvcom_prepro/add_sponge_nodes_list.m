@@ -82,7 +82,7 @@ Mobj.nSponge = Mobj.nSponge + 1;
 Mobj.nSpongeNodes(Mobj.nSponge) = npts;
 Mobj.sponge_nodes(Mobj.nSponge, 1:npts) = SpongeList;
 Mobj.sponge_name{Mobj.nSponge} = SpongeName;
-Mobj.sponge_fac(Mobj.nSponge) = SpongeCoeff;
+Mobj.sponge_fac(Mobj.nSponge,1:npts) = SpongeCoeff;
 
 if numel(unique(SpongeRadius)) == 1   % if you have a constant sponge radius
     Mobj.sponge_rad(Mobj.nSponge) = SpongeRadius;
