@@ -121,18 +121,6 @@ nemo.flux = nemo.flux * 1000;
 
 [~, ~, nt] = size(nemo.flux);
 
-% All the units need to go from per litre to per metre cubed.
-
-names = fieldnames(nemo);
-for f = 1:length(names)
-    % Skip position data and do nutrient/flux data only.
-    switch names{f}
-        case {'lon', 'lat', 'LON', 'LAT', 'time'}
-            continue
-    end
-    nemo.(names{f}) = nemo.(names{f}) / 1000;
-end
-
 % Now we've got the data, use the flux data to find the indices of the
 % rivers in the arrays and extract those as time series in a format
 % suitable for writing out with write_FVCOM_river.
@@ -142,6 +130,7 @@ mask = sum(nemo.flux, 3) ~= 0;
 nr = length(mirow);
 
 % Now do all the data.
+names = fieldnames(nemo);
 for n = 1:length(names)
     switch names{n}
         case {'lon', 'lat', 'LON', 'LAT', 'time'}
