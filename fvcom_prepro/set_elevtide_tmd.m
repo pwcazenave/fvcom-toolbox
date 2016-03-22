@@ -39,7 +39,7 @@ current_dir = pwd;
 %tmp = which('tmd_tide_pred_2.m');
 %a = strfind(tmp, 'tmd_tide_pred_2.m');
 %cd(tmp(1:a-1))
-cd([getenv('Hydro') '\Software\Matlab\TMD2.03\'])
+cd(['C:\Matlab\ToolboxesExternal\TMD2.03\'])
 [eta, TMD_ConList] = tmd_tide_pred_2(model_file, time, lat, lon, 'z');
 cd(current_dir);
 
