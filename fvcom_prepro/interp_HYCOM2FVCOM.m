@@ -92,7 +92,7 @@ stime = greg2mjulian(start_date(1), start_date(2), ...
 [~, tidx] = min(abs(hycom.time - stime));
 
 for vv = 1:length(varlist);
-    
+
     currvar = varlist{vv};
 
     switch currvar
@@ -203,7 +203,7 @@ for vv = 1:length(varlist);
             te = toc;
 
             if ftbverbose
-                fprintf('done. (elapsed time = %.2f seconds)\n', te) 
+                fprintf('done. (elapsed time = %.2f seconds)\n', te)
             end
 
     end
