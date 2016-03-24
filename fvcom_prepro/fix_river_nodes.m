@@ -116,6 +116,15 @@ for n = 1:Mobj.nObs
             Mobj.river_nodes(idx(inds)) = [];
             Mobj.river_flux(:, idx(inds)) = [];
             Mobj.river_names(idx(inds)) = [];
+            % Also trim the temperature, salinity and ERSEM variables,
+            % if we have them.
+            enames = {'temp', 'salt', 'nh4', 'no3', 'o', 'p', 'sio3', 'dic', 'bioalk'};
+            for e = 1:length(enames);
+                ename = sprintf('river_%s', enames{e});
+                if isfield(Mobj, ename)
+                    Mobj.(ename)(:, idx(inds)) = [];
+                end
+            end
         end
     end
 end
