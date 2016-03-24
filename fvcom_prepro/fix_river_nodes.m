@@ -85,6 +85,15 @@ if Mobj.nRivers < 1
     return
 end
 
+% Generate names for the variables we're going to use. These may not all be
+% used if you are not running ERSEM, but we build them in case.
+evars = {'flux', 'temp', 'salt', 'nh4', 'no3', 'o', 'p', 'sio3', 'dic', 'bioalk'};
+for e = 1:length(evars)
+    enames{e} = sprintf('river_%s', evars{e});
+    fnames{e} = sprintf('fv_%s', evars{e});
+end
+
+
 % Remove nodes close to the open boundary joint with the coastline.
 % Identifying the coastline/open boundary joining nodes is simply a case of
 % taking the first and last node ID for each open boundary. Using that
@@ -118,11 +127,9 @@ for n = 1:Mobj.nObs
             Mobj.river_names(idx(inds)) = [];
             % Also trim the temperature, salinity and ERSEM variables,
             % if we have them.
-            enames = {'temp', 'salt', 'nh4', 'no3', 'o', 'p', 'sio3', 'dic', 'bioalk'};
-            for e = 1:length(enames);
-                ename = sprintf('river_%s', enames{e});
-                if isfield(Mobj, ename)
-                    Mobj.(ename)(:, idx(inds)) = [];
+            for e = 1:length(enames)
+                if isfield(Mobj, enames{e})
+                    Mobj.(enames{e})(:, idx(inds)) = [];
                 end
             end
         end
@@ -171,20 +178,34 @@ end
 
 for r = riv_idx
 
+    % Based on the flux data, find adjacent nodes over which to split the data
+    % and then split all variables (both physics and, optionally, ERSEM data).
+
     % Eliminate any existing river nodes from the list of candidates.
     candidates = setdiff(coast_nodes_valid, Mobj.river_nodes);
 
     % Extract the river data for the rivers in excess of the threshold so
     % we can remove them from the existing arrays.
-    river_flux = Mobj.river_flux(:, r);
+    for e = 1:length(enames)
+        if isfield(Mobj, enames{e})
+            tmp_struct.(enames{e}) = Mobj.(enames{e})(:, r);
+        end
+    end
+
+    % Save the nodes and names of this river.
     river_node = Mobj.river_nodes(r);
     river_names = Mobj.river_names(r);
+
     % Replace the current time series with NaNs. We'll remove them to
     % after we've split the rivers in riv_idx. If we remove them here, then
     % the indices in riv_idx get offset by some amount (1 position each
     % time). Doing that is hard to track, so we'll replace with NaNs and
     % remove afterwards.
-    Mobj.river_flux(:, r) = nan;
+    for e = 1:length(enames)
+        if isfield(Mobj, enames{e})
+            Mobj.(enames{e})(:, r) = nan;
+        end
+    end
     Mobj.river_nodes(r) = nan;
     Mobj.river_names{r} = 'REMOVEME';
 
@@ -192,16 +213,24 @@ for r = riv_idx
     % maximum fits into the actual maximum. So, if the maximum is 10000
     % m^{3}s^{-1} and max_discharge is 2000 m^{3}s^{-1}, then you split
     % over 5 nodes.
-    nsplit = ceil(max(river_flux) / max_discharge);
+    nsplit = ceil(max(tmp_struct.river_flux) / max_discharge);
 
-    % Scale the flux by nsplit.
-    river_flux = river_flux / nsplit;
+    % Scale the data by nsplit.
+    for e = 1:length(enames)
+        if isfield(Mobj, enames{e})
+            tmp_struct.(enames{e}) = tmp_struct.(enames{e}) / nsplit;
+        end
+    end
 
     % We can keep the original node, but we need to find the
     % remaining nsplit-1 nodes.
     fv_obc = river_node;
     fv_names = {sprintf('%s_%i', river_names{1}, 1)};
-    fv_flow = repmat(river_flux, [1, nsplit]);
+    for e = 1:length(fnames)
+        if isfield(Mobj, enames{e})
+            tmp_struct.(fnames{e}) = repmat(tmp_struct.(enames{e}), [1, nsplit]);
+        end
+    end
 
     for ff = 2:nsplit
         % Update the list of candidates to exclude those we've just found.
@@ -275,24 +304,32 @@ for r = riv_idx
 
     % Now we can append these new rivers to the existing list of
     % discharges, nodes and names.
-    Mobj.river_flux = [Mobj.river_flux, fv_flow];
+    for e = 1:length(enames)
+        if isfield(Mobj, enames{e})
+            Mobj.(enames{e}) = [Mobj.(enames{e}), tmp_struct.(fnames{e})];
+        end
+    end
     Mobj.river_names = [Mobj.river_names; fv_names'];
     Mobj.river_nodes = [Mobj.river_nodes, fv_obc];
 end
 
-% Remove all the original river fluxes for the split rivers. Check we're
+% Remove all the original river data for the split rivers. Check we're
 % doing the right columns by checking if the first row of the fluxes are
 % all NaNs for the riv_idx indices.
 if all(isnan(Mobj.river_flux(1, riv_idx)))
-    Mobj.river_flux(:, riv_idx) = [];
+    for e = 1:length(enames)
+        if isfield(Mobj, enames{e})
+            Mobj.(enames{e})(:, riv_idx) = [];
+        end
+    end
     Mobj.river_nodes(riv_idx) = [];
     Mobj.river_names(riv_idx) = [];
 end
 
 % Tidy up.
-clear r riv_idx river_flux river_nodes river_names nsplit ...
-    boundary_nodes coast_nodes candidates fv_flow fv_dist ...
-    fv_names fv_obc idx mask n_tri row ff
+clear r riv_idx river_nodes river_names nsplit ...
+    boundary_nodes coast_nodes candidates fv_dist ...
+    fv_names fv_obc idx mask n_tri row ff tmp_struct
 
 if ftbverbose
     fprintf('end   : %s\n', subname)
