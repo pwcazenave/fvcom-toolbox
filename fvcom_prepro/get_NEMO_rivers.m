@@ -127,6 +127,7 @@ nemo.area = nemo.e1t .* nemo.e2t;
 %   dic - no change whatsoever.
 
 % Convert units from grams to millimoles where appropriate.
+nemo.nh4 = (nemo.nh4 / 14) * 1000;
 nemo.no3 = (nemo.no3 / 14) * 1000;
 nemo.o = (nemo.o / 32) * 1000; % 2 x 16 for O2
 nemo.p = (nemo.p / 35.5) * 1000;
