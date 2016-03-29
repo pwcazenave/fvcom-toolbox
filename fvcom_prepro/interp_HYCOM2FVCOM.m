@@ -58,6 +58,9 @@ function Mobj = interp_HYCOM2FVCOM(Mobj, hycom, start_date, varlist)
 %   the new parpool function instead of matlabpool in anticipation of the
 %   latter's eventual removal from MATLAB.
 %   2016-03-18 Clarify help on the shape of the required input data arrays.
+%   2016-03-29 Update the interpolation to extrapolate by removing NaNs
+%   from the input data and setting the 'nearest' flag on
+%   scatteredInterpolant.
 %
 %==========================================================================
 
@@ -166,9 +169,19 @@ for vv = 1:length(varlist);
 
             tic
             parfor zi = 1:fz
+                % Get the current depth layer's data and mask out the NaN
+                % values.
+                hytempzcurrent = hytempz(:, :, zi);
+
+                % Strip out NaNs so we can extrapolate with TriScatteredInterp.
+                nanmask = ~isnan(hytempzcurrent);
+                plonclean = plon(nanmask);
+                platclean = plat(nanmask);
+                hytempzclean = hytempzcurrent(nanmask);
                 % Set up the interpolation object and interpolate the
                 % current variable to the FVCOM unstructured grid.
-                ft = TriScatteredInterp(plon, plat, reshape(hytempz(:, :, zi), [], 1), 'natural');
+                ft = scatteredInterpolant(plonclean, platclean, ...
+                    hytempzclean, 'natural', 'nearest');
                 fvtemp(:, zi) = ft(flon, flat);
             end
 
