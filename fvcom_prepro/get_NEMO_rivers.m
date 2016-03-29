@@ -332,7 +332,7 @@ fnames = fieldnames(fv);
 % Assign the relevant arrays to the Mobj. Flux is added in the section
 % dealing with either climatology or time series data.
 Mobj.river_nodes = fv_obc;
-Mobj.river_names = fv_names;
+Mobj.river_names = fv_names';
 Mobj.have_rivers = true;
 Mobj.nRivers = length(fv_obc);
 
