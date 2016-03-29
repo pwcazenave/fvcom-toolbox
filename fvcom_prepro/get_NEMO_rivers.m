@@ -7,10 +7,10 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 % DESCRIPTION:
 %   For the positions in Mobj.rivers.positions, find the nearest
 %   unstructured grid node and extract the river discharge from
-%   Mobj.rivers.river_flux. The river positions must fall within the
-%   specified distance (dist_thresh). If multiple rivers are assigned to
-%   the same node, the river with the larger of the set of discharges is
-%   used.
+%   Mobj.rivers.river_flux. To correct the flux values from the
+%   NEMO data, we need the grid size data (in
+%   Mobj.rivers.river_coordinates). The river positions must fall
+%   within the specified distance (dist_thresh).
 %
 % INPUT:
 %   Mobj - MATLAB mesh object containing:
@@ -23,6 +23,8 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 %           - positions - river positions in lon, lat.
 %           - names - list of river names
 %           - river_flux - path to the NEMO netCDF data file.
+%           - river_coordinates - path to the NEMO netCDF grid data
+%               file. Must have variables 'e1t' and 'e2t'.
 %   dist_thresh - maximum distance away from a river node beyond
 %       which the search for an FVCOM node is abandoned. Units in degrees.
 %   model_year - [optional] when giving climatology, a year must be
@@ -109,17 +111,35 @@ nemo.sio3 = ncread(Mobj.rivers.river_flux, 'rosio2');
 nemo.dic = ncread(Mobj.rivers.river_flux, 'rodic');
 nemo.bioalk = ncread(Mobj.rivers.river_flux, 'robioalk');
 
+% Now get the NEMO grid data.
+nemo.e1t = ncread(Mobj.rivers.river_coordinates, 'e1t');
+nemo.e2t = ncread(Mobj.rivers.river_coordinates, 'e2t');
+% Calculate the area for all elements in the grid.
+nemo.area = nemo.e1t .* nemo.e2t;
+
+% NEMO does conversions to ERSEM units internally. Whilst this is easy in
+% same ways, it's not particularly transparent. So, instead, we'll do all
+% the conversions up front and then the data that get loaded into ERSEM are
+% already in the correct units. To summarise those conversions, we have:
+%
+%   nutrients (nh4, no3, o, p, sio3) from grams/l to mmol/m^3
+%   flux from kg/m^{2}/s to m^{3}/s (divide by freshwater density)
+%   dic - no change whatsoever.
+
 % Convert units from grams to millimoles where appropriate.
 nemo.no3 = (nemo.no3 / 14) * 1000;
 nemo.o = (nemo.o / 32) * 1000; % 2 x 16 for O2
 nemo.p = (nemo.p / 35.5) * 1000;
 nemo.sio3 = (nemo.sio3 / 28) * 1000;
 
-% Flux in NEMO is specified in kg/m^{2}/s. FVCOM wants m^{3}/s. Fix that
-% here.
-nemo.flux = nemo.flux * 1000;
-
 [~, ~, nt] = size(nemo.flux);
+
+% Flux in NEMO is specified in kg/m^{2}/s. FVCOM wants m^{3}/s. Divide by
+% freshwater density to get m/s and then multiply by the area of each
+% element to get flux.
+nemo.flux = nemo.flux / 1000;
+% Now multiply by the relevant area to (finally!) get to m^{3}/s.
+nemo.flux = nemo.flux .* repmat(nemo.area, 1, 1, nt);
 
 % Now we've got the data, use the flux data to find the indices of the
 % rivers in the arrays and extract those as time series in a format
@@ -279,7 +299,7 @@ for ff = 1:fv_nr
     % Add it to the list of valid rivers
     fv_obc(vc) = coast_nodes(idx);
     fv_names{vc} = nemo.rivers.names{ff};
-    
+
     % Add the current river data to the relevant arrays.
     for n = 1:length(names)
         switch names{n}
