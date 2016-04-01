@@ -57,7 +57,7 @@ flux = ncread(RiverFile, 'river_flux');
 [nTimes, nRivnodes] = size(flux);
 
 % make sure time dimension matches FVCOM river dims
-tempTimes = prod(size(VarData));
+tempTimes = numel(VarData);
 if nTimes ~= tempTimes
     fprintf('# of time frames in file %s is %d\n', RiverFile, tempTimes)
     fprintf('# of time frames in VarData is %d\n', nTimes)
