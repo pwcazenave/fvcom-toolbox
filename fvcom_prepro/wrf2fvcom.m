@@ -106,7 +106,7 @@ netcdf.putAtt(ncid, netcdf.getConstant('NC_GLOBAL'), 'source', nc.source);
 netcdf.putAtt(ncid, netcdf.getConstant('NC_GLOBAL'), 'START_DATE', nc.START_DATE);
 netcdf.putAtt(ncid, netcdf.getConstant('NC_GLOBAL'), 'END_DATE', nc.END_DATE);
 netcdf.putAtt(ncid, netcdf.getConstant('NC_GLOBAL'), 'file', nc.file);
-netcdf.putAtt(ncid, netcdf.getConstant('NC_GLOBAL'), 'Conventions',nc.Conventions);
+netcdf.putAtt(ncid, netcdf.getConstant('NC_GLOBAL'), 'Conventions', nc.Conventions);
 
 sn_idim = netcdf.defDim(ncid, 'south_north', wrf.south_north);
 we_idim = netcdf.defDim(ncid, 'west_east', wrf.west_east);
@@ -207,8 +207,5 @@ netcdf.close(ncid);
 
 if ftbverbose
     fprintf('done.\n')
-end
-
-if ftbverbose
     fprintf('end   : %s \n', subname)
 end
