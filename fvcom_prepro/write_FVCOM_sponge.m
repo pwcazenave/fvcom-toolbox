@@ -7,6 +7,13 @@ function write_FVCOM_sponge(Mobj,filename)
 % DESCRIPTION:
 %    Generate an ascii FVCOM 3.x format sponge file from Mesh object
 %
+% INPUT
+%   Mobj     = Mesh object with fields:
+%              - sponge_fac - the sponge factor.
+%              - sponge_rad - the sponge radius.
+%              - nSponge - the number of sponge boundary (see
+%                add_sponge_nodes_list).
+%              - nSponge - the node IDs of the sponge nodes.
 % INPUT 
 %   Mobj     = Mesh object
 %   filename = FVCOM sponge file name
@@ -27,6 +34,9 @@ function write_FVCOM_sponge(Mobj,filename)
 %   2014-10-28 Added support for variable sponge damping coefficient, by
 %   assuming the size of the sponge_fac and sponge_rad arrays are equal the
 %   number of sponge nodes by default.
+%   2016-04-20 Reconcile the original behaviour (single value at each open
+%   boundary) and the variable values for each node. Also update the help
+%   and general formatting of the code.
 %   
 %==============================================================================
 subname = 'write_FVCOM_sponge';
@@ -46,15 +56,20 @@ end;
 % Correct possible errors arrising from previouse Mobj storage methods
 %------------------------------------------------------------------------------
 
-% make sure sponge_fac and sponge_rad are the right size
-if size(Mobj.sponge_fac,2)==1
-    Mobj.sponge_fac = Mobj.sponge_fac(:,1)*ones(1,max(Mobj.nSpongeNodes));
-elseif size(Mobj.sponge_fac,2)<max(Mobj.nSpongeNodes)
+% Make sure sponge_fac and sponge_rad are the right size. We'll also allow
+% a single value per open boundary.
+if size(Mobj.sponge_fac,2) == 1
+    Mobj.sponge_fac = Mobj.sponge_fac(:,1) * ones(1, max(Mobj.nSpongeNodes));
+elseif size(Mobj.sponge_fac, 2) == Mobj.nObs
+    Mobj.sponge_fac = repmat(Mobj.sponge_fac, max(Mobj.nSpongeNodes), 1)';
+elseif size(Mobj.sponge_fac, 2) < max(Mobj.nSpongeNodes)
     error('sponge_fac is an incompatible size, check it''s been written correctly.')
 end
 if size(Mobj.sponge_rad,2)==1
     Mobj.sponge_rad = Mobj.sponge_rad(:,1)*ones(1,max(Mobj.nSpongeNodes));
-elseif size(Mobj.sponge_rad,2)<max(Mobj.nSpongeNodes)
+elseif size(Mobj.sponge_rad, 2) == Mobj.nObs
+    Mobj.sponge_rad = repmat(Mobj.sponge_rad, max(Mobj.nSpongeNodes), 1)';
+elseif size(Mobj.sponge_rad,2) < max(Mobj.nSpongeNodes)
     error('sponge_rad is an incompatible size, check it''s been written correctly.')
 end
 
