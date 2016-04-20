@@ -38,8 +38,14 @@ end;
 nElems = numel(turbine.numbers);
 nSiglay = size(turbine.sigma_layer,2);
 if(nElems == 0)
-    error('dimension of turbine_numbers is 0, something is wrong ')
+	error('dimension of turbine_numbers is 0, something is wrong ')
 end;
+
+if isfield(turbine, 'thrust')
+    write_thrust = true;
+else
+    write_thrust = false;
+end
 
 %------------------------------------------------------------------------------
 % Dump to turbine NetCDF file
@@ -51,7 +57,7 @@ end;
 nc = netcdf.create(filename,'clobber');
 
 netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title',mytitle)
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
+netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', 'File created using write_FVCOM_TT.m from the MATLAB fvcom-toolbox')
 
 % dimensions
 nele_dimid=netcdf.defDim(nc,'nele',nElems);
@@ -67,9 +73,12 @@ netcdf.putAtt(nc,sigma_layer_varid,'long_name','the fraction of each sigma layer
 swept_area_varid=netcdf.defVar(nc,'swept_area','NC_FLOAT',nele_dimid);
 netcdf.putAtt(nc,swept_area_varid,'long_name','Area swept by turbine rotor blades');
 
+if write_thrust
+    thrust_coeff_varid=netcdf.defVar(nc,'thrust_coeff','NC_FLOAT',nele_dimid);
+    netcdf.putAtt(nc,thrust_coeff_varid,'long_name','Turbine thrust ceofficient');
+end
+
 % variables that could be added in the future
-% thrust_coeff_varid=netcdf.defVar(nc,'thrust_coeff','NC_FLOAT',nele_dimid);
-% netcdf.putAtt(nc,thrust_coeff_varid,'long_name','Turbine thrust ceofficient');
 % blade_coeff_varid=netcdf.defVar(nc,'blade_coeff','NC_FLOAT',nele_dimid);
 % netcdf.putAtt(nc,blade_coeff_varid,'long_name','Drag coefficient for the turbine blades');
 
@@ -82,9 +91,11 @@ netcdf.endDef(nc);
 netcdf.putVar(nc,num_tt_varid,turbine.numbers);
 netcdf.putVar(nc,sigma_layer_varid,turbine.sigma_layer);
 netcdf.putVar(nc,swept_area_varid,turbine.area);
+if write_thrust
+    netcdf.putVar(nc,thrust_coeff_varid,turbine.thrust);
+end
 
 % variables that could be added in the future
-% netcdf.putVar(nc,thrust_coeff_varid,turbine.thrust);
 % netcdf.putVar(nc,blade_coeff_varid,turbine.drag);
 
 % close file

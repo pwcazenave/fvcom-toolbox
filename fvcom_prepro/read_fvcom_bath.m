@@ -18,8 +18,10 @@ function [h] = read_fvcom_bath(bathfile)
 %
 % Author(s):  
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Rory O'Hara Murray (Marine Scotland Science)
 %
 % Revision history
+%    2014-11-19 Remove loops to speed up reading in the file.
 %   
 %==============================================================================
 
@@ -42,10 +44,8 @@ Nverts = C{4};
 h = zeros(Nverts,1);
 fprintf('reading bathymetry file\n');
 fprintf('# nodes %d\n',Nverts);
-for i=1:Nverts
-  C = textscan(fid, '%f %f %f', 1);
-  h(i) = C{3};
-end;
+C = textscan(fid,' %f %f %f',Nverts);
+h = C{3};
 fprintf('min depth %f max depth %f\n',min(h),max(h));
 fprintf('bathymetry reading complete\n');
 fclose(fid);
