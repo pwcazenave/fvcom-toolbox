@@ -52,10 +52,7 @@ if(Mobj.have_bath)
 	if(ftbverbose); fprintf('writing FVCOM bathymetry file %s\n',filename); end;
 	fid = fopen(filename,'w');
 	fprintf(fid,'Node Number = %d\n',Mobj.nVerts);
-% 	for i=1:Mobj.nVerts
-% 	  fprintf(fid,'%f %f %f\n',x(i),y(i),Mobj.h(i));
-% 	end;
-    fprintf(fid, '%f %f %f\n', [x y Mobj.h]');
+	fprintf(fid, '%f %f %f\n', [x y Mobj.h]');
 	fclose(fid);
 else
 	error('can''t write bathymetry to file, mesh object has no bathymetry')
