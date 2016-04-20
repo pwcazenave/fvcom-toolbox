@@ -52,9 +52,6 @@ if(Mobj.have_cor)
 	if(ftbverbose); fprintf('writing FVCOM coriolis file %s\n',filename); end;
 	fid = fopen(filename,'w');
 	fprintf(fid,'Node Number = %d\n',Mobj.nVerts);
-% 	for i=1:Mobj.nVerts
-% 	  fprintf(fid,'%f %f %f\n',x(i),y(i),Mobj.f(i));
-% 	end;
     fprintf(fid, '%f %f %f\n', [x, y, Mobj.f]');
 	fclose(fid);
 else
