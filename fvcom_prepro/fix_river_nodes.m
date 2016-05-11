@@ -93,7 +93,32 @@ for e = 1:length(evars)
     fnames{e} = sprintf('fv_%s', evars{e});
 end
 
+% Find the model coastline.
+coast_nodes = get_coastline(Mobj);
 
+% Remove river nodes close to the open boundaries.
+Mobj = clear_boundary_nodes(Mobj, dist_thresh);
+
+% Split big rivers over adjacent nodes.
+Mobj = split_big_rivers(Mobj, max_discharge, coast_nodes, enames, fnames);
+
+% Update the number of rivers we have.
+Mobj.nRivers = length(Mobj.river_nodes);
+
+if ftbverbose
+    fprintf('end   : %s\n', subname)
+end
+
+function coast_nodes = get_coastline(Mobj)
+% Find the appropriate nodes from the coastline nodes. This is mostly
+% lifted from get_EHYPE_rivers.m.
+[~, ~, ~, bnd] = connectivity([Mobj.lon, Mobj.lat], Mobj.tri);
+boundary_nodes = 1:Mobj.nVerts;
+boundary_nodes = boundary_nodes(bnd);
+coast_nodes = boundary_nodes(~ismember(boundary_nodes, ...
+    [Mobj.read_obc_nodes{:}]));
+
+function Mobj = clear_boundary_nodes(Mobj, dist_thresh)
 % Remove nodes close to the open boundary joint with the coastline.
 % Identifying the coastline/open boundary joining nodes is simply a case of
 % taking the first and last node ID for each open boundary. Using that
@@ -136,8 +161,7 @@ for n = 1:Mobj.nObs
     end
 end
 
-clear obc_land_nodes n d dist idx inds
-
+function Mobj = split_big_rivers(Mobj, max_discharge, coast_nodes, enames, fnames)
 % For some of the rivers, the discharge is very large and is the source of
 % model instability (e.g. the Rhine crashes my irish_sea_v20 grid). So,
 % identify discharges in excess of some value and split that discharge over
@@ -145,17 +169,11 @@ clear obc_land_nodes n d dist idx inds
 % another river. Do this second so we don't have to worry about removing
 % nodes based on their distance from the land/open boundary joint which
 % have been split, which is the case if these two steps are reversed.
+
+global ftbverbose
+
 riv_idx = 1:size(Mobj.river_flux, 2);
 riv_idx = riv_idx(max(Mobj.river_flux) > max_discharge);
-
-% Find the appropriate nodes from the coastline nodes. This is mostly
-% lifted from get_EHYPE_rivers.m.
-[~, ~, ~, bnd] = connectivity([Mobj.lon, Mobj.lat], Mobj.tri);
-boundary_nodes = 1:Mobj.nVerts;
-boundary_nodes = boundary_nodes(bnd);
-coast_nodes = boundary_nodes(~ismember(boundary_nodes, ...
-    [Mobj.read_obc_nodes{:}]));
-clear boundary_nodes bnd
 
 % Find all the nodes which are connected to two land nodes. These cause
 % problems with the search for valid river nodes. I can't think of an
@@ -170,7 +188,6 @@ for nn = 1:length(coast_nodes)
 end
 nogood = nogood(~isnan(nogood));
 coast_nodes_valid = setdiff(coast_nodes, nogood);
-clear nn row nogood
 
 if ftbverbose
     fprintf('%i river(s) exceed the specified discharge threshold (%.2f m^{3}s^{-1}).\n', length(riv_idx), max_discharge)
@@ -178,8 +195,9 @@ end
 
 for r = riv_idx
 
-    % Based on the flux data, find adjacent nodes over which to split the data
-    % and then split all variables (both physics and, optionally, ERSEM data).
+    % Based on the flux data, find adjacent nodes over which to split the
+    % data and then split all variables (both physics and, optionally,
+    % ERSEM data).
 
     % Eliminate any existing river nodes from the list of candidates.
     candidates = setdiff(coast_nodes_valid, Mobj.river_nodes);
@@ -196,11 +214,11 @@ for r = riv_idx
     river_node = Mobj.river_nodes(r);
     river_names = Mobj.river_names(r);
 
-    % Replace the current time series with NaNs. We'll remove them to
-    % after we've split the rivers in riv_idx. If we remove them here, then
-    % the indices in riv_idx get offset by some amount (1 position each
-    % time). Doing that is hard to track, so we'll replace with NaNs and
-    % remove afterwards.
+    % Replace the current time series with NaNs. We'll remove them after
+    % we've split the rivers in riv_idx. If we remove them here, then the
+    % indices in riv_idx get offset by some amount (1 position each time).
+    % Doing that is hard to track, so we'll replace with NaNs and remove
+    % afterwards.
     for e = 1:length(enames)
         if isfield(Mobj, enames{e})
             Mobj.(enames{e})(:, r) = nan;
@@ -326,10 +344,6 @@ if all(isnan(Mobj.river_flux(1, riv_idx)))
     Mobj.river_names(riv_idx) = [];
 end
 
-% Tidy up.
-clear r riv_idx river_nodes river_names nsplit ...
-    boundary_nodes coast_nodes candidates fv_dist ...
-    fv_names fv_obc idx mask n_tri row ff tmp_struct
 
 if ftbverbose
     fprintf('end   : %s\n', subname)
