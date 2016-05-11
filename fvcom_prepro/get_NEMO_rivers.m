@@ -345,7 +345,6 @@ end
 % Create a Modified Julian Day time series of the NEMO river data. Assume
 % it's a climatology, so generate the right time series based on that
 % assumption.
-checkdate = nemo.time(1:nt) / (60 * 60 * 24);
 if isempty(yr) && ~isnumeric(yr)
     error('For climatology, a year must be specified for the time series to be generated.')
 end
