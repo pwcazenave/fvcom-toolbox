@@ -27,10 +27,13 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 %               file. Must have variables 'e1t' and 'e2t'.
 %   dist_thresh - maximum distance away from a river node beyond
 %       which the search for an FVCOM node is abandoned. Units in degrees.
-%   model_year - [optional] when giving climatology, a year must be
+%   The following keyword-argument pairs are also valid:
+%   'model_year' - [optional] when giving climatology, a year must be
 %       specified so that the time series can be anchored in time. The
 %       returned time series will be 3 years long centred on the specified
 %       year. Discharges will be repeated for the two additional years.
+%   'dump_positions' - [optional] dump the NEMO river positions to the
+%       specified text file.
 %
 % OUTPUT:
 %   Mobj.river_flux - volume flux at the nodes within the model domain.
@@ -54,11 +57,16 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 % EXAMPLE USAGE:
 %   Mobj = get_NEMO_rivers(Mobj, 0.15)
 %
+%   To extract the NEMO river locations to file:
+%
+%   Mobj = get_NEMO_rivers(Mobj, 0.15, 'dump_positions', '/tmp/nemo.txt');
+%
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history:
 %   2016-03-02 - First version based on get_nemo_rivers.m.
+%   2016-05-03 - Add option to dump NEMO river locations to text file.
 %
 %==========================================================================
 
@@ -82,6 +90,7 @@ yr = [];
 % on keyword-value pairs. Really, we want keyword-value pairs all the time,
 % so silently work when given three arguments and don't mention it in the
 % help. This is going to bite me at some point in the future, I'm sure.
+dump_positions = false;
 if nargin == 3
     yr = varargin{1};
 elseif nargin > 3
@@ -89,6 +98,9 @@ elseif nargin > 3
         switch varargin{aa}
             case 'model_year'
                 yr = varargin{aa + 1};
+            case 'dump_positions'
+                dump_positions = true;
+                position_file = varargin{aa + 1};
         end
     end
 end
@@ -187,6 +199,12 @@ end
 % Separate the inputs into separate arrays.
 nemo_name = nemo.rivers.names;
 nemo_xy = nemo.rivers.positions;
+
+if dump_positions
+    % Add a header for GIS
+    dlmwrite(position_file, 'lonDD,latDD', 'delimiter', '');
+    dlmwrite(position_file, nemo_xy, 'precision', '%0.6f', '-append');
+end
 
 fv_nr = length(nemo_name);
 
