@@ -115,6 +115,8 @@ end
 % Generate names for the variables we're going to use. These may not all be
 % used if you are not running ERSEM, but we build them in case.
 evars = {'flux', 'temp', 'salt', 'nh4', 'no3', 'o', 'p', 'sio3', 'dic', 'bioalk'};
+enames = cell(length(evars));
+fnames = cell(length(evars));
 for e = 1:length(evars)
     enames{e} = sprintf('river_%s', evars{e});
     fnames{e} = sprintf('fv_%s', evars{e});
