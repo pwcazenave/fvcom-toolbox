@@ -91,7 +91,7 @@ function Mobj = fix_river_nodes(Mobj, max_discharge, dist_thresh, varargin)
 %
 %==========================================================================
 
-subname = 'fix_river_nodes';
+[~, subname] = fileparts(mfilename('fullpath'));
 
 global ftbverbose
 if ftbverbose
