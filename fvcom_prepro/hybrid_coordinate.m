@@ -100,6 +100,7 @@ end
 
 % Save to the given file name.
 fout = fopen(conf.sigma_file, 'wt');
+assert(fout >= 0, 'Error opening sigma file: %s', conf.sigma_file)
 fprintf(fout, 'NUMBER OF SIGMA LEVELS = %d\n', nlev);
 fprintf(fout, 'SIGMA COORDINATE TYPE = GENERALIZED\n');
 fprintf(fout, 'DU = %4.1f\n', DU);
@@ -226,7 +227,8 @@ ZZ = abs(median(diff(Z0) - diff(Z2)));
 return
 
 function debug_mode()
-% Test with made up data.
+% Test with made up data. This isn't actually used at all, but it's handy
+% to leave around for debugging things.
 % Hmax = 200;
 y = 0:100;
 B = 100;
