@@ -15,6 +15,8 @@ function Mobj = fix_river_nodes(Mobj, max_discharge, dist_thresh, varargin)
 %       checking enabled, will stop the model.
 %       2. Very large discharges into relatively small elements (e.g. the
 %       Rhine discharge) cause the model to crash.
+%       3. Rivers discharging into shallow elements can lead to
+%       instabilities.
 %
 %   This function checks that:
 %       1. Rivers are deleted if their distance from the open boundary join
@@ -22,6 +24,8 @@ function Mobj = fix_river_nodes(Mobj, max_discharge, dist_thresh, varargin)
 %       2. Any rivers with discharges above the specified threshold are
 %       split over a number of nodes such that each node has a maximum
 %       discharge less than the treshold.
+%       3. Optionally, each river is optimised to use the deepest node
+%       within ths distance threshold specified.
 %   This order is relatively important otherwise the splitting could put
 %   nodes within the land/open boundary joint radius and reduce the river
 %   discharge for a given river by eliminating only some of the river
@@ -81,6 +85,9 @@ function Mobj = fix_river_nodes(Mobj, max_discharge, dist_thresh, varargin)
 %   catastrophic, whereas a shallow node is sometimes catastrophic. This
 %   approach should also mean we minimise the risk of putting a node back
 %   onto a shallower node.
+%   2016-05-13 Move the removal of invalid coastline nodes into the
+%   function to read coastline nodes rather than having it in the splitting
+%   function.
 %
 %==========================================================================
 
@@ -126,7 +133,7 @@ end
 coast_nodes = get_coastline(Mobj);
 
 % Remove river nodes close to the open boundaries.
-Mobj = clear_boundary_nodes(Mobj, dist_thresh);
+Mobj = clear_boundary_nodes(Mobj, dist_thresh, enames);
 
 % Split big rivers over adjacent nodes.
 Mobj = split_big_rivers(Mobj, max_discharge, coast_nodes, enames, fnames);
@@ -144,7 +151,7 @@ if ftbverbose
     fprintf('end   : %s\n', subname)
 end
 
-function coast_nodes = get_coastline(Mobj)
+function coast_nodes_valid = get_coastline(Mobj)
 % Find the appropriate nodes from the coastline nodes. This is mostly
 % lifted from get_EHYPE_rivers.m.
 [~, ~, ~, bnd] = connectivity([Mobj.lon, Mobj.lat], Mobj.tri);
@@ -153,12 +160,30 @@ boundary_nodes = boundary_nodes(bnd);
 coast_nodes = boundary_nodes(~ismember(boundary_nodes, ...
     [Mobj.read_obc_nodes{:}]));
 
-function Mobj = clear_boundary_nodes(Mobj, dist_thresh)
+% Remove invalid coastline nodes (from the perspective of rivers). Those
+% are which are connected to two land nodes. I can't think of an elegant
+% way of doing this, so brute force it is. This is a bit slow (~10 seconds)
+% on my grid with ~13000 coastal nodes.
+nogood = nan(size(coast_nodes)); % clear out the nans later.
+for nn = 1:length(coast_nodes)
+    [row, ~] = find(Mobj.tri == coast_nodes(nn));
+    if length(row) == 1
+        nogood(nn) = coast_nodes(nn);
+    end
+end
+nogood = nogood(~isnan(nogood));
+coast_nodes_valid = setdiff(coast_nodes, nogood);
+
+
+function Mobj = clear_boundary_nodes(Mobj, dist_thresh, enames)
 % Remove nodes close to the open boundary joint with the coastline.
 % Identifying the coastline/open boundary joining nodes is simply a case of
 % taking the first and last node ID for each open boundary. Using that
 % position, we can find any river nodes which fall within that distance and
 % simply remove their data from the relevant Mobj.river_* arrays.
+
+global ftbverbose
+
 obc_land_nodes = nan(Mobj.nObs, 2);
 for n = 1:Mobj.nObs
     obc_land_nodes(n, :) = [Mobj.read_obc_nodes{n}(1), ...
@@ -210,32 +235,17 @@ global ftbverbose
 riv_idx = 1:size(Mobj.river_flux, 2);
 riv_idx = riv_idx(max(Mobj.river_flux) > max_discharge);
 
-% Find all the nodes which are connected to two land nodes. These cause
-% problems with the search for valid river nodes. I can't think of an
-% elegant way of doing this, so brute force it is. This is a bit slow (~10
-% seconds) on my grid with ~13000 coastal nodes.
-nogood = nan(size(coast_nodes)); % clear out the nans later.
-for nn = 1:length(coast_nodes)
-    [row, ~] = find(Mobj.tri == coast_nodes(nn));
-    if length(row) == 1
-        nogood(nn) = coast_nodes(nn);
-    end
-end
-nogood = nogood(~isnan(nogood));
-coast_nodes_valid = setdiff(coast_nodes, nogood);
-
 if ftbverbose
     fprintf('%i river(s) exceed the specified discharge threshold (%.2f m^{3}s^{-1}).\n', length(riv_idx), max_discharge)
 end
 
 for r = riv_idx
-
     % Based on the flux data, find adjacent nodes over which to split the
     % data and then split all variables (both physics and, optionally,
     % ERSEM data).
 
     % Eliminate any existing river nodes from the list of candidates.
-    candidates = setdiff(coast_nodes_valid, Mobj.river_nodes);
+    candidates = setdiff(coast_nodes, Mobj.river_nodes);
 
     % Extract the river data for the rivers in excess of the threshold so
     % we can remove them from the existing arrays.
