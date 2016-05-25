@@ -9,7 +9,7 @@ function Mobj = hybrid_coordinate(conf, Mobj)
 % INPUT:
 %   conf - configuration struct with the following fields:
 %       sigma_file - file path into which to write the hybrid coordinates
-%       H0 - transition depth of the hybrid coordinates?
+%       H0 - transition depth of the hybrid coordinates
 %       DU - upper water boundary thickness (metres)
 %       DL - lower water boundary thickness (metres)
 %       KU - layer number in the water column of DU
@@ -58,6 +58,12 @@ function Mobj = hybrid_coordinate(conf, Mobj)
 %
 %==========================================================================
 
+[~, subname] = fileparts(mfilename('fullpath'));
+global ftbverbose
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
+
 % Limits on the optimisation run.
 optimisation_settings = optimset('MaxFunEvals', 5000, ...
     'MaxIter', 5000, ...
@@ -73,10 +79,18 @@ KU = conf.KU;
 KL = conf.KL;
 
 % Solve for z1-z2 to find Hmin parameter
+if ftbverbose
+    fprintf('Optimising the hybrid coordinates... ')
+end
 ZKU = repmat(DU./KU, 1, KU);
 ZKL = repmat(DL./KL, 1, KL);
 fparams = @(H)hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL);
 [Hmin, ~] = fminsearch(fparams, H0, optimisation_settings);
+
+if ftbverbose
+    fprintf('done.\n')
+    fprintf('Saving to %s... ', conf.sigma_file)
+end
 
 % Save to the given file name.
 fout = fopen(conf.sigma_file, 'wt');
@@ -100,17 +114,27 @@ end
 fprintf(fout,'\n');
 fclose(fout);
 
+if ftbverbose
+    fprintf('done.\n')
+    fprintf('Populating Mobj... ')
+end
+
 % Create the arrays of the layer and level sigma coordinates.
 for xx = 1:length(Mobj.h)
     Mobj.siglev(xx,:) = sigma_gen(nlev,DL,DU,KL,KU,ZKL,ZKU,Mobj.h(xx),Hmin);
 end
 Mobj.siglay = Mobj.siglev(:,1:end-1) + (diff(Mobj.siglev,1,2)/2);
+% Turn off ftbverbose for this loop.
+old = ftbverbose;
+ftbverbose = 0;
 for zz = 1:nlev-1
     Mobj.siglevc(:, zz) = nodes2elems(Mobj.siglev(:, zz), Mobj);
     Mobj.siglayc(:, zz) = nodes2elems(Mobj.siglay(:, zz), Mobj);
 end
 % An extra level compared with layers.
 Mobj.siglevc(:, zz + 1) = nodes2elems(Mobj.siglev(:, zz + 1), Mobj);
+ftbverbose = old;
+clear old
 
 % Create a depth array for the element centres.
 if ~isfield(Mobj, 'hc')
@@ -122,6 +146,11 @@ Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* Mobj.siglev;
 Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* Mobj.siglay;
 Mobj.siglevzc = repmat(Mobj.hc, 1, nlev) .* Mobj.siglevc;
 Mobj.siglayzc = repmat(Mobj.hc, 1, nlev-1) .* Mobj.siglayc;
+
+if ftbverbose
+    fprintf('done.\n')
+    fprintf('end   : %s\n', subname)
+end
 
 return
 
