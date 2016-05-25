@@ -85,6 +85,12 @@ end
 ZKU = repmat(DU./KU, 1, KU);
 ZKL = repmat(DL./KL, 1, KL);
 fparams = @(H)hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL);
+% Does the sigma_gen function do the same thing as hybrid_coordinate_hmin?
+% It seems suspiciously similar, except it has separate calculations for
+% depths above and below H0 (MIN CONSTANT DEPTH). If hmin == h, then
+% sigma_gen does almost the same thing as hybrid_coordinate_hmin (I think -
+% I haven't actually tested that assertation).
+% fparams = @(H)sigma_gen(nlev, DL, DU, KL, KU, ZKL, ZKU, H, H);
 [Hmin, ~] = fminsearch(fparams, H0, optimisation_settings);
 
 if ftbverbose
