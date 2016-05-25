@@ -383,6 +383,15 @@ Mobj.river_time = greg2mjulian(mtime(:, 1), mtime(:, 2), ...
 % Repeat the river data for the climatology before adding to the Mobj.
 for n = 1:length(fnames)
     new = sprintf('river_%s', fnames{n});
+
+    % NEMO is insane. Old versions of the rivers data had enough days for
+    % leap and non-leap years; new versions don't. So, let's pad the data
+    % by a day in either case and that should word for data with both 365
+    % and 366 times. In the case where we're using data with 366 values
+    % already, this shouldn't make any difference as we're explicitly
+    % indexing to the days in the year using daysinyr anyway.
+    fv.(fnames{n}) = [fv.(fnames{n}); fv.(fnames{n})(end, :)];
+
     Mobj.(new) = [fv.(fnames{n})(1:daysinyr(1), :); ...
                   fv.(fnames{n})(1:daysinyr(2), :); ...
                   fv.(fnames{n})(1:daysinyr(3), :)];
