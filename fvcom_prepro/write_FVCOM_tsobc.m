@@ -15,19 +15,25 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj,varargin)
 %    nSiglay - Number of sigma layers
 %    in_temp - Boundary temperature (Celsius)
 %    in_salt - Boundary salinity (psu)
-%    Mobj - Mesh Object
-%    Optional keyword-argument pairs. These control the time variables.
+%    Mobj - Mesh Object with the following fields:
+%       - nObs - number of open boundaries
+%       - read_obc_nodes - open boundary node cell array (length = nObs)
+%       - siglay - sigma layer definitions
+%       - siglev - sigma level definitions
+%    Optional keyword-argument pairs:
+%
+%    'strtime' = set to true to output the 'Times' variable
+%    'inttime' = set to true to output the 'Itime' and 'Itime2' variables
+%    'floattime' = set to true to output the 'time' variable
+%
 %    This script defaults to writing 'Times' only.
+%
 %    FVCOM needs only one of:
 %        1. Times: character string of times
 %        2. Itime and Itime2: integer days and milliseconds since midnight
 %        3. time: float days.
 %    FVCOM checks for these in the order above and this script defaults to
-%    writing Times only. Adjust the keyword-argument pairs to your liking:
-%
-%    'strtime' = set to true to output the 'Times' variable
-%    'inttime' = set to true to output the 'Itime' and 'Itime2' variables
-%    'floattime' = set to true to output the 'time' variable
+%    writing Times only. Adjust the keyword-argument pairs to your liking.
 %
 % OUTPUT:
 %    FVCOM hydrographic open boundary netCDF file
@@ -48,6 +54,12 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj,varargin)
 %    salinity.
 %    2013-01-09 Add support for 3D input temperature and salinity (such as
 %    might be generated with get_POLCOMS_tsobc.m.
+%    2016-05-25 Removed the reads of the ASCII configuration files (which
+%    was very slow) and instead extracted the relevant information from the
+%    supplied mesh object. As such, the requirements for the mesh object
+%    have changed, so hopefully this won't bite too many people in the
+%    behind. Also simplified the allocation of the arrays when uniform
+%    values are given (i.e. when in_salt and in_temp are scalars).
 %
 % KJA Revision history
 %    Undated - Add better check for the size of the input arrays (works
@@ -55,7 +67,7 @@ function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt,Mobj,varargin)
 %    2013-08-16 - Updated output of Itime2 to avoid rounding errors
 %    when converting from double to single format.
 %
-%==============================================================================
+%==========================================================================
 
 if nargin == 5
     warning(['Assuming uniform terrain-following sigma coordinates. ', ...
@@ -63,8 +75,8 @@ if nargin == 5
         'structure with fields siglay and siglev.'])
 end
 
-subname = 'write_FVCOM_tsobc';
-global ftbverbose;
+[~, subname] = fileparts(mfilename('fullpath'));
+global ftbverbose
 if ftbverbose
   fprintf('\nbegin : %s\n', subname)
 end
@@ -84,119 +96,53 @@ for vv = 1:2:length(varargin)
     end
 end
 
-fvcom_bathy = [basename, '_dep.dat'];
-fvcom_obc   = [basename, '_obc.dat'];
 tsOBCFile = [basename, '_tsobc.nc'];
 
-%------------------------------------------------------------------------------
-% read in the FVCOM open boundary node data (need node numbers and dimension)
-%------------------------------------------------------------------------------
-fid = fopen(fvcom_obc,'r');
-if(fid  < 0)
-  error(['file: ' fvcom_obc ' does not exist']);
-end
-C = textscan(fid, '%s %s %s %s %d', 1);
-nObc = C{5};
-obc_nodes = zeros(nObc,1);
-if(ftbverbose); fprintf('reading obc file\n'); end;
-if(ftbverbose); fprintf('# nodes %d\n',nObc); end;
-for i=1:nObc
-  C = textscan(fid, '%d %d %d', 1);
-  obc_nodes(i) = C{2};
-end
+obc_nodes = [Mobj.read_obc_nodes{:}]';
+obc_h = Mobj.h(obc_nodes);
+siglev = Mobj.siglev(obc_nodes, :);
+siglay = Mobj.siglay(obc_nodes, :);
 
-if(ftbverbose); fprintf('obc reading complete\n');end;
-
-%------------------------------------------------------------------------------
-% read in the FVCOM bathymetry data (need bathymetry on open boundary nodes)
-%------------------------------------------------------------------------------
-fid = fopen(fvcom_bathy,'r');
-if(fid  < 0)
-  error(['file: ' fvcom_bathy ' does not exist']);
-end
-C = textscan(fid, '%s %s %s %d', 1);
-Nverts = C{4};
-h = zeros(Nverts,1);
-if(ftbverbose); fprintf('reading bathymetry file\n');end;
-if(ftbverbose); fprintf('# nodes %d\n',Nverts);end;
-for i=1:Nverts
-  C = textscan(fid, '%f %f %f', 1);
-  h(i) = C{3};
-end
-if(ftbverbose); fprintf('min depth %f max depth %f\n',min(h),max(h));end;
-if(ftbverbose); fprintf('bathymetry reading complete\n');end;
-fclose(fid);
-
-%--------------------------------------------------------------
-% Generate the requisite data
-%--------------------------------------------------------------
-
-% extract bathymetry at open boundary nodes
-obc_h = h(obc_nodes);
-
-% time
-% time = 0:1:31.;
-nTimes = numel(time);
-
+nTimes = length(time);
+nObc = length(obc_nodes);
 nSiglev = nSiglay + 1;
 
-% Create or process the temperature and salinity arrays.
-if max(size(in_temp)) == 1
-    inc = 1/real(nSiglay);
-    siglev = 0:-inc:-1;
-    siglay = nan(1, nSiglay);
-    for i=1:nSiglay
-        siglay(i) = mean(siglev(i:i+1));
-    end
-    % initialize temperature/salinity arrays
-    temp = zeros(nObc,nSiglay,nTimes);
-    salt = zeros(nObc,nSiglay,nTimes);
+%--------------------------------------------------------------------------
+% Generate the requisite data
+%--------------------------------------------------------------------------
 
-    % set a constant temperature and salinity
-    obc_temp = repmat(in_temp, 1, nTimes);
-    obc_salt = repmat(in_salt, 1, nTimes);
-
-    % set variable temperature and salinity
-    % for i=1:nTimes
-    % 	obc_temp(i) = 18. + 2.*real(i-1)/nTimes;
-    % 	obc_salt(i) = 30. - 5.*real(i-1)/nTimes;
-    % end
-
-    % Create 3D array from three 1D arrays
-    % temp = repmat(obc_temp, [nObc, nSiglay, 1]);
-    % salt = repmat(obc_salt, [nObc, nSiglay, 1]);
-    for i=1:nObc
-        for j=1:nSiglay
-            temp(i,j,:) = obc_temp;
-            salt(i,j,:) = obc_salt;
-        end
-    end
+if isscalar(in_temp) && isscalar(in_salt)
+    % Make 3D arrays from the scalar values given.
+    temp = repmat(in_temp, [nObc, nSiglay, nTimes]);
+    salt = repmat(in_salt, [nObc, nSiglay, nTimes]);
 else
-    % We have a 3D array already so we just need a couple of stats.
+    % We have a 3D array already.
     temp = in_temp;
     salt = in_salt;
+end
+clear in_temp in_salt
 
-    if nargin == 6 && isfield(Mobj, 'siglay') && isfield(Mobj, 'siglev')
-        siglev = Mobj.siglev;
-        siglay = Mobj.siglay;
-    else
-        warning('Assuming uniform terrain-following sigma coordinates')
-        inc = 1/real(nSiglay);
-        siglev = 0:-inc:-1;
-        siglay = nan(1, nSiglay);
-    end
-
-    if nSiglev ~= size(in_temp, 2) + 1 || length(siglev) ~= size(in_temp, 2) + 1 || length(siglev) ~= size(in_salt, 2) + 1
-        error('Specified number sigma levels does not match supplied data')
-    end
-    if nSiglay ~= size(in_temp, 2) || length(siglay) ~= size(in_temp, 2) || length(siglay) ~= size(in_salt, 2)
-        error('Specified number of sigma layers does not match supplied data')
-    end
+% We need to make sigma level and layer data resolved for each node on the
+% open boundary (in case we have hybrid coordinates).
+if isvector(siglev)
+    siglev = repmat(siglev, [nObc, 1]);
+end
+if isvector(siglay)
+    siglay = repmat(siglay, [nObc, 1]);
 end
 
-%--------------------------------------------------------------
-% set NetCDF variables and dump to file
-%--------------------------------------------------------------
+% Check we've got everything the right size and shape.
+if nSiglev ~= size(temp, 2) + 1 || size(siglev, 2) ~= size(temp, 2) + 1 || size(siglev, 2) ~= size(salt, 2) + 1
+    error('Specified number sigma levels does not match supplied data')
+end
+if nSiglay ~= size(temp, 2) || size(siglay, 2) ~= size(temp, 2) || size(siglay, 2) ~= size(salt, 2)
+    error('Specified number of sigma layers does not match supplied data')
+end
+
+
+%--------------------------------------------------------------------------
+% Set netCDF variables and dump to file
+%--------------------------------------------------------------------------
 
 % open boundary forcing
 nc = netcdf.create(tsOBCFile, 'clobber');
@@ -249,11 +195,11 @@ netcdf.putAtt(nc,obc_h_varid,'units','m');
 netcdf.putAtt(nc,obc_h_varid,'grid','obc_grid');
 netcdf.putAtt(nc,obc_h_varid,'type','data');
 
-obc_siglev_varid=netcdf.defVar(nc,'siglev','NC_FLOAT',siglev_dimid);
+obc_siglev_varid=netcdf.defVar(nc,'siglev','NC_FLOAT',[nobc_dimid,siglev_dimid]);
 netcdf.putAtt(nc,obc_siglev_varid,'long_name','ocean_sigma/general_coordinate');
 netcdf.putAtt(nc,obc_siglev_varid,'grid','obc_grid');
 
-obc_siglay_varid=netcdf.defVar(nc,'siglay','NC_FLOAT',siglay_dimid);
+obc_siglay_varid=netcdf.defVar(nc,'siglay','NC_FLOAT',[nobc_dimid,siglay_dimid]);
 netcdf.putAtt(nc,obc_siglay_varid,'long_name','ocean_sigma/general_coordinate');
 netcdf.putAtt(nc,obc_siglay_varid,'grid','obc_grid');
 
@@ -282,14 +228,14 @@ if strtime
         nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
         nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%09.6f', nDate)];
     end
-    netcdf.putVar(nc,Times_varid,[0, 0], [26, nTimes],nStringOut);
+    netcdf.putVar(nc,Times_varid,[0, 0],[26, nTimes],nStringOut);
 end
 if floattime
     netcdf.putVar(nc,time_varid,0,numel(time),time);
 end
 if inttime
     netcdf.putVar(nc,itime_varid,floor(time));
-    %netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000); % PWC original
+    % netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000); % PWC original
     % KJA edit: avoids rounding errors when converting from double to single
     % Rounds to nearest multiple of the number of msecs in an hour
     netcdf.putVar(nc,itime2_varid,0,numel(time),round((mod(time,1)*24*3600*1000)/(3600*1000))*(3600*1000));
@@ -300,4 +246,6 @@ netcdf.putVar(nc,obc_salinity_varid,salt);
 % close file
 netcdf.close(nc);
 
-if ftbverbose; fprintf('end   : %s\n', subname); end
+if ftbverbose
+    fprintf('end   : %s\n', subname)
+end
