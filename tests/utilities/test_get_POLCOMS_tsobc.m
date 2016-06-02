@@ -29,10 +29,10 @@ clc
 [base, subname] = fileparts(mfilename('fullpath'));
 addpath(fullfile(base, '../../fvcom_prepro'))
 
-load('/tmp/pica/fvcom-toolbox/tests/data/get_POLCOMS_tsobc_data.mat');
+load(fullfile(base, '../data/get_POLCOMS_tsobc_data.mat'));
 
 % Perform the interpolation using the new routine.
-obc_ts = {'/tmp/pica/fvcom-toolbox/tests/data/Daily.PolcomsErsem.2001.01.nc'};
+obc_ts = {fullfile(base, '../data/Daily.PolcomsErsem.2001.01.nc')};
 Mobj_new = get_POLCOMS_tsobc(Mobj, obc_ts);
 
 % Check we have the temperature, salinity and time fields in the new mesh
