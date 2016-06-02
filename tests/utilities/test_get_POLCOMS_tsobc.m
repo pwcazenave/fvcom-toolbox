@@ -18,6 +18,8 @@
 %
 % Revision history:
 %   2013-05-17 First version.
+%   2016-06-02 Updated to actually compare the interpolated data rather
+%   than just the grid information.
 %
 %==========================================================================
 
@@ -34,6 +36,15 @@ load(fullfile(base, '../data/get_POLCOMS_tsobc_data.mat'));
 % Perform the interpolation using the new routine.
 obc_ts = {fullfile(base, '../data/Daily.PolcomsErsem.2001.01.nc')};
 Mobj_new = get_POLCOMS_tsobc(Mobj, obc_ts);
+
+% Add the necessary information for the checks.
+t = delaunayTriangulation(Mobj_new.lon, Mobj_new.lat);
+Mobj_new.tri = t.ConnectivityList;
+clear t
+Mobj.nVerts = length(Mobj.lon);
+Mobj.nElems = size(Mobj.tri, 1);
+Mobj_new.nVerts = length(Mobj_new.lon);
+Mobj_new.nElems = size(Mobj_new.tri, 1);
 
 % Check we have the temperature, salinity and time fields in the new mesh
 % object.
@@ -85,33 +96,36 @@ for ff = 1:length(fnames)
             % Check we have the same number of points and time steps in the
             % new interpolation as in the original.
             %--------------------------------------------------------------
-            [~, results.(fnames{ff}).origNodeTimes] = ...
-                size(Mobj.(fnames{ff}));
-            [results.(fnames{ff}).nNodes, ...
-                results.(fnames{ff}).nNodeTimes] = ...
-                size(Mobj_new.(fnames{ff}));
 
-            if results.(fnames{ff}).nNodes == Mobj.nVerts
+            % Get number of new nodes, times and elements
+            results.(fnames{ff}).nVerts = Mobj_new.nVerts;
+            results.(fnames{ff}).nElems = Mobj_new.nElems;
+            results.(fnames{ff}).nTimes = length(Mobj_new.ts_times);
+            results.(fnames{ff}).orignTimes = length(Mobj.ts_times);
+
+            % Compare old and new nodes, elements and times.
+            if results.(fnames{ff}).nVerts == Mobj.nVerts
                 results.(fnames{ff}).nodeNumber = 'PASS';
             end
-            if results.(fnames{ff}).nNodeTimes == ...
-                    results.(fnames{ff}).origNodeTimes
+            if results.(fnames{ff}).nTimes == length(Mobj.ts_times)
                 results.(fnames{ff}).numNodeTimes = 'PASS';
+            end
+            if results.(fnames{ff}).nElems == Mobj.nElems
+                results.(fnames{ff}).elementNumber = 'PASS';
             end
 
             %--------------------------------------------------------------
-            % Check the values in the node and element arrays match to
-            % reference values.
+            % Check the values in the node arrays match the reference
+            % values.
             %--------------------------------------------------------------
             results.(fnames{ff}).nodeDiff = ...
                 Mobj.(fnames{ff}) - ...
                 Mobj_new.(fnames{ff});
 
             results.(fnames{ff}).nodeRange = ...
-                max(results.(fnames{ff}).nodeDiff(:)) - ...
-                min(results.(fnames{ff}).nodeDiff(:));
+                max(results.(fnames{ff}).nodeDiff(:));
 
-            if nodeRange == 0
+            if results.(fnames{ff}).nodeRange == 0
                 results.(fnames{ff}).nodeValues = 'PASS';
             end
     end
@@ -162,7 +176,7 @@ for ff = 1:length(fnames)
                     fprintf('\toriginal/new number of %s nodes: %d, %d\n', ...
                         fnames{ff}, ...
                         Mobj.nVerts, ...
-                        results.(fnames{ff}).nNodes)
+                        results.(fnames{ff}).nVerts)
                 end
 
             case 'elementNumber'
@@ -179,8 +193,8 @@ for ff = 1:length(fnames)
                 if strcmp(S, 'FAIL')
                     fprintf('\toriginal/new number of %s node times: %d, %d\n', ...
                         fnames{ff}, ...
-                        results.(fnames{ff}).origNodeTimes, ...
-                        results.(fnames{ff}).nNodeTimes)
+                        results.(fnames{ff}).orignTimes, ...
+                        results.(fnames{ff}).nTimes)
                 end
 
             case 'numElementTimes'
