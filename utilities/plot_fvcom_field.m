@@ -2,12 +2,15 @@
 % postprocessing/viewing. It looks for the nv field included in fvcom
 % output files. This function runs an animation if the field includes more
 % than one time steps.
-% 
+%
 % plot_fvcom_field(Mobj, PlotField, 'fid', figure_id, 'cli', colour_lims, 'gif',
 % filename, 'axi', axis_range, 'pll', 'grd', colour);
 %
 % INPUT
-%   Mobj                    = matlab mesh object 
+%   Mobj                    = matlab mesh object with the following fields:
+%       - lon, lat, x, y    = nodal positions (spherical and/or cartesian)
+%       - nv, tri           = connectivity table (called either nv or tri)
+%       - [optional] time   = Modified Julian Day time series
 %   PlotField               = vertex-based field to plot
 %   [optional] fid          = the fid of the figure to plot the field in - specify figure id
 %   [optional] cli          = the colour limits to use - specify the limits
@@ -45,7 +48,10 @@ end
 
 % defaults
 clims = [min(plot_field(:)) max(plot_field(:))];
-if clims(1)==clims(2) clims(1)=clims(1)-0.1; clims(2)=clims(2)+0.1; end
+if clims(1)==clims(2)
+    clims(1)=clims(1)-0.1;
+    clims(2)=clims(2)+0.1;
+end
 gif = false;
 grd = false;
 plot_ll = false;
@@ -57,8 +63,10 @@ quiver_flag = false;
 
 for ii=1:1:length(varargin)
     keyword  = lower(varargin{ii});
-    if length(keyword)~=3 continue; end
-    switch(keyword(1:3))
+    if length(keyword)~=3
+        continue
+    end
+    switch keyword
         case 'fid' % id of a figure
             fig = varargin{ii+1};
             fig_flag = true;
@@ -66,7 +74,7 @@ for ii=1:1:length(varargin)
             clims = varargin{ii+1};
         case 'gif' % make an animated gif
             gif = true;
-            gif_filename = varargin{ii+1}
+            gif_filename = varargin{ii+1};
         case 'axi' % axis
             axis_flag = true;
             axi = varargin{ii+1};
@@ -128,13 +136,17 @@ for ii=1:size(plot_field,2)
     if legend_text_flag set(get(c, 'ylabel'), 'string', legend_text); end
     set(gca, 'clim', clims);
     axis(axi)
-    if title_flag title(fig_title); elseif time_flag title(['time = ' datestr(double(M.time(ii))+MJD_datenum, 'HH:MM dd/mm/yyyy')]); end
+    if title_flag
+        title(fig_title)
+    elseif time_flag
+        title(['time = ' datestr(double(M.time(ii))+MJD_datenum, 'HH:MM dd/mm/yyyy')])
+    end
     if quiver_flag
         hold on
         quiver(quiverData.X, quiverData.Y, quiverData.U(:,:,ii), quiverData.V(:,:,ii), 'k');
         hold off
     end
-    
+
     if gif
         axis off
         set(gcf, 'color', 'w')
