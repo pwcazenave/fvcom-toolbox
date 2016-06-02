@@ -88,53 +88,31 @@ for ff = 1:length(fnames)
             %--------------------------------------------------------------
             [~, results.(fnames{ff}).origNodeTimes] = ...
                 size(forcing_interp.(fnames{ff}).node);
-            [~, results.(fnames{ff}).origElementTimes] = ...
-                size(forcing_interp.(fnames{ff}).data);
             [results.(fnames{ff}).nNodes, ...
                 results.(fnames{ff}).nNodeTimes] = ...
                 size(forcing_interp_new.(fnames{ff}).node);
-            [results.(fnames{ff}).nElems, ...
-                results.(fnames{ff}).nElementTimes] = ...
-                size(forcing_interp_new.(fnames{ff}).data);
 
             if results.(fnames{ff}).nNodes == Mobj.nVerts
                 results.(fnames{ff}).nodeNumber = 'PASS';
-            end
-            if results.(fnames{ff}).nElems == Mobj.nElems
-                results.(fnames{ff}).elementNumber = 'PASS';
             end
             if results.(fnames{ff}).nNodeTimes == ...
                     results.(fnames{ff}).origNodeTimes
                 results.(fnames{ff}).numNodeTimes = 'PASS';
             end
-            if results.(fnames{ff}).nElementTimes == ...
-                    results.(fnames{ff}).origElementTimes
-                results.(fnames{ff}).numElementTimes = 'PASS';
-            end
 
             %--------------------------------------------------------------
-            % Check the values in the node and element arrays match to
-            % reference values.
+            % Check the values in the node arrays match the reference
+            % values.
             %--------------------------------------------------------------
             results.(fnames{ff}).nodeDiff = ...
                 forcing_interp.(fnames{ff}).node - ...
                 forcing_interp_new.(fnames{ff}).node;
-            results.(fnames{ff}).elemDiff = ...
-                forcing_interp.(fnames{ff}).data - ...
-                forcing_interp_new.(fnames{ff}).data;
 
             results.(fnames{ff}).nodeRange = ...
-                max(results.(fnames{ff}).nodeDiff(:)) - ...
-                min(results.(fnames{ff}).nodeDiff(:));
-            results.(fnames{ff}).elemRange = ...
-                max(results.(fnames{ff}).elemDiff(:)) - ...
-                min(results.(fnames{ff}).elemDiff(:));
+                max(results.(fnames{ff}).nodeDiff(:));
 
             if results.(fnames{ff}).nodeRange == 0
                 results.(fnames{ff}).nodeValues = 'PASS';
-            end
-            if results.(fnames{ff}).elemRange == 0;
-                results.(fnames{ff}).elementValues = 'PASS';
             end
     end
 end
@@ -187,15 +165,6 @@ for ff = 1:length(fnames)
                         results.(fnames{ff}).nNodes)
                 end
 
-            case 'elementNumber'
-                fprintf('%s %s element number test\n', S, fnames{ff})
-                if strcmp(S, 'FAIL')
-                    fprintf('\toriginal/new number of %s elements: %d, %d\n', ...
-                        fnames{ff}, ...
-                        Mobj.nElems, ...
-                        results.(fnames{ff}).nElems)
-                end
-
             case 'numNodeTimes'
                 fprintf('%s %s node time steps test\n', S, fnames{ff})
                 if strcmp(S, 'FAIL')
@@ -205,29 +174,12 @@ for ff = 1:length(fnames)
                         results.(fnames{ff}).nNodeTimes)
                 end
 
-            case 'numElementTimes'
-                fprintf('%s %s element time steps test\n', S, fnames{ff})
-                if strcmp(S, 'FAIL')
-                    fprintf('\toriginal/new number of %s element times: %d, %d\n', ...
-                        fnames{ff}, ...
-                        results.(fnames{ff}).origElementTimes, ...
-                        results.(fnames{ff}).nElementTimes)
-                end
-
             case 'nodeValues'
                 fprintf('%s %s node values test\n', S, fnames{ff})
                 if strcmp(S, 'FAIL')
                     fprintf('\trange of %s node values: %d\n', ...
                         fnames{ff}, ...
                         results.(fnames{ff}).nodeRange)
-                end
-
-            case 'elementValues'
-                fprintf('%s %s element values test\n', S, fnames{ff})
-                if strcmp(S, 'FAIL')
-                    fprintf('\trange of %s element values: %d\n', ...
-                        fnames{ff}, ...
-                        results.(fnames{ff}).elemRange)
                 end
         end
     end
