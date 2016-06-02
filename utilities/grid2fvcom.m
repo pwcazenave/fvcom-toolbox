@@ -169,12 +169,8 @@ for vv = 1:length(vars)
             fprintf('skipping %s\n', vars{vv})
 
         otherwise
-            % Preallocate the output arrays.
-            % Serial version:
-            % fvcom.(vars{vv}).data = zeros(nElems, ntimes);
-            % fvcom.(vars{vv}).node = zeros(nVerts, ntimes);
-            % Also create temporary arrays for the inner loop to be
-            % parallelisable (is that a word?):
+            % Preallocate the output arrays. Also create temporary arrays
+            % for the inner loop to be parallelisable (is that a word?):
             tmp_fvcom_data = zeros(nElems, ntimes);
             tmp_fvcom_node = zeros(nVerts, ntimes);
             try
@@ -242,14 +238,7 @@ for vv = 1:length(vars)
                     fprintf('interpolating %s, frame %d of %d\n', varname, i, ntimes);
                 end
 
-                % Serial version:
-                % currvar = data.(vars{vv}).data(:, :, i);
-                % Parallel version:
                 currvar = tmp_data_data(:, :, i);
-
-                % griddata way (cubic interpolation)
-                %fvcom.(vars{vv}).node(:,i) = griddata(wind.x,wind.y,currvar,x,y,'cubic');
-                %fvcom.(vars{vv}).data(:,i) = griddata(wind.x,wind.y,currvar,xc,yc,'cubic');
 
                 % TriScatteredInterp way (with natural neighbour
                 % interpolation). Instead of the quite crude try/catch that
@@ -279,33 +268,7 @@ for vv = 1:length(vars)
                 else
                     error('Can''t interpolate the data: non-matching coordinate array sizes.')
                 end
-%                 try
-%                     ftsin = TriScatteredInterp(...
-%                         xx, ...
-%                         yy, ...
-%                         currvar(~isnan(currvar(:))), ...
-%                         'natural');
-%                 catch err
-%                     % In my experience, the matlabpool size - 1 is the
-%                     % first iteration that actually gets printed to the
-%                     % display.
-%                     if i == matlabpool('size') - 1
-%                         % Only print the warning on the "first" iteration.
-%                         warning([err.identifier, ': Some NCEP data are projected' ...
-%                             ' onto a different grid. Check you have specified' ...
-%                             ' data.xalt and data.yalt arrays which are on the' ...
-%                             ' same grid as the data to be interpolated.'])
-%                     end
-%                     ftsin = TriScatteredInterp(xxalt, yyalt, ...
-%                         currvar(~isnan(currvar(:))), 'natural');
-%                 end
 
-                % Serial version:
-                % fvcom.(vars{vv}).node(:,i) = ftsin(x,y);
-                % fvcom.(vars{vv}).data(:,i) = ftsin(xc,yc);
-                % nnans(1) = sum(isnan(fvcom.(vars{vv}).node(:,i)));
-                % nnans(2) = sum(isnan(fvcom.(vars{vv}).data(:,i)));
-                % Parallel version:
                 tmp_fvcom_node(:, i) = ftsin(x, y);
                 nnans1 = sum(isnan(tmp_fvcom_node(:, i)));
                 if  nnans1 > 0
