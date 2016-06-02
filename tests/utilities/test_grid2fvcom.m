@@ -18,6 +18,7 @@
 %
 % Revision history:
 %   2013-05-17 First version.
+%   2016-06-02 Fix paths to data to load.
 %
 %==========================================================================
 
@@ -25,14 +26,11 @@ matlabrc
 close all
 clc
 
-addpath('/users/modellers/pica/Code/fvcom-toolbox/utilities')
-addpath('/users/modellers/pica/Code/fvcom-toolbox/fvcom_prepro/')
+% Set up our test environment.
+[base, subname] = fileparts(mfilename('fullpath'));
+addpath(fullfile(base, '../../fvcom_prepro'))
 
-% Temporary paths when on Riqui's machine
-addpath('/tmp/pica/fvcom-toolbox/fvcom_prepro/')
-addpath('/tmp/pica/fvcom-toolbox/utilities/')
-
-load('/tmp/pica/fvcom-toolbox/tests/data/grid2fvcom_data.mat');
+load(fullfile(base, '../data/grid2fvcom_data.mat'));
 
 interpfields = {'uwnd', 'vwnd', 'slp', 'nshf', 'nlwrs', 'nswrs', 'P_E', ...
     'Et', 'time', 'lon', 'lat', 'x', 'y'};
