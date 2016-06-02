@@ -7,11 +7,9 @@
 %       - number of time steps in the output
 %       - range of values in the node arrays
 %
-% It uses a simplified POLCOMS NetCDF file from January, 2001 as the base
-% input. The mesh object (Mobj) contains the required input for
-% get_POLCOMS_tsobc as well as a set of 'known good' results
-% (Mobj.temperature, Mobj.salt and Mobj.ts_times) for comparison against
-% the new result.
+% It uses synthetic data on an automatically generated grid and then reads
+% in the results and compares them against the inputs. Warning are issued
+% for non-identical results.
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
@@ -28,16 +26,11 @@ clc
 % Set up our test environment.
 [base, subname] = fileparts(mfilename('fullpath'));
 cd(base)
-%%
-cd /users/modellers/pica/Code/fvcom-toolbox/tests/fvcom_prepro/
-base = './';
 
 addpath(fullfile(base, '../../fvcom_prepro'))
 addpath(fullfile(base, '../../utilities'))
 
-
-% Make some synthetic data to user for the test so we can easily compare
-% the results.
+%% Make some synthetic data for the test to compare the results.
 
 % A boring grid.
 nt = 30; % about a month of daily data
