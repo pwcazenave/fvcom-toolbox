@@ -59,10 +59,10 @@ Mobj.read_obc_nodes{2} = nodes(Mobj.lon == max(Mobj.lon));
 nobn = length([Mobj.read_obc_nodes{:}]);
 
 % Have a look see.
-clf
-trimesh(Mobj.tri, Mobj.lon, Mobj.lat, 'color', 'k')
-hold on
-plot(Mobj.lon([Mobj.read_obc_nodes{:}]), Mobj.lat([Mobj.read_obc_nodes{:}]), 'r.')
+% clf
+% trimesh(Mobj.tri, Mobj.lon, Mobj.lat, 'color', 'k')
+% hold on
+% plot(Mobj.lon([Mobj.read_obc_nodes{:}]), Mobj.lat([Mobj.read_obc_nodes{:}]), 'r.')
 
 % Make the vertical grid (nice and simple at first).
 Mobj.siglev = repmat(sigma_geo(nz, 1), [nx, 1]);
