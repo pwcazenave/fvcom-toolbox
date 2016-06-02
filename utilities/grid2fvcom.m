@@ -86,6 +86,8 @@ function fvcom = grid2fvcom(Mobj, vars, data, varargin)
 %   are used to accommodate subtleties in the parallel code in MATLAB.
 %   2015-05-20 Update the parallel processing commands.
 %   2015-05-22 Add option to disable output on element centres.
+%   2016-06-02 Fix the alternative grid handling in the parallel loop.
+%   Remove commented out code too.
 %
 %==========================================================================
 
@@ -184,14 +186,6 @@ for vv = 1:length(vars)
 
             xx = data.x(:);
             yy = data.y(:);
-            % Sometimes the parfor loop will fail if xxalt and yyalt
-            % aren't defined at all. So, make them empty here. This
-            % shouldn't impact data where we need those alternative arrays
-            % because if the data.xalt and data.yalt arrays exist, then
-            % these values will be overwritten with them. It does ensure
-            % that xxalt and yyalt always exist though.
-            xxalt = [];
-            yyalt = [];
 
             % Check the shapes of the input data match those of the
             % position arrays.
@@ -200,20 +194,11 @@ for vv = 1:length(vars)
 
             if isfield(data, 'xalt')
                 [fvxalt, fvyalt] = size(data.xalt);
-                xxalt = data.xalt(:);
-                yyalt = data.yalt(:);
                 if (ncx ~= fvx || ncy ~= fvy) || (ncx ~= fvxalt || ncy ~= fvyalt)
                     % Flipping the input array so it hopefully matches the
                     % position arrays.
                     tmp_data_data = permute(tmp_data_data, [2, 1, 3]);
                     warning('Transposed ''%s'' input data to match position array dimensions', vars{vv})
-                end
-                if isfield(data, 'lsmalt')
-                    % If we have a land mask, mask off the coastal and land
-                    % points in the coordinates arrays with the alternative
-                    % mask.
-                    xxalt(data.lsmalt ~= 0) = [];
-                    yyalt(data.lsmalt ~= 0) = [];
                 end
             else
                 if (ncx ~= fvx || ncy ~= fvy)
@@ -222,8 +207,8 @@ for vv = 1:length(vars)
                     tmp_data_data = permute(tmp_data_data, [2, 1, 3]);
                     warning('Transposed ''%s'' input data to match position array dimensions', vars{vv})
                 end
-                % If we have a land mask, mask off the coastal and land points
-                % in the coordinates arrays.
+                % If we have a land mask, mask off the coastal and land
+                % points in the coordinates arrays.
                 if isfield(data, 'lsm')
                     xx(data.lsm ~= 0) = [];
                     yy(data.lsm ~= 0) = [];
@@ -252,6 +237,15 @@ for vv = 1:length(vars)
                 ndata = numel(currvar(~isnan(currvar)));
                 nxx = numel(xx);
                 nyy = numel(yy);
+                % Get the alternate grid, if we have it.
+                if isfield(data, 'xalt')
+                    xxalt = data.xalt(:);
+                    yyalt = data.yalt(:);
+                    if isfield(data, 'lsmalt')
+                        xxalt(data.lsmalt ~= 0) = [];
+                        yyalt(data.lsmalt ~= 0) = [];
+                    end
+                end
                 assert(nxx == nyy, 'Inconsistent coordinate array sizes.')
                 if nxx == ndata
                     ftsin = TriScatteredInterp(...
@@ -259,7 +253,7 @@ for vv = 1:length(vars)
                         yy, ...
                         currvar(~isnan(currvar(:))), ...
                         'natural');
-                elseif exist('xxalt', 'var') && numel(xxalt) == ndata
+                elseif isfield(data, 'xalt') && numel(xxalt) == ndata
                     ftsin = TriScatteredInterp(...
                         xxalt, ...
                         yyalt, ...
