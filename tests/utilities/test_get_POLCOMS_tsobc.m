@@ -25,12 +25,9 @@ matlabrc
 close all
 clc
 
-addpath('/users/modellers/pica/Code/fvcom-toolbox/utilities')
-addpath('/users/modellers/pica/Code/fvcom-toolbox/fvcom_prepro/')
-
-% Temporary paths when on Riqui's machine
-addpath('/tmp/pica/fvcom-toolbox/fvcom_prepro/')
-addpath('/tmp/pica/fvcom-toolbox/utilities/')
+% Set up our test environment.
+[base, subname] = fileparts(mfilename('fullpath'));
+addpath(fullfile(base, '../../fvcom_prepro'))
 
 load('/tmp/pica/fvcom-toolbox/tests/data/get_POLCOMS_tsobc_data.mat');
 
