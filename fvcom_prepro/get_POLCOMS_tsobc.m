@@ -70,13 +70,11 @@ if ftbverbose
     fprintf(['begin : ' subname '\n'])
 end
 
-wasOpened = false;
 if license('test', 'Distrib_Computing_Toolbox')
     % We have the Parallel Computing Toolbox, so launch a bunch of workers.
-    if matlabpool('size') == 0
+    if isempty(gcp('nocreate'))
         % Force pool to be local in case we have remote pools available.
-        matlabpool open local
-        wasOpened = true;
+        parpool('local');
     end
 end
 
@@ -280,11 +278,6 @@ Mobj.ts_times = greg2mjulian(...
     pc.time.hms(1), ...
     pc.time.hms(2), ...
     pc.time.hms(3)) + (pc.time.data / 3600 / 24);
-
-% Close the MATLAB pool if we opened it.
-if wasOpened
-    matlabpool close
-end
 
 if ftbverbose
     fprintf(['end   : ' subname '\n'])
