@@ -76,11 +76,8 @@ for ff = 1:length(fnames)
             % change if proven otherwise.
             %--------------------------------------------------------------
             results.(fnames{ff}).nodeNumber = 'FAIL';
-            results.(fnames{ff}).elementNumber = 'FAIL';
             results.(fnames{ff}).numNodeTimes = 'FAIL';
-            results.(fnames{ff}).numElementTimes = 'FAIL';
             results.(fnames{ff}).nodeValues = 'FAIL';
-            results.(fnames{ff}).elementValues = 'FAIL';
 
             %--------------------------------------------------------------
             % Check we have the same number of points and time steps in the
