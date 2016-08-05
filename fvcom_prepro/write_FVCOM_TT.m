@@ -68,7 +68,7 @@ swept_area_varid=netcdf.defVar(nc,'swept_area','NC_FLOAT',nele_dimid);
 netcdf.putAtt(nc,swept_area_varid,'long_name','Area swept by turbine rotor blades');
 
 % variables that could be added in the future
-% thrust_coeff_varid=netcdf.defVar(nc,'thrust_coeff','NC_FLOAT',nele_dimid);
+thrust_coeff_varid=netcdf.defVar(nc,'thrust_coeff','NC_FLOAT',nele_dimid);
 % netcdf.putAtt(nc,thrust_coeff_varid,'long_name','Turbine thrust ceofficient');
 % blade_coeff_varid=netcdf.defVar(nc,'blade_coeff','NC_FLOAT',nele_dimid);
 % netcdf.putAtt(nc,blade_coeff_varid,'long_name','Drag coefficient for the turbine blades');
@@ -84,7 +84,7 @@ netcdf.putVar(nc,sigma_layer_varid,turbine.sigma_layer);
 netcdf.putVar(nc,swept_area_varid,turbine.area);
 
 % variables that could be added in the future
-% netcdf.putVar(nc,thrust_coeff_varid,turbine.thrust);
+netcdf.putVar(nc,thrust_coeff_varid,turbine.thrust_coeff);
 % netcdf.putVar(nc,blade_coeff_varid,turbine.drag);
 
 % close file
