@@ -8,9 +8,12 @@ function write_FVCOM_groundwater(Mobj, grndwtr_file, varargin)
 %
 % INPUT:
 %   Mobj = Matlab mesh object with fields:
-%       obc_nodes - array of boundary node IDs.
-%       surfaceElevation - array of surface elevation values (shaped [space,
-%       time]).
+%       groundwater - struct with the following fields (sizes of arrays in
+%       square brackets):
+%           - times - Modified Julian Days of the groundwater input.
+%           - flux - Ground water Volume flux (m^{3}s^{-1}) [nodes, time].
+%           - temp - Ground water temperature (Celsius) [nodes, time].
+%           - salt - Ground water salinity (PSU) [nodes, time].
 %   grndwtr_file = name of netCDF file.
 %
 %   Optional keyword-argument pairs. These control the time variables. This
@@ -41,6 +44,8 @@ function write_FVCOM_groundwater(Mobj, grndwtr_file, varargin)
 %
 % Revision history
 %   2015-11-18 First version.
+%   2016-08-08 Added help which actually refers to this script's function
+%   rather than the template upon which is was based.
 %
 %==========================================================================
 
