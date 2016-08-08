@@ -22,9 +22,8 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 %       * rivers - river data struct with the following fields:
 %           - positions - river positions in lon, lat.
 %           - names - list of river names
-%           - river_flux - path to the NEMO netCDF data file.
-%           - river_coordinates - path to the NEMO netCDF grid data
-%               file. Must have variables 'e1t' and 'e2t'.
+%           - river_flux - path to the NEMO netCDF data file. Must contain
+%           the area of each grid element for conversion of the fluxes.
 %   dist_thresh - maximum distance away from a river node beyond
 %       which the search for an FVCOM node is abandoned. Units in degrees.
 %   The following keyword-argument pairs are also valid:
@@ -43,16 +42,14 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 %   Mobj.river_p - phosphate
 %   Mobj.river_sio3 - silicate
 %   Mobj.river_dic - dissolved inorganic carbon
-%   Mobj.river_bioalk - alkalinity
-%   Mobj.river_temp - temperature
-%   Mobj.river_salt - salinity
-%   Mobj.river_nodes - node IDs for the rivers. At the moment, these are
-%       point sources only. Eventually, some rivers may have to be split
-%       over several nodes.
+%   Mobj.river_totalk - total alkalinity
+%   Mobj.river_bioalk - bio-alkalinity
+%   Mobj.river_nodes - node IDs for the rivers.
 %   Mobj.river_names - river names which fall within the model domain. For
 %       rivers where the discharge has been summed, the name is compoud,
 %       with each contributing name separated by a hyphen (-).
-%   Mobj.river_time - time series for the river discharge data
+%   Mobj.river_time - Modified Julian Day time series for the river
+%       discharge data.
 %
 % EXAMPLE USAGE:
 %   Mobj = get_NEMO_rivers(Mobj, 0.15)
@@ -67,6 +64,10 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 % Revision history:
 %   2016-03-02 - First version based on get_nemo_rivers.m.
 %   2016-05-03 - Add option to dump NEMO river locations to text file.
+%   2016-06-06 - Remove temperature and salinity from the description as
+%   they're really the Baltic Sea inputs only. Also read in the grid area
+%   from the new format ERSEM file (variable dA). Add total alkalinity
+%   to the outputs.
 %
 %==========================================================================
 
@@ -121,16 +122,21 @@ nemo.o = ncread(Mobj.rivers.river_flux, 'roo');
 nemo.p = ncread(Mobj.rivers.river_flux, 'rop');
 nemo.sio3 = ncread(Mobj.rivers.river_flux, 'rosio2');
 nemo.dic = ncread(Mobj.rivers.river_flux, 'rodic');
+nemo.alt = ncread(Mobj.rivers.river_flux, 'rototalk');
 nemo.bioalk = ncread(Mobj.rivers.river_flux, 'robioalk');
+% nemo.temp = ncread(Mobj.rivers.river_flux, 'rotemper');
+% nemo.salt = ncread(Mobj.rivers.river_flux, 'rosaline');
 
 % Now get the NEMO grid data.
-nemo.e1t = ncread(Mobj.rivers.river_coordinates, 'e1t');
-nemo.e2t = ncread(Mobj.rivers.river_coordinates, 'e2t');
+% nemo.e1t = ncread(Mobj.rivers.river_coordinates, 'e1t');
+% nemo.e2t = ncread(Mobj.rivers.river_coordinates, 'e2t');
 % Calculate the area for all elements in the grid.
-nemo.area = nemo.e1t .* nemo.e2t;
+% nemo.area = nemo.e1t .* nemo.e2t;
+% Just use the new area variable instead of needing two files.
+nemo.area = ncread(Mobj.rivers.river_flux, 'dA');
 
 % NEMO does conversions to ERSEM units internally. Whilst this is easy in
-% same ways, it's not particularly transparent. So, instead, we'll do all
+% some ways, it's not particularly transparent. So, instead, we'll do all
 % the conversions up front and then the data that get loaded into ERSEM are
 % already in the correct units. To summarise those conversions, we have:
 %
