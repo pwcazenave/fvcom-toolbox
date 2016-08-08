@@ -45,7 +45,7 @@ function write_FVCOM_groundwater(Mobj, grndwtr_file, varargin)
 % Revision history
 %   2015-11-18 First version.
 %   2016-08-08 Added help which actually refers to this script's function
-%   rather than the template upon which is was based.
+%   rather than the template upon which it was based.
 %
 %==========================================================================
 
