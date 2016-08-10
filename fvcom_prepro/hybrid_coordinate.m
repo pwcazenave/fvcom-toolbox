@@ -55,10 +55,9 @@ function Mobj = hybrid_coordinate(conf, Mobj)
 %
 % Revision history:
 %   2015-05-24 First version based on Riqui's initial implementation.
-%   2016-08-10 Updated the minimisation function to use the maximum
-%   of the difference between the two sets of vertical distributions
-%   rather than the median difference. Also tidy up the debug
-%   function.
+%   2016-08-10 Updated the minimisation function to use the maximum of the
+%   difference between the two sets of vertical distributions rather than
+%   the median difference. Also tidy up the debug function.
 %
 %==========================================================================
 
@@ -82,19 +81,13 @@ DL = conf.DL;
 KU = conf.KU;
 KL = conf.KL;
 
-% Solve for z1-z2 to find Hmin parameter
+% Solve for Z0-Z2 to find Hmin parameter
 if ftbverbose
     fprintf('Optimising the hybrid coordinates... ')
 end
 ZKU = repmat(DU./KU, 1, KU);
 ZKL = repmat(DL./KL, 1, KL);
 fparams = @(H)hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL);
-% Does the sigma_gen function do the same thing as hybrid_coordinate_hmin?
-% It seems suspiciously similar, except it has separate calculations for
-% depths above and below H0 (MIN CONSTANT DEPTH). If hmin == h, then
-% sigma_gen does almost the same thing as hybrid_coordinate_hmin (I think -
-% I haven't actually tested that assertation).
-% fparams = @(H)sigma_gen(nlev, DL, DU, KL, KU, ZKL, ZKU, H, H);
 [Hmin, ~] = fminsearch(fparams, H0, optimisation_settings);
 
 if ftbverbose
