@@ -54,7 +54,7 @@ function [Mobj] = read_sms_mesh(varargin)
 %
 %==============================================================================
 
-subname = 'read_sms_mesh';
+[~, subname] = fileparts(mfilename('fullpath'));
 global ftbverbose;
 if ftbverbose
     fprintf('\nbegin : %s \n', subname)
