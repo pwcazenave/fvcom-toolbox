@@ -27,36 +27,38 @@
 <div class="box"><strong>function add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"> add time dependent scalar variable to a Riverfile 
+<div class="fragment"><pre class="comment"> add time dependent scalar variable to a Riverfile
 
  function add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
 
  DESCRIPTION:
-    Write an additional scalar variable (e.g. sediment, DO) to a NetCDF
+    Write an additional scalar variable (e.g. sediment, DO) to a netCDF
     River file.  Note that the concentration of the scalar variable
-    is set the same at all river points in the file so it is assumed 
+    is set the same at all river points in the file so it is assumed
     that even if the file contains multiple nodes, they all refer to the same
     river.
 
  INPUT
-    RiverFile:   FVCOM 3.x NetCDF river forcing file
-    VarName:     Variable name (will be the name of the array in the NetCDF file)
+    RiverFile:   FVCOM 3.x netCDF river forcing file
+    VarName:     Variable name (will be the name of the array in the netCDF file)
     VarLongName: Variable attribute &quot;long_name&quot;
     VarUnits:    Variable attribute &quot;units&quot;
-    VarData:     1-D Time series of variable data of exact same dimensions as 
-                 the river flux 
-   
+    VarData:     1-D time series of variable data of exact same dimensions as
+                 the river flux
+
  OUTPUT:
     Modified FVCOM RiverFile
 
  EXAMPLE USAGE
-    add_var_FVCOM_river('tst_riv.nc','medium_sand','medium sand','kg-m^-3',sand_ts)  
+    add_var_FVCOM_river('tst_riv.nc','medium_sand','medium sand','kg-m^-3',sand_ts)
 
- Author(s):  
+ Author(s):
     Geoff Cowles (University of Massachusetts Dartmouth)
+    Pierre Cazenave (Plymouth Marine Laboratory)
 
  Revision history
-   
+    2016-04-01 Updated the code to use the native MATLAB netCDF routines.
+
 ==============================================================================</pre></div>
 
 <!-- crossreference -->
@@ -78,18 +80,18 @@ This function is called by:
 0004 <span class="comment">% function add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)</span>
 0005 <span class="comment">%</span>
 0006 <span class="comment">% DESCRIPTION:</span>
-0007 <span class="comment">%    Write an additional scalar variable (e.g. sediment, DO) to a NetCDF</span>
+0007 <span class="comment">%    Write an additional scalar variable (e.g. sediment, DO) to a netCDF</span>
 0008 <span class="comment">%    River file.  Note that the concentration of the scalar variable</span>
 0009 <span class="comment">%    is set the same at all river points in the file so it is assumed</span>
 0010 <span class="comment">%    that even if the file contains multiple nodes, they all refer to the same</span>
 0011 <span class="comment">%    river.</span>
 0012 <span class="comment">%</span>
 0013 <span class="comment">% INPUT</span>
-0014 <span class="comment">%    RiverFile:   FVCOM 3.x NetCDF river forcing file</span>
-0015 <span class="comment">%    VarName:     Variable name (will be the name of the array in the NetCDF file)</span>
+0014 <span class="comment">%    RiverFile:   FVCOM 3.x netCDF river forcing file</span>
+0015 <span class="comment">%    VarName:     Variable name (will be the name of the array in the netCDF file)</span>
 0016 <span class="comment">%    VarLongName: Variable attribute &quot;long_name&quot;</span>
 0017 <span class="comment">%    VarUnits:    Variable attribute &quot;units&quot;</span>
-0018 <span class="comment">%    VarData:     1-D Time series of variable data of exact same dimensions as</span>
+0018 <span class="comment">%    VarData:     1-D time series of variable data of exact same dimensions as</span>
 0019 <span class="comment">%                 the river flux</span>
 0020 <span class="comment">%</span>
 0021 <span class="comment">% OUTPUT:</span>
@@ -100,78 +102,86 @@ This function is called by:
 0026 <span class="comment">%</span>
 0027 <span class="comment">% Author(s):</span>
 0028 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0029 <span class="comment">%</span>
-0030 <span class="comment">% Revision history</span>
-0031 <span class="comment">%</span>
-0032 <span class="comment">%==============================================================================</span>
-0033 
-0034 <span class="comment">%warning off</span>
+0029 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Revision history</span>
+0032 <span class="comment">%    2016-04-01 Updated the code to use the native MATLAB netCDF routines.</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">%==============================================================================</span>
 0035 
-0036 subname = <span class="string">'add_var_FVCOM_river'</span>;
-0037 <span class="keyword">global</span> ftbverbose;
-0038 <span class="keyword">if</span>(ftbverbose);
-0039   fprintf(<span class="string">'\n'</span>)
-0040   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
-0041 <span class="keyword">end</span>;
-0042 
-0043 <span class="keyword">if</span>(ftbverbose);fprintf(<span class="string">'adding variable %s to file %s\n'</span>,VarName,RiverFile); <span class="keyword">end</span>;
-0044 
-0045 <span class="comment">%------------------------------------------------------------------------------</span>
-0046 <span class="comment">% Open River Netcdf and read dimensions</span>
-0047 <span class="comment">%------------------------------------------------------------------------------</span>
-0048 <span class="keyword">if</span>(~exist(RiverFile))
-0049     error([<span class="string">'file: '</span> RiverFile <span class="string">' does not exist'</span>]);
-0050 <span class="keyword">end</span>;
-0051 
-0052 nc = netcdf(RiverFile, <span class="string">'w'</span>);  
-0053  
-0054 <span class="comment">% read dimensions</span>
-0055 flux = nc{<span class="string">'river_flux'</span>}(:,:);
-0056 [nTimes,nRivnodes]= size(flux);
-0057 
-0058 <span class="comment">% make sure time dimension matches FVCOM river dims</span>
-0059 tempTimes = prod(size(VarData));
-0060 <span class="keyword">if</span>(nTimes ~= tempTimes)
-0061     fprintf(<span class="string">'# of time frames in file %s is %d\n'</span>,RiverFile,tempTimes)
-0062     fprintf(<span class="string">'# of time frames in VarData is %d\n'</span>,nTimes)
-0063     error(<span class="string">'you have chosen the wrong vocation'</span>)
-0064 <span class="keyword">end</span>;
-0065 
+0036 <span class="comment">%warning off</span>
+0037 
+0038 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0039 <span class="keyword">global</span> ftbverbose
+0040 <span class="keyword">if</span> ftbverbose
+0041     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0042 <span class="keyword">end</span>
+0043 
+0044 <span class="keyword">if</span> ftbverbose
+0045     fprintf(<span class="string">'adding variable %s to file %s\n'</span>, VarName, RiverFile)
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="comment">%------------------------------------------------------------------------------</span>
+0049 <span class="comment">% Open River Netcdf and read dimensions</span>
+0050 <span class="comment">%------------------------------------------------------------------------------</span>
+0051 <span class="keyword">if</span> exist(RiverFile, <span class="string">'file'</span>) ~= 2
+0052     error(<span class="string">'file: %s does not exist'</span>, RiverFile)
+0053 <span class="keyword">end</span>
+0054 
+0055 <span class="comment">% read dimensions</span>
+0056 flux = ncread(RiverFile, <span class="string">'river_flux'</span>);
+0057 [nTimes, nRivnodes] = size(flux);
+0058 
+0059 <span class="comment">% make sure time dimension matches FVCOM river dims</span>
+0060 tempTimes = numel(VarData);
+0061 <span class="keyword">if</span> nTimes ~= tempTimes
+0062     fprintf(<span class="string">'# of time frames in file %s is %d\n'</span>, RiverFile, tempTimes)
+0063     fprintf(<span class="string">'# of time frames in VarData is %d\n'</span>, nTimes)
+0064     error(<span class="string">'You have chosen the wrong vocation'</span>)
+0065 <span class="keyword">end</span>
 0066 
-0067 <span class="comment">%------------------------------------------------------------------------------</span>
-0068 <span class="comment">% Write variable definition and data and close file</span>
-0069 <span class="comment">%------------------------------------------------------------------------------</span>
-0070 
-0071 <span class="comment">% set field</span>
-0072 river_field = zeros(nTimes,nRivnodes);
-0073 <span class="keyword">for</span> i=1:nTimes
-0074     river_field(i,1:nRivnodes) = VarData(i);
-0075 <span class="keyword">end</span>;
-0076 
-0077 
+0067 
+0068 <span class="comment">%------------------------------------------------------------------------------</span>
+0069 <span class="comment">% Write variable definition and data and close file</span>
+0070 <span class="comment">%------------------------------------------------------------------------------</span>
+0071 
+0072 <span class="comment">% set field</span>
+0073 river_field = repmat(VarData, nRivnodes, 1);
+0074 
+0075 <span class="comment">%------------------------------------------------------------------------------</span>
+0076 <span class="comment">% dump to netcdf file</span>
+0077 <span class="comment">%------------------------------------------------------------------------------</span>
 0078 
-0079 <span class="comment">%--------------------------------------------------------------</span>
-0080 <span class="comment">% dump to netcdf file</span>
-0081 <span class="comment">%--------------------------------------------------------------</span>
-0082 
-0083 <span class="comment">% open boundary forcing</span>
-0084 nc = netcdf(RiverFile, <span class="string">'w'</span>);    
-0085 nc{VarName} = ncfloat(<span class="string">'time'</span>,<span class="string">'rivers'</span>);
-0086 nc{VarName}.long_name = VarLongName; 
-0087 nc{VarName}.units     = VarUnits;   
-0088 
-0089 <span class="comment">% dump dynamic data</span>
-0090 <span class="keyword">for</span> i=1:nTimes
-0091   nc{VarName}(i,1:nRivnodes) = river_field(i,1:nRivnodes); 
-0092 <span class="keyword">end</span>;
-0093 
-0094 nc = close(nc);    
+0079 <span class="comment">% open boundary forcing</span>
+0080 nc = netcdf.open(RiverFile, <span class="string">'NC_WRITE'</span>);
+0081 
+0082 <span class="comment">% define dimensions</span>
+0083 time_dimid = netcdf.inqDimID(nc, <span class="string">'time'</span>);
+0084 rivers_dimid = netcdf.inqDimID(nc, <span class="string">'rivers'</span>);
+0085 
+0086 <span class="comment">% add the new variable if it doesn't already exist.</span>
+0087 <span class="keyword">try</span>
+0088     netcdf.reDef(nc);
+0089     varid = netcdf.defVar(nc, VarName, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0090     netcdf.putAtt(nc, varid, <span class="string">'long_name'</span>, VarLongName);
+0091     netcdf.putAtt(nc, varid, <span class="string">'units'</span>, VarUnits);
+0092 
+0093     <span class="comment">% end definitions</span>
+0094     netcdf.endDef(nc);
 0095 
-0096 
-0097 <span class="keyword">if</span>(ftbverbose);
-0098   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0099 <span class="keyword">end</span>;
-0100</pre></div>
-<hr><address>Generated on Thu 18-Feb-2016 11:26:24 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0096     <span class="comment">% dump dynamic data</span>
+0097     netcdf.putVar(nc, varid, river_field);
+0098 <span class="keyword">catch</span> e
+0099     fprintf(e.message)
+0100     error(<span class="string">'Adding variable %s failed - does the variable already exist?'</span>, VarName)
+0101 <span class="keyword">end</span>
+0102 
+0103 netcdf.close(nc);
+0104 
+0105 <span class="keyword">if</span> ftbverbose
+0106     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0107 <span class="keyword">end</span>
+0108</pre></div>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

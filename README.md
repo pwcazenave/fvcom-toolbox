@@ -44,10 +44,10 @@ TODO:
 If you are stuck for something to get started with on the toolbox, there are some parts which are in need of some attention:
 
 (0) The original MATLAB code used a third-party netCDF toolbox to write FVCOM input files. This library is largely redundant as recent versions of MATLAB include this functionality by default. Some functions in the toolbox still use the old toolbox:
+- examples:
+    * example_FVCOM_wind_ts.m
 - fvcom_prepro:
     * add_sigma_forDT.m
-    * add_var_FVCOM_river.m
-    * example_FVCOM_wind_ts.m
     * wrf2fvcom_U10V10.m
 - swan_scripts:
     * calc_tauw.m

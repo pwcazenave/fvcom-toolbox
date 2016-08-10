@@ -47,10 +47,11 @@
  Author(s):
     Geoff Cowles (University of Massachusetts Dartmouth)
     Pierre Cazenave (Plymouth Marine Laboratory)
+    Rory O'Hara Murray (Marien Scotland Science)
 
  Revision history
     2014-04-23 Minor formatting fixes and add the global ftbverbose flag.
-
+    2014-08-19 Remove loops to speed up reading in the file.
 ==============================================================================</pre></div>
 
 <!-- crossreference -->
@@ -88,100 +89,99 @@ This function is called by:
 0020 <span class="comment">% Author(s):</span>
 0021 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
 0022 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
-0023 <span class="comment">%</span>
-0024 <span class="comment">% Revision history</span>
-0025 <span class="comment">%    2014-04-23 Minor formatting fixes and add the global ftbverbose flag.</span>
-0026 <span class="comment">%</span>
-0027 <span class="comment">%==============================================================================</span>
-0028 
-0029 subname = <span class="string">'read_fvcom_mesh'</span>;
-0030 <span class="keyword">global</span> ftbverbose;
-0031 <span class="keyword">if</span> ftbverbose
-0032     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
-0033 <span class="keyword">end</span>
-0034 
+0023 <span class="comment">%    Rory O'Hara Murray (Marien Scotland Science)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% Revision history</span>
+0026 <span class="comment">%    2014-04-23 Minor formatting fixes and add the global ftbverbose flag.</span>
+0027 <span class="comment">%    2014-08-19 Remove loops to speed up reading in the file.</span>
+0028 <span class="comment">%==============================================================================</span>
+0029 
+0030 subname = <span class="string">'read_fvcom_mesh'</span>;
+0031 <span class="keyword">global</span> ftbverbose;
+0032 <span class="keyword">if</span> ftbverbose
+0033     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0034 <span class="keyword">end</span>
 0035 
-0036 <span class="comment">%------------------------------------------------------------------------------</span>
-0037 <span class="comment">% Create a blank mesh object</span>
-0038 <span class="comment">%------------------------------------------------------------------------------</span>
-0039 Mobj = make_blank_mesh();
-0040 coordinate = <span class="string">'cartesian'</span>;
-0041 have_bath = false;
-0042 have_xy = true;
-0043 have_lonlat = false;
-0044 
+0036 
+0037 <span class="comment">%------------------------------------------------------------------------------</span>
+0038 <span class="comment">% Create a blank mesh object</span>
+0039 <span class="comment">%------------------------------------------------------------------------------</span>
+0040 Mobj = make_blank_mesh();
+0041 coordinate = <span class="string">'cartesian'</span>;
+0042 have_bath = false;
+0043 have_xy = true;
+0044 have_lonlat = false;
 0045 
-0046 <span class="comment">%------------------------------------------------------------------------------</span>
-0047 <span class="comment">% Read the mesh from the fvcom grid file</span>
-0048 <span class="comment">%------------------------------------------------------------------------------</span>
-0049 
+0046 
+0047 <span class="comment">%------------------------------------------------------------------------------</span>
+0048 <span class="comment">% Read the mesh from the fvcom grid file</span>
+0049 <span class="comment">%------------------------------------------------------------------------------</span>
 0050 
-0051 fid = fopen(gridfile,<span class="string">'r'</span>);
-0052 <span class="keyword">if</span>(fid  &lt; 0)
-0053     error([<span class="string">'file: '</span> gridfile <span class="string">' does not exist'</span>]);
-0054 <span class="keyword">end</span>;
-0055 
-0056 <span class="comment">%----------------------------------------------------</span>
-0057 <span class="comment">% read in the fvcom connectivity and vertices</span>
-0058 <span class="comment">%----------------------------------------------------</span>
-0059 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1); nVerts = C{4};
-0060 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1); nElems = C{4};
-0061 tri = zeros(nElems,3);
-0062 x   = zeros(nVerts,1);
-0063 y   = zeros(nVerts,1);
-0064 h   = zeros(nVerts,1);
-0065 lon = zeros(nVerts,1);
-0066 lat = zeros(nVerts,1);
-0067 ts  = zeros(nVerts,1);
-0068 
-0069 <span class="keyword">if</span> ftbverbose
-0070     fprintf(<span class="string">'reading mesh file\n'</span>);
-0071     fprintf(<span class="string">'# nodes %d\n'</span>,nVerts);
-0072     fprintf(<span class="string">'# elems %d\n'</span>,nElems);
-0073 <span class="keyword">end</span>
-0074 <span class="keyword">for</span> i=1:nElems
-0075   C = textscan(fid,<span class="string">' %d %d %d %d %d\n'</span>,1);
-0076   tri(i,1) = C{2};  tri(i,2) = C{3}; tri(i,3) = C{4};
-0077 <span class="keyword">end</span>;
-0078 <span class="keyword">for</span> i=1:nVerts
-0079   C = textscan(fid, <span class="string">'%d %f %f %f'</span>, 1);
-0080   x(i) = C{2};
-0081   y(i) = C{3};
-0082 <span class="keyword">end</span>;
-0083 <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'mesh read in\n'</span>); <span class="keyword">end</span>
-0084 fclose(fid);
-0085 
-0086 <span class="comment">%------------------------------------------------------------------------------</span>
-0087 <span class="comment">% Transfer to Mesh structure</span>
-0088 <span class="comment">%------------------------------------------------------------------------------</span>
-0089 
-0090 Mobj.nVerts  = nVerts;
-0091 Mobj.nElems  = nElems;
-0092 Mobj.nativeCoords = coordinate;
-0093 
-0094 <span class="keyword">if</span>(have_lonlat)
-0095     Mobj.have_lonlat  = have_lonlat;
-0096 <span class="keyword">end</span>;
-0097 <span class="keyword">if</span>(have_xy)
-0098     Mobj.have_xy      = have_xy;
-0099 <span class="keyword">end</span>;
-0100 <span class="keyword">if</span>(have_bath)
-0101     Mobj.have_bath    = have_bath;
-0102 <span class="keyword">end</span>;
-0103 Mobj.x            = x;
-0104 Mobj.y            = y;
-0105 Mobj.ts           = ts;
-0106 Mobj.lon          = lon;
-0107 Mobj.lat          = lat;
-0108 Mobj.h            = h;
-0109 Mobj.tri          = tri;
+0051 
+0052 fid = fopen(gridfile,<span class="string">'r'</span>);
+0053 <span class="keyword">if</span>(fid  &lt; 0)
+0054     error([<span class="string">'file: '</span> gridfile <span class="string">' does not exist'</span>]);
+0055 <span class="keyword">end</span>;
+0056 
+0057 <span class="comment">%----------------------------------------------------</span>
+0058 <span class="comment">% read in the fvcom connectivity and vertices</span>
+0059 <span class="comment">%----------------------------------------------------</span>
+0060 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1); nVerts = C{4};
+0061 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1); nElems = C{4};
+0062 tri = zeros(nElems,3);
+0063 x   = zeros(nVerts,1);
+0064 y   = zeros(nVerts,1);
+0065 h   = zeros(nVerts,1);
+0066 lon = zeros(nVerts,1);
+0067 lat = zeros(nVerts,1);
+0068 ts  = zeros(nVerts,1);
+0069 
+0070 <span class="keyword">if</span> ftbverbose
+0071     fprintf(<span class="string">'reading mesh file\n'</span>);
+0072     fprintf(<span class="string">'# nodes %d\n'</span>,nVerts);
+0073     fprintf(<span class="string">'# elems %d\n'</span>,nElems);
+0074 <span class="keyword">end</span>
+0075 C = textscan(fid,<span class="string">' %d %d %d %d %d'</span>,nElems);
+0076 tri(:,1) = C{2};  tri(:,2) = C{3}; tri(:,3) = C{4};
+0077 
+0078 C = textscan(fid, <span class="string">'%d %f %f %f'</span>, nVerts);
+0079 x(:) = C{2};
+0080 y(:) = C{3};
+0081 
+0082 <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'mesh read in\n'</span>); <span class="keyword">end</span>
+0083 fclose(fid);
+0084 
+0085 <span class="comment">%------------------------------------------------------------------------------</span>
+0086 <span class="comment">% Transfer to Mesh structure</span>
+0087 <span class="comment">%------------------------------------------------------------------------------</span>
+0088 
+0089 Mobj.nVerts  = nVerts;
+0090 Mobj.nElems  = nElems;
+0091 Mobj.nativeCoords = coordinate;
+0092 
+0093 <span class="keyword">if</span>(have_lonlat)
+0094     Mobj.have_lonlat  = have_lonlat;
+0095 <span class="keyword">end</span>;
+0096 <span class="keyword">if</span>(have_xy)
+0097     Mobj.have_xy      = have_xy;
+0098 <span class="keyword">end</span>;
+0099 <span class="keyword">if</span>(have_bath)
+0100     Mobj.have_bath    = have_bath;
+0101 <span class="keyword">end</span>;
+0102 Mobj.x            = x;
+0103 Mobj.y            = y;
+0104 Mobj.ts           = ts;
+0105 Mobj.lon          = lon;
+0106 Mobj.lat          = lat;
+0107 Mobj.h            = h;
+0108 Mobj.tri          = tri;
+0109 
 0110 
-0111 
-0112 <span class="keyword">if</span> ftbverbose
-0113     fprintf(<span class="string">'end   : %s \n'</span>, subname)
-0114 <span class="keyword">end</span>
-0115 
-0116</pre></div>
-<hr><address>Generated on Thu 18-Feb-2016 11:26:24 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0111 <span class="keyword">if</span> ftbverbose
+0112     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0113 <span class="keyword">end</span>
+0114 
+0115</pre></div>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

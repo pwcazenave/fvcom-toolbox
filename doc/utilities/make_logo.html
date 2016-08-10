@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of make_logo</title>
+  <meta name="keywords" content="make_logo">
+  <meta name="description" content="Make the toolbox logo. Adapted from:">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; make_logo.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>make_logo
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Make the toolbox logo. Adapted from:</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>This is a script file. </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Make the toolbox logo. Adapted from:
+   mathworks.com/help/matlab/examples/creating-the-matlab-logo.html
+
+ Note: this will not produce the same figure each time as there's a call
+ to rand in the script.
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory).
+ 
+ ChangeLog:
+   2016-06-02 First version.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">% Make the toolbox logo. Adapted from:</span>
+0002 <span class="comment">%   mathworks.com/help/matlab/examples/creating-the-matlab-logo.html</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Note: this will not produce the same figure each time as there's a call</span>
+0005 <span class="comment">% to rand in the script.</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% Author(s):</span>
+0008 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory).</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% ChangeLog:</span>
+0011 <span class="comment">%   2016-06-02 First version.</span>
+0012 
+0013 ftbverbose = 1;
+0014 
+0015 [base, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0016 cd(base)
+0017 
+0018 <span class="keyword">global</span> ftbverbose
+0019 <span class="keyword">if</span> ftbverbose
+0020     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0021 <span class="keyword">end</span>
+0022 
+0023 <span class="comment">% Make an initial membrane and then triangulate it and plot that.</span>
+0024 
+0025 n = 5; <span class="comment">% size of the membrane</span>
+0026 L = 160 * membrane(1, n);
+0027 [X, Y] = meshgrid(1:n*2 + 1, 1:n*2 + 1);
+0028 
+0029 <span class="comment">% Interpolate onto an irregular grid.</span>
+0030 XX = X .* (0.95 + mod(abs(rand(size(X))), 0.05));
+0031 YY = Y .* (0.95 + mod(abs(rand(size(Y))), 0.05));
+0032 Z = griddata(X, Y, L, XX, YY);
+0033 
+0034 tri = delaunayTriangulation(XX(:), YY(:));
+0035 
+0036 <span class="comment">% Do the plot replicating (as closely as possible) the MATLAB logo.</span>
+0037 close all
+0038 
+0039 f = figure;
+0040 ax = axes;
+0041 s = trisurf(tri.ConnectivityList, XX(:), YY(:), Z(:));
+0042 s.EdgeColor = <span class="string">'none'</span>;
+0043 view(3)
+0044 ax.XLim = [1 max(X(:))];
+0045 ax.YLim = [1 max(Y(:))];
+0046 ax.ZLim = [min(Z(:)), max(Z(:))];
+0047 ax.CameraUpVector = [0 0 1];
+0048 ax.CameraViewAngle = 8;
+0049 ax.Position = [0 0 1 1];
+0050 ax.DataAspectRatio = [1 1 20];
+0051 l1 = light;
+0052 l1.Position = [160 400 80];
+0053 l1.Style = <span class="string">'local'</span>;
+0054 l2 = light;
+0055 l2.Position = [.5 -1 .4];
+0056 l2.Color = [0.8 0.8 0];
+0057 caxis([min(Z(:)), max(Z(:))])
+0058 s.FaceLighting = <span class="string">'gouraud'</span>;
+0059 s.AmbientStrength = 0.3;
+0060 s.DiffuseStrength = 0.9;
+0061 s.BackFaceLighting = <span class="string">'lit'</span>;
+0062 s.SpecularStrength = 1;
+0063 s.SpecularColorReflectance = 1;
+0064 s.SpecularExponent = 7;
+0065 axis off
+0066 colormap(hot)
+0067 
+0068 <span class="comment">% Transparent background and save to PDF.</span>
+0069 set(gca,<span class="string">'color'</span>,<span class="string">'none'</span>) 
+0070 print(gcf, <span class="string">'-dpdf'</span>, <span class="string">'../doc/fvcom-toolbox.pdf'</span>, <span class="string">'-painters'</span>)
+0071 
+0072 <span class="keyword">if</span> ftbverbose
+0073     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0074 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of read_netcdf_vars_xy</title>
+  <meta name="keywords" content="read_netcdf_vars_xy">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; read_netcdf_vars_xy.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>read_netcdf_vars_xy
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function M = read_netcdf_vars_xy(varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+ A function to extract netcdf variables for a number of (x, y) locations
+ read_netcdf_vars.m is called repeatidly
+
+ help read_netcdf_vars for detailed usage info
+
+ INPUT
+   Pass the variable names that you want to extract
+   [optional pair] filename, the netCDF filename
+   [optional triple] dimrange, the dimension name, the dimension range</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="read_netcdf_vars.html" class="code" title="function [M] = read_netcdf_vars(varargin)">read_netcdf_vars</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function M = read_netcdf_vars_xy(varargin)</a>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% A function to extract netcdf variables for a number of (x, y) locations</span>
+0004 <span class="comment">% read_netcdf_vars.m is called repeatidly</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% help read_netcdf_vars for detailed usage info</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% INPUT</span>
+0009 <span class="comment">%   Pass the variable names that you want to extract</span>
+0010 <span class="comment">%   [optional pair] filename, the netCDF filename</span>
+0011 <span class="comment">%   [optional triple] dimrange, the dimension name, the dimension range</span>
+0012 
+0013 <span class="comment">% Author(s)</span>
+0014 <span class="comment">%   Rory O'Hara Murray, Marine Scotland Science</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Revision history</span>
+0017 <span class="comment">%   v0 May 2014</span>
+0018 <span class="comment">%==========================================================================</span>
+0019 
+0020 <span class="comment">% defaults</span>
+0021 nodeflag = false;
+0022 cellflag = false;
+0023 
+0024 <span class="comment">% look for some keywords with some setting after them and remember which</span>
+0025 <span class="comment">% index of varargin are 'taken' in freeI.</span>
+0026 freeI = true(1,size(varargin,2));
+0027 subsample_num = 0;
+0028 <span class="keyword">for</span> ii=1:1:length(varargin)
+0029     keyword  = lower(varargin{ii});
+0030     vartype = class(keyword);
+0031     <span class="keyword">if</span> vartype(1)~=<span class="string">'c'</span> | length(keyword)&lt;10, <span class="keyword">continue</span>; <span class="keyword">end</span>
+0032     <span class="keyword">switch</span>(keyword(1:10))
+0033         <span class="keyword">case</span> <span class="string">'nodevalues'</span>
+0034             nodeflag = true;
+0035             nodevalues = varargin{ii+1};
+0036             freeI([ii ii+1]) = false;
+0037         <span class="keyword">case</span> <span class="string">'cellvalues'</span>
+0038             cellflag = true;
+0039             cellvalues = varargin{ii+1};
+0040             freeI([ii ii+1]) = false;
+0041     <span class="keyword">end</span>
+0042 <span class="keyword">end</span>
+0043 
+0044 <span class="comment">% error checking</span>
+0045 <span class="keyword">if</span> cellflag &amp; nodeflag
+0046     <span class="keyword">if</span> length(cellvalues) ~= length(nodevalues)
+0047         error(<span class="string">'The number of elements and nodes are not the same. This functions only works if they are the same :-('</span>);
+0048         <span class="keyword">return</span>
+0049     <span class="keyword">end</span>
+0050 <span class="keyword">end</span>
+0051 
+0052 <span class="comment">% Call read_netcdf_vars.m with all the same arguments, appart from those</span>
+0053 <span class="comment">% used here to define xy_nodes and cells</span>
+0054 
+0055 <span class="keyword">if</span> nodeflag &amp;&amp; cellflag
+0056     <span class="keyword">for</span> count=1:length(nodevalues);
+0057         
+0058         nodes=nodevalues(count);
+0059         cells=cellvalues(count);
+0060         M1 = <a href="read_netcdf_vars.html" class="code" title="function [M] = read_netcdf_vars(varargin)">read_netcdf_vars</a>(varargin{freeI}, <span class="string">'dimrange'</span>, <span class="string">'node'</span>, nodes+[0 1], <span class="string">'dimrange'</span>, <span class="string">'nele'</span>, cells+[0 1]);
+0061         
+0062         <span class="keyword">if</span> count==1
+0063             M = M1;
+0064         <span class="keyword">elseif</span> count&gt;0
+0065             <span class="comment">% save all the variables</span>
+0066             varnames = fieldnames(M1);
+0067             <span class="keyword">for</span> ii=4:2:length(varnames)
+0068                 dimids = M1.(varnames{ii-1}).dimids;
+0069                 <span class="keyword">if</span> size(dimids,1)&gt;0 &amp;&amp; dimids(1)&lt;=1;
+0070                     M.(varnames{ii})(count,:,:) = M1.(varnames{ii});
+0071                 <span class="keyword">end</span>
+0072             <span class="keyword">end</span>
+0073         <span class="keyword">end</span>
+0074         
+0075     <span class="keyword">end</span>
+0076 <span class="keyword">elseif</span> nodeflag
+0077     <span class="keyword">for</span> count=1:length(nodevalues);
+0078         
+0079         nodes=nodevalues(count);
+0080         M1 = <a href="read_netcdf_vars.html" class="code" title="function [M] = read_netcdf_vars(varargin)">read_netcdf_vars</a>(varargin{freeI}, <span class="string">'dimrange'</span>, <span class="string">'node'</span>, nodes+[0 1]);
+0081         
+0082         <span class="keyword">if</span> count==1
+0083             M = M1;
+0084         <span class="keyword">elseif</span> count&gt;0
+0085             <span class="comment">% save all the variables</span>
+0086             varnames = fieldnames(M1);
+0087             <span class="keyword">for</span> ii=4:2:length(varnames)
+0088                 dimids = M1.(varnames{ii-1}).dimids;
+0089                 <span class="keyword">if</span> dimids(1)==1;
+0090                     M.(varnames{ii})(count,:,:) = M1.(varnames{ii});
+0091                 <span class="keyword">end</span>
+0092             <span class="keyword">end</span>
+0093         <span class="keyword">end</span>
+0094         
+0095     <span class="keyword">end</span>
+0096 <span class="keyword">elseif</span> cellflag
+0097     <span class="keyword">for</span> count=1:length(cellvalues);
+0098         
+0099         cells=cellvalues(count);
+0100         M1 = <a href="read_netcdf_vars.html" class="code" title="function [M] = read_netcdf_vars(varargin)">read_netcdf_vars</a>(varargin{freeI}, <span class="string">'dimrange'</span>, <span class="string">'nele'</span>, cells+[0 1]);
+0101         
+0102         <span class="keyword">if</span> count==1
+0103             M = M1;
+0104         <span class="keyword">elseif</span> count&gt;0
+0105             <span class="comment">% save all the variables</span>
+0106             varnames = fieldnames(M1);
+0107             <span class="keyword">for</span> ii=4:2:length(varnames)
+0108                 dimids = M1.(varnames{ii-1}).dimids;
+0109                 <span class="keyword">if</span> dimids(1)==0;
+0110                     M.(varnames{ii})(count,:,:) = M1.(varnames{ii});
+0111                 <span class="keyword">end</span>
+0112             <span class="keyword">end</span>
+0113         <span class="keyword">end</span>
+0114         
+0115     <span class="keyword">end</span>
+0116 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -45,8 +45,10 @@
 
  Author(s):  
     Geoff Cowles (University of Massachusetts Dartmouth)
+    Rory O'Hara Murray (Marine Scotland Science)
 
  Revision history
+    2014-11-19 Remove loops to speed up reading in the file.
    
 ==============================================================================</pre></div>
 
@@ -83,34 +85,34 @@ This function is called by:
 0018 <span class="comment">%</span>
 0019 <span class="comment">% Author(s):</span>
 0020 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0021 <span class="comment">%</span>
-0022 <span class="comment">% Revision history</span>
-0023 <span class="comment">%</span>
-0024 <span class="comment">%==============================================================================</span>
-0025 
-0026 subname = <span class="string">'read_fvcom_bath'</span>;
-0027 <span class="keyword">global</span> ftbverbose
-0028 <span class="keyword">if</span>(ftbverbose)
-0029   fprintf(<span class="string">'\n'</span>)
-0030   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
-0031 <span class="keyword">end</span>;
-0032 
-0033 <span class="comment">%------------------------------------------------------------------------------</span>
-0034 <span class="comment">% read in the FVCOM bathymetry data</span>
+0021 <span class="comment">%    Rory O'Hara Murray (Marine Scotland Science)</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Revision history</span>
+0024 <span class="comment">%    2014-11-19 Remove loops to speed up reading in the file.</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">%==============================================================================</span>
+0027 
+0028 subname = <span class="string">'read_fvcom_bath'</span>;
+0029 <span class="keyword">global</span> ftbverbose
+0030 <span class="keyword">if</span>(ftbverbose)
+0031   fprintf(<span class="string">'\n'</span>)
+0032   fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
+0033 <span class="keyword">end</span>;
+0034 
 0035 <span class="comment">%------------------------------------------------------------------------------</span>
-0036 fid = fopen(bathfile,<span class="string">'r'</span>);
-0037 <span class="keyword">if</span>(fid  &lt; 0)
-0038   error([<span class="string">'file: '</span> bathfile <span class="string">' does not exist'</span>]);
-0039 <span class="keyword">end</span>;
-0040 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1);
-0041 Nverts = C{4};
-0042 h = zeros(Nverts,1);
-0043 fprintf(<span class="string">'reading bathymetry file\n'</span>);
-0044 fprintf(<span class="string">'# nodes %d\n'</span>,Nverts);
-0045 <span class="keyword">for</span> i=1:Nverts
-0046   C = textscan(fid, <span class="string">'%f %f %f'</span>, 1);
-0047   h(i) = C{3};
-0048 <span class="keyword">end</span>;
+0036 <span class="comment">% read in the FVCOM bathymetry data</span>
+0037 <span class="comment">%------------------------------------------------------------------------------</span>
+0038 fid = fopen(bathfile,<span class="string">'r'</span>);
+0039 <span class="keyword">if</span>(fid  &lt; 0)
+0040   error([<span class="string">'file: '</span> bathfile <span class="string">' does not exist'</span>]);
+0041 <span class="keyword">end</span>;
+0042 C = textscan(fid, <span class="string">'%s %s %s %d'</span>, 1);
+0043 Nverts = C{4};
+0044 h = zeros(Nverts,1);
+0045 fprintf(<span class="string">'reading bathymetry file\n'</span>);
+0046 fprintf(<span class="string">'# nodes %d\n'</span>,Nverts);
+0047 C = textscan(fid,<span class="string">' %f %f %f'</span>,Nverts);
+0048 h = C{3};
 0049 fprintf(<span class="string">'min depth %f max depth %f\n'</span>,min(h),max(h));
 0050 fprintf(<span class="string">'bathymetry reading complete\n'</span>);
 0051 fclose(fid);
@@ -122,6 +124,6 @@ This function is called by:
 0057 <span class="keyword">end</span>;
 0058 
 0059</pre></div>
-<hr><address>Generated on Thu 18-Feb-2016 11:26:24 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

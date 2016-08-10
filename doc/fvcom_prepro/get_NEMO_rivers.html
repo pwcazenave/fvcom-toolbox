@@ -1,0 +1,550 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of get_NEMO_rivers</title>
+  <meta name="keywords" content="get_NEMO_rivers">
+  <meta name="description" content="Extract river data from the supplied river positions for the FVCOM">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; get_NEMO_rivers.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>get_NEMO_rivers
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Extract river data from the supplied river positions for the FVCOM</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Extract river data from the supplied river positions for the FVCOM
+ grid in Mobj from the NEMO data
+
+ get_NEMO_rivers(Mobj, dist_thresh)
+
+ DESCRIPTION:
+   For the positions in Mobj.rivers.positions, find the nearest
+   unstructured grid node and extract the river discharge from
+   Mobj.rivers.river_flux. To correct the flux values from the
+   NEMO data, we need the grid size data (in
+   Mobj.rivers.river_coordinates). The river positions must fall
+   within the specified distance (dist_thresh).
+
+ INPUT:
+   Mobj - MATLAB mesh object containing:
+       * have_lonlat - boolean to check for spherical coordinates.
+       * lon, lat - positions for the unstructured grid.
+       * tri - triangulation table for the unstructured grid.
+       * nVerts - number of nodes in the grid.
+       * read_obc_nodes - open boundary node IDs.
+       * rivers - river data struct with the following fields:
+           - positions - river positions in lon, lat.
+           - names - list of river names
+           - river_flux - path to the NEMO netCDF data file. Must contain
+           the area of each grid element for conversion of the fluxes.
+   dist_thresh - maximum distance away from a river node beyond
+       which the search for an FVCOM node is abandoned. Units in degrees.
+   The following keyword-argument pairs are also valid:
+   'model_year' - [optional] when giving climatology, a year must be
+       specified so that the time series can be anchored in time. The
+       returned time series will be 3 years long centred on the specified
+       year. Discharges will be repeated for the two additional years.
+   'dump_positions' - [optional] dump the NEMO river positions to the
+       specified text file.
+   'alternate_positions' - [optional] read in a CSV file with alternate
+       positions for the NEMO rivers. This is useful if you've manually
+       moved the NEMO rivers onto more realistic locations. This assumes
+       that the alternate positions supplied are in the same order as the
+       original ones are read in.
+
+ OUTPUT:
+   Mobj.river_flux - volume flux at the nodes within the model domain.
+   Mobj.river_nh4 - ammonia
+   Mobj.river_no3 - notrate
+   Mobj.river_o - oxygen
+   Mobj.river_p - phosphate
+   Mobj.river_sio3 - silicate
+   Mobj.river_dic - dissolved inorganic carbon
+   Mobj.river_totalk - total alkalinity
+   Mobj.river_bioalk - bio-alkalinity
+   Mobj.river_nodes - node IDs for the rivers.
+   Mobj.river_names - river names which fall within the model domain. For
+       rivers where the discharge has been summed, the name is compoud,
+       with each contributing name separated by a hyphen (-).
+   Mobj.river_time - Modified Julian Day time series for the river
+       discharge data.
+
+ EXAMPLE USAGE:
+   Mobj = get_NEMO_rivers(Mobj, 0.15)
+
+   To extract the NEMO river locations to file:
+
+   Mobj = get_NEMO_rivers(Mobj, 0.15, 'dump_positions', '/tmp/nemo.txt');
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history:
+   2016-03-02 - First version based on get_nemo_rivers.m.
+   2016-05-03 - Add option to dump NEMO river locations to text file.
+   2016-06-06 - Remove temperature and salinity from the description as
+   they're really the Baltic Sea inputs only. Also read in the grid area
+   from the new format ERSEM file (variable dA). Add total alkalinity
+   to the outputs.
+   2016-08-10 - Add new option to use an alternative river positions.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)</a>
+0002 <span class="comment">% Extract river data from the supplied river positions for the FVCOM</span>
+0003 <span class="comment">% grid in Mobj from the NEMO data</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% get_NEMO_rivers(Mobj, dist_thresh)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%   For the positions in Mobj.rivers.positions, find the nearest</span>
+0009 <span class="comment">%   unstructured grid node and extract the river discharge from</span>
+0010 <span class="comment">%   Mobj.rivers.river_flux. To correct the flux values from the</span>
+0011 <span class="comment">%   NEMO data, we need the grid size data (in</span>
+0012 <span class="comment">%   Mobj.rivers.river_coordinates). The river positions must fall</span>
+0013 <span class="comment">%   within the specified distance (dist_thresh).</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% INPUT:</span>
+0016 <span class="comment">%   Mobj - MATLAB mesh object containing:</span>
+0017 <span class="comment">%       * have_lonlat - boolean to check for spherical coordinates.</span>
+0018 <span class="comment">%       * lon, lat - positions for the unstructured grid.</span>
+0019 <span class="comment">%       * tri - triangulation table for the unstructured grid.</span>
+0020 <span class="comment">%       * nVerts - number of nodes in the grid.</span>
+0021 <span class="comment">%       * read_obc_nodes - open boundary node IDs.</span>
+0022 <span class="comment">%       * rivers - river data struct with the following fields:</span>
+0023 <span class="comment">%           - positions - river positions in lon, lat.</span>
+0024 <span class="comment">%           - names - list of river names</span>
+0025 <span class="comment">%           - river_flux - path to the NEMO netCDF data file. Must contain</span>
+0026 <span class="comment">%           the area of each grid element for conversion of the fluxes.</span>
+0027 <span class="comment">%   dist_thresh - maximum distance away from a river node beyond</span>
+0028 <span class="comment">%       which the search for an FVCOM node is abandoned. Units in degrees.</span>
+0029 <span class="comment">%   The following keyword-argument pairs are also valid:</span>
+0030 <span class="comment">%   'model_year' - [optional] when giving climatology, a year must be</span>
+0031 <span class="comment">%       specified so that the time series can be anchored in time. The</span>
+0032 <span class="comment">%       returned time series will be 3 years long centred on the specified</span>
+0033 <span class="comment">%       year. Discharges will be repeated for the two additional years.</span>
+0034 <span class="comment">%   'dump_positions' - [optional] dump the NEMO river positions to the</span>
+0035 <span class="comment">%       specified text file.</span>
+0036 <span class="comment">%   'alternate_positions' - [optional] read in a CSV file with alternate</span>
+0037 <span class="comment">%       positions for the NEMO rivers. This is useful if you've manually</span>
+0038 <span class="comment">%       moved the NEMO rivers onto more realistic locations. This assumes</span>
+0039 <span class="comment">%       that the alternate positions supplied are in the same order as the</span>
+0040 <span class="comment">%       original ones are read in.</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">% OUTPUT:</span>
+0043 <span class="comment">%   Mobj.river_flux - volume flux at the nodes within the model domain.</span>
+0044 <span class="comment">%   Mobj.river_nh4 - ammonia</span>
+0045 <span class="comment">%   Mobj.river_no3 - notrate</span>
+0046 <span class="comment">%   Mobj.river_o - oxygen</span>
+0047 <span class="comment">%   Mobj.river_p - phosphate</span>
+0048 <span class="comment">%   Mobj.river_sio3 - silicate</span>
+0049 <span class="comment">%   Mobj.river_dic - dissolved inorganic carbon</span>
+0050 <span class="comment">%   Mobj.river_totalk - total alkalinity</span>
+0051 <span class="comment">%   Mobj.river_bioalk - bio-alkalinity</span>
+0052 <span class="comment">%   Mobj.river_nodes - node IDs for the rivers.</span>
+0053 <span class="comment">%   Mobj.river_names - river names which fall within the model domain. For</span>
+0054 <span class="comment">%       rivers where the discharge has been summed, the name is compoud,</span>
+0055 <span class="comment">%       with each contributing name separated by a hyphen (-).</span>
+0056 <span class="comment">%   Mobj.river_time - Modified Julian Day time series for the river</span>
+0057 <span class="comment">%       discharge data.</span>
+0058 <span class="comment">%</span>
+0059 <span class="comment">% EXAMPLE USAGE:</span>
+0060 <span class="comment">%   Mobj = get_NEMO_rivers(Mobj, 0.15)</span>
+0061 <span class="comment">%</span>
+0062 <span class="comment">%   To extract the NEMO river locations to file:</span>
+0063 <span class="comment">%</span>
+0064 <span class="comment">%   Mobj = get_NEMO_rivers(Mobj, 0.15, 'dump_positions', '/tmp/nemo.txt');</span>
+0065 <span class="comment">%</span>
+0066 <span class="comment">% Author(s):</span>
+0067 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0068 <span class="comment">%</span>
+0069 <span class="comment">% Revision history:</span>
+0070 <span class="comment">%   2016-03-02 - First version based on get_nemo_rivers.m.</span>
+0071 <span class="comment">%   2016-05-03 - Add option to dump NEMO river locations to text file.</span>
+0072 <span class="comment">%   2016-06-06 - Remove temperature and salinity from the description as</span>
+0073 <span class="comment">%   they're really the Baltic Sea inputs only. Also read in the grid area</span>
+0074 <span class="comment">%   from the new format ERSEM file (variable dA). Add total alkalinity</span>
+0075 <span class="comment">%   to the outputs.</span>
+0076 <span class="comment">%   2016-08-10 - Add new option to use an alternative river positions.</span>
+0077 <span class="comment">%</span>
+0078 <span class="comment">%==========================================================================</span>
+0079 
+0080 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0081 
+0082 <span class="keyword">global</span> ftbverbose
+0083 <span class="keyword">if</span> ftbverbose
+0084     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0085 <span class="keyword">end</span>
+0086 
+0087 <span class="comment">% Check inputs</span>
+0088 <span class="keyword">if</span> ~Mobj.have_lonlat
+0089     error([<span class="string">'Require unstructured grid positions in lon/lat format '</span>, <span class="keyword">...</span>
+0090         <span class="string">'to compare against supplied river positions.'</span>])
+0091 <span class="keyword">end</span>
+0092 
+0093 yr = [];
+0094 
+0095 <span class="comment">% If we have only three arguments, we have to assume we've been given a</span>
+0096 <span class="comment">% year for the climatology. Otherwise, we need to read the arguments based</span>
+0097 <span class="comment">% on keyword-value pairs. Really, we want keyword-value pairs all the time,</span>
+0098 <span class="comment">% so silently work when given three arguments and don't mention it in the</span>
+0099 <span class="comment">% help. This is going to bite me at some point in the future, I'm sure.</span>
+0100 dump_positions = false;
+0101 alt_positions = false;
+0102 <span class="keyword">if</span> nargin == 3
+0103     yr = varargin{1};
+0104 <span class="keyword">elseif</span> nargin &gt; 3
+0105     <span class="keyword">for</span> aa = 1:2:length(varargin)
+0106         <span class="keyword">switch</span> varargin{aa}
+0107             <span class="keyword">case</span> <span class="string">'model_year'</span>
+0108                 yr = varargin{aa + 1};
+0109             <span class="keyword">case</span> <span class="string">'dump_positions'</span>
+0110                 dump_positions = true;
+0111                 position_file = varargin{aa + 1};
+0112             <span class="keyword">case</span> <span class="string">'alternate_positions'</span>
+0113                 alt_positions = true;
+0114                 alternate_file = varargin{aa + 1};                
+0115         <span class="keyword">end</span>
+0116     <span class="keyword">end</span>
+0117 <span class="keyword">end</span>
+0118 
+0119 <span class="keyword">if</span> ~isempty(yr) &amp;&amp; ~isnumeric(yr)
+0120     error(<span class="string">'Trying to do climatology, but don''t have an anchor year. Supply one via the ''model_year'' keyword-value pair.'</span>)
+0121 <span class="keyword">end</span>
+0122 
+0123 <span class="comment">% Load the NEMO data.</span>
+0124 nemo.lon = ncread(Mobj.rivers.river_flux, <span class="string">'x'</span>);
+0125 nemo.lat = ncread(Mobj.rivers.river_flux, <span class="string">'y'</span>);
+0126 [nemo.LON, nemo.LAT] = meshgrid(nemo.lon, nemo.lat);
+0127 nemo.time = ncread(Mobj.rivers.river_flux, <span class="string">'time_counter'</span>);
+0128 nemo.flux = ncread(Mobj.rivers.river_flux, <span class="string">'rorunoff'</span>);
+0129 nemo.nh4 = ncread(Mobj.rivers.river_flux, <span class="string">'ronh4'</span>);
+0130 nemo.no3 = ncread(Mobj.rivers.river_flux, <span class="string">'rono3'</span>);
+0131 nemo.o = ncread(Mobj.rivers.river_flux, <span class="string">'roo'</span>);
+0132 nemo.p = ncread(Mobj.rivers.river_flux, <span class="string">'rop'</span>);
+0133 nemo.sio3 = ncread(Mobj.rivers.river_flux, <span class="string">'rosio2'</span>);
+0134 nemo.dic = ncread(Mobj.rivers.river_flux, <span class="string">'rodic'</span>);
+0135 nemo.alt = ncread(Mobj.rivers.river_flux, <span class="string">'rototalk'</span>);
+0136 nemo.bioalk = ncread(Mobj.rivers.river_flux, <span class="string">'robioalk'</span>);
+0137 <span class="comment">% nemo.temp = ncread(Mobj.rivers.river_flux, 'rotemper');</span>
+0138 <span class="comment">% nemo.salt = ncread(Mobj.rivers.river_flux, 'rosaline');</span>
+0139 
+0140 <span class="comment">% Now get the NEMO grid data.</span>
+0141 <span class="comment">% nemo.e1t = ncread(Mobj.rivers.river_coordinates, 'e1t');</span>
+0142 <span class="comment">% nemo.e2t = ncread(Mobj.rivers.river_coordinates, 'e2t');</span>
+0143 <span class="comment">% Calculate the area for all elements in the grid.</span>
+0144 <span class="comment">% nemo.area = nemo.e1t .* nemo.e2t;</span>
+0145 <span class="comment">% Just use the new area variable instead of needing two files.</span>
+0146 nemo.area = ncread(Mobj.rivers.river_flux, <span class="string">'dA'</span>);
+0147 
+0148 <span class="comment">% NEMO does conversions to ERSEM units internally. Whilst this is easy in</span>
+0149 <span class="comment">% some ways, it's not particularly transparent. So, instead, we'll do all</span>
+0150 <span class="comment">% the conversions up front and then the data that get loaded into ERSEM are</span>
+0151 <span class="comment">% already in the correct units. To summarise those conversions, we have:</span>
+0152 <span class="comment">%</span>
+0153 <span class="comment">%   nutrients (nh4, no3, o, p, sio3) from grams/l to mmol/m^3</span>
+0154 <span class="comment">%   flux from kg/m^{2}/s to m^{3}/s (divide by freshwater density)</span>
+0155 <span class="comment">%   dic - no change whatsoever.</span>
+0156 
+0157 <span class="comment">% Convert units from grams to millimoles where appropriate.</span>
+0158 nemo.nh4 = (nemo.nh4 / 14) * 1000;
+0159 nemo.no3 = (nemo.no3 / 14) * 1000;
+0160 nemo.o = (nemo.o / 32) * 1000; <span class="comment">% 2 x 16 for O2</span>
+0161 nemo.p = (nemo.p / 35.5) * 1000;
+0162 nemo.sio3 = (nemo.sio3 / 28) * 1000;
+0163 
+0164 [~, ~, nt] = size(nemo.flux);
+0165 
+0166 <span class="comment">% Flux in NEMO is specified in kg/m^{2}/s. FVCOM wants m^{3}/s. Divide by</span>
+0167 <span class="comment">% freshwater density to get m/s and then multiply by the area of each</span>
+0168 <span class="comment">% element to get flux.</span>
+0169 nemo.flux = nemo.flux / 1000;
+0170 <span class="comment">% Now multiply by the relevant area to (finally!) get to m^{3}/s.</span>
+0171 nemo.flux = nemo.flux .* repmat(nemo.area, 1, 1, nt);
+0172 
+0173 <span class="comment">% Now we've got the data, use the flux data to find the indices of the</span>
+0174 <span class="comment">% rivers in the arrays and extract those as time series in a format</span>
+0175 <span class="comment">% suitable for writing out with write_FVCOM_river.</span>
+0176 mask = sum(nemo.flux, 3) ~= 0;
+0177 <span class="comment">% Get the indices so we can extract the time series.</span>
+0178 [mirow, micol] = ind2sub(size(mask), find(mask == true));
+0179 nr = length(mirow);
+0180 
+0181 <span class="comment">% Now do all the data.</span>
+0182 names = fieldnames(nemo);
+0183 <span class="keyword">for</span> n = 1:length(names)
+0184     <span class="keyword">switch</span> names{n}
+0185         <span class="keyword">case</span> {<span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'LON'</span>, <span class="string">'LAT'</span>, <span class="string">'time'</span>}
+0186             <span class="keyword">continue</span>
+0187     <span class="keyword">end</span>
+0188 
+0189     <span class="comment">% Preallocate and then fill with the time series for each valid river</span>
+0190     <span class="comment">% location.</span>
+0191     nemo.rivers.(names{n}) = nan(nt, nr);
+0192     <span class="keyword">for</span> r = 1:nr
+0193         nemo.rivers.(names{n})(:, r) = squeeze(nemo.(names{n})(mirow(r), micol(r), :));
+0194     <span class="keyword">end</span>
+0195 <span class="keyword">end</span>
+0196 
+0197 <span class="comment">% Do the positions in the same way (with a loop) to avoid having to figure</span>
+0198 <span class="comment">% out if using the mask collapses the arrays in teh same way as the find</span>
+0199 <span class="comment">% did.</span>
+0200 nemo.rivers.positions = nan(nr, 2);
+0201 nemo.rivers.names = {};
+0202 <span class="keyword">for</span> r = 1:nr
+0203     <span class="comment">% For some reason, the output of meshgrid is the wrong way around, so</span>
+0204     <span class="comment">% use the row and column indices the wrong way around too.</span>
+0205     nemo.rivers.positions(r, :) = [nemo.LON(micol(r), mirow(r)), <span class="keyword">...</span>
+0206         nemo.LAT(micol(r), mirow(r))];
+0207     <span class="comment">% We don't have sensible names for the NEMO rivers, so use the position</span>
+0208     <span class="comment">% instead. Perhaps there exists a list of the names somewhere which I</span>
+0209     <span class="comment">% could use. Yuri has asked Sarah Wakelin to see if she's got that</span>
+0210     <span class="comment">% list.</span>
+0211     nemo.rivers.names{r, 1} = sprintf(<span class="string">'river_%.6f-%.6f'</span>, <span class="keyword">...</span>
+0212         nemo.rivers.positions(r, :));
+0213 <span class="keyword">end</span>
+0214 
+0215 <span class="keyword">if</span> alt_positions
+0216     <span class="comment">% We've been given a file with alternate river positions in. Use that</span>
+0217     <span class="comment">% for the river locations instead.</span>
+0218     f = open(alternate_positions, <span class="string">'r'</span>);
+0219     
+0220 <span class="keyword">end</span>
+0221 
+0222 <span class="comment">% Separate the inputs into separate arrays.</span>
+0223 nemo_name = nemo.rivers.names;
+0224 nemo_xy = nemo.rivers.positions;
+0225 
+0226 <span class="keyword">if</span> dump_positions
+0227     <span class="comment">% Add a header for GIS</span>
+0228     dlmwrite(position_file, <span class="string">'lonDD,latDD'</span>, <span class="string">'delimiter'</span>, <span class="string">''</span>);
+0229     dlmwrite(position_file, nemo_xy, <span class="string">'precision'</span>, <span class="string">'%0.6f'</span>, <span class="string">'-append'</span>);
+0230 <span class="keyword">end</span>
+0231 
+0232 fv_nr = length(nemo_name);
+0233 
+0234 <span class="comment">% Check each location in the NEMO positions against the grid in Mobj and</span>
+0235 <span class="comment">% for the indices within the dist_thresh, load and extract the relevant</span>
+0236 <span class="comment">% time series data.</span>
+0237 
+0238 vc = 0; <span class="comment">% valid FVCOM boundary node counter</span>
+0239 
+0240 <span class="comment">% We need to find the unstructured grid boundary nodes and exclude the open</span>
+0241 <span class="comment">% boundary nodes from them. This will be our list of potential candidates</span>
+0242 <span class="comment">% for the river nodes (i.e. the land coastline).</span>
+0243 [~, ~, ~, bnd] = connectivity([Mobj.lon, Mobj.lat], Mobj.tri);
+0244 boundary_nodes = 1:Mobj.nVerts;
+0245 boundary_nodes = boundary_nodes(bnd);
+0246 coast_nodes = boundary_nodes(~ismember(boundary_nodes, [Mobj.read_obc_nodes{:}]));
+0247 tlon = Mobj.lon(coast_nodes);
+0248 tlat = Mobj.lat(coast_nodes);
+0249 
+0250 fv_obc = nan;
+0251 fv_names = cell(0);
+0252 
+0253 <span class="comment">% Initialise the flow array with a 366 day long time series of nans. This</span>
+0254 <span class="comment">% array will be appended to (unless all rivers are outside the domain).</span>
+0255 <span class="comment">% Only do this if we're doing climatology (signified by a non-empty year).</span>
+0256 skipped = 0;
+0257 
+0258 <span class="comment">% Preallocate all the arrays.</span>
+0259 <span class="keyword">for</span> n = 1:length(names)
+0260     <span class="keyword">switch</span> names{n}
+0261         <span class="keyword">case</span> {<span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'LON'</span>, <span class="string">'LAT'</span>, <span class="string">'time'</span>}
+0262             <span class="keyword">continue</span>
+0263     <span class="keyword">end</span>
+0264     fv.(names{n}) = nan(nt, nr);
+0265 <span class="keyword">end</span>
+0266 
+0267 <span class="keyword">for</span> ff = 1:fv_nr
+0268     <span class="comment">% Find the coastline node closest to this river. Don't bother with sqrt</span>
+0269     <span class="comment">% for the distance threshold, instead just square the distance when</span>
+0270     <span class="comment">% doing the comparison. This should increase performance, although</span>
+0271     <span class="comment">% probably only marginally.</span>
+0272     fv_dist = (nemo_xy(ff, 1) - tlon).^2 + <span class="keyword">...</span>
+0273         (nemo_xy(ff, 2) - tlat).^2;
+0274     [c, idx] = min(fv_dist);
+0275     <span class="keyword">if</span> c &gt; dist_thresh^2
+0276         skipped = skipped + 1;
+0277         <span class="keyword">continue</span>
+0278     <span class="keyword">else</span>
+0279         <span class="keyword">if</span> ftbverbose
+0280             fprintf(<span class="string">'candidate river %s found (%f, %f)... '</span>, nemo_name{ff}, nemo_xy(ff, 1), nemo_xy(ff, 2))
+0281         <span class="keyword">end</span>
+0282     <span class="keyword">end</span>
+0283 
+0284     vc = vc + 1;
+0285 
+0286     <span class="comment">% We need to make sure the element in which this node occurs does not</span>
+0287     <span class="comment">% have two land boundaries (otherwise the model just fills up that</span>
+0288     <span class="comment">% element because that element will always have a zero velocity).</span>
+0289 
+0290     <span class="comment">% Find the other nodes which are joined to the node we've just found.</span>
+0291     <span class="comment">% We don't need the column to get the other nodes in the element, only</span>
+0292     <span class="comment">% the row is required.</span>
+0293     [row, ~] = find(Mobj.tri == coast_nodes(idx));
+0294 
+0295     <span class="keyword">if</span> length(row) == 1
+0296         <span class="comment">% This is a bad node because it is a part of only one element. The</span>
+0297         <span class="comment">% rivers need two adjacent elements to work reliably (?). So, we</span>
+0298         <span class="comment">% need to repeat the process above until we find a node that's</span>
+0299         <span class="comment">% connected to two elements. We'll try the other nodes in the</span>
+0300         <span class="comment">% current element before searching the rest of the coastline (which</span>
+0301         <span class="comment">% is computationally expensive).</span>
+0302 
+0303         <span class="comment">% Remove the current node index from the list of candidates (i.e.</span>
+0304         <span class="comment">% leave only the two other nodes in the element).</span>
+0305         mask = Mobj.tri(row, :) ~= coast_nodes(idx);
+0306         n_tri = Mobj.tri(row, mask);
+0307 
+0308         <span class="comment">% Remove values which aren't coastline values (we don't want to set</span>
+0309         <span class="comment">% the river node to an open water node).</span>
+0310         n_tri = intersect(n_tri, coast_nodes);
+0311 
+0312         <span class="comment">% Of the remaining nodes in the element, find the closest one to</span>
+0313         <span class="comment">% the original river location (in fvcom_xy).</span>
+0314         [~, n_idx] = sort(sqrt( <span class="keyword">...</span>
+0315             (nemo_xy(ff, 1) - Mobj.lon(n_tri)).^2 <span class="keyword">...</span>
+0316             + (nemo_xy(ff, 2) - Mobj.lon(n_tri)).^2));
+0317 
+0318         [row_2, ~] = find(Mobj.tri == n_tri(n_idx(1)));
+0319         <span class="keyword">if</span> length(n_idx) &gt; 1
+0320             [row_3, ~] = find(Mobj.tri == n_tri(n_idx(2)));
+0321         <span class="keyword">end</span>
+0322         <span class="comment">% Closest first</span>
+0323         <span class="keyword">if</span> length(row_2) &gt; 1
+0324             idx = find(coast_nodes == n_tri(n_idx(1)));
+0325         <span class="comment">% The other one (only if we have more than one node to consider).</span>
+0326         <span class="keyword">elseif</span> length(n_idx) &gt; 1 &amp;&amp; length(row_3) &gt; 1
+0327             idx = find(coast_nodes == n_tri(n_idx(2)));
+0328         <span class="comment">% OK, we need to search across all the other coastline nodes.</span>
+0329         <span class="keyword">else</span>
+0330             <span class="comment">% TODO: Implement a search of all the other coastline nodes.</span>
+0331             <span class="comment">% My testing indicates that we never get here (at least for the</span>
+0332             <span class="comment">% grids I've tested). I'd be interested to see the mesh which</span>
+0333             <span class="comment">% does get here...</span>
+0334             <span class="keyword">continue</span>
+0335         <span class="keyword">end</span>
+0336         <span class="keyword">if</span> ftbverbose
+0337             fprintf(<span class="string">'alternate node '</span>)
+0338         <span class="keyword">end</span>
+0339     <span class="keyword">end</span>
+0340 
+0341     <span class="comment">% Add it to the list of valid rivers</span>
+0342     fv_obc(vc) = coast_nodes(idx);
+0343     fv_names{vc} = nemo.rivers.names{ff};
+0344 
+0345     <span class="comment">% Add the current river data to the relevant arrays.</span>
+0346     <span class="keyword">for</span> n = 1:length(names)
+0347         <span class="keyword">switch</span> names{n}
+0348             <span class="keyword">case</span> {<span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'LON'</span>, <span class="string">'LAT'</span>, <span class="string">'time'</span>}
+0349                 <span class="keyword">continue</span>
+0350         <span class="keyword">end</span>
+0351         fv.(names{n})(:, vc) = nemo.rivers.(names{n})(:, ff);
+0352     <span class="keyword">end</span>
+0353 
+0354     <span class="keyword">if</span> ftbverbose
+0355         fprintf(<span class="string">'added (%f, %f)\n'</span>, Mobj.lon(fv_obc(vc)), Mobj.lat(fv_obc(vc)))
+0356     <span class="keyword">end</span>
+0357 
+0358 <span class="keyword">end</span>
+0359 
+0360 <span class="comment">% Trim the data arrays for the rivers we've extracted since we preallocated</span>
+0361 <span class="comment">% the array assuming we'd use all the rivers.</span>
+0362 <span class="keyword">for</span> n = 1:length(names)
+0363     <span class="keyword">switch</span> names{n}
+0364         <span class="keyword">case</span> {<span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'LON'</span>, <span class="string">'LAT'</span>, <span class="string">'time'</span>}
+0365             <span class="keyword">continue</span>
+0366     <span class="keyword">end</span>
+0367     fv.(names{n}) = fv.(names{n})(:, 1:vc);
+0368 <span class="keyword">end</span>
+0369 
+0370 <span class="comment">% Save a list of the field names in the FVCOM river data.</span>
+0371 fnames = fieldnames(fv);
+0372 
+0373 <span class="comment">% Assign the relevant arrays to the Mobj. Flux is added in the section</span>
+0374 <span class="comment">% dealing with either climatology or time series data.</span>
+0375 Mobj.river_nodes = fv_obc;
+0376 Mobj.river_names = fv_names';
+0377 Mobj.have_rivers = true;
+0378 Mobj.nRivers = length(fv_obc);
+0379 
+0380 <span class="comment">% Dump the data into the relevant arrays in Mobj.</span>
+0381 <span class="keyword">for</span> n = 1:length(fnames)
+0382     new = sprintf(<span class="string">'river_%s'</span>, fnames{n});
+0383     Mobj.(new) = fv.(fnames{n});
+0384 <span class="keyword">end</span>
+0385 
+0386 <span class="comment">% Create a Modified Julian Day time series of the NEMO river data. Assume</span>
+0387 <span class="comment">% it's a climatology, so generate the right time series based on that</span>
+0388 <span class="comment">% assumption.</span>
+0389 <span class="keyword">if</span> isempty(yr) &amp;&amp; ~isnumeric(yr)
+0390     error(<span class="string">'For climatology, a year must be specified for the time series to be generated.'</span>)
+0391 <span class="keyword">end</span>
+0392 
+0393 <span class="comment">% Make three years of data starting from the year before the current one.</span>
+0394 <span class="comment">% Do so accounting for leap years.</span>
+0395 daysinyr = [sum(eomday(yr - 1, 1:12)), <span class="keyword">...</span>
+0396     sum(eomday(yr, 1:12)), <span class="keyword">...</span>
+0397     sum(eomday(yr + 1, 1:12))];
+0398 <span class="comment">% Offset the checkdate by one to add zero for the first day. Alternative</span>
+0399 <span class="comment">% would be to specify the day as the end of the previous month (or a day</span>
+0400 <span class="comment">% value of zero?).</span>
+0401 offsetdays = (1:sum(daysinyr)) - 1;
+0402 mtime = datevec(datenum(yr - 1, 1, 1, 0, 0, 0) + offsetdays);
+0403 Mobj.river_time = greg2mjulian(mtime(:, 1), mtime(:, 2), <span class="keyword">...</span>
+0404     mtime(:, 3), mtime(:, 4), mtime(:, 5), mtime(:, 6));
+0405 
+0406 <span class="comment">% Repeat the river data for the climatology before adding to the Mobj.</span>
+0407 <span class="keyword">for</span> n = 1:length(fnames)
+0408     new = sprintf(<span class="string">'river_%s'</span>, fnames{n});
+0409 
+0410     <span class="comment">% NEMO is insane. Old versions of the rivers data had enough days for</span>
+0411     <span class="comment">% leap and non-leap years; new versions don't. So, let's pad the data</span>
+0412     <span class="comment">% by a day in either case and that should word for data with both 365</span>
+0413     <span class="comment">% and 366 times. In the case where we're using data with 366 values</span>
+0414     <span class="comment">% already, this shouldn't make any difference as we're explicitly</span>
+0415     <span class="comment">% indexing to the days in the year using daysinyr anyway.</span>
+0416     fv.(fnames{n}) = [fv.(fnames{n}); fv.(fnames{n})(<span class="keyword">end</span>, :)];
+0417 
+0418     Mobj.(new) = [fv.(fnames{n})(1:daysinyr(1), :); <span class="keyword">...</span>
+0419                   fv.(fnames{n})(1:daysinyr(2), :); <span class="keyword">...</span>
+0420                   fv.(fnames{n})(1:daysinyr(3), :)];
+0421 <span class="keyword">end</span>
+0422 
+0423 <span class="keyword">if</span> ftbverbose
+0424     fprintf(<span class="string">'included %d of %d rivers (skipped %d)\n'</span>, <span class="keyword">...</span>
+0425         fv_nr - skipped, fv_nr, skipped)
+0426     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0427 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

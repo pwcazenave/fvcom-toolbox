@@ -27,30 +27,42 @@
 <div class="box"><strong>function write_FVCOM_sponge(Mobj,filename) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre class="comment"> Write FVCOM format sponge layer file  
+<div class="fragment"><pre class="comment"> Write FVCOM format sponge layer file
 
  function write_FVCOM_sponge(Mobj,filename)
 
  DESCRIPTION:
     Generate an ascii FVCOM 3.x format sponge file from Mesh object
 
- INPUT 
-   Mobj     = Mesh object
+ INPUT
+   Mobj     = Mesh object with fields:
+              - sponge_fac - the sponge factor.
+              - sponge_rad - the sponge radius.
+              - nSponge - the number of sponge boundary (see
+                add_sponge_nodes_list).
+              - nSponge - the node IDs of the sponge nodes.
    filename = FVCOM sponge file name
 
  OUTPUT:
     FVCOM sponge file: filename
 
  EXAMPLE USAGE
-    write_FVCOM_sponge(Mobj,'tst_spg.dat')   
+    write_FVCOM_sponge(Mobj,'tst_spg.dat')
 
- Author(s):  
+ Author(s):
     Geoff Cowles (University of Massachusetts Dartmouth)
     Karen Thurston (National Oceanography Centre, Liverpool)
+    Rory O'Hara Murray (Marine Scotland Science)
 
  Revision history
-   2013-01-18  Added support for variable sponge radius
-   
+   2013-01-18 Added support for variable sponge radius.
+   2014-10-28 Added support for variable sponge damping coefficient, by
+   assuming the size of the sponge_fac and sponge_rad arrays are equal the
+   number of sponge nodes by default.
+   2016-04-20 Reconcile the original behaviour (single value at each open
+   boundary) and the variable values for each node. Also update the help
+   and general formatting of the code.
+
 ==============================================================================</pre></div>
 
 <!-- crossreference -->
@@ -66,75 +78,118 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_sponge(Mobj,filename) </a>
-0002 
-0003 <span class="comment">% Write FVCOM format sponge layer file</span>
-0004 <span class="comment">%</span>
-0005 <span class="comment">% function write_FVCOM_sponge(Mobj,filename)</span>
-0006 <span class="comment">%</span>
-0007 <span class="comment">% DESCRIPTION:</span>
-0008 <span class="comment">%    Generate an ascii FVCOM 3.x format sponge file from Mesh object</span>
-0009 <span class="comment">%</span>
-0010 <span class="comment">% INPUT</span>
-0011 <span class="comment">%   Mobj     = Mesh object</span>
-0012 <span class="comment">%   filename = FVCOM sponge file name</span>
-0013 <span class="comment">%</span>
-0014 <span class="comment">% OUTPUT:</span>
-0015 <span class="comment">%    FVCOM sponge file: filename</span>
-0016 <span class="comment">%</span>
-0017 <span class="comment">% EXAMPLE USAGE</span>
-0018 <span class="comment">%    write_FVCOM_sponge(Mobj,'tst_spg.dat')</span>
-0019 <span class="comment">%</span>
-0020 <span class="comment">% Author(s):</span>
-0021 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0022 <span class="comment">%    Karen Thurston (National Oceanography Centre, Liverpool)</span>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_sponge(Mobj,filename)</a>
+0002 <span class="comment">% Write FVCOM format sponge layer file</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function write_FVCOM_sponge(Mobj,filename)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Generate an ascii FVCOM 3.x format sponge file from Mesh object</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT</span>
+0010 <span class="comment">%   Mobj     = Mesh object with fields:</span>
+0011 <span class="comment">%              - sponge_fac - the sponge factor.</span>
+0012 <span class="comment">%              - sponge_rad - the sponge radius.</span>
+0013 <span class="comment">%              - nSponge - the number of sponge boundary (see</span>
+0014 <span class="comment">%                add_sponge_nodes_list).</span>
+0015 <span class="comment">%              - nSponge - the node IDs of the sponge nodes.</span>
+0016 <span class="comment">%   filename = FVCOM sponge file name</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% OUTPUT:</span>
+0019 <span class="comment">%    FVCOM sponge file: filename</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% EXAMPLE USAGE</span>
+0022 <span class="comment">%    write_FVCOM_sponge(Mobj,'tst_spg.dat')</span>
 0023 <span class="comment">%</span>
-0024 <span class="comment">% Revision history</span>
-0025 <span class="comment">%   2013-01-18  Added support for variable sponge radius</span>
-0026 <span class="comment">%</span>
-0027 <span class="comment">%==============================================================================</span>
-0028 subname = <span class="string">'write_FVCOM_sponge'</span>;
-0029 <span class="keyword">global</span> ftbverbose 
-0030 <span class="keyword">if</span>(ftbverbose)
-0031   fprintf(<span class="string">'\n'</span>); fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>]);
-0032 <span class="keyword">end</span>;
-0033 
-0034 <span class="comment">%------------------------------------------------------------------------------</span>
-0035 <span class="comment">% Parse input arguments</span>
-0036 <span class="comment">%------------------------------------------------------------------------------</span>
-0037 <span class="keyword">if</span>(exist(<span class="string">'Mobj'</span>)*exist(<span class="string">'filename'</span>)==0)
-0038     error(<span class="string">'arguments to write_FVCOM_sponge are incorrect'</span>)
-0039 <span class="keyword">end</span>;
-0040 
-0041 <span class="comment">%------------------------------------------------------------------------------</span>
-0042 <span class="comment">% Dump the file</span>
-0043 <span class="comment">%------------------------------------------------------------------------------</span>
-0044 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'writing FVCOM spongefile %s\n'</span>,filename); <span class="keyword">end</span>;
-0045 fid = fopen(filename,<span class="string">'w'</span>);
-0046 
-0047 <span class="keyword">if</span>(Mobj.nSponge==0)
-0048     fprintf(fid,<span class="string">'Sponge Node Number = %d\n'</span>,0);
-0049 <span class="keyword">else</span>
-0050     Total_Sponge = sum(Mobj.nSpongeNodes(1:Mobj.nSponge));
-0051     fprintf(fid,<span class="string">'Sponge Node Number = %d\n'</span>,Total_Sponge);
-0052     <span class="keyword">for</span> i=1:Mobj.nSponge
-0053         <span class="keyword">if</span> numel(unique(Mobj.sponge_rad)) == 1   <span class="comment">% if you have a constant sponge radius</span>
-0054             <span class="keyword">for</span> j=1:Mobj.nSpongeNodes(i)
-0055                 fprintf(fid,<span class="string">'%d %f %f \n'</span>,Mobj.sponge_nodes(i,j),Mobj.sponge_rad(i),Mobj.sponge_fac(i));
-0056             <span class="keyword">end</span>;
-0057         <span class="keyword">else</span>    <span class="comment">% if you have a variable sponge radius</span>
-0058             <span class="keyword">for</span> j=1:Mobj.nSpongeNodes(i)
-0059                 fprintf(fid,<span class="string">'%d %f %f \n'</span>,Mobj.sponge_nodes(i,j),Mobj.sponge_rad(i,j),Mobj.sponge_fac(i));
-0060             <span class="keyword">end</span>;
-0061         <span class="keyword">end</span>
-0062     <span class="keyword">end</span>;
-0063 <span class="keyword">end</span>;
-0064 fclose(fid);
-0065         
-0066 <span class="keyword">if</span>(ftbverbose)
-0067   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0068 <span class="keyword">end</span>;
-0069</pre></div>
-<hr><address>Generated on Thu 18-Feb-2016 11:26:24 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0024 <span class="comment">% Author(s):</span>
+0025 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0026 <span class="comment">%    Karen Thurston (National Oceanography Centre, Liverpool)</span>
+0027 <span class="comment">%    Rory O'Hara Murray (Marine Scotland Science)</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Revision history</span>
+0030 <span class="comment">%   2013-01-18 Added support for variable sponge radius.</span>
+0031 <span class="comment">%   2014-10-28 Added support for variable sponge damping coefficient, by</span>
+0032 <span class="comment">%   assuming the size of the sponge_fac and sponge_rad arrays are equal the</span>
+0033 <span class="comment">%   number of sponge nodes by default.</span>
+0034 <span class="comment">%   2016-04-20 Reconcile the original behaviour (single value at each open</span>
+0035 <span class="comment">%   boundary) and the variable values for each node. Also update the help</span>
+0036 <span class="comment">%   and general formatting of the code.</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">%==============================================================================</span>
+0039 
+0040 subname = <span class="string">'write_FVCOM_sponge'</span>;
+0041 
+0042 <span class="keyword">global</span> ftbverbose
+0043 
+0044 <span class="keyword">if</span> ftbverbose
+0045     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname);
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="comment">%------------------------------------------------------------------------------</span>
+0049 <span class="comment">% Parse input arguments</span>
+0050 <span class="comment">%------------------------------------------------------------------------------</span>
+0051 <span class="keyword">if</span> exist(<span class="string">'Mobj'</span>, <span class="string">'var'</span>) == 0 &amp;&amp; exist(<span class="string">'filename'</span>, <span class="string">'var'</span>) == 0
+0052     error(<span class="string">'arguments to write_FVCOM_sponge are incorrect'</span>)
+0053 <span class="keyword">end</span>
+0054 
+0055 <span class="comment">%------------------------------------------------------------------------------</span>
+0056 <span class="comment">% Correct possible errors arrising from previous Mobj storage methods</span>
+0057 <span class="comment">%------------------------------------------------------------------------------</span>
+0058 
+0059 <span class="comment">% Make sure sponge_fac and sponge_rad are the right size. We'll also allow</span>
+0060 <span class="comment">% a single value per open boundary.</span>
+0061 <span class="keyword">if</span> size(Mobj.sponge_fac,2) == 1
+0062     Mobj.sponge_fac = Mobj.sponge_fac(:,1) * ones(1, max(Mobj.nSpongeNodes));
+0063 <span class="keyword">elseif</span> size(Mobj.sponge_fac, 2) == Mobj.nObs
+0064     Mobj.sponge_fac = repmat(Mobj.sponge_fac, max(Mobj.nSpongeNodes), 1)';
+0065 <span class="keyword">elseif</span> size(Mobj.sponge_fac, 2) &lt; max(Mobj.nSpongeNodes)
+0066     error(<span class="string">'sponge_fac is an incompatible size, check it''s been written correctly.'</span>)
+0067 <span class="keyword">end</span>
+0068 <span class="keyword">if</span> size(Mobj.sponge_rad,2)==1
+0069     Mobj.sponge_rad = Mobj.sponge_rad(:,1)*ones(1,max(Mobj.nSpongeNodes));
+0070 <span class="keyword">elseif</span> size(Mobj.sponge_rad, 2) == Mobj.nObs
+0071     Mobj.sponge_rad = repmat(Mobj.sponge_rad, max(Mobj.nSpongeNodes), 1)';
+0072 <span class="keyword">elseif</span> size(Mobj.sponge_rad,2) &lt; max(Mobj.nSpongeNodes)
+0073     error(<span class="string">'sponge_rad is an incompatible size, check it''s been written correctly.'</span>)
+0074 <span class="keyword">end</span>
+0075 
+0076 <span class="comment">% If there are zeros across the sponge_fac and sponge_rad arrays then</span>
+0077 <span class="comment">% assume they are constant values and fill. This may have happened if one</span>
+0078 <span class="comment">% sponge layer has constant values, and the second has variable values.</span>
+0079 <span class="keyword">for</span> n=1:length(Mobj.nSpongeNodes)
+0080     <span class="keyword">if</span> sum(Mobj.sponge_fac(n,2:Mobj.nSpongeNodes(n)))==0
+0081         Mobj.sponge_fac(n,2:Mobj.nSpongeNodes(n)) = Mobj.sponge_fac(n,1);
+0082     <span class="keyword">end</span>
+0083     <span class="keyword">if</span> sum(Mobj.sponge_rad(n,2:Mobj.nSpongeNodes(n)))==0
+0084         Mobj.sponge_rad(n,2:Mobj.nSpongeNodes(n)) = Mobj.sponge_rad(n,1);
+0085     <span class="keyword">end</span>
+0086 <span class="keyword">end</span>
+0087 
+0088 <span class="comment">%------------------------------------------------------------------------------</span>
+0089 <span class="comment">% Dump the file</span>
+0090 <span class="comment">%------------------------------------------------------------------------------</span>
+0091 <span class="keyword">if</span> ftbverbose
+0092     fprintf(<span class="string">'writing FVCOM spongefile %s\n'</span>,filename)
+0093 <span class="keyword">end</span>
+0094 fid = fopen(filename,<span class="string">'w'</span>);
+0095 
+0096 <span class="keyword">if</span> Mobj.nSponge == 0
+0097     fprintf(fid,<span class="string">'Sponge Node Number = %d\n'</span>,0);
+0098 <span class="keyword">else</span>
+0099     Total_Sponge = sum(Mobj.nSpongeNodes(1:Mobj.nSponge));
+0100     fprintf(fid,<span class="string">'Sponge Node Number = %d\n'</span>,Total_Sponge);
+0101     <span class="keyword">for</span> i=1:Mobj.nSponge
+0102         <span class="keyword">for</span> j=1:Mobj.nSpongeNodes(i)
+0103             fprintf(fid,<span class="string">'%d %f %f \n'</span>,Mobj.sponge_nodes(i,j),Mobj.sponge_rad(i,j),Mobj.sponge_fac(i,j));
+0104         <span class="keyword">end</span>
+0105     <span class="keyword">end</span>
+0106 <span class="keyword">end</span>
+0107 fclose(fid);
+0108 
+0109 <span class="keyword">if</span> ftbverbose
+0110   fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0111 <span class="keyword">end</span>
+0112</pre></div>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -27,6 +27,8 @@ function Mobj = interp_HYCOM2FVCOM(Mobj, hycom, start_date, varlist)
 %   hycom       = Struct output by get_HYCOM_forcing. Must include fields:
 %                   - hycom.lon, hycom.lat - rectangular arrays.
 %                   - hycom.Depth - HYCOM depth levels.
+%                 The data fields (specified in varlist) must be shaped
+%                 (x, y, z, time).
 %   start_date  = Gregorian start date array (YYYY, MM, DD, hh, mm, ss).
 %   varlist     = cell array of fields to use from the HYCOM struct.
 %
@@ -55,6 +57,10 @@ function Mobj = interp_HYCOM2FVCOM(Mobj, hycom, start_date, varlist)
 %   onto which to interpolate. Also update the parallel pool code to use
 %   the new parpool function instead of matlabpool in anticipation of the
 %   latter's eventual removal from MATLAB.
+%   2016-03-18 Clarify help on the shape of the required input data arrays.
+%   2016-03-29 Update the interpolation to extrapolate by removing NaNs
+%   from the input data and setting the 'nearest' flag on
+%   scatteredInterpolant.
 %
 %==========================================================================
 
@@ -63,6 +69,10 @@ subname = 'interp_HYCOM2FVCOM';
 global ftbverbose;
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
+end
+
+if nargin == 0
+    error('Not enough input arguments. See HELP %s', subname)
 end
 
 % Run jobs on multiple workers if we have that functionality. Not sure if
@@ -85,7 +95,7 @@ stime = greg2mjulian(start_date(1), start_date(2), ...
 [~, tidx] = min(abs(hycom.time - stime));
 
 for vv = 1:length(varlist);
-    
+
     currvar = varlist{vv};
 
     switch currvar
@@ -159,9 +169,19 @@ for vv = 1:length(varlist);
 
             tic
             parfor zi = 1:fz
+                % Get the current depth layer's data and mask out the NaN
+                % values.
+                hytempzcurrent = hytempz(:, :, zi);
+
+                % Strip out NaNs so we can extrapolate with TriScatteredInterp.
+                nanmask = ~isnan(hytempzcurrent);
+                plonclean = plon(nanmask);
+                platclean = plat(nanmask);
+                hytempzclean = hytempzcurrent(nanmask);
                 % Set up the interpolation object and interpolate the
                 % current variable to the FVCOM unstructured grid.
-                ft = TriScatteredInterp(plon, plat, reshape(hytempz(:, :, zi), [], 1), 'natural');
+                ft = scatteredInterpolant(plonclean, platclean, ...
+                    hytempzclean, 'natural', 'nearest');
                 fvtemp(:, zi) = ft(flon, flat);
             end
 
@@ -196,7 +216,7 @@ for vv = 1:length(varlist);
             te = toc;
 
             if ftbverbose
-                fprintf('done. (elapsed time = %.2f seconds)\n', te) 
+                fprintf('done. (elapsed time = %.2f seconds)\n', te)
             end
 
     end

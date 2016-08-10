@@ -149,6 +149,6 @@ netcdf.putVar(nc, times_varid, nStringOut);
 netcdf.close(nc);
 
 if ftbverbose
-    fprintf(['end   : ' subname '\n'])
+    fprintf('end   : %s\n', subname)
 end
 

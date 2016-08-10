@@ -1,5 +1,117 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20160811
+--------
+
+Fairly major overhaul of the code. Adds a lot of new functionality and tidies
+up the code across a large part of the toolbox.
+
+README.md
+    * Update the location of functions which still require updating to use
+    modern MATLAB netCDF syntax.
+
+doc:
+    * Update the documentation for the new release.
+    convert_logo.sh
+        * Script to convert the logo for the toolbox from PDF to png.
+
+fvcom_prepro:
+    add_var_FVCOM_river.m
+        * Convert from old netCDF routines to native MATLAB syntax.
+    fix_river_nodes.m
+        * Add ability to move river nodes to the deepest node within the given
+        radius.
+    get_HYCOM_forcing.m
+        * Add new data sets from the HYCOM server (post-2014).
+    get_HYCOM_tsobc.m
+        * Add fallback interpolation to inverse distance weighted if the
+        triangular interpolation fails.
+    get_NEMO_rivers.m
+        * New function to read in NEMO formatted river data.
+    get_POLCOMS_tsobc.m
+        * Fix the parallel pool code syntax.
+    hybrid_coordinate.m
+        * New function to create a hybrid vertical coordinates file.
+    interp_HYCOM2FVCOM.m
+        * Clarify help on the shape of the required input data arrays. Update
+        the interpolation to extrapolate by removing NaNs from the input data
+        and setting the 'nearest' flag on scatteredInterpolant.
+    read_fvcom_bath.m
+        * Remove loops to speed up reading in the file.
+    read_sigma.m
+        * Made the sigma distributions be spatially resolved for the UNIFORM,
+        GEOMETRIC and GENERALIZED cases. Also removed the UNIFORM distribution
+        from the checks on the values of parameters which only belong in the
+        GENERALIZED case.
+    read_sms_mesh.m
+        * Fix behaviour if grid has no open boundaries so we can rely on
+        have_strings existing in either case.
+    wrf2fvcom.m
+        * Add missing global attribute.
+    write_FVCOM_TT.m
+        * Add support for a variable turbine thrust coefficient.
+    write_FVCOM_bath.m
+        * Removed loops to speed up writing the file
+    write_FVCOM_cor.m
+        * Removed loops to speed up writing the file. Remove tabs and clean up
+        syntax.
+    write_FVCOM_forcing.m
+        * Remove stray whitespace.
+    write_FVCOM_grid.m
+        * Removed loops to speed up writing the file. Minor code tweaks to fix
+        MATLAB warnings. Add check that we successfully opened the output file.
+    write_FVCOM_groundwater.m
+        * Added help which actually refers to this script's function rather
+        than the template upon which it was based.
+    write_FVCOM_river.m
+        * Fix print statement format.
+    write_FVCOM_river_ERSEM.m
+        * New version to export nutrients alongside the physical parameters for
+        FVCOM-ERSEM. Based on write_FVCOM_river.
+    write_FVCOM_sponge.m
+        * Reconcile the original behaviour (single value at each open boundary)
+        and the variable values for each node. Also update the help and general
+        formatting of the code.
+    write_FVCOM_tsobc.m
+        * Removed the reads of the ASCII configuration files (which was very
+        slow) and instead extracted the relevant information from the supplied
+        mesh object. As such, the requirements for the mesh object have
+        changed, so hopefully this won't bite too many people in the behind.
+        Also simplified the allocation of the arrays when uniform values are
+        given (i.e. when in_salt and in_temp are scalars).
+    write_FVCOM_z0.m
+        * Added new variable (cbcmin) to support FVCOM version 4. Also tidied
+        up the code a bit.
+
+tests:
+    fvcom_prepro:
+        test_write_FVCOM_tsobc.m
+            * Unit test for write_FVCOM_tsobc.
+    utilities:
+        test_get_POLCOMS_tsobc.m
+            * Updated to actually compare the interpolated data rather than just the grid information.
+        test_grid2fvcom.m
+            * Fix paths to data to load.
+
+utilities:
+    grid2fvcom.m
+        * Fix the alternative grid handling in the parallel loop. Remove
+        commented out code too.
+    make_logo.m
+        * Make the toolbox logo.
+    plot_fvcom_field.m
+        * Changed the way fig id is checked, not using 'exist' anymore. Added
+        the axis command in.
+    read_fvcom_mesh.m
+        * Remove loops to speed up reading in the file.
+    read_netcdf_vars.m
+        * Dimension ids are now added to attributes. Added the ability to
+        specify the stride/sample rate.
+    read_netcdf_vars_xy.m
+        * Function to extract netcdf variables for a number of (x, y)
+        locations.
+
+
 20160218
 --------
 

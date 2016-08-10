@@ -38,18 +38,20 @@ function Mobj = read_sigma(Mobj, sigmafile)
 %   fiddling around with ranges, although the output is the same).
 %   2014-04-28 Add the sigma levels for the element centres in addition to
 %   the element nodes.
+%   2016-05-25 Made the sigma distributions be spatially resolved for the
+%   UNIFORM, GEOMETRIC and GENERALIZED cases. Also removed the UNIFORM
+%   distribution from the checks on the values of parameters which only
+%   belong in the GENERALIZED case.
 
-subname = 'read_sigma';
+[~, subname] = fileparts(mfilename('fullpath'));
 
-global ftbverbose;
+global ftbverbose
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
 
 fid = fopen(sigmafile,'r');
-if(fid  < 0)
-    error(['file: ' sigmafile ' does not exist']);
-end
+assert(fid >= 0, 'Sigma file: %s does not exist', sigmafile)
 
 while ~feof(fid)
     line = fgetl(fid);
@@ -95,7 +97,7 @@ end
 
 % Do some checks if we've got uniform or generalised coordinates to make
 % sure the input is correct.
-if strcmpi(sigtype, 'GENERALIZED') || strcmpi(sigtype, 'UNIFORM')
+if strcmpi(sigtype, 'GENERALIZED')
     if numel(zku) ~= ku
         warning('Number of zku values does not match the number specified in ku')
     end
@@ -115,7 +117,7 @@ if ftbverbose
     end
 
     % Only in the generalised or uniform sigma files.
-    if strcmpi(sigtype, 'GENERALIZED') || strcmpi(sigtype, 'UNIFORM')
+    if strcmpi(sigtype, 'GENERALIZED')
         fprintf('du\t%d\n', du)
         fprintf('dl\t%d\n', dl)
         fprintf('min_constant_depth\t%f\n', min_constant_depth)
@@ -126,35 +128,51 @@ if ftbverbose
     end
 end
 
-% Calculate the sigma distributions at each grid node
+% Calculate the sigma distributions at each grid node.
+nx = length(Mobj.h);
 switch lower(sigtype)
     case 'generalized'
-        z = sigma_gen(nlev, dl, du, kl, ku, zkl, zku, ...
-            Mobj.z(i), min_constant_depth);
+        z = nan([nx, nlev]);
+        h = Mobj.h; % avoids broadcasting Mobj on every iteration
+        % Not sure if a parfor is wise here as the pool start up time might
+        % exceed the run time. For big grids, the parfor is probably a wise
+        % move.
+        parfor i = 1:nx
+            z(i, :) = sigma_gen(nlev, dl, du, kl, ku, zkl, zku, ...
+                h(i), min_constant_depth);
+        end
+        clear h
     case 'uniform'
-        z = sigma_geo(nlev, 1);
-        % z = 0:-1/double(nlev-1):-1;
+        z = repmat(sigma_geo(nlev, 1), [nx, 1]);
     case 'geometric'
-        z = sigma_geo(nlev, sigpow);
+        z = repmat(sigma_geo(nlev, sigpow), [nx, 1]);
     otherwise
-        error('Don''t know sigtype %s (is it supported?)', sigtype)
+        error('Don''t recognise sigtype %s (is it supported?)', sigtype)
 end
-
-% Create a siglay variable (i.e. midpoint in the sigma levels).
-zlay = z(1:end-1) + (diff(z)/2);
 
 % Create a depth array for the element centres.
 hc = nodes2elems(Mobj.h, Mobj);
+ne = length(hc);
 
-Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* repmat(z, Mobj.nVerts, 1);
-Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* repmat(zlay, Mobj.nVerts, 1);
-Mobj.siglevzc = repmat(hc, 1, nlev) .* repmat(z, Mobj.nElems, 1);
-Mobj.siglayzc = repmat(hc, 1, nlev-1) .* repmat(zlay, Mobj.nElems, 1);
+% Create a siglay variable (i.e. midpoint in the sigma levels).
+zlay = z(:, 1:end - 1) + (diff(z, [], 2) ./ 2);
+zlayc = nan(ne, nlev - 1);
+zc = nan(ne, nlev);
+for i = 1:nlev
+    zc(:, i) = nodes2elems(z(:, i), Mobj);
+    if i ~= nlev
+        zlayc(:, i) = nodes2elems(zlay(:, i), Mobj);
+    end
+end
+Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* z;
+Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* zlay;
+Mobj.siglevzc = repmat(hc, 1, nlev) .* zc;
+Mobj.siglayzc = repmat(hc, 1, nlev-1) .* zlayc;
 
 % Add the sigma levels and layers to the Mobj.
 Mobj.siglev = z;
 Mobj.siglay = zlay;
 
-if ftbverbose;
+if ftbverbose
     fprintf('end   : %s\n', subname)
 end

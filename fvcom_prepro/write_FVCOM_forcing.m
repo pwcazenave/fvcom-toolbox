@@ -141,7 +141,7 @@ subname = 'write_FVCOM_forcing';
 
 global ftbverbose;
 if ftbverbose
-	fprintf('\nbegin : %s \n', subname)
+    fprintf('\nbegin : %s \n', subname)
 end
 
 % Default to string times as FVCOM looks for these first.
@@ -324,7 +324,7 @@ for i=1:length(suffixes)
                     end
                     used_dims = [used_dims, {'nElems', 'nElems', 'nElems', 'nElems'}];
                 end
-                
+
             case {'vwnd', 'v10'}
                 % We dealt with these in the u component section above, so
                 % just pass silently.
@@ -359,7 +359,7 @@ for i=1:length(suffixes)
                     used_fnames = [used_fnames, fnames{vv}];
                     used_dims = [used_dims, 'nNodes'];
                 end
-                
+
             case 'shum'
                 if strcmpi(suffixes{i}, '_specific_humidity') || ~multi_out
                     % Specific humidity
@@ -374,7 +374,7 @@ for i=1:length(suffixes)
                     used_fnames = [used_fnames, fnames{vv}];
                     used_dims = [used_dims, 'nNodes'];
                 end
-                
+
             case {'Et', 'evap'}
                 if strcmpi(suffixes{i}, '_evap') || ~multi_out
                     % Evaporation

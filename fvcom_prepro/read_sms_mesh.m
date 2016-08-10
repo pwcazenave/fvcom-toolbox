@@ -49,10 +49,12 @@ function [Mobj] = read_sms_mesh(varargin)
 %   than repeating the values. Also add element centre coordinates for
 %   cartesian coordinates. This is somewhat redundant given setup_metrics
 %   does this anyway.
+%   2016-07-28 Fix behaviour if grid has no open boundaries so we can rely
+%   on have_strings existing in either case.
 %
 %==============================================================================
 
-subname = 'read_sms_mesh';
+[~, subname] = fileparts(mfilename('fullpath'));
 global ftbverbose;
 if ftbverbose
     fprintf('\nbegin : %s \n', subname)
@@ -355,6 +357,8 @@ end
 if have_strings
     Mobj.have_strings   = have_strings;
     Mobj.read_obc_nodes = read_obc_nodes;
+else
+    Mobj.have_strings;
 end
 if exist('addCoriolis', 'var') && addCoriolis
     Mobj.have_cor       = true;
