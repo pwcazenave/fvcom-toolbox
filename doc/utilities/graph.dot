@@ -42,6 +42,7 @@ digraph m2html {
   inkmlbb -> read_kml;
   inkmlbb -> tri_from_bndry;
   interpolate_polcoms_timeseries_zet -> interpolate_near_coast;
+  read_netcdf_vars_xy -> read_netcdf_vars;
   show_sigma -> sigma_gen;
   transect_nodes_screen -> ginput2;
 
@@ -100,6 +101,7 @@ digraph m2html {
   m_ll2ll [URL="m_ll2ll.html"];
   m_to_lat [URL="m_to_lat.html"];
   m_to_lon [URL="m_to_lon.html"];
+  make_logo [URL="make_logo.html"];
   mjul2str [URL="mjul2str.html"];
   mjul2str2 [URL="mjul2str2.html"];
   mjulian2greg [URL="mjulian2greg.html"];
@@ -113,6 +115,7 @@ digraph m2html {
   read_kml [URL="read_kml.html"];
   read_netCDF_FVCOM [URL="read_netCDF_FVCOM.html"];
   read_netcdf_vars [URL="read_netcdf_vars.html"];
+  read_netcdf_vars_xy [URL="read_netcdf_vars_xy.html"];
   read_polcoms_params [URL="read_polcoms_params.html"];
   read_scoord_params [URL="read_scoord_params.html"];
   readdir [URL="readdir.html"];

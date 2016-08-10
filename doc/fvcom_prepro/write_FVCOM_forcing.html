@@ -495,7 +495,7 @@ This function is called by:
 0324                     <span class="keyword">end</span>
 0325                     used_dims = [used_dims, {<span class="string">'nElems'</span>, <span class="string">'nElems'</span>, <span class="string">'nElems'</span>, <span class="string">'nElems'</span>}];
 0326                 <span class="keyword">end</span>
-0327                 
+0327 
 0328             <span class="keyword">case</span> {<span class="string">'vwnd'</span>, <span class="string">'v10'</span>}
 0329                 <span class="comment">% We dealt with these in the u component section above, so</span>
 0330                 <span class="comment">% just pass silently.</span>
@@ -530,7 +530,7 @@ This function is called by:
 0359                     used_fnames = [used_fnames, fnames{vv}];
 0360                     used_dims = [used_dims, <span class="string">'nNodes'</span>];
 0361                 <span class="keyword">end</span>
-0362                 
+0362 
 0363             <span class="keyword">case</span> <span class="string">'shum'</span>
 0364                 <span class="keyword">if</span> strcmpi(suffixes{i}, <span class="string">'_specific_humidity'</span>) || ~multi_out
 0365                     <span class="comment">% Specific humidity</span>
@@ -545,7 +545,7 @@ This function is called by:
 0374                     used_fnames = [used_fnames, fnames{vv}];
 0375                     used_dims = [used_dims, <span class="string">'nNodes'</span>];
 0376                 <span class="keyword">end</span>
-0377                 
+0377 
 0378             <span class="keyword">case</span> {<span class="string">'Et'</span>, <span class="string">'evap'</span>}
 0379                 <span class="keyword">if</span> strcmpi(suffixes{i}, <span class="string">'_evap'</span>) || ~multi_out
 0380                     <span class="comment">% Evaporation</span>
@@ -834,6 +834,6 @@ This function is called by:
 0663 <span class="keyword">if</span> ftbverbose
 0664     fprintf(<span class="string">'end   : %s \n'</span>, subname)
 0665 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Thu 18-Feb-2016 11:26:24 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

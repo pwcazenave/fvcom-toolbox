@@ -1,0 +1,353 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of hybrid_coordinate</title>
+  <meta name="keywords" content="hybrid_coordinate">
+  <meta name="description" content="Create a hybrid vertical coordinates file.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; hybrid_coordinate.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>hybrid_coordinate
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Create a hybrid vertical coordinates file.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Mobj = hybrid_coordinate(conf, Mobj) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Create a hybrid vertical coordinates file.
+
+ Mobj = hybrid_coordinate(conf, Mobj);
+
+ DESCRIPTION:
+   Calculates and writes a hybird coordinates file for FVCOM.
+
+ INPUT:
+   conf - configuration struct with the following fields:
+       sigma_file - file path into which to write the hybrid coordinates
+       H0 - transition depth of the hybrid coordinates
+       DU - upper water boundary thickness (metres)
+       DL - lower water boundary thickness (metres)
+       KU - number of layers in the DU water column
+       KL - number of layers in the DL water column
+       nlev - number of vertical levels (layers + 1)
+   Mobj - Mesh object with the following fields:
+       h - water depth at the nodes
+
+ OUTPUT:
+   Mobj - Mesh object with the following new fields:
+       siglev - Sigma levels at the nodes
+       siglevc - Sigma levels at the elements
+       siglay - Sigma layers at the nodes
+       siglayc - Sigma layers at the elements
+       siglevz - Water depth levels at the nodes
+       siglevzc - Water depth levels at the elements
+       siglayz - Water depth layers at the nodes
+       siglayzc - Water depth layers at the elements
+       hc - Water depth at the elements
+
+ EXAMPLE USAGE:
+   conf.sigma_file = 'coord_hybrid.sig';
+   conf.nlev = 41;
+   conf.DU = 25;
+   conf.DL = 25;
+   conf.Hmin = 200;
+   conf.KU = 5;
+   conf.KL = 5;
+   conf.ZKU = [.5 .5 .5 .5 .5];
+   conf.ZKL = [.5 .5 .5 .5 .5];
+   conf.H0 = 100;
+   conf.nlev = 20;
+   conf.DU = 25;
+   conf.DL = 25;
+   conf.KU = 5;
+   conf.KL = 5;
+   Mobj.h = random(100, 1) * 100;  % 100 random bathymetry points
+   Mobj = hybrid_coordinate(conf, Mobj);
+
+ Author(s):
+   Ricard Torres (Plymouth Marine Laboratory)
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history:
+   2015-05-24 First version based on Riqui's initial implementation.
+   2016-08-10 Updated the minimisation function to use the maximum of the
+   difference between the two sets of vertical distributions rather than
+   the median difference. Also tidy up the debug function.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>	Transfer a field from vertices to elements</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)</a></li><li><a href="#_sub2" class="code">function debug_mode()</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = hybrid_coordinate(conf, Mobj)</a>
+0002 <span class="comment">% Create a hybrid vertical coordinates file.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Mobj = hybrid_coordinate(conf, Mobj);</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Calculates and writes a hybird coordinates file for FVCOM.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT:</span>
+0010 <span class="comment">%   conf - configuration struct with the following fields:</span>
+0011 <span class="comment">%       sigma_file - file path into which to write the hybrid coordinates</span>
+0012 <span class="comment">%       H0 - transition depth of the hybrid coordinates</span>
+0013 <span class="comment">%       DU - upper water boundary thickness (metres)</span>
+0014 <span class="comment">%       DL - lower water boundary thickness (metres)</span>
+0015 <span class="comment">%       KU - number of layers in the DU water column</span>
+0016 <span class="comment">%       KL - number of layers in the DL water column</span>
+0017 <span class="comment">%       nlev - number of vertical levels (layers + 1)</span>
+0018 <span class="comment">%   Mobj - Mesh object with the following fields:</span>
+0019 <span class="comment">%       h - water depth at the nodes</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% OUTPUT:</span>
+0022 <span class="comment">%   Mobj - Mesh object with the following new fields:</span>
+0023 <span class="comment">%       siglev - Sigma levels at the nodes</span>
+0024 <span class="comment">%       siglevc - Sigma levels at the elements</span>
+0025 <span class="comment">%       siglay - Sigma layers at the nodes</span>
+0026 <span class="comment">%       siglayc - Sigma layers at the elements</span>
+0027 <span class="comment">%       siglevz - Water depth levels at the nodes</span>
+0028 <span class="comment">%       siglevzc - Water depth levels at the elements</span>
+0029 <span class="comment">%       siglayz - Water depth layers at the nodes</span>
+0030 <span class="comment">%       siglayzc - Water depth layers at the elements</span>
+0031 <span class="comment">%       hc - Water depth at the elements</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">% EXAMPLE USAGE:</span>
+0034 <span class="comment">%   conf.sigma_file = 'coord_hybrid.sig';</span>
+0035 <span class="comment">%   conf.nlev = 41;</span>
+0036 <span class="comment">%   conf.DU = 25;</span>
+0037 <span class="comment">%   conf.DL = 25;</span>
+0038 <span class="comment">%   conf.Hmin = 200;</span>
+0039 <span class="comment">%   conf.KU = 5;</span>
+0040 <span class="comment">%   conf.KL = 5;</span>
+0041 <span class="comment">%   conf.ZKU = [.5 .5 .5 .5 .5];</span>
+0042 <span class="comment">%   conf.ZKL = [.5 .5 .5 .5 .5];</span>
+0043 <span class="comment">%   conf.H0 = 100;</span>
+0044 <span class="comment">%   conf.nlev = 20;</span>
+0045 <span class="comment">%   conf.DU = 25;</span>
+0046 <span class="comment">%   conf.DL = 25;</span>
+0047 <span class="comment">%   conf.KU = 5;</span>
+0048 <span class="comment">%   conf.KL = 5;</span>
+0049 <span class="comment">%   Mobj.h = random(100, 1) * 100;  % 100 random bathymetry points</span>
+0050 <span class="comment">%   Mobj = hybrid_coordinate(conf, Mobj);</span>
+0051 <span class="comment">%</span>
+0052 <span class="comment">% Author(s):</span>
+0053 <span class="comment">%   Ricard Torres (Plymouth Marine Laboratory)</span>
+0054 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0055 <span class="comment">%</span>
+0056 <span class="comment">% Revision history:</span>
+0057 <span class="comment">%   2015-05-24 First version based on Riqui's initial implementation.</span>
+0058 <span class="comment">%   2016-08-10 Updated the minimisation function to use the maximum of the</span>
+0059 <span class="comment">%   difference between the two sets of vertical distributions rather than</span>
+0060 <span class="comment">%   the median difference. Also tidy up the debug function.</span>
+0061 <span class="comment">%</span>
+0062 <span class="comment">%==========================================================================</span>
+0063 
+0064 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0065 <span class="keyword">global</span> ftbverbose
+0066 <span class="keyword">if</span> ftbverbose
+0067     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0068 <span class="keyword">end</span>
+0069 
+0070 <span class="comment">% Limits on the optimisation run.</span>
+0071 optimisation_settings = optimset(<span class="string">'MaxFunEvals'</span>, 5000, <span class="keyword">...</span>
+0072     <span class="string">'MaxIter'</span>, 5000, <span class="keyword">...</span>
+0073     <span class="string">'TolFun'</span>, 10e-5, <span class="keyword">...</span>
+0074     <span class="string">'TolX'</span>, 1e-7);
+0075 
+0076 <span class="comment">% Extract the relevant information from the conf struct.</span>
+0077 nlev = conf.nlev;
+0078 H0 = conf.H0;
+0079 DU = conf.DU;
+0080 DL = conf.DL;
+0081 KU = conf.KU;
+0082 KL = conf.KL;
+0083 
+0084 <span class="comment">% Solve for Z0-Z2 to find Hmin parameter</span>
+0085 <span class="keyword">if</span> ftbverbose
+0086     fprintf(<span class="string">'Optimising the hybrid coordinates... '</span>)
+0087 <span class="keyword">end</span>
+0088 ZKU = repmat(DU./KU, 1, KU);
+0089 ZKL = repmat(DL./KL, 1, KL);
+0090 fparams = @(H)<a href="#_sub1" class="code" title="subfunction ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)">hybrid_coordinate_hmin</a>(H, nlev, DU, DL, KU, KL, ZKU, ZKL);
+0091 [Hmin, ~] = fminsearch(fparams, H0, optimisation_settings);
+0092 
+0093 <span class="keyword">if</span> ftbverbose
+0094     fprintf(<span class="string">'done.\n'</span>)
+0095     fprintf(<span class="string">'Saving to %s... '</span>, conf.sigma_file)
+0096 <span class="keyword">end</span>
+0097 
+0098 <span class="comment">% Save to the given file name.</span>
+0099 fout = fopen(conf.sigma_file, <span class="string">'wt'</span>);
+0100 assert(fout &gt;= 0, <span class="string">'Error opening sigma file: %s'</span>, conf.sigma_file)
+0101 fprintf(fout, <span class="string">'NUMBER OF SIGMA LEVELS = %d\n'</span>, nlev);
+0102 fprintf(fout, <span class="string">'SIGMA COORDINATE TYPE = GENERALIZED\n'</span>);
+0103 fprintf(fout, <span class="string">'DU = %4.1f\n'</span>, DU);
+0104 fprintf(fout, <span class="string">'DL = %4.1f\n'</span>, DL);
+0105 fprintf(fout, <span class="string">'MIN CONSTANT DEPTH = %10.1f\n'</span>, round(Hmin));
+0106 fprintf(fout, <span class="string">'KU = %d\n'</span>, KU);
+0107 fprintf(fout, <span class="string">'KL = %d\n'</span>, KL);
+0108 <span class="comment">% Add the thicknesses with a loop.</span>
+0109 fprintf(fout, <span class="string">'ZKU = '</span>);
+0110 <span class="keyword">for</span> ii = 1:length(ZKU)
+0111     fprintf(fout, <span class="string">'%4.1f'</span>, ZKU(ii));
+0112 <span class="keyword">end</span>
+0113 fprintf(fout, <span class="string">'\n'</span>);
+0114 fprintf(fout, <span class="string">'ZKL = '</span>);
+0115 <span class="keyword">for</span> ii = 1:length(ZKU)
+0116     fprintf(fout, <span class="string">'%4.1f'</span>, ZKL(ii));
+0117 <span class="keyword">end</span>
+0118 fprintf(fout,<span class="string">'\n'</span>);
+0119 fclose(fout);
+0120 
+0121 <span class="keyword">if</span> ftbverbose
+0122     fprintf(<span class="string">'done.\n'</span>)
+0123     fprintf(<span class="string">'Populating Mobj... '</span>)
+0124 <span class="keyword">end</span>
+0125 
+0126 <span class="comment">% Create the arrays of the layer and level sigma coordinates.</span>
+0127 <span class="keyword">for</span> xx = 1:length(Mobj.h)
+0128     Mobj.siglev(xx,:) = sigma_gen(nlev,DL,DU,KL,KU,ZKL,ZKU,Mobj.h(xx),Hmin);
+0129 <span class="keyword">end</span>
+0130 Mobj.siglay = Mobj.siglev(:,1:end-1) + (diff(Mobj.siglev,1,2)/2);
+0131 <span class="comment">% Turn off ftbverbose for this loop.</span>
+0132 old = ftbverbose;
+0133 ftbverbose = 0;
+0134 <span class="keyword">for</span> zz = 1:nlev-1
+0135     Mobj.siglevc(:, zz) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.siglev(:, zz), Mobj);
+0136     Mobj.siglayc(:, zz) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.siglay(:, zz), Mobj);
+0137 <span class="keyword">end</span>
+0138 <span class="comment">% An extra level compared with layers.</span>
+0139 Mobj.siglevc(:, zz + 1) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.siglev(:, zz + 1), Mobj);
+0140 ftbverbose = old;
+0141 clear old
+0142 
+0143 <span class="comment">% Create a depth array for the element centres.</span>
+0144 <span class="keyword">if</span> ~isfield(Mobj, <span class="string">'hc'</span>)
+0145     Mobj.hc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.h, Mobj);
+0146 <span class="keyword">end</span>
+0147 
+0148 <span class="comment">% Finally, make some [depth, sigma] arrays.</span>
+0149 Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* Mobj.siglev;
+0150 Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* Mobj.siglay;
+0151 Mobj.siglevzc = repmat(Mobj.hc, 1, nlev) .* Mobj.siglevc;
+0152 Mobj.siglayzc = repmat(Mobj.hc, 1, nlev-1) .* Mobj.siglayc;
+0153 
+0154 <span class="keyword">if</span> ftbverbose
+0155     fprintf(<span class="string">'done.\n'</span>)
+0156     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0157 <span class="keyword">end</span>
+0158 
+0159 <span class="keyword">return</span>
+0160 
+0161 <a name="_sub1" href="#_subfunctions" class="code">function ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)</a>
+0162 <span class="comment">% Helper function to find the relevant minimum depth. I think.</span>
+0163 <span class="comment">%</span>
+0164 <span class="comment">%   ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)</span>
+0165 <span class="comment">%</span>
+0166 <span class="comment">% INPUT:</span>
+0167 <span class="comment">%   H: transition depth of the hybrid coordinates?</span>
+0168 <span class="comment">%   nlev: number of vertical levels (layers + 1)</span>
+0169 <span class="comment">%   DU: upper water boundary thickness (metres)</span>
+0170 <span class="comment">%   DL: lower water boundary thickness (metres)</span>
+0171 <span class="comment">%   KU: layer number in the water column of DU</span>
+0172 <span class="comment">%   KL: layer number in the water column of DL</span>
+0173 <span class="comment">%</span>
+0174 <span class="comment">% OUTPUT:</span>
+0175 <span class="comment">%   ZZ: minimum water depth?</span>
+0176 <span class="comment">%</span>
+0177 <span class="comment">% Author(s):</span>
+0178 <span class="comment">%   Ricard Torres (Plymouth Marine Laboratory)</span>
+0179 
+0180 <span class="keyword">if</span> DU + DL &gt; 1.25 * H;
+0181     disp(<span class="string">'Depth too shallow for the chosen DU and DL values'</span>)
+0182     <span class="keyword">return</span>
+0183 <span class="keyword">end</span>
+0184 
+0185 Z0 = zeros(nlev, 1);
+0186 Z2 = Z0;
+0187 Z0(1, 1) = 0;
+0188 DL2 = 0.001;
+0189 DU2 = 0.001;
+0190 KBM1 = nlev - 1;
+0191 <span class="keyword">for</span> nn = 1:nlev - 1
+0192     X1 = DL2 + DU2;
+0193     X1 = X1 * (KBM1 - nn) / KBM1;
+0194     X1 = X1 - DL2;
+0195     X1 = tanh(X1);
+0196     X2 = tanh(DL2);
+0197     X3 = X2 + tanh(DU2);
+0198 
+0199     Z0(nn + 1, 1)=((X1 + X2) / X3) - 1;
+0200 <span class="keyword">end</span>
+0201 
+0202 <span class="comment">% s-coordinates</span>
+0203 X1 = (H - DU - DL);
+0204 X2 = X1 ./ H;
+0205 DR = X2 ./ (nlev - KU - KL - 1);
+0206 
+0207 Z2(1,1) = 0.0;
+0208 
+0209 <span class="keyword">for</span> K = 2:KU + 1
+0210     Z2(K, 1) = Z2(K - 1, 1) - (ZKU(K - 1) ./ H);
+0211 <span class="keyword">end</span>
+0212 
+0213 <span class="keyword">for</span> K= KU + 2:nlev - KL
+0214     Z2(K, 1) = Z2(K - 1, 1) - DR;
+0215 <span class="keyword">end</span>
+0216 
+0217 KK = 0;
+0218 <span class="keyword">for</span> K = nlev - KL + 1:nlev
+0219     KK = KK + 1;
+0220     Z2(K, 1) = Z2(K - 1, 1) - (ZKL(KK) ./ H);
+0221 <span class="keyword">end</span>
+0222 ZZ = max(diff(Z0) - diff(Z2));
+0223 
+0224 <span class="keyword">return</span>
+0225 
+0226 <a name="_sub2" href="#_subfunctions" class="code">function debug_mode()</a>
+0227 <span class="comment">% Test with made up data. This isn't actually used at all, but it's handy</span>
+0228 <span class="comment">% to leave around for debugging things.</span>
+0229 
+0230 Hmin=50;
+0231 Hmax=Hmin + 200;
+0232 y = 0:0.1:100;
+0233 B = 100;
+0234 H = Hmax .* exp(-((y./B-0.15).^2./0.5.^2));
+0235 nlev = conf.nlev;
+0236 
+0237 <span class="comment">% Loop through all nodes to create sigma coordinates.</span>
+0238 <span class="keyword">for</span> xx=1:length(H)
+0239     Z2(xx, :) = sigma_gen(nlev, DL, DU, KL, KU, ZKL, ZKU, H(xx), Hmin);
+0240 <span class="keyword">end</span>
+0241 
+0242 plot(Z2 .* repmat(H', 1, nlev))
+0243 fprintf(<span class="string">'Calculated minimum depth: %.2f\n'</span>, Hmin)
+0244</pre></div>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

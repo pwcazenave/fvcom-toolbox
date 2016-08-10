@@ -112,60 +112,71 @@ This function is called by:
 0041     error(<span class="string">'dimension of turbine_numbers is 0, something is wrong '</span>)
 0042 <span class="keyword">end</span>;
 0043 
-0044 <span class="comment">%------------------------------------------------------------------------------</span>
-0045 <span class="comment">% Dump to turbine NetCDF file</span>
-0046 <span class="comment">%------------------------------------------------------------------------------</span>
-0047 <span class="keyword">if</span>(ftbverbose);
-0048   fprintf(<span class="string">'Dumping to turbine parameters NetCDF file: %s\n'</span>,filename);
-0049   fprintf(<span class="string">'Size of turbine_numbers array: %i\n'</span>,nElems);
-0050 <span class="keyword">end</span>;
-0051 nc = netcdf.create(filename,<span class="string">'clobber'</span>);
-0052 
-0053 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,mytitle)
-0054 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
-0055 
-0056 <span class="comment">% dimensions</span>
-0057 nele_dimid=netcdf.defDim(nc,<span class="string">'nele'</span>,nElems);
-0058 nsiglay_dimid=netcdf.defDim(nc,<span class="string">'siglay'</span>, nSiglay);
-0059 
-0060 <span class="comment">% variables and attributes</span>
-0061 num_tt_varid=netcdf.defVar(nc,<span class="string">'turbine_number'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
-0062 netcdf.putAtt(nc,num_tt_varid,<span class="string">'long_name'</span>,<span class="string">'Number of turbines in each element'</span>);
-0063 
-0064 sigma_layer_varid=netcdf.defVar(nc,<span class="string">'turbine_sigma_layer'</span>,<span class="string">'NC_FLOAT'</span>,[nele_dimid nsiglay_dimid]);
-0065 netcdf.putAtt(nc,sigma_layer_varid,<span class="string">'long_name'</span>,<span class="string">'the fraction of each sigma layer that the turbines are located in'</span>);
-0066 
-0067 swept_area_varid=netcdf.defVar(nc,<span class="string">'swept_area'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
-0068 netcdf.putAtt(nc,swept_area_varid,<span class="string">'long_name'</span>,<span class="string">'Area swept by turbine rotor blades'</span>);
+0044 <span class="keyword">if</span> isfield(turbine, <span class="string">'thrust'</span>)
+0045     write_thrust = true;
+0046 <span class="keyword">else</span>
+0047     write_thrust = false;
+0048 <span class="keyword">end</span>
+0049 
+0050 <span class="comment">%------------------------------------------------------------------------------</span>
+0051 <span class="comment">% Dump to turbine NetCDF file</span>
+0052 <span class="comment">%------------------------------------------------------------------------------</span>
+0053 <span class="keyword">if</span>(ftbverbose);
+0054   fprintf(<span class="string">'Dumping to turbine parameters NetCDF file: %s\n'</span>,filename);
+0055   fprintf(<span class="string">'Size of turbine_numbers array: %i\n'</span>,nElems);
+0056 <span class="keyword">end</span>;
+0057 nc = netcdf.create(filename,<span class="string">'clobber'</span>);
+0058 
+0059 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,mytitle)
+0060 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
+0061 
+0062 <span class="comment">% dimensions</span>
+0063 nele_dimid=netcdf.defDim(nc,<span class="string">'nele'</span>,nElems);
+0064 nsiglay_dimid=netcdf.defDim(nc,<span class="string">'siglay'</span>, nSiglay);
+0065 
+0066 <span class="comment">% variables and attributes</span>
+0067 num_tt_varid=netcdf.defVar(nc,<span class="string">'turbine_number'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
+0068 netcdf.putAtt(nc,num_tt_varid,<span class="string">'long_name'</span>,<span class="string">'Number of turbines in each element'</span>);
 0069 
-0070 <span class="comment">% variables that could be added in the future</span>
-0071 <span class="comment">% thrust_coeff_varid=netcdf.defVar(nc,'thrust_coeff','NC_FLOAT',nele_dimid);</span>
-0072 <span class="comment">% netcdf.putAtt(nc,thrust_coeff_varid,'long_name','Turbine thrust ceofficient');</span>
-0073 <span class="comment">% blade_coeff_varid=netcdf.defVar(nc,'blade_coeff','NC_FLOAT',nele_dimid);</span>
-0074 <span class="comment">% netcdf.putAtt(nc,blade_coeff_varid,'long_name','Drag coefficient for the turbine blades');</span>
+0070 sigma_layer_varid=netcdf.defVar(nc,<span class="string">'turbine_sigma_layer'</span>,<span class="string">'NC_FLOAT'</span>,[nele_dimid nsiglay_dimid]);
+0071 netcdf.putAtt(nc,sigma_layer_varid,<span class="string">'long_name'</span>,<span class="string">'the fraction of each sigma layer that the turbines are located in'</span>);
+0072 
+0073 swept_area_varid=netcdf.defVar(nc,<span class="string">'swept_area'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
+0074 netcdf.putAtt(nc,swept_area_varid,<span class="string">'long_name'</span>,<span class="string">'Area swept by turbine rotor blades'</span>);
 0075 
-0076 <span class="comment">% end definitions</span>
-0077 netcdf.endDef(nc);
-0078 
-0079 <span class="comment">% write data</span>
-0080 <span class="comment">% netCDF variable names:</span>
-0081 <span class="comment">% turbine_sigma_layer, turbine_number, swept_area</span>
-0082 netcdf.putVar(nc,num_tt_varid,turbine.numbers);
-0083 netcdf.putVar(nc,sigma_layer_varid,turbine.sigma_layer);
-0084 netcdf.putVar(nc,swept_area_varid,turbine.area);
-0085 
-0086 <span class="comment">% variables that could be added in the future</span>
-0087 <span class="comment">% netcdf.putVar(nc,thrust_coeff_varid,turbine.thrust);</span>
-0088 <span class="comment">% netcdf.putVar(nc,blade_coeff_varid,turbine.drag);</span>
-0089 
-0090 <span class="comment">% close file</span>
-0091 netcdf.close(nc);
-0092 
-0093 <span class="keyword">if</span>(ftbverbose);
-0094   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0095 <span class="keyword">end</span>;
-0096 
-0097</pre></div>
-<hr><address>Generated on Thu 18-Feb-2016 11:26:24 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0076 <span class="keyword">if</span> write_thrust
+0077     thrust_coeff_varid=netcdf.defVar(nc,<span class="string">'thrust_coeff'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
+0078     netcdf.putAtt(nc,thrust_coeff_varid,<span class="string">'long_name'</span>,<span class="string">'Turbine thrust ceofficient'</span>);
+0079 <span class="keyword">end</span>
+0080 
+0081 <span class="comment">% variables that could be added in the future</span>
+0082 <span class="comment">% blade_coeff_varid=netcdf.defVar(nc,'blade_coeff','NC_FLOAT',nele_dimid);</span>
+0083 <span class="comment">% netcdf.putAtt(nc,blade_coeff_varid,'long_name','Drag coefficient for the turbine blades');</span>
+0084 
+0085 <span class="comment">% end definitions</span>
+0086 netcdf.endDef(nc);
+0087 
+0088 <span class="comment">% write data</span>
+0089 <span class="comment">% netCDF variable names:</span>
+0090 <span class="comment">% turbine_sigma_layer, turbine_number, swept_area</span>
+0091 netcdf.putVar(nc,num_tt_varid,turbine.numbers);
+0092 netcdf.putVar(nc,sigma_layer_varid,turbine.sigma_layer);
+0093 netcdf.putVar(nc,swept_area_varid,turbine.area);
+0094 <span class="keyword">if</span> write_thrust
+0095     netcdf.putVar(nc,thrust_coeff_varid,turbine.thrust);
+0096 <span class="keyword">end</span>
+0097 
+0098 <span class="comment">% variables that could be added in the future</span>
+0099 <span class="comment">% netcdf.putVar(nc,blade_coeff_varid,turbine.drag);</span>
+0100 
+0101 <span class="comment">% close file</span>
+0102 netcdf.close(nc);
+0103 
+0104 <span class="keyword">if</span>(ftbverbose);
+0105   fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0106 <span class="keyword">end</span>;
+0107 
+0108</pre></div>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

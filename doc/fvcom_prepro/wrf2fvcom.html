@@ -185,7 +185,7 @@ This function is called by:
 0106 netcdf.putAtt(ncid, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'START_DATE'</span>, nc.START_DATE);
 0107 netcdf.putAtt(ncid, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'END_DATE'</span>, nc.END_DATE);
 0108 netcdf.putAtt(ncid, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'file'</span>, nc.file);
-0109 netcdf.putAtt(ncid, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'Conventions'</span>,nc.Conventions);
+0109 netcdf.putAtt(ncid, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'Conventions'</span>, nc.Conventions);
 0110 
 0111 sn_idim = netcdf.defDim(ncid, <span class="string">'south_north'</span>, wrf.south_north);
 0112 we_idim = netcdf.defDim(ncid, <span class="string">'west_east'</span>, wrf.west_east);
@@ -286,11 +286,8 @@ This function is called by:
 0207 
 0208 <span class="keyword">if</span> ftbverbose
 0209     fprintf(<span class="string">'done.\n'</span>)
-0210 <span class="keyword">end</span>
-0211 
-0212 <span class="keyword">if</span> ftbverbose
-0213     fprintf(<span class="string">'end   : %s \n'</span>, subname)
-0214 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Thu 18-Feb-2016 11:26:24 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0210     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0211 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

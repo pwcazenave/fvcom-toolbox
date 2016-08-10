@@ -47,6 +47,7 @@
 
  Revision history:
    2013-05-17 First version.
+   2016-06-02 Fix paths to data to load.
 
 ==========================================================================</pre></div>
 
@@ -83,226 +84,173 @@ This function is called by:
 0018 <span class="comment">%</span>
 0019 <span class="comment">% Revision history:</span>
 0020 <span class="comment">%   2013-05-17 First version.</span>
-0021 <span class="comment">%</span>
-0022 <span class="comment">%==========================================================================</span>
-0023 
-0024 matlabrc
-0025 close all
-0026 clc
-0027 
-0028 addpath(<span class="string">'/users/modellers/pica/Code/fvcom-toolbox/utilities'</span>)
-0029 addpath(<span class="string">'/users/modellers/pica/Code/fvcom-toolbox/fvcom_prepro/'</span>)
-0030 
-0031 <span class="comment">% Temporary paths when on Riqui's machine</span>
-0032 addpath(<span class="string">'/tmp/pica/fvcom-toolbox/fvcom_prepro/'</span>)
-0033 addpath(<span class="string">'/tmp/pica/fvcom-toolbox/utilities/'</span>)
+0021 <span class="comment">%   2016-06-02 Fix paths to data to load.</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">%==========================================================================</span>
+0024 
+0025 matlabrc
+0026 close all
+0027 clc
+0028 
+0029 <span class="comment">% Set up our test environment.</span>
+0030 [base, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0031 addpath(fullfile(base, <span class="string">'../../fvcom_prepro'</span>))
+0032 
+0033 load(fullfile(base, <span class="string">'../data/grid2fvcom_data.mat'</span>));
 0034 
-0035 load(<span class="string">'/tmp/pica/fvcom-toolbox/tests/data/grid2fvcom_data.mat'</span>);
-0036 
-0037 interpfields = {<span class="string">'uwnd'</span>, <span class="string">'vwnd'</span>, <span class="string">'slp'</span>, <span class="string">'nshf'</span>, <span class="string">'nlwrs'</span>, <span class="string">'nswrs'</span>, <span class="string">'P_E'</span>, <span class="keyword">...</span>
-0038     <span class="string">'Et'</span>, <span class="string">'time'</span>, <span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'x'</span>, <span class="string">'y'</span>};
-0039 
-0040 <span class="comment">% Perform the interpolation using the new routine and check the outputs are</span>
-0041 <span class="comment">% the same.</span>
-0042 forcing_interp_new = grid2fvcom(Mobj, interpfields, forcing);
-0043 
-0044 <span class="comment">% Check we have the same number of fields (if we don't, we can't go any</span>
-0045 <span class="comment">% further).</span>
-0046 fnames = fieldnames(forcing_interp);
-0047 <span class="keyword">if</span> length(fnames) ~= length(fieldnames(forcing_interp_new))
-0048     error([<span class="string">'The number of reference struct field names (%d) does'</span>, <span class="keyword">...</span>
-0049         <span class="string">' not equal the number in the new struct (%d)'</span>], <span class="keyword">...</span>
-0050         length(fnames), length(fieldnames(forcing_interp_new)))
-0051 <span class="keyword">end</span>
+0035 interpfields = {<span class="string">'uwnd'</span>, <span class="string">'vwnd'</span>, <span class="string">'slp'</span>, <span class="string">'nshf'</span>, <span class="string">'nlwrs'</span>, <span class="string">'nswrs'</span>, <span class="string">'P_E'</span>, <span class="keyword">...</span>
+0036     <span class="string">'Et'</span>, <span class="string">'time'</span>, <span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'x'</span>, <span class="string">'y'</span>};
+0037 
+0038 <span class="comment">% Perform the interpolation using the new routine and check the outputs are</span>
+0039 <span class="comment">% the same.</span>
+0040 forcing_interp_new = grid2fvcom(Mobj, interpfields, forcing);
+0041 
+0042 <span class="comment">% Check we have the same number of fields (if we don't, we can't go any</span>
+0043 <span class="comment">% further).</span>
+0044 fnames = fieldnames(forcing_interp);
+0045 <span class="keyword">if</span> length(fnames) ~= length(fieldnames(forcing_interp_new))
+0046     error([<span class="string">'The number of reference struct field names (%d) does'</span>, <span class="keyword">...</span>
+0047         <span class="string">' not equal the number in the new struct (%d)'</span>], <span class="keyword">...</span>
+0048         length(fnames), length(fieldnames(forcing_interp_new)))
+0049 <span class="keyword">end</span>
+0050 
+0051 <span class="comment">%%</span>
 0052 
-0053 <span class="comment">%%</span>
+0053 results = struct();
 0054 
-0055 results = struct();
+0055 <span class="keyword">for</span> ff = 1:length(fnames)
 0056 
-0057 <span class="keyword">for</span> ff = 1:length(fnames)
+0057     results.(fnames{ff}) = struct();
 0058 
-0059     results.(fnames{ff}) = struct();
-0060 
-0061     <span class="keyword">switch</span> fnames{ff}
-0062         <span class="keyword">case</span> {<span class="string">'time'</span>, <span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'x'</span>, <span class="string">'y'</span>}
+0059     <span class="keyword">switch</span> fnames{ff}
+0060         <span class="keyword">case</span> {<span class="string">'time'</span>, <span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'x'</span>, <span class="string">'y'</span>}
+0061 
+0062             results.(fnames{ff}).vectorValues = <span class="string">'FAIL'</span>;
 0063 
-0064             results.(fnames{ff}).vectorValues = <span class="string">'FAIL'</span>;
-0065 
-0066             results.(fnames{ff}).check = <span class="keyword">...</span>
-0067                 forcing_interp.(fnames{ff}) - forcing_interp_new.(fnames{ff});
-0068             checkDiff = max(results.(fnames{ff}).check) - <span class="keyword">...</span>
-0069                 min(results.(fnames{ff}).check);
-0070             <span class="keyword">if</span> checkDiff == 0
-0071                 results.(fnames{ff}).vectorValues = <span class="string">'PASS'</span>;
-0072             <span class="keyword">end</span>
+0064             results.(fnames{ff}).check = <span class="keyword">...</span>
+0065                 forcing_interp.(fnames{ff}) - forcing_interp_new.(fnames{ff});
+0066             checkDiff = max(results.(fnames{ff}).check) - <span class="keyword">...</span>
+0067                 min(results.(fnames{ff}).check);
+0068             <span class="keyword">if</span> checkDiff == 0
+0069                 results.(fnames{ff}).vectorValues = <span class="string">'PASS'</span>;
+0070             <span class="keyword">end</span>
+0071 
+0072         <span class="keyword">otherwise</span>
 0073 
-0074         <span class="keyword">otherwise</span>
-0075 
-0076             <span class="comment">%--------------------------------------------------------------</span>
-0077             <span class="comment">% Set the pass/fail flags for the tests. Assume fail and only</span>
-0078             <span class="comment">% change if proven otherwise.</span>
-0079             <span class="comment">%--------------------------------------------------------------</span>
-0080             results.(fnames{ff}).nodeNumber = <span class="string">'FAIL'</span>;
-0081             results.(fnames{ff}).elementNumber = <span class="string">'FAIL'</span>;
-0082             results.(fnames{ff}).numNodeTimes = <span class="string">'FAIL'</span>;
-0083             results.(fnames{ff}).numElementTimes = <span class="string">'FAIL'</span>;
-0084             results.(fnames{ff}).nodeValues = <span class="string">'FAIL'</span>;
-0085             results.(fnames{ff}).elementValues = <span class="string">'FAIL'</span>;
-0086 
-0087             <span class="comment">%--------------------------------------------------------------</span>
-0088             <span class="comment">% Check we have the same number of points and time steps in the</span>
-0089             <span class="comment">% new interpolation as in the original.</span>
-0090             <span class="comment">%--------------------------------------------------------------</span>
-0091             [~, results.(fnames{ff}).origNodeTimes] = <span class="keyword">...</span>
-0092                 size(forcing_interp.(fnames{ff}).node);
-0093             [~, results.(fnames{ff}).origElementTimes] = <span class="keyword">...</span>
-0094                 size(forcing_interp.(fnames{ff}).data);
-0095             [results.(fnames{ff}).nNodes, <span class="keyword">...</span>
-0096                 results.(fnames{ff}).nNodeTimes] = <span class="keyword">...</span>
-0097                 size(forcing_interp_new.(fnames{ff}).node);
-0098             [results.(fnames{ff}).nElems, <span class="keyword">...</span>
-0099                 results.(fnames{ff}).nElementTimes] = <span class="keyword">...</span>
-0100                 size(forcing_interp_new.(fnames{ff}).data);
-0101 
-0102             <span class="keyword">if</span> results.(fnames{ff}).nNodes == Mobj.nVerts
-0103                 results.(fnames{ff}).nodeNumber = <span class="string">'PASS'</span>;
-0104             <span class="keyword">end</span>
-0105             <span class="keyword">if</span> results.(fnames{ff}).nElems == Mobj.nElems
-0106                 results.(fnames{ff}).elementNumber = <span class="string">'PASS'</span>;
-0107             <span class="keyword">end</span>
-0108             <span class="keyword">if</span> results.(fnames{ff}).nNodeTimes == <span class="keyword">...</span>
-0109                     results.(fnames{ff}).origNodeTimes
-0110                 results.(fnames{ff}).numNodeTimes = <span class="string">'PASS'</span>;
-0111             <span class="keyword">end</span>
-0112             <span class="keyword">if</span> results.(fnames{ff}).nElementTimes == <span class="keyword">...</span>
-0113                     results.(fnames{ff}).origElementTimes
-0114                 results.(fnames{ff}).numElementTimes = <span class="string">'PASS'</span>;
-0115             <span class="keyword">end</span>
+0074             <span class="comment">%--------------------------------------------------------------</span>
+0075             <span class="comment">% Set the pass/fail flags for the tests. Assume fail and only</span>
+0076             <span class="comment">% change if proven otherwise.</span>
+0077             <span class="comment">%--------------------------------------------------------------</span>
+0078             results.(fnames{ff}).nodeNumber = <span class="string">'FAIL'</span>;
+0079             results.(fnames{ff}).numNodeTimes = <span class="string">'FAIL'</span>;
+0080             results.(fnames{ff}).nodeValues = <span class="string">'FAIL'</span>;
+0081 
+0082             <span class="comment">%--------------------------------------------------------------</span>
+0083             <span class="comment">% Check we have the same number of points and time steps in the</span>
+0084             <span class="comment">% new interpolation as in the original.</span>
+0085             <span class="comment">%--------------------------------------------------------------</span>
+0086             [~, results.(fnames{ff}).origNodeTimes] = <span class="keyword">...</span>
+0087                 size(forcing_interp.(fnames{ff}).node);
+0088             [results.(fnames{ff}).nNodes, <span class="keyword">...</span>
+0089                 results.(fnames{ff}).nNodeTimes] = <span class="keyword">...</span>
+0090                 size(forcing_interp_new.(fnames{ff}).node);
+0091 
+0092             <span class="keyword">if</span> results.(fnames{ff}).nNodes == Mobj.nVerts
+0093                 results.(fnames{ff}).nodeNumber = <span class="string">'PASS'</span>;
+0094             <span class="keyword">end</span>
+0095             <span class="keyword">if</span> results.(fnames{ff}).nNodeTimes == <span class="keyword">...</span>
+0096                     results.(fnames{ff}).origNodeTimes
+0097                 results.(fnames{ff}).numNodeTimes = <span class="string">'PASS'</span>;
+0098             <span class="keyword">end</span>
+0099 
+0100             <span class="comment">%--------------------------------------------------------------</span>
+0101             <span class="comment">% Check the values in the node arrays match the reference</span>
+0102             <span class="comment">% values.</span>
+0103             <span class="comment">%--------------------------------------------------------------</span>
+0104             results.(fnames{ff}).nodeDiff = <span class="keyword">...</span>
+0105                 forcing_interp.(fnames{ff}).node - <span class="keyword">...</span>
+0106                 forcing_interp_new.(fnames{ff}).node;
+0107 
+0108             results.(fnames{ff}).nodeRange = <span class="keyword">...</span>
+0109                 max(results.(fnames{ff}).nodeDiff(:));
+0110 
+0111             <span class="keyword">if</span> results.(fnames{ff}).nodeRange == 0
+0112                 results.(fnames{ff}).nodeValues = <span class="string">'PASS'</span>;
+0113             <span class="keyword">end</span>
+0114     <span class="keyword">end</span>
+0115 <span class="keyword">end</span>
 0116 
-0117             <span class="comment">%--------------------------------------------------------------</span>
-0118             <span class="comment">% Check the values in the node and element arrays match to</span>
-0119             <span class="comment">% reference values.</span>
-0120             <span class="comment">%--------------------------------------------------------------</span>
-0121             results.(fnames{ff}).nodeDiff = <span class="keyword">...</span>
-0122                 forcing_interp.(fnames{ff}).node - <span class="keyword">...</span>
-0123                 forcing_interp_new.(fnames{ff}).node;
-0124             results.(fnames{ff}).elemDiff = <span class="keyword">...</span>
-0125                 forcing_interp.(fnames{ff}).data - <span class="keyword">...</span>
-0126                 forcing_interp_new.(fnames{ff}).data;
+0117 <span class="comment">%%</span>
+0118 <span class="comment">%--------------------------------------------------------------------------</span>
+0119 <span class="comment">% Print a summary of the testing</span>
+0120 <span class="comment">%--------------------------------------------------------------------------</span>
+0121 totalTests = 0;
+0122 totalPasses = 0;
+0123 
+0124 <span class="keyword">for</span> ff = 1:length(fnames)
+0125     resultnames = fieldnames(results.(fnames{ff}));
+0126     numRes = length(resultnames);
 0127 
-0128             results.(fnames{ff}).nodeRange = <span class="keyword">...</span>
-0129                 max(results.(fnames{ff}).nodeDiff(:)) - <span class="keyword">...</span>
-0130                 min(results.(fnames{ff}).nodeDiff(:));
-0131             results.(fnames{ff}).elemRange = <span class="keyword">...</span>
-0132                 max(results.(fnames{ff}).elemDiff(:)) - <span class="keyword">...</span>
-0133                 min(results.(fnames{ff}).elemDiff(:));
-0134 
-0135             <span class="keyword">if</span> results.(fnames{ff}).nodeRange == 0
-0136                 results.(fnames{ff}).nodeValues = <span class="string">'PASS'</span>;
-0137             <span class="keyword">end</span>
-0138             <span class="keyword">if</span> results.(fnames{ff}).elemRange == 0;
-0139                 results.(fnames{ff}).elementValues = <span class="string">'PASS'</span>;
-0140             <span class="keyword">end</span>
-0141     <span class="keyword">end</span>
-0142 <span class="keyword">end</span>
+0128     <span class="keyword">for</span> fi = 1:numRes
+0129 
+0130         <span class="comment">% Skip if the field is not a string (we're only interested in</span>
+0131         <span class="comment">% pass/fail really.</span>
+0132         <span class="keyword">if</span> ~ischar(results.(fnames{ff}).(resultnames{fi}))
+0133             <span class="keyword">continue</span>
+0134         <span class="keyword">else</span>
+0135             <span class="comment">% Increment the number of tests performed.</span>
+0136             totalTests = totalTests + 1;
+0137         <span class="keyword">end</span>
+0138 
+0139         <span class="comment">% Get the total number of PASSed tests.</span>
+0140         <span class="keyword">if</span> strcmp(results.(fnames{ff}).(resultnames{fi}), <span class="string">'PASS'</span>)
+0141             totalPasses = totalPasses + 1;
+0142         <span class="keyword">end</span>
 0143 
-0144 <span class="comment">%%</span>
-0145 <span class="comment">%--------------------------------------------------------------------------</span>
-0146 <span class="comment">% Print a summary of the testing</span>
-0147 <span class="comment">%--------------------------------------------------------------------------</span>
-0148 totalTests = 0;
-0149 totalPasses = 0;
-0150 
-0151 <span class="keyword">for</span> ff = 1:length(fnames)
-0152     resultnames = fieldnames(results.(fnames{ff}));
-0153     numRes = length(resultnames);
-0154 
-0155     <span class="keyword">for</span> fi = 1:numRes
-0156 
-0157         <span class="comment">% Skip if the field is not a string (we're only interested in</span>
-0158         <span class="comment">% pass/fail really.</span>
-0159         <span class="keyword">if</span> ~ischar(results.(fnames{ff}).(resultnames{fi}))
-0160             <span class="keyword">continue</span>
-0161         <span class="keyword">else</span>
-0162             <span class="comment">% Increment the number of tests performed.</span>
-0163             totalTests = totalTests + 1;
-0164         <span class="keyword">end</span>
-0165 
-0166         <span class="comment">% Get the total number of PASSed tests.</span>
-0167         <span class="keyword">if</span> strcmp(results.(fnames{ff}).(resultnames{fi}), <span class="string">'PASS'</span>)
-0168             totalPasses = totalPasses + 1;
-0169         <span class="keyword">end</span>
-0170 
-0171         S = results.(fnames{ff}).(resultnames{fi});
-0172 
-0173         <span class="keyword">switch</span> resultnames{fi}
-0174             <span class="keyword">case</span> <span class="string">'vectorValues'</span>
-0175                 fprintf(<span class="string">'%s %s values test\n'</span>, S, fnames{ff})
+0144         S = results.(fnames{ff}).(resultnames{fi});
+0145 
+0146         <span class="keyword">switch</span> resultnames{fi}
+0147             <span class="keyword">case</span> <span class="string">'vectorValues'</span>
+0148                 fprintf(<span class="string">'%s %s values test\n'</span>, S, fnames{ff})
+0149                 <span class="keyword">if</span> strcmp(S, <span class="string">'FAIL'</span>)
+0150                     fprintf(<span class="string">'\tmin/max of %s range: %f, %f\n'</span>, <span class="keyword">...</span>
+0151                         fnames{ff}, <span class="keyword">...</span>
+0152                         min(results.(fnames{ff}).check), <span class="keyword">...</span>
+0153                         max(results.(fnames{ff}).check))
+0154                 <span class="keyword">end</span>
+0155 
+0156             <span class="keyword">case</span> <span class="string">'nodeNumber'</span>
+0157                 fprintf(<span class="string">'%s %s node number test\n'</span>, S, fnames{ff})
+0158                 <span class="keyword">if</span> strcmp(S, <span class="string">'FAIL'</span>)
+0159                     fprintf(<span class="string">'\toriginal/new number of %s nodes: %d, %d\n'</span>, <span class="keyword">...</span>
+0160                         fnames{ff}, <span class="keyword">...</span>
+0161                         Mobj.nVerts, <span class="keyword">...</span>
+0162                         results.(fnames{ff}).nNodes)
+0163                 <span class="keyword">end</span>
+0164 
+0165             <span class="keyword">case</span> <span class="string">'numNodeTimes'</span>
+0166                 fprintf(<span class="string">'%s %s node time steps test\n'</span>, S, fnames{ff})
+0167                 <span class="keyword">if</span> strcmp(S, <span class="string">'FAIL'</span>)
+0168                     fprintf(<span class="string">'\toriginal/new number of %s node times: %d, %d\n'</span>, <span class="keyword">...</span>
+0169                         fnames{ff}, <span class="keyword">...</span>
+0170                         results.(fnames{ff}).origNodeTimes, <span class="keyword">...</span>
+0171                         results.(fnames{ff}).nNodeTimes)
+0172                 <span class="keyword">end</span>
+0173 
+0174             <span class="keyword">case</span> <span class="string">'nodeValues'</span>
+0175                 fprintf(<span class="string">'%s %s node values test\n'</span>, S, fnames{ff})
 0176                 <span class="keyword">if</span> strcmp(S, <span class="string">'FAIL'</span>)
-0177                     fprintf(<span class="string">'\tmin/max of %s range: %f, %f\n'</span>, <span class="keyword">...</span>
+0177                     fprintf(<span class="string">'\trange of %s node values: %d\n'</span>, <span class="keyword">...</span>
 0178                         fnames{ff}, <span class="keyword">...</span>
-0179                         min(results.(fnames{ff}).check), <span class="keyword">...</span>
-0180                         max(results.(fnames{ff}).check))
-0181                 <span class="keyword">end</span>
-0182 
-0183             <span class="keyword">case</span> <span class="string">'nodeNumber'</span>
-0184                 fprintf(<span class="string">'%s %s node number test\n'</span>, S, fnames{ff})
-0185                 <span class="keyword">if</span> strcmp(S, <span class="string">'FAIL'</span>)
-0186                     fprintf(<span class="string">'\toriginal/new number of %s nodes: %d, %d\n'</span>, <span class="keyword">...</span>
-0187                         fnames{ff}, <span class="keyword">...</span>
-0188                         Mobj.nVerts, <span class="keyword">...</span>
-0189                         results.(fnames{ff}).nNodes)
-0190                 <span class="keyword">end</span>
-0191 
-0192             <span class="keyword">case</span> <span class="string">'elementNumber'</span>
-0193                 fprintf(<span class="string">'%s %s element number test\n'</span>, S, fnames{ff})
-0194                 <span class="keyword">if</span> strcmp(S, <span class="string">'FAIL'</span>)
-0195                     fprintf(<span class="string">'\toriginal/new number of %s elements: %d, %d\n'</span>, <span class="keyword">...</span>
-0196                         fnames{ff}, <span class="keyword">...</span>
-0197                         Mobj.nElems, <span class="keyword">...</span>
-0198                         results.(fnames{ff}).nElems)
-0199                 <span class="keyword">end</span>
-0200 
-0201             <span class="keyword">case</span> <span class="string">'numNodeTimes'</span>
-0202                 fprintf(<span class="string">'%s %s node time steps test\n'</span>, S, fnames{ff})
-0203                 <span class="keyword">if</span> strcmp(S, <span class="string">'FAIL'</span>)
-0204                     fprintf(<span class="string">'\toriginal/new number of %s node times: %d, %d\n'</span>, <span class="keyword">...</span>
-0205                         fnames{ff}, <span class="keyword">...</span>
-0206                         results.(fnames{ff}).origNodeTimes, <span class="keyword">...</span>
-0207                         results.(fnames{ff}).nNodeTimes)
-0208                 <span class="keyword">end</span>
-0209 
-0210             <span class="keyword">case</span> <span class="string">'numElementTimes'</span>
-0211                 fprintf(<span class="string">'%s %s element time steps test\n'</span>, S, fnames{ff})
-0212                 <span class="keyword">if</span> strcmp(S, <span class="string">'FAIL'</span>)
-0213                     fprintf(<span class="string">'\toriginal/new number of %s element times: %d, %d\n'</span>, <span class="keyword">...</span>
-0214                         fnames{ff}, <span class="keyword">...</span>
-0215                         results.(fnames{ff}).origElementTimes, <span class="keyword">...</span>
-0216                         results.(fnames{ff}).nElementTimes)
-0217                 <span class="keyword">end</span>
-0218 
-0219             <span class="keyword">case</span> <span class="string">'nodeValues'</span>
-0220                 fprintf(<span class="string">'%s %s node values test\n'</span>, S, fnames{ff})
-0221                 <span class="keyword">if</span> strcmp(S, <span class="string">'FAIL'</span>)
-0222                     fprintf(<span class="string">'\trange of %s node values: %d\n'</span>, <span class="keyword">...</span>
-0223                         fnames{ff}, <span class="keyword">...</span>
-0224                         results.(fnames{ff}).nodeRange)
-0225                 <span class="keyword">end</span>
-0226 
-0227             <span class="keyword">case</span> <span class="string">'elementValues'</span>
-0228                 fprintf(<span class="string">'%s %s element values test\n'</span>, S, fnames{ff})
-0229                 <span class="keyword">if</span> strcmp(S, <span class="string">'FAIL'</span>)
-0230                     fprintf(<span class="string">'\trange of %s element values: %d\n'</span>, <span class="keyword">...</span>
-0231                         fnames{ff}, <span class="keyword">...</span>
-0232                         results.(fnames{ff}).elemRange)
-0233                 <span class="keyword">end</span>
-0234         <span class="keyword">end</span>
-0235     <span class="keyword">end</span>
-0236 <span class="keyword">end</span>
-0237 
-0238 fprintf(<span class="string">'\n------------------SUMMARY------------------\n'</span>)
-0239 fprintf(<span class="string">'           %d of %d tests passed'</span>, totalPasses, totalTests)
-0240 fprintf(<span class="string">'\n-------------------------------------------\n'</span>)</pre></div>
-<hr><address>Generated on Thu 18-Feb-2016 11:26:24 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0179                         results.(fnames{ff}).nodeRange)
+0180                 <span class="keyword">end</span>
+0181         <span class="keyword">end</span>
+0182     <span class="keyword">end</span>
+0183 <span class="keyword">end</span>
+0184 
+0185 fprintf(<span class="string">'\n------------------SUMMARY------------------\n'</span>)
+0186 fprintf(<span class="string">'           %d of %d tests passed'</span>, totalPasses, totalTests)
+0187 fprintf(<span class="string">'\n-------------------------------------------\n'</span>)</pre></div>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

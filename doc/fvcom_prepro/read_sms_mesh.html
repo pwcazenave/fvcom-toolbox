@@ -77,6 +77,8 @@
    than repeating the values. Also add element centre coordinates for
    cartesian coordinates. This is somewhat redundant given setup_metrics
    does this anyway.
+   2016-07-28 Fix behaviour if grid has no open boundaries so we can rely
+   on have_strings existing in either case.
 
 ==============================================================================</pre></div>
 
@@ -144,332 +146,336 @@ This function is called by:
 0049 <span class="comment">%   than repeating the values. Also add element centre coordinates for</span>
 0050 <span class="comment">%   cartesian coordinates. This is somewhat redundant given setup_metrics</span>
 0051 <span class="comment">%   does this anyway.</span>
-0052 <span class="comment">%</span>
-0053 <span class="comment">%==============================================================================</span>
-0054 
-0055 subname = <span class="string">'read_sms_mesh'</span>;
-0056 <span class="keyword">global</span> ftbverbose;
-0057 <span class="keyword">if</span> ftbverbose
-0058     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
-0059 <span class="keyword">end</span>
-0060 
-0061 userproject = false;
-0062 have_bath = false;
-0063 have_strings = false;
-0064 
-0065 <span class="comment">%--------------------------------------------------------------------------</span>
-0066 <span class="comment">% Create a blank mesh object</span>
+0052 <span class="comment">%   2016-07-28 Fix behaviour if grid has no open boundaries so we can rely</span>
+0053 <span class="comment">%   on have_strings existing in either case.</span>
+0054 <span class="comment">%</span>
+0055 <span class="comment">%==============================================================================</span>
+0056 
+0057 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0058 <span class="keyword">global</span> ftbverbose;
+0059 <span class="keyword">if</span> ftbverbose
+0060     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0061 <span class="keyword">end</span>
+0062 
+0063 userproject = false;
+0064 have_bath = false;
+0065 have_strings = false;
+0066 
 0067 <span class="comment">%--------------------------------------------------------------------------</span>
-0068 Mobj = <a href="make_blank_mesh.html" class="code" title="function [Mobj] = make_blank_mesh">make_blank_mesh</a>;
-0069 coordinate = <span class="string">'cartesian'</span>;
-0070 
-0071 <span class="comment">%--------------------------------------------------------------------------</span>
-0072 <span class="comment">% Parse input arguments</span>
+0068 <span class="comment">% Create a blank mesh object</span>
+0069 <span class="comment">%--------------------------------------------------------------------------</span>
+0070 Mobj = <a href="make_blank_mesh.html" class="code" title="function [Mobj] = make_blank_mesh">make_blank_mesh</a>;
+0071 coordinate = <span class="string">'cartesian'</span>;
+0072 
 0073 <span class="comment">%--------------------------------------------------------------------------</span>
-0074 
-0075 <span class="keyword">if</span> mod(length(varargin), 2) ~= 0
-0076     error(<span class="string">'incorrect usage of read_sms_mesh, use keyword pairs'</span>)
-0077 <span class="keyword">end</span>
-0078 
-0079 <span class="keyword">for</span> i = 1:2:length(varargin) - 1
-0080     keyword = lower(varargin{i});
-0081 
-0082     <span class="keyword">if</span> ~ischar(keyword)
-0083         error(<span class="string">'incorrect usage of read_sms_mesh'</span>)
-0084     <span class="keyword">end</span>
-0085 
-0086     <span class="keyword">switch</span> keyword
-0087         <span class="keyword">case</span> <span class="string">'2dm'</span>
-0088             sms_2dm = varargin{i + 1};
-0089             have_2dm = true;
-0090         <span class="keyword">case</span> <span class="string">'bath'</span>
-0091             sms_bath = varargin{i + 1};
-0092             have_bath = true;
-0093         <span class="keyword">case</span> <span class="string">'coordinate'</span>
-0094             coord = varargin{i + 1};
-0095             <span class="keyword">if</span> strcmpi(coord, <span class="string">'spherical'</span>)
-0096                 coordinate = <span class="string">'spherical'</span>;
-0097                 have_lonlat = true;
-0098             <span class="keyword">elseif</span> strcmpi(coord, <span class="string">'cartesian'</span>)
-0099                 coordinate = <span class="string">'cartesian'</span>;
-0100                 have_xy = true;
-0101             <span class="keyword">else</span>
-0102                 warning(<span class="string">'Unrecognised coordinate system (%s). Valid values are ''spherical'' and ''cartesian''.'</span>, coordinate)
-0103             <span class="keyword">end</span>
-0104         <span class="keyword">case</span> <span class="string">'project'</span>
-0105             val = varargin{i + 1};
-0106             <span class="keyword">if</span> val
-0107                 userproject = true;
-0108             <span class="keyword">else</span>
-0109                 userproject = false;
-0110             <span class="keyword">end</span>
-0111         <span class="keyword">case</span> <span class="string">'addcoriolis'</span>
-0112             val = varargin{i + 1};
-0113             <span class="keyword">if</span> val
-0114                 addCoriolis = true;
-0115             <span class="keyword">else</span>
-0116                 addCoriolis = false;
-0117             <span class="keyword">end</span>
-0118         <span class="keyword">otherwise</span>
-0119             disp(varargin{i + 1})
-0120             error(<span class="string">'Can''t understand property: %s'</span>, varargin{i + 1});
-0121 
-0122     <span class="keyword">end</span>
-0123 <span class="keyword">end</span>
-0124 
-0125 <span class="comment">%--------------------------------------------------------------------------</span>
-0126 <span class="comment">% Read the mesh from the 2dm file</span>
+0074 <span class="comment">% Parse input arguments</span>
+0075 <span class="comment">%--------------------------------------------------------------------------</span>
+0076 
+0077 <span class="keyword">if</span> mod(length(varargin), 2) ~= 0
+0078     error(<span class="string">'incorrect usage of read_sms_mesh, use keyword pairs'</span>)
+0079 <span class="keyword">end</span>
+0080 
+0081 <span class="keyword">for</span> i = 1:2:length(varargin) - 1
+0082     keyword = lower(varargin{i});
+0083 
+0084     <span class="keyword">if</span> ~ischar(keyword)
+0085         error(<span class="string">'incorrect usage of read_sms_mesh'</span>)
+0086     <span class="keyword">end</span>
+0087 
+0088     <span class="keyword">switch</span> keyword
+0089         <span class="keyword">case</span> <span class="string">'2dm'</span>
+0090             sms_2dm = varargin{i + 1};
+0091             have_2dm = true;
+0092         <span class="keyword">case</span> <span class="string">'bath'</span>
+0093             sms_bath = varargin{i + 1};
+0094             have_bath = true;
+0095         <span class="keyword">case</span> <span class="string">'coordinate'</span>
+0096             coord = varargin{i + 1};
+0097             <span class="keyword">if</span> strcmpi(coord, <span class="string">'spherical'</span>)
+0098                 coordinate = <span class="string">'spherical'</span>;
+0099                 have_lonlat = true;
+0100             <span class="keyword">elseif</span> strcmpi(coord, <span class="string">'cartesian'</span>)
+0101                 coordinate = <span class="string">'cartesian'</span>;
+0102                 have_xy = true;
+0103             <span class="keyword">else</span>
+0104                 warning(<span class="string">'Unrecognised coordinate system (%s). Valid values are ''spherical'' and ''cartesian''.'</span>, coordinate)
+0105             <span class="keyword">end</span>
+0106         <span class="keyword">case</span> <span class="string">'project'</span>
+0107             val = varargin{i + 1};
+0108             <span class="keyword">if</span> val
+0109                 userproject = true;
+0110             <span class="keyword">else</span>
+0111                 userproject = false;
+0112             <span class="keyword">end</span>
+0113         <span class="keyword">case</span> <span class="string">'addcoriolis'</span>
+0114             val = varargin{i + 1};
+0115             <span class="keyword">if</span> val
+0116                 addCoriolis = true;
+0117             <span class="keyword">else</span>
+0118                 addCoriolis = false;
+0119             <span class="keyword">end</span>
+0120         <span class="keyword">otherwise</span>
+0121             disp(varargin{i + 1})
+0122             error(<span class="string">'Can''t understand property: %s'</span>, varargin{i + 1});
+0123 
+0124     <span class="keyword">end</span>
+0125 <span class="keyword">end</span>
+0126 
 0127 <span class="comment">%--------------------------------------------------------------------------</span>
-0128 
-0129 fid = fopen(sms_2dm, <span class="string">'rt'</span>);
-0130 <span class="keyword">if</span> fid &lt; 0
-0131     error([<span class="string">'file: '</span> sms_2dm <span class="string">' does not exist'</span>]);
-0132 <span class="keyword">end</span>
-0133 
-0134 <span class="comment">% Count number of elements and vertices</span>
-0135 <span class="keyword">if</span> ftbverbose
-0136     fprintf(<span class="string">'reading from: %s\n'</span>, sms_2dm)
-0137     fprintf(<span class="string">'first pass to count number of nodes and vertices\n'</span>)
-0138 <span class="keyword">end</span>
-0139 
-0140 nElems = 0;
-0141 nVerts = 0;
-0142 nStrings = 0;
-0143 nHeader = 0;
-0144 StillReading = true;
-0145 <span class="keyword">while</span> StillReading
-0146     lin = fgetl(fid);
-0147     <span class="keyword">if</span> lin ~= -1 <span class="comment">% EOF is -1</span>
-0148         <span class="keyword">switch</span> lin(1:2)
-0149             <span class="keyword">case</span> <span class="string">'E3'</span>
-0150                 nElems = nElems + 1;
-0151             <span class="keyword">case</span> <span class="string">'ND'</span>
-0152                 nVerts = nVerts + 1;
-0153             <span class="keyword">case</span> <span class="string">'NS'</span>
-0154                 nStrings = nStrings + 1;
-0155             <span class="keyword">case</span> {<span class="string">'ME'</span>, <span class="string">'NU'</span>}
-0156                 nHeader = nHeader + 1;
-0157             <span class="keyword">case</span> <span class="string">'E4'</span>
-0158                 error(<span class="string">'Quadrilateral elements are unsupported in FVCOM'</span>)
-0159             <span class="keyword">otherwise</span>
-0160                 StillReading = false;
-0161         <span class="keyword">end</span>
-0162     <span class="keyword">else</span>
-0163         <span class="comment">% Got to EOF</span>
-0164         StillReading = false;
-0165     <span class="keyword">end</span>
-0166 <span class="keyword">end</span>
-0167 fclose(fid);
-0168 
-0169 fid = fopen(sms_2dm, <span class="string">'rt'</span>);
+0128 <span class="comment">% Read the mesh from the 2dm file</span>
+0129 <span class="comment">%--------------------------------------------------------------------------</span>
+0130 
+0131 fid = fopen(sms_2dm, <span class="string">'rt'</span>);
+0132 <span class="keyword">if</span> fid &lt; 0
+0133     error([<span class="string">'file: '</span> sms_2dm <span class="string">' does not exist'</span>]);
+0134 <span class="keyword">end</span>
+0135 
+0136 <span class="comment">% Count number of elements and vertices</span>
+0137 <span class="keyword">if</span> ftbverbose
+0138     fprintf(<span class="string">'reading from: %s\n'</span>, sms_2dm)
+0139     fprintf(<span class="string">'first pass to count number of nodes and vertices\n'</span>)
+0140 <span class="keyword">end</span>
+0141 
+0142 nElems = 0;
+0143 nVerts = 0;
+0144 nStrings = 0;
+0145 nHeader = 0;
+0146 StillReading = true;
+0147 <span class="keyword">while</span> StillReading
+0148     lin = fgetl(fid);
+0149     <span class="keyword">if</span> lin ~= -1 <span class="comment">% EOF is -1</span>
+0150         <span class="keyword">switch</span> lin(1:2)
+0151             <span class="keyword">case</span> <span class="string">'E3'</span>
+0152                 nElems = nElems + 1;
+0153             <span class="keyword">case</span> <span class="string">'ND'</span>
+0154                 nVerts = nVerts + 1;
+0155             <span class="keyword">case</span> <span class="string">'NS'</span>
+0156                 nStrings = nStrings + 1;
+0157             <span class="keyword">case</span> {<span class="string">'ME'</span>, <span class="string">'NU'</span>}
+0158                 nHeader = nHeader + 1;
+0159             <span class="keyword">case</span> <span class="string">'E4'</span>
+0160                 error(<span class="string">'Quadrilateral elements are unsupported in FVCOM'</span>)
+0161             <span class="keyword">otherwise</span>
+0162                 StillReading = false;
+0163         <span class="keyword">end</span>
+0164     <span class="keyword">else</span>
+0165         <span class="comment">% Got to EOF</span>
+0166         StillReading = false;
+0167     <span class="keyword">end</span>
+0168 <span class="keyword">end</span>
+0169 fclose(fid);
 0170 
-0171 <span class="keyword">if</span> ftbverbose
-0172   fprintf(<span class="string">'nVerts: %d\n'</span>, nVerts);
-0173   fprintf(<span class="string">'nElems: %d\n'</span>, nElems);
-0174   fprintf(<span class="string">'reading in connectivity and grid points\n'</span>)
-0175 <span class="keyword">end</span>
-0176 
-0177 <span class="comment">% Allocate memory to hold mesh and connectivity</span>
-0178 tri = zeros(nElems,3);
-0179 lon = zeros(nVerts,1);
-0180 lat = zeros(nVerts,1);
-0181 ts  = zeros(nVerts,1);
-0182 
-0183 <span class="comment">% Skip the header</span>
-0184 C = textscan(fid, <span class="string">'%s'</span>, nHeader + 1);
-0185 
-0186 <span class="comment">% Read the triangulation table</span>
-0187 C = textscan(fid, <span class="string">'%s %d %d %d %d %d'</span>, nElems);
-0188 tri(:, 1) = C{3};
-0189 tri(:, 2) = C{4};
-0190 tri(:, 3) = C{5};
-0191 
-0192 <span class="comment">% Read in the nodes and interpolated depths</span>
-0193 C = textscan(fid, <span class="string">'%s %d %f %f %f '</span>, nVerts);
-0194 x = C{3};
-0195 y = C{4};
-0196 h = C{5};
-0197 
-0198 <span class="comment">% Check we don't have any NaNs anywhere</span>
-0199 <span class="keyword">if</span> max(isnan(x)) == 1
-0200     error(<span class="string">'%d NaNs in the x data'</span>, sum(isnan(x)))
-0201 <span class="keyword">end</span>
-0202 <span class="keyword">if</span> max(isnan(y)) == 1
-0203     error(<span class="string">'%d NaNs in the y data'</span>, sum(isnan(x)))
-0204 <span class="keyword">end</span>
-0205 <span class="keyword">if</span> max(isnan(h)) == 1
-0206     error(<span class="string">'%d NaNs in the h data'</span>, sum(isnan(x)))
-0207 <span class="keyword">end</span>
-0208 <span class="keyword">if</span> max(isnan(tri(:))) == 1
-0209     error(<span class="string">'%d NaNs in the h data'</span>, sum(isnan(tri(:))))
-0210 <span class="keyword">end</span>
-0211 
-0212 <span class="comment">% Build array of all the nodes in the nodestrings.</span>
-0213 C = textscan(fid, <span class="string">'%s %d %d %d %d %d %d %d %d %d %d'</span>, nStrings);
-0214 allNodes = cell2mat(C(2:end))';
-0215 allNodes(allNodes == 0) = [];
-0216 
-0217 <span class="comment">% Add a new field to Mobj with all the nodestrings as a cell array.</span>
-0218 nodeStrings = find(allNodes &lt; 0);
-0219 read_obc_nodes = cell(1, length(nodeStrings));
-0220 <span class="keyword">for</span> nString = 1:sum(allNodes(:) &lt; 0)
-0221     <span class="keyword">if</span> nString == 1
-0222         read_obc_nodes{nString} = abs(allNodes(1:nodeStrings(nString)));
-0223     <span class="keyword">else</span>
-0224         read_obc_nodes{nString} = <span class="keyword">...</span>
-0225             abs(allNodes(nodeStrings(nString - 1) + 1: <span class="keyword">...</span>
-0226             nodeStrings(nString)));
-0227     <span class="keyword">end</span>
-0228 <span class="keyword">end</span>
-0229 
-0230 <span class="keyword">if</span> nStrings &gt; 0
-0231     have_strings = true;
-0232 <span class="keyword">end</span>
-0233 
-0234 have_lonlat = false;
-0235 have_xy     = false;
-0236 <span class="keyword">if</span> strcmpi(coordinate, <span class="string">'spherical'</span>)
-0237     lon = x;
-0238     lat = y;
-0239     <span class="comment">% Why reset everything to zero here?</span>
-0240     <span class="comment">%x = x * 0.0;</span>
-0241     <span class="comment">%y = y * 0.0;</span>
-0242     have_lonlat = true;
-0243     <span class="comment">% Just do a double check on the coordinates to make sure we don't</span>
-0244     <span class="comment">% actually have cartesian</span>
-0245     <span class="keyword">if</span> max(lon) &gt; 360
-0246         warning(<span class="string">'You''ve specified spherical coordinates, but your upper longitude value exceeds 360 degrees. Are you sure you have spherical data?'</span>)
-0247     <span class="keyword">end</span>
-0248 <span class="keyword">elseif</span> strcmpi(coordinate, <span class="string">'cartesian'</span>)
-0249     have_xy = true;
-0250 <span class="keyword">else</span>
-0251     warning(<span class="string">'Unrecognised coordinate system (%s). Valid values are ''spherical'' and ''cartesian''.'</span>, coordinate)
-0252 <span class="keyword">end</span>
-0253 
-0254 fclose(fid);
+0171 fid = fopen(sms_2dm, <span class="string">'rt'</span>);
+0172 
+0173 <span class="keyword">if</span> ftbverbose
+0174   fprintf(<span class="string">'nVerts: %d\n'</span>, nVerts);
+0175   fprintf(<span class="string">'nElems: %d\n'</span>, nElems);
+0176   fprintf(<span class="string">'reading in connectivity and grid points\n'</span>)
+0177 <span class="keyword">end</span>
+0178 
+0179 <span class="comment">% Allocate memory to hold mesh and connectivity</span>
+0180 tri = zeros(nElems,3);
+0181 lon = zeros(nVerts,1);
+0182 lat = zeros(nVerts,1);
+0183 ts  = zeros(nVerts,1);
+0184 
+0185 <span class="comment">% Skip the header</span>
+0186 C = textscan(fid, <span class="string">'%s'</span>, nHeader + 1);
+0187 
+0188 <span class="comment">% Read the triangulation table</span>
+0189 C = textscan(fid, <span class="string">'%s %d %d %d %d %d'</span>, nElems);
+0190 tri(:, 1) = C{3};
+0191 tri(:, 2) = C{4};
+0192 tri(:, 3) = C{5};
+0193 
+0194 <span class="comment">% Read in the nodes and interpolated depths</span>
+0195 C = textscan(fid, <span class="string">'%s %d %f %f %f '</span>, nVerts);
+0196 x = C{3};
+0197 y = C{4};
+0198 h = C{5};
+0199 
+0200 <span class="comment">% Check we don't have any NaNs anywhere</span>
+0201 <span class="keyword">if</span> max(isnan(x)) == 1
+0202     error(<span class="string">'%d NaNs in the x data'</span>, sum(isnan(x)))
+0203 <span class="keyword">end</span>
+0204 <span class="keyword">if</span> max(isnan(y)) == 1
+0205     error(<span class="string">'%d NaNs in the y data'</span>, sum(isnan(x)))
+0206 <span class="keyword">end</span>
+0207 <span class="keyword">if</span> max(isnan(h)) == 1
+0208     error(<span class="string">'%d NaNs in the h data'</span>, sum(isnan(x)))
+0209 <span class="keyword">end</span>
+0210 <span class="keyword">if</span> max(isnan(tri(:))) == 1
+0211     error(<span class="string">'%d NaNs in the h data'</span>, sum(isnan(tri(:))))
+0212 <span class="keyword">end</span>
+0213 
+0214 <span class="comment">% Build array of all the nodes in the nodestrings.</span>
+0215 C = textscan(fid, <span class="string">'%s %d %d %d %d %d %d %d %d %d %d'</span>, nStrings);
+0216 allNodes = cell2mat(C(2:end))';
+0217 allNodes(allNodes == 0) = [];
+0218 
+0219 <span class="comment">% Add a new field to Mobj with all the nodestrings as a cell array.</span>
+0220 nodeStrings = find(allNodes &lt; 0);
+0221 read_obc_nodes = cell(1, length(nodeStrings));
+0222 <span class="keyword">for</span> nString = 1:sum(allNodes(:) &lt; 0)
+0223     <span class="keyword">if</span> nString == 1
+0224         read_obc_nodes{nString} = abs(allNodes(1:nodeStrings(nString)));
+0225     <span class="keyword">else</span>
+0226         read_obc_nodes{nString} = <span class="keyword">...</span>
+0227             abs(allNodes(nodeStrings(nString - 1) + 1: <span class="keyword">...</span>
+0228             nodeStrings(nString)));
+0229     <span class="keyword">end</span>
+0230 <span class="keyword">end</span>
+0231 
+0232 <span class="keyword">if</span> nStrings &gt; 0
+0233     have_strings = true;
+0234 <span class="keyword">end</span>
+0235 
+0236 have_lonlat = false;
+0237 have_xy     = false;
+0238 <span class="keyword">if</span> strcmpi(coordinate, <span class="string">'spherical'</span>)
+0239     lon = x;
+0240     lat = y;
+0241     <span class="comment">% Why reset everything to zero here?</span>
+0242     <span class="comment">%x = x * 0.0;</span>
+0243     <span class="comment">%y = y * 0.0;</span>
+0244     have_lonlat = true;
+0245     <span class="comment">% Just do a double check on the coordinates to make sure we don't</span>
+0246     <span class="comment">% actually have cartesian</span>
+0247     <span class="keyword">if</span> max(lon) &gt; 360
+0248         warning(<span class="string">'You''ve specified spherical coordinates, but your upper longitude value exceeds 360 degrees. Are you sure you have spherical data?'</span>)
+0249     <span class="keyword">end</span>
+0250 <span class="keyword">elseif</span> strcmpi(coordinate, <span class="string">'cartesian'</span>)
+0251     have_xy = true;
+0252 <span class="keyword">else</span>
+0253     warning(<span class="string">'Unrecognised coordinate system (%s). Valid values are ''spherical'' and ''cartesian''.'</span>, coordinate)
+0254 <span class="keyword">end</span>
 0255 
-0256 <span class="comment">%--------------------------------------------------------------------------</span>
-0257 <span class="comment">% Read the topography from the bathymetry file</span>
+0256 fclose(fid);
+0257 
 0258 <span class="comment">%--------------------------------------------------------------------------</span>
-0259 
-0260 bath_range = max(h) - min(h);
-0261 <span class="keyword">if</span> have_bath
-0262     <span class="keyword">if</span> bath_range == 0
-0263         fid = fopen(sms_bath, <span class="string">'rt'</span>);
-0264         <span class="keyword">if</span> fid &lt; 0
-0265             error(<span class="string">'file: %s does not exist'</span>, sms_bath);
-0266         <span class="keyword">else</span>
-0267             <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'reading sms bathymetry from: %s\n'</span>, sms_bath); <span class="keyword">end</span>
-0268         <span class="keyword">end</span>
-0269         lin = fgetl(fid);
-0270         lin = fgetl(fid);
+0259 <span class="comment">% Read the topography from the bathymetry file</span>
+0260 <span class="comment">%--------------------------------------------------------------------------</span>
+0261 
+0262 bath_range = max(h) - min(h);
+0263 <span class="keyword">if</span> have_bath
+0264     <span class="keyword">if</span> bath_range == 0
+0265         fid = fopen(sms_bath, <span class="string">'rt'</span>);
+0266         <span class="keyword">if</span> fid &lt; 0
+0267             error(<span class="string">'file: %s does not exist'</span>, sms_bath);
+0268         <span class="keyword">else</span>
+0269             <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'reading sms bathymetry from: %s\n'</span>, sms_bath); <span class="keyword">end</span>
+0270         <span class="keyword">end</span>
 0271         lin = fgetl(fid);
-0272         C = textscan(fid, <span class="string">'%s %d'</span>, 1);
-0273         nVerts_tmp = C{2};
+0272         lin = fgetl(fid);
+0273         lin = fgetl(fid);
 0274         C = textscan(fid, <span class="string">'%s %d'</span>, 1);
-0275         nElems_tmp = C{2};
-0276         <span class="keyword">if</span> (nVerts - nVerts_tmp) * (nElems - nElems_tmp) ~= 0
-0277             fprintf(<span class="string">'dimensions of bathymetry file do not match 2dm file\n'</span>)
-0278             fprintf(<span class="string">'bathymetry nVerts: %d\n'</span>,nVerts_tmp)
-0279             fprintf(<span class="string">'bathymetry nElems: %d\n'</span>,nElems_tmp)
-0280             error(<span class="string">'stopping...'</span>)
-0281         <span class="keyword">end</span>
-0282         lin = fgetl(fid);
-0283         lin = fgetl(fid);
+0275         nVerts_tmp = C{2};
+0276         C = textscan(fid, <span class="string">'%s %d'</span>, 1);
+0277         nElems_tmp = C{2};
+0278         <span class="keyword">if</span> (nVerts - nVerts_tmp) * (nElems - nElems_tmp) ~= 0
+0279             fprintf(<span class="string">'dimensions of bathymetry file do not match 2dm file\n'</span>)
+0280             fprintf(<span class="string">'bathymetry nVerts: %d\n'</span>,nVerts_tmp)
+0281             fprintf(<span class="string">'bathymetry nElems: %d\n'</span>,nElems_tmp)
+0282             error(<span class="string">'stopping...'</span>)
+0283         <span class="keyword">end</span>
 0284         lin = fgetl(fid);
-0285         lin = fgetl(fid); <span class="comment">% extra one for the new format from SMS 10.1, I think</span>
-0286         C2 = textscan(fid, <span class="string">'%f'</span>, nVerts);
-0287         h = C2{1};
-0288         have_bath = true;
-0289 
-0290         clear C2
+0285         lin = fgetl(fid);
+0286         lin = fgetl(fid);
+0287         lin = fgetl(fid); <span class="comment">% extra one for the new format from SMS 10.1, I think</span>
+0288         C2 = textscan(fid, <span class="string">'%f'</span>, nVerts);
+0289         h = C2{1};
+0290         have_bath = true;
 0291 
-0292         fclose(fid);
-0293     <span class="keyword">end</span>
-0294 <span class="keyword">elseif</span> bath_range ~= 0
-0295     have_bath = true;
-0296 <span class="keyword">end</span>
-0297 
-0298 <span class="comment">% Make sure we have positive depths</span>
-0299 <span class="keyword">if</span> sum(h &gt; 0) &lt; sum(h &lt; 0)
-0300     h = -h;
-0301 <span class="keyword">end</span>
-0302 
-0303 <span class="comment">%--------------------------------------------------------------------------</span>
-0304 <span class="comment">% Project if desired by user</span>
+0292         clear C2
+0293 
+0294         fclose(fid);
+0295     <span class="keyword">end</span>
+0296 <span class="keyword">elseif</span> bath_range ~= 0
+0297     have_bath = true;
+0298 <span class="keyword">end</span>
+0299 
+0300 <span class="comment">% Make sure we have positive depths</span>
+0301 <span class="keyword">if</span> sum(h &gt; 0) &lt; sum(h &lt; 0)
+0302     h = -h;
+0303 <span class="keyword">end</span>
+0304 
 0305 <span class="comment">%--------------------------------------------------------------------------</span>
-0306 <span class="keyword">if</span> userproject
-0307     <span class="keyword">if</span> strcmpi(coordinate, <span class="string">'cartesian'</span>)
-0308         fprintf(<span class="string">'inverse projecting to get (lon,lat)\n'</span>)
-0309         [lon, lat] = my_project(x, y, <span class="string">'inverse'</span>);
-0310         have_lonlat = true;
-0311     <span class="keyword">elseif</span> strcmpi(coordinate, <span class="string">'spherical'</span>)
-0312         fprintf(<span class="string">'forward projecting to get (x,y)\n'</span>)
-0313         [x, y] = my_project(lon, lat, <span class="string">'forward'</span>);
-0314         have_xy = true;
-0315     <span class="keyword">else</span>
-0316         warning(<span class="string">'Unrecognised coordinate system (%s). Valid values are ''spherical'' and ''cartesian''.'</span>, coordinate)
-0317     <span class="keyword">end</span>
-0318 <span class="keyword">end</span>
-0319 
-0320 <span class="comment">%--------------------------------------------------------------------------</span>
-0321 <span class="comment">% Transfer to Mesh structure</span>
+0306 <span class="comment">% Project if desired by user</span>
+0307 <span class="comment">%--------------------------------------------------------------------------</span>
+0308 <span class="keyword">if</span> userproject
+0309     <span class="keyword">if</span> strcmpi(coordinate, <span class="string">'cartesian'</span>)
+0310         fprintf(<span class="string">'inverse projecting to get (lon,lat)\n'</span>)
+0311         [lon, lat] = my_project(x, y, <span class="string">'inverse'</span>);
+0312         have_lonlat = true;
+0313     <span class="keyword">elseif</span> strcmpi(coordinate, <span class="string">'spherical'</span>)
+0314         fprintf(<span class="string">'forward projecting to get (x,y)\n'</span>)
+0315         [x, y] = my_project(lon, lat, <span class="string">'forward'</span>);
+0316         have_xy = true;
+0317     <span class="keyword">else</span>
+0318         warning(<span class="string">'Unrecognised coordinate system (%s). Valid values are ''spherical'' and ''cartesian''.'</span>, coordinate)
+0319     <span class="keyword">end</span>
+0320 <span class="keyword">end</span>
+0321 
 0322 <span class="comment">%--------------------------------------------------------------------------</span>
-0323 
-0324 Mobj.nVerts  = nVerts;
-0325 Mobj.nElems  = nElems;
-0326 Mobj.nativeCoords = coordinate;
-0327 
-0328 Mobj.ts           = ts;
-0329 Mobj.h            = h;
-0330 Mobj.tri          = tri;
-0331 
-0332 <span class="keyword">if</span> have_lonlat
-0333     Mobj.have_lonlat    = have_lonlat;
-0334     Mobj.lon            = lon;
-0335     Mobj.lat            = lat;
-0336     Mobj.x              = zeros(size(lon));
-0337     Mobj.y              = zeros(size(lat));
-0338     <span class="comment">% Add element spherical coordinates too.</span>
-0339     Mobj.lonc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(lon, Mobj);
-0340     Mobj.latc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(lat, Mobj);
-0341 <span class="keyword">end</span>
-0342 <span class="keyword">if</span> have_xy
-0343     Mobj.have_xy        = have_xy;
-0344     Mobj.x              = x;
-0345     Mobj.y              = y;
-0346     Mobj.lon            = zeros(size(x));
-0347     Mobj.lat            = zeros(size(y));
-0348     <span class="comment">% Add element cartesian coordinates too.</span>
-0349     Mobj.xc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(x, Mobj);
-0350     Mobj.yc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(y, Mobj);
-0351 <span class="keyword">end</span>
-0352 <span class="keyword">if</span> have_bath
-0353     Mobj.have_bath      = have_bath;
-0354 <span class="keyword">end</span>
-0355 <span class="keyword">if</span> have_strings
-0356     Mobj.have_strings   = have_strings;
-0357     Mobj.read_obc_nodes = read_obc_nodes;
-0358 <span class="keyword">end</span>
-0359 <span class="keyword">if</span> exist(<span class="string">'addCoriolis'</span>, <span class="string">'var'</span>) &amp;&amp; addCoriolis
-0360     Mobj.have_cor       = true;
-0361 <span class="keyword">end</span>
-0362 
-0363 assert(isfield(Mobj, <span class="string">'x'</span>), <span class="string">'No coordinate data provided. Check your inputs and try again.'</span>)
-0364 
-0365 <span class="comment">% Make a depth array for the element centres.</span>
-0366 Mobj.hc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(h, Mobj);
-0367 
-0368 <span class="comment">%--------------------------------------------------------------------------</span>
-0369 <span class="comment">% Add the Coriolis values</span>
-0370 <span class="comment">%--------------------------------------------------------------------------</span>
-0371 <span class="keyword">if</span> exist(<span class="string">'addCoriolis'</span>, <span class="string">'var'</span>) &amp;&amp; addCoriolis
-0372     Mobj = <a href="add_coriolis.html" class="code" title="function [Mobj] = add_coriolis(Mobj,cortype,fval)">add_coriolis</a>(Mobj, <span class="string">'uselatitude'</span>);
-0373 <span class="keyword">end</span>
-0374 
-0375 <span class="keyword">if</span> ftbverbose
-0376   fprintf(<span class="string">'end   : %s\n'</span>, subname)
-0377 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Thu 18-Feb-2016 11:26:24 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0323 <span class="comment">% Transfer to Mesh structure</span>
+0324 <span class="comment">%--------------------------------------------------------------------------</span>
+0325 
+0326 Mobj.nVerts  = nVerts;
+0327 Mobj.nElems  = nElems;
+0328 Mobj.nativeCoords = coordinate;
+0329 
+0330 Mobj.ts           = ts;
+0331 Mobj.h            = h;
+0332 Mobj.tri          = tri;
+0333 
+0334 <span class="keyword">if</span> have_lonlat
+0335     Mobj.have_lonlat    = have_lonlat;
+0336     Mobj.lon            = lon;
+0337     Mobj.lat            = lat;
+0338     Mobj.x              = zeros(size(lon));
+0339     Mobj.y              = zeros(size(lat));
+0340     <span class="comment">% Add element spherical coordinates too.</span>
+0341     Mobj.lonc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(lon, Mobj);
+0342     Mobj.latc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(lat, Mobj);
+0343 <span class="keyword">end</span>
+0344 <span class="keyword">if</span> have_xy
+0345     Mobj.have_xy        = have_xy;
+0346     Mobj.x              = x;
+0347     Mobj.y              = y;
+0348     Mobj.lon            = zeros(size(x));
+0349     Mobj.lat            = zeros(size(y));
+0350     <span class="comment">% Add element cartesian coordinates too.</span>
+0351     Mobj.xc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(x, Mobj);
+0352     Mobj.yc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(y, Mobj);
+0353 <span class="keyword">end</span>
+0354 <span class="keyword">if</span> have_bath
+0355     Mobj.have_bath      = have_bath;
+0356 <span class="keyword">end</span>
+0357 <span class="keyword">if</span> have_strings
+0358     Mobj.have_strings   = have_strings;
+0359     Mobj.read_obc_nodes = read_obc_nodes;
+0360 <span class="keyword">else</span>
+0361     Mobj.have_strings;
+0362 <span class="keyword">end</span>
+0363 <span class="keyword">if</span> exist(<span class="string">'addCoriolis'</span>, <span class="string">'var'</span>) &amp;&amp; addCoriolis
+0364     Mobj.have_cor       = true;
+0365 <span class="keyword">end</span>
+0366 
+0367 assert(isfield(Mobj, <span class="string">'x'</span>), <span class="string">'No coordinate data provided. Check your inputs and try again.'</span>)
+0368 
+0369 <span class="comment">% Make a depth array for the element centres.</span>
+0370 Mobj.hc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(h, Mobj);
+0371 
+0372 <span class="comment">%--------------------------------------------------------------------------</span>
+0373 <span class="comment">% Add the Coriolis values</span>
+0374 <span class="comment">%--------------------------------------------------------------------------</span>
+0375 <span class="keyword">if</span> exist(<span class="string">'addCoriolis'</span>, <span class="string">'var'</span>) &amp;&amp; addCoriolis
+0376     Mobj = <a href="add_coriolis.html" class="code" title="function [Mobj] = add_coriolis(Mobj,cortype,fval)">add_coriolis</a>(Mobj, <span class="string">'uselatitude'</span>);
+0377 <span class="keyword">end</span>
+0378 
+0379 <span class="keyword">if</span> ftbverbose
+0380   fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0381 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

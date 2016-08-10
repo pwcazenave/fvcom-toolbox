@@ -17,6 +17,7 @@ digraph m2html {
   get_POLCOMS_tsobc_NOCL -> get_POLCOMS_sigma;
   get_POLCOMS_tsobc_gcoms -> get_POLCOMS_netCDF;
   get_POLCOMS_tsrestart_NOCL -> get_POLCOMS_sigma;
+  hybrid_coordinate -> nodes2elems;
   interp_POLCOMS2FVCOM -> get_POLCOMS_netCDF;
   read_gmsh_mesh -> make_blank_mesh;
   read_grid_mesh -> add_coriolis;
@@ -64,6 +65,7 @@ digraph m2html {
   get_MetUM_pp [URL="get_MetUM_pp.html"];
   get_NAE2_forcing [URL="get_NAE2_forcing.html"];
   get_NCEP_forcing [URL="get_NCEP_forcing.html"];
+  get_NEMO_rivers [URL="get_NEMO_rivers.html"];
   get_POLCOMS_meanflow [URL="get_POLCOMS_meanflow.html"];
   get_POLCOMS_netCDF [URL="get_POLCOMS_netCDF.html"];
   get_POLCOMS_river_discharge [URL="get_POLCOMS_river_discharge.html"];
@@ -76,6 +78,7 @@ digraph m2html {
   get_POLPRED_spectide [URL="get_POLPRED_spectide.html"];
   get_cs3x [URL="get_cs3x.html"];
   get_zeta_xtide [URL="get_zeta_xtide.html"];
+  hybrid_coordinate [URL="hybrid_coordinate.html"];
   inCell [URL="inCell.html"];
   init_lag [URL="init_lag.html"];
   interp_HYCOM2FVCOM [URL="interp_HYCOM2FVCOM.html"];
@@ -126,6 +129,7 @@ digraph m2html {
   write_FVCOM_stations [URL="write_FVCOM_stations.html"];
   write_FVCOM_tsobc [URL="write_FVCOM_tsobc.html"];
   write_FVCOM_tsobcERSEM [URL="write_FVCOM_tsobcERSEM.html"];
+  write_FVCOM_tsobc_old [URL="write_FVCOM_tsobc_old.html"];
   write_FVCOM_wind_ts_speed [URL="write_FVCOM_wind_ts_speed.html"];
   write_FVCOM_z0 [URL="write_FVCOM_z0.html"];
   write_WRF_forcing [URL="write_WRF_forcing.html"];
