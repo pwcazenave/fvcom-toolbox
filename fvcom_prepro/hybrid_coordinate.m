@@ -12,8 +12,8 @@ function Mobj = hybrid_coordinate(conf, Mobj)
 %       H0 - transition depth of the hybrid coordinates
 %       DU - upper water boundary thickness (metres)
 %       DL - lower water boundary thickness (metres)
-%       KU - layer number in the water column of DU
-%       KL - layer number in the water column of DL
+%       KU - number of layers in the DU water column
+%       KL - number of layers in the DL water column
 %       nlev - number of vertical levels (layers + 1)
 %   Mobj - Mesh object with the following fields:
 %       h - water depth at the nodes
@@ -55,6 +55,10 @@ function Mobj = hybrid_coordinate(conf, Mobj)
 %
 % Revision history:
 %   2015-05-24 First version based on Riqui's initial implementation.
+%   2016-08-10 Updated the minimisation function to use the maximum
+%   of the difference between the two sets of vertical distributions
+%   rather than the median difference. Also tidy up the debug
+%   function.
 %
 %==========================================================================
 
@@ -176,7 +180,7 @@ function ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)
 %
 % OUTPUT:
 %   ZZ: minimum water depth?
-% 
+%
 % Author(s):
 %   Ricard Torres (Plymouth Marine Laboratory)
 
@@ -198,7 +202,7 @@ for nn = 1:nlev - 1
     X1 = tanh(X1);
     X2 = tanh(DL2);
     X3 = X2 + tanh(DU2);
-    
+
     Z0(nn + 1, 1)=((X1 + X2) / X3) - 1;
 end
 
@@ -222,54 +226,26 @@ for K = nlev - KL + 1:nlev
     KK = KK + 1;
     Z2(K, 1) = Z2(K - 1, 1) - (ZKL(KK) ./ H);
 end
-ZZ = abs(median(diff(Z0) - diff(Z2)));
+ZZ = max(diff(Z0) - diff(Z2));
 
 return
 
 function debug_mode()
 % Test with made up data. This isn't actually used at all, but it's handy
 % to leave around for debugging things.
-% Hmax = 200;
-y = 0:100;
+
+Hmin=50;
+Hmax=Hmin + 200;
+y = 0:0.1:100;
 B = 100;
-H = Hmax .* exp(-((y./B-0.15).^2 ./(0.5).^2));
-% H = 120;
-Z0 = zeros(length(H), nlev);
-Z2 = zeros(length(H), nlev);
-for hh = 1:length(H)
-    Z0(hh, 1) = 0;
-    DL2 = 0.001;
-    DU2 = 0.001;
-    KBM1 = nlev-1;
-    for nn = 1:nlev-1
-        X1 = DL2 + DU2;
-        X1 = X1 * (KBM1 - nn) / KBM1;
-        X1 = X1 - DL2;
-        X1 = tanh(X1);
-        X2 = tanh(DL2);
-        X3 = X2 + tanh(DU2);
+H = Hmax .* exp(-((y./B-0.15).^2./0.5.^2));
+nlev = conf.nlev;
 
-        Z0(hh, nn + 1) = ((X1 + X2) / X3) - 1.0;
-    end
-
-    % s-coordinates
-    X1 = (H(hh) - DU - DL);
-    X2 = X1 ./ H(hh);
-    DR = X2 ./ (nlev - KU - KL - 1);
-
-    Z2(hh, 1) = 0.0;
-
-    for K = 2:KU + 1
-        Z2(hh, K)= Z2(hh, K - 1) - (ZKU(K - 1) ./ H(hh));
-    end
-
-    for K = KU + 2:nlev - KL
-        Z2(hh, K) = Z2(hh, K - 1) - DR;
-    end
-
-    KK = 0;
-    for K = nlev - KL + 1:nlev
-        KK = KK + 1;
-        Z2(hh, K) = Z2(hh, K - 1) - (ZKL(KK) ./ H(hh));
-    end
+% Loop through all nodes to create sigma coordinates.
+for xx=1:length(H)
+    Z2(xx, :) = sigma_gen(nlev, DL, DU, KL, KU, ZKL, ZKU, H(xx), Hmin);
 end
+
+plot(Z2 .* repmat(H', 1, nlev))
+fprintf('Calculated minimum depth: %.2f\n', Hmin)
+
