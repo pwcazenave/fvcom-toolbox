@@ -88,6 +88,8 @@ function Mobj = fix_river_nodes(Mobj, max_discharge, dist_thresh, varargin)
 %   2016-05-13 Move the removal of invalid coastline nodes into the
 %   function to read coastline nodes rather than having it in the splitting
 %   function.
+%   2016-08-11 Clarify the warning about the minimum water depth to
+%   indicate which way is down.
 %
 %==========================================================================
 
@@ -458,5 +460,5 @@ for r = 1:length(Mobj.river_nodes)
     end
 end
 if ftbverbose
-    fprintf('Minimum river depth is: %.2f\n', min(Mobj.h(Mobj.river_nodes)))
+    fprintf('Minimum river depth is: %.2f (positive down)\n', min(Mobj.h(Mobj.river_nodes)))
 end
