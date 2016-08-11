@@ -33,6 +33,11 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 %       year. Discharges will be repeated for the two additional years.
 %   'dump_positions' - [optional] dump the NEMO river positions to the
 %       specified text file.
+%   'alternate_positions' - [optional] read in a CSV file with alternate
+%       positions for the NEMO rivers. Supply a comma separated file with
+%       the new values and then the old values as (xnew,ynew,xold,yold).
+%       This is useful if you've manually moved the NEMO rivers onto more
+%       realistic locations.
 %
 % OUTPUT:
 %   Mobj.river_flux - volume flux at the nodes within the model domain.
@@ -68,6 +73,8 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 %   they're really the Baltic Sea inputs only. Also read in the grid area
 %   from the new format ERSEM file (variable dA). Add total alkalinity
 %   to the outputs.
+%   2016-08-10 - Add new option to use a file specifying alternative river
+%   positions.
 %
 %==========================================================================
 
@@ -92,6 +99,7 @@ yr = [];
 % so silently work when given three arguments and don't mention it in the
 % help. This is going to bite me at some point in the future, I'm sure.
 dump_positions = false;
+alt_positions = false;
 if nargin == 3
     yr = varargin{1};
 elseif nargin > 3
@@ -102,6 +110,9 @@ elseif nargin > 3
             case 'dump_positions'
                 dump_positions = true;
                 position_file = varargin{aa + 1};
+            case 'alternate_positions'
+                alt_positions = true;
+                alternate_file = varargin{aa + 1};
         end
     end
 end
@@ -200,6 +211,33 @@ for r = 1:nr
     % list.
     nemo.rivers.names{r, 1} = sprintf('river_%.6f-%.6f', ...
         nemo.rivers.positions(r, :));
+end
+
+if alt_positions
+    % We've been given a file with alternate river positions in. Use that
+    % for the river locations instead.
+    f = fopen(alternate_file, 'r');
+    new_positions = textscan(f, '%f%f%f%f%[^\n\r]', ...
+        'Delimiter', ',', ...
+        'HeaderLines', 1, ...
+        'ReturnOnError', false);
+    new_x = new_positions{1};
+    new_y = new_positions{2};
+    original_x = new_positions{3};
+    original_y = new_positions{4};
+    % Although in principle the "old" positions should be identical, odd
+    % little precision issues can creep in and cause all sorts of problems.
+    % So, we'll instead search for the nearest location and use that
+    % instead.
+    for ri = 1:length(original_x)
+        xdiffs = original_x(ri) - nemo.rivers.positions(:, 1);
+        ydiffs = original_y(ri) - nemo.rivers.positions(:, 2);
+        [~, index] = min(sqrt(xdiffs.^2 - ydiffs.^2));
+        % Now we know which river we're updating, just replace the NEMO
+        % positions read in from netCDF with our CSV versions.
+        nemo.rivers.positions(index, :) = [new_x(ri), new_y(ri)];
+    end
+    clear xdiffs ydiffs ri index
 end
 
 % Separate the inputs into separate arrays.
@@ -392,7 +430,7 @@ for n = 1:length(fnames)
 
     % NEMO is insane. Old versions of the rivers data had enough days for
     % leap and non-leap years; new versions don't. So, let's pad the data
-    % by a day in either case and that should word for data with both 365
+    % by a day in either case and that should work for data with both 365
     % and 366 times. In the case where we're using data with 366 values
     % already, this shouldn't make any difference as we're explicitly
     % indexing to the days in the year using daysinyr anyway.
