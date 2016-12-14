@@ -212,7 +212,7 @@ for v = 1:length(fields)
                 [~, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
                 % Get the n nearest nodes from HYCOM data (more? fewer?).
                 np = 16;
-                if length(ii) < np;
+                if length(ii) < np
                     % Reset np to the number of points we actually have.
                     np = length(ii);
                 end
@@ -344,7 +344,7 @@ for v = 1:length(fields)
 
             % If HYCOM has a single value, just repeat it across all depth
             % values.
-            if length(tpz) == 1;
+            if length(tpz) == 1
                 fvtempz(pp, :) = repmat(itempz(pp, ~mm), [1, length(tfz)]);
             else
                 % To ensure we get the full vertical expression of the
