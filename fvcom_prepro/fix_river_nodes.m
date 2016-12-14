@@ -49,10 +49,10 @@ function Mobj = fix_river_nodes(Mobj, max_discharge, dist_thresh, varargin)
 %       land within which nodes will be removed from the river data arrays.
 %
 %   The following optional keyword-argument pairs are also supported:
-%   'depth_optimise' - set to true to search for the deepest node to use
-%       for the river within the distance threshold (dist_thresh)
-%       specified. This increases the stability of FVCOM. Defaults to
-%       false.
+%   'depth_optimise' - set to a depth beyond which a search for the deepest
+%       node to use is triggered for the river within the distance
+%       threshold (dist_thresh) specified. This increases the stability of
+%       FVCOM. Defaults to false.
 %   'debug' - set to true to plot adjusted river nodes from the depth
 %       optimisation procedure. Defaults to false.
 %
@@ -90,6 +90,9 @@ function Mobj = fix_river_nodes(Mobj, max_discharge, dist_thresh, varargin)
 %   function.
 %   2016-08-11 Clarify the warning about the minimum water depth to
 %   indicate which way is down.
+%   2016-08-15 Make the depth optimisation take a depth as an argument
+%   rather than a boolean so we can only deepen nodes which are shallower
+%   than the given depth.
 %
 %==========================================================================
 
@@ -105,7 +108,8 @@ debug = false;
 for aa = 1:2:length(varargin)
     switch varargin{aa}
         case 'depth_optimise'
-            depth_optimise = varargin{aa + 1};
+            depth_optimise = true;
+            depth_threshold = varargin{aa + 1};
         case 'debug'
             debug = varargin{aa + 1};
     end
@@ -143,7 +147,7 @@ Mobj = split_big_rivers(Mobj, max_discharge, coast_nodes, enames, fnames);
 % If we've been asked to optimise the depth of nodes, do that now. We may
 % have to rerun some of the checks above. I don't know yet.
 if depth_optimise
-    Mobj = optimise_depth(Mobj, dist_thresh, coast_nodes, debug);
+    Mobj = optimise_depth(Mobj, depth_threshold, dist_thresh, coast_nodes, debug);
 end
 
 % Update the number of rivers we have.
@@ -391,7 +395,7 @@ if all(isnan(Mobj.river_flux(1, riv_idx)))
     Mobj.river_names(riv_idx) = [];
 end
 
-function Mobj = optimise_depth(Mobj, dist_thresh, coast_nodes, debug)
+function Mobj = optimise_depth(Mobj, depth_threshold, dist_thresh, coast_nodes, debug)
 % For each river node, search within the distance threshold given and pick
 % the deepest coastline node for that river.
 
@@ -414,8 +418,9 @@ for r = 1:length(Mobj.river_nodes)
     [deepest_depth, deepest_index] = max(coast_depth(candidates(distance < dist_thresh)));
     % Update if we've deepened this node.
     if ri ~= candidate_nodes(deepest_index)
-        % Only update if we improve matters (deepen a river input node).
-        if deepest_depth > Mobj.h(ri)
+        % Only update if we improve matters (deepen a river input node) and
+        % are shallower than the threshold depth given.
+        if deepest_depth > Mobj.h(ri) && Mobj.h(ri) < depth_threshold
             % Let everyone know what's going on.
             if ftbverbose
                 fprintf(['Moving river %s to a node with depth %.2f', ...

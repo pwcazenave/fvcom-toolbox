@@ -478,11 +478,11 @@ elseif time >= greg2mjulian(2009, 5, 7, 0, 0, 0) && time < greg2mjulian(2011, 1,
     url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.8?';
 elseif time >= greg2mjulian(2011, 1, 3, 0, 0, 0) && time < greg2mjulian(2013, 8, 21, 0, 0, 0)
     url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9?';
-elseif time >= greg2mjulian(2013, 8, 21, 0, 0, 0) && time < greg2mjulian(2014, 4, 21, 0, 0, 0):
+elseif time >= greg2mjulian(2013, 8, 21, 0, 0, 0) && time < greg2mjulian(2014, 4, 21, 0, 0, 0)
     url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_91.0?';
-elseif time >= greg2mjulian(2014, 4, 21, 0, 0, 0) && time < greg2mjulian(2016, 4, 18, 0, 0, 0):
+elseif time >= greg2mjulian(2014, 4, 21, 0, 0, 0) && time < greg2mjulian(2016, 4, 18, 0, 0, 0)
     url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_91.1?';
-elseif time >= greg2mjulian(2016, 4, 18, 0, 0, 0) && time <= greg2mjulian(t1, t2, t3, t4, t5, t6):
+elseif time >= greg2mjulian(2016, 4, 18, 0, 0, 0) && time <= greg2mjulian(t1, t2, t3, t4, t5, t6)
     url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_91.2?';
 elseif time > greg2mjulian(t1, t2, t3, t4, t5, t6)
     error('Given date is in the future.')
