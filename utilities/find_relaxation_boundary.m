@@ -60,11 +60,12 @@ for i = 1:nb
     [C2,~] = ismember(Mobj.tri(:,2), nodeIDs(:),'rows');
     [C3,~] = ismember(Mobj.tri(:,3), nodeIDs(:),'rows');
     obc_elems{i}= unique([find(C1);find(C2);find(C3)]);
+    if iscolumn( obc_elems{i});obc_elems{i}=obc_elems{i}';end
     nObcElements(i) = numel(obc_elems{i}(:));
     
 end
-Mobj.relaxBC_nodes={reshape([Mobj.read_obc_nodes{:}],[],1)};
-Mobj.relaxBC_elems={reshape([obc_elems{:}],[],1)};
+Mobj.relaxBC_nodes={[Mobj.read_obc_nodes{:}]};
+Mobj.relaxBC_elems={[obc_elems{:}]};
 
 for bb=2:bc_width
     nodeIDs = Mobj.tri(Mobj.relaxBC_elems{bb-1},:);

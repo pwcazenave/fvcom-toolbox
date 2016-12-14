@@ -1,14 +1,15 @@
-function Mobj=distance_to_coast(Mobj,conf)
-% Calculates the distance from the coast in all mesh nodes
+function Mobj=distance_along_BC(Mobj,BCnodes,conf)
+% Calculates the distance from coast along the open boundary nodes
 %
-% Mobj=distance_to_coast(Mobj,conf)
+% Mobj=distance_along_BC(Mobj,BCnodes,conf)
 %
 % DESCRIPTION:
-%    Calculates distance from coast within the domain mesh and
-%    stores it in a matlab mesh object
+%    Calculates distance from coast along open boundary nodes and
+%    store them in a matlab mesh object
 %
 % INPUT 
 %   Mobj                   = Mesh object structure variable
+%   BCnodes                = indices of nodes located at the boundary
 %   conf                   = configuration structure variable with the
 %   directory where the HJB_Solver_Package is installed
 %
@@ -16,7 +17,7 @@ function Mobj=distance_to_coast(Mobj,conf)
 %    Mobj = matlab structure containing distance data
 %
 % EXAMPLE USAGE
-%     Mobj=distance_to_coast(Mobj,conf)
+%     Mobj=distance_along_BC(Mobj,BCnodes,conf)
 % This function needs the HJB_solver package by Shawn Walker and can be downloaded from Matlab central 
 % http://www.mathworks.com/matlabcentral/fileexchange/24827-hamilton-jacobi-solver-on-unstructured-triangular-grids
 
@@ -28,6 +29,7 @@ function Mobj=distance_to_coast(Mobj,conf)
 %   2015-11-20 First version 
 %
 %==============================================================================
+
 dump = dbstack;
 subname = dump.name;
 clear dump
@@ -35,16 +37,13 @@ global ftbverbose;
 if ftbverbose
     fprintf('\nbegin : %s \n', subname)
 end
-
 CD=pwd;
 % setup HPJ solver to calculate the distance function for the SMS mesh
  [~,~,~,bnd] = connectivity([Mobj.x,Mobj.y],Mobj.tri);
 % remove nodestring from coast.
-    
-BCnodes=[Mobj.read_obc_nodes{:}];
+% BCnodes=[Mobj.read_obc_nodes{:}];
+coast_ind=(BCnodes);
 
-bnd(BCnodes)=0;
-coast_ind=find(bnd);
 
  % % calculate distance function 
 myParam.Max_Tri_per_Star = 20;
@@ -64,10 +63,9 @@ cd (conf.HJB_Solver_Package)
 % 
 SEmex  = SolveEikonalmex(myTM,myBdy,myParam,myMetric);
 tic
-Mobj.dist  =SEmex.Compute_Soln;
+Mobj.distOB  = SEmex.Compute_Soln;
 cd(CD)
 if ftbverbose
     fprintf('end   : %s \n', subname)
 end
-
 return
