@@ -1,7 +1,7 @@
-function [Nested]=find_nesting_region(conf,Mobj)
+function Nested = find_nesting_region(conf, Mobj)
 % Creates a nesting structure array for direct/indirect or weighted nesting
 %
-% function [Nested]=find_nesting_region(conf,M)
+% function Nested = find_nesting_region(conf,M)
 %
 % DESCRIPTION:
 %   Uses the Mesh object M and the conf variable to search for the nodes
@@ -17,15 +17,31 @@ function [Nested]=find_nesting_region(conf,Mobj)
 % INPUT:
 %  conf     = struct whose field names are the model configuration options
 %              as set by the user. These are generally assigned at the top of a
-%              make_input.m type of script. Minimum fields are
-%              Nesting type (1, 2 == direct nesting, 3 == weighted)
-%              conf.Nested_type = 3;
-%              If we're doing type 3, we can specify the number of levels of nested
-%              boundaries to use. The minimum valid value is 1. For Indirect or direct
-%              nesting use 1
-%              conf.levels = 5;
-%              conf.power = determines drop of weights from 1 [0 is linear, 1-4 is 1/conf.levels.^conf.power]
-%  M        = Mesh object
+%              make_input.m type of script. Minimum fields are:
+%              - Nested_type: Array of nesting types, one for each open boundary.
+%              1 or 2 are direct nesting, 3 is weighted. If we're doing
+%              type 3, we can specify the number of levels of nested
+%              boundaries to use. The minimum valid value is 1. For
+%              Indirect or direct nesting use 1
+%              - levels: number of levels of nodes over which to relax the
+%              boundary (if Nested_type is 3).
+%              - power = determines drop of weights from 1. 0 is linear,
+%              1-4 is 1/conf.levels.^conf.power.
+%  M        = Mesh object with the following fields:
+%              - tri: Triangulation table as pupulated by read_sms_grid
+%              - x: Node x coordinates (cartesian)
+%              - y: Node y coordinates (cartesian)
+%              - xc: element x coordinates (cartesian)
+%              - yc: Element y coordinates (cartesian)
+%              - nObcNodes: number of nodes as defined by SMS and read
+%              through read_sms_grid
+%              - read_obc_nodes = nodes indices at boundaries as read in
+%              read_sms_grid.
+%              - obc_type = Type of OBC as defined in mod_obcs.F [ values
+%              of 1-10] and parsed to Mobj from conf by add_obc_nodes_list
+%              - obc_nodes: matrix with node indices. Each row is a given
+%              open boundary.
+%              - nObs: number of open boundaries.
 %
 % OUTPUT:
 %  Nested  Mesh object with added nesting variables .
@@ -50,7 +66,7 @@ function [Nested]=find_nesting_region(conf,Mobj)
 %   the global variable ftbverbose shows information at run time as well as
 %   generating a figure with the location of the nesting nodes and elements
 %
-%   [Nested]=find_nesting_region(conf,Mobj)
+%    Nested = find_nesting_region(conf,Mobj)
 %
 %   Nested.nObcNodes = number of nodes in new nesting zone
 %   Nested.read_obc_nodes = nodes indices in nesting zone
@@ -69,10 +85,9 @@ function [Nested]=find_nesting_region(conf,Mobj)
 %
 % Revision history:
 %   2015-11-01 First version based on Hakeem and Darren code as provided to
-%   Torres by Pierre
-%   script.
-%   2016-01-19 Updated to a stand alone function and general tidy up
-%   general tidy up.
+%   Torres by Pierre.
+%   2016-01-19 Updated to a stand alone function and general tidy up.
+%   2016-12-14 Updated the help.
 %
 %==========================================================================
 
@@ -86,25 +101,24 @@ if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
 
-M=Mobj;
+M = Mobj;
 M.nObcNodes = M.nObcNodes.*(~isnan(conf.levels./conf.levels));
 nBC = sum(~isnan(conf.levels./conf.levels));
 TR = triangulation(M.tri, [M.x, M.y]);
 et = cell(sum(conf.levels), 1);
-M.weight_cell = cell(1,nBC*sum(conf.levels));
-for oo=1:length(M.read_obc_nodes)
+M.weight_cell = cell(1, nBC*sum(conf.levels));
+for oo = 1:length(M.read_obc_nodes)
     M.weight_node{oo} = ones(1, M.nObcNodes(oo));
 end
-nn=0;
+nn = 0;
 if ftbverbose
     figure,cla
     patch('Vertices', [M.x, M.y], 'Faces', M.tri, ...
         'Cdata', -M.h, 'edgecolor', 'b', 'facecolor', 'interp');
 end
-%% The initial OB are first in the order. The nested OB
-% follow
 
-etdx=0;
+% The initial boundary is first in the order. The nested boundaries follow.
+etdx = 0;
 for oo=1:length(Mobj.read_obc_nodes)
     if conf.Nested_type(oo) == 3
         % probably best to have them as a linear decrease?
@@ -112,10 +126,10 @@ for oo=1:length(Mobj.read_obc_nodes)
             % one should be the outermost boundary level which is why the vectors
             % are flipped
             weights_nodes = fliplr((1:conf.levels(oo))./conf.levels(oo));
-            weights_nodes(end+1) =0;
+            weights_nodes(end+1) = 0;
             
             weights_elems = fliplr((1:conf.levels(oo)-1)./conf.levels(oo)-1);
-            weights_elems(end+1) =0;
+            weights_elems(end+1) = 0;
             
         else
             weights_nodes = 1:conf.levels(oo)+1;
@@ -128,67 +142,67 @@ for oo=1:length(Mobj.read_obc_nodes)
         
     end
     for n = 1:conf.levels(oo)
-        nn=nn+1;etdx=etdx+1;
-        if (oo>1 && n == 1)
-            M.read_obc_nodes{nn+1} = Mobj.read_obc_nodes{oo};
-            M.obc_type(nn+1)=conf.Nested_type(oo);
-            M.nObcNodes(nn+1) = length(Mobj.read_obc_nodes{oo});
-            M.obc_nodes(nn+1, 1:Mobj.nObcNodes(oo)) = Mobj.read_obc_nodes{oo};
+        nn = nn + 1;
+        etdx = etdx + 1;
+        if (oo > 1 && n == 1)
+            M.read_obc_nodes{nn + 1} = Mobj.read_obc_nodes{oo};
+            M.obc_type(nn + 1)=conf.Nested_type(oo);
+            M.nObcNodes(nn + 1) = length(Mobj.read_obc_nodes{oo});
+            M.obc_nodes(nn + 1, 1:Mobj.nObcNodes(oo)) = Mobj.read_obc_nodes{oo};
             
-            ti = vertexAttachments(TR, double(M.read_obc_nodes{nn+1})');
+            ti = vertexAttachments(TR, double(M.read_obc_nodes{nn + 1})');
             et{etdx} = setdiff(unique([ti{:}]),[et{1:end}]);
-            nn=nn+1;
+            nn=nn + 1;
             
-            M.read_obc_nodes{nn+1} = int32(setdiff(unique(M.tri(et{etdx}, :)), ...
+            M.read_obc_nodes{nn + 1} = int32(setdiff(unique(M.tri(et{etdx}, :)), ...
                 [M.read_obc_nodes{1:nn}]))';
-            M.obc_type(nn+1)=conf.Nested_type(nn);
+            M.obc_type(nn + 1) = conf.Nested_type(oo);
             M.nObs =  M.nObs+1;
-            M.nObcNodes(nn+1) = length(M.read_obc_nodes{nn+1});
-            M.obc_nodes(nn+1, 1:M.nObcNodes(nn+1)) = M.read_obc_nodes{nn+1};
+            M.nObcNodes(nn + 1) = length(M.read_obc_nodes{nn + 1});
+            M.obc_nodes(nn + 1, 1:M.nObcNodes(nn + 1)) = M.read_obc_nodes{nn + 1};
             
         else
             
             ti = vertexAttachments(TR, double(M.read_obc_nodes{nn})');
             et{etdx} = setdiff(unique([ti{:}]),[et{1:end}]);
-            M.read_obc_nodes{nn+1} = int32(setdiff(unique(M.tri(et{etdx}, :)), ...
+            M.read_obc_nodes{nn + 1} = int32(setdiff(unique(M.tri(et{etdx}, :)), ...
                 [M.read_obc_nodes{1:nn}]))';
-            M.obc_type(nn+1)=M.obc_type(nn);
+            M.obc_type(nn + 1)=M.obc_type(nn);
             M.nObs =  M.nObs+1;
-            M.nObcNodes(nn+1) = length(M.read_obc_nodes{nn+1});
-            M.obc_nodes(nn+1, 1:M.nObcNodes(nn+1)) = M.read_obc_nodes{nn+1};
+            M.nObcNodes(nn + 1) = length(M.read_obc_nodes{nn + 1});
+            M.obc_nodes(nn + 1, 1:M.nObcNodes(nn + 1)) = M.read_obc_nodes{nn + 1};
             
         end
         % Plot nesting region.
         if ftbverbose
-            if n == 1 | nn==1
+            if n == 1 || nn == 1
                 axis('equal', 'tight')
                 colormap('gray')
                 hold on
                 plot(M.x(M.read_obc_nodes{nn}), M.y(M.read_obc_nodes{nn}), 'wo')
-                plot(M.x(M.read_obc_nodes{nn+1}), M.y(M.read_obc_nodes{nn+1}), 'ro')
+                plot(M.x(M.read_obc_nodes{nn + 1}), M.y(M.read_obc_nodes{nn + 1}), 'ro')
                 plot(M.xc(et{etdx}), M.yc(et{etdx}), 'wx')
             else
-                plot(M.x(M.read_obc_nodes{nn+1}), M.y(M.read_obc_nodes{nn+1}), 'ro')
+                plot(M.x(M.read_obc_nodes{nn + 1}), M.y(M.read_obc_nodes{nn + 1}), 'ro')
                 plot(M.xc(et{etdx}), M.yc(et{etdx}), 'wx')
             end
         end
         
         
         if conf.Nested_type(oo) == 3
-            M.weight_node{nn+1} = repmat(weights_nodes(n+1), ...
-                1, M.nObcNodes(nn+1));
+            M.weight_node{nn + 1} = repmat(weights_nodes(n+1), ...
+                1, M.nObcNodes(nn + 1));
             M.weight_cell{etdx} = repmat(weights_elems(n), ...
                 1, length(et{etdx}), 1);
         end
     end
 end
-%%
 
-Nested=M;
-Nested.read_obc_elems=et;
+Nested = M;
+Nested.read_obc_elems = et;
+
 if ftbverbose
     fprintf('end   : %s \n', subname)
 end
 
 return
-
