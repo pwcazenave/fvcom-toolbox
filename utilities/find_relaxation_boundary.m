@@ -102,17 +102,20 @@ all_nest_nodes = Mobj.relaxBC_nodes{:};
 Mobj.relaxnBC_elems = length(all_nest_elems);
 Mobj.relaxnBC_nodes = length(all_nest_nodes);
 
-
-% figure(1)
+% Check it's worked for the first model boundary.
+% xc = nodes2elems(Mobj.x, Mobj);
+% yc = nodes2elems(Mobj.y, Mobj);
+% figure
 % clf
-%     triplot(Mobj.tri,Mobj.x,Mobj.y,'k');
+% triplot(Mobj.tri,Mobj.x,Mobj.y,'k');
 % hold on
 % 
-% plot(Mobj.x( Mobj.relaxBC_nodes{1}), Mobj.y( Mobj.relaxBC_nodes{1}), 'r.')
-% plot(Mobj.x( Mobj.relaxBC_nodes{2}), Mobj.y( Mobj.relaxBC_nodes{2}), 'r.')
-% plot(Mobj.x( Mobj.relaxBC_nodes{3}), Mobj.y( Mobj.relaxBC_nodes{3}), 'kx')
-% plot(Mobj.x( Mobj.relaxBC_nodes{4}), Mobj.y( Mobj.relaxBC_nodes{4}), 'rx')
-% 
+% symbols = {'r.', 'k.', 'rx', 'kx', 'ro', 'ko'};
+% for nn = 1:length(Mobj.relaxBC_nodes)
+%     plot(Mobj.x(Mobj.relaxBC_nodes{nn}), ...
+%         Mobj.y(Mobj.relaxBC_nodes{nn}), ...
+%         symbols{mod(nn, length(Mobj.relaxBC_nodes)) + 1})
+% end
 % plot(xc(Mobj.relaxBC_elems{3}), yc(Mobj.relaxBC_elems{3}), 'kx')
 % axis('equal', 'tight')
 
