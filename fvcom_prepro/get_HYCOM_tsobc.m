@@ -135,6 +135,11 @@ for v = 1:length(fields)
         end
         % Get the current 3D array of HYCOM results.
         pctemp3 = hycom.(fields{v}).data(:, :, :, t);
+        % Remove NaNs since we've assumed later on that everything above
+        % some value is NaN instead (currently 1.26e29). Make the value
+        % that we replace the NaNs with larger since we check for larger
+        % values when deleting invalid values.
+        pctemp3(isnan(pctemp3)) = 1.27e29;
 
         % Preallocate the intermediate results array.
         itempz = nan(nf, nz);
