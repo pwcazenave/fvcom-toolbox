@@ -235,6 +235,25 @@ for v = 1:length(fields)
                 plat = double(tlat(ixy));
                 ptemp = tpctemp2(ixy);
 
+                % Check we're interpolating at the surface correctly.
+                % figure(100)
+                % if i == 1
+                %     clf
+                %     pcolor(hycom.lon, hycom.lat, pctemp2); colorbar; hold on
+                %     shading flat
+                %     hold on
+                % end
+                % plot(tlon(ixy), tlat(ixy), 'ko')
+                % plot(fx, fy, 'rx')
+                % plot(tlon(ixy(1)), tlat(ixy(1)), 'gs')
+                % scatter(tlon(ixy(1)), tlat(ixy(1)), 20, ptemp(1), 'filled')
+                % disp(ptemp(1))
+                % caxis([34.5, 35.5])
+                % axis('equal', 'tight')
+                % axis([fx - 0.5, fx + 0.5, fy - 0.5, fy + 0.5])
+                % legend('Data', 'Candidate valid', 'FVCOM node', 'Nearest valid', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')
+                % legend('BoxOff')
+
                 % Use a triangulation to do the horizontal interpolation if
                 % we have enough points, otherwise take the mean of the two
                 % values.
