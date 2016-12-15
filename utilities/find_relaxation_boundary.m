@@ -1,41 +1,48 @@
 function Mobj = find_relaxation_boundary(Mobj)
-% Find the elements which fall along the boundary.
-% 
+% Find the elements which fall along the boundary for a nested
+% configuration.
+%
 % Mobj = find_boundary_elements(Mobj)
-% 
+%
 % DESCRIPTION:
 %   Find the elements which are bounded by the open boundaries described by
-%   the nodes in Mobj.read_obc_nodes.
-% 
+%   the nodes in Mobj.read_obc_nodes and which go to a depth of
+%   Mobj.relax_bc_Nnodes.
+%
 % INPUT:
 %   Mobj - required fields:
-%           - read_obc_nodes
-%           - obc_nodes
-%           - tri
-% 
+%           - read_obc_nodes - cell array of open boundary node IDs.
+%           - tri - mesh triangulation
+%           - relax_bc_Nnodes - array (length is Mobj.nObs) of number of
+%           elements from the open boundary over which to relax the nested
+%           inputs.
+%
 % OUTPUT:
-%   Mobj - new field of a cell array read_obc_elements which contains the
-%          IDs of the elements which fall on the model open boundaries and
-%          nObcElements which is the total number of boundary elements
-%          along each boundary.
-% 
-% NOTES:
-%   This will be pretty slow if your unstructured grid has an enormous
-%   number of elements in it (it loops through every element and compares
-%   against the boundary nodes). I'm sure there's a quicker way, so feel
-%   free to have at it.
-% 
+%   Mobj - mesh object with the following new fields:
+%           - relaxBC_nodes = node IDs for the relaxed region
+%           - relaxBC_elems = element IDs for the relaxed region
+%           - relaxnBC_nodes = number of nodes in the relaxed region
+%           - relaxnBC_elems = number of elements in the relaxed region
+%
 % EXAMPLE USAGE:
-%   Mobj = find_boundary_elements(Mobj)
-% 
+%   Mobj = find_relaxation_boundary(Mobj)
+%
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
-% 
+%   Ricardo Torres (Plymouth Marine Laboratory)
+%
 % Revision history:
-%   2013-02-26 First version.
-%   2013-02-28 Add new field to the output (total number of boundary
-%   elements as nObcElements).
-% 
+%   2016-12-15 Add support for varying depth of nested region over each
+%   open boundary. Also update help to actually refer to what this function
+%   does.
+%
+% Author(s):
+%   Pierre Cazenave (Plymouth Marine Laboratory)
+%   Ricardo Torres (Plymouth Marine Laboratory)
+%
+% Revision history:
+%   2016-12-15 Update help to actually refer to what this function does.
+%
 %==========================================================================
 
 subname = 'find_boundary_elements';
