@@ -157,9 +157,8 @@ for v = 1:length(fields)
             mask = tpctemp2 > 1.26e29;
 
             % We need to do some more checks for the data which has been
-            % saved via Python. This is a sort of bounds check to
-            % eliminate unrealistic data. Warn if we actually delete
-            % anything.
+            % saved via Python. This is a sort of bounds check to eliminate
+            % unrealistic data. Warn if we actually delete anything.
             switch fields{v}
                 case 'salinity'
                     mask_alt = tpctemp2 < 0;
