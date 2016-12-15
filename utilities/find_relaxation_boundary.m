@@ -74,19 +74,33 @@ end
 Mobj.relaxBC_nodes = {[Mobj.read_obc_nodes{:}]};
 Mobj.relaxBC_elems = {[obc_elems{:}]};
 
-for bb=2:bc_width
-    nodeIDs = Mobj.tri(Mobj.relaxBC_elems{bb-1},:);
-    nodeIDs=unique(nodeIDs(:));
-    C1 = setdiff(nodeIDs(:),...
-        cat(1,Mobj.relaxBC_nodes{1:bb-1}), 'rows');
-    Mobj.relaxBC_nodes(bb)={C1};
-    [C1,~] = ismember(Mobj.tri(:,1),nodeIDs(:), 'rows');
-    [C2,~] = ismember(Mobj.tri(:,2), nodeIDs(:),'rows');
-    [C3,~] = ismember(Mobj.tri(:,3), nodeIDs(:),'rows');
-    C1 = setdiff(unique([find(C1);find(C2);find(C3)]),...
-        cat(1,Mobj.relaxBC_elems{1:bb-1}), 'rows');
-    Mobj.relaxBC_elems(bb)={C1};
+for bb = 2:bc_width
+    nodeIDs = Mobj.tri(Mobj.relaxBC_elems{bb-1}, :);
+    nodeIDs = unique(nodeIDs(:));
+    % Find connected nodes.
+    bc_nodes = Mobj.relaxBC_nodes{1:bb-1};
+    if ~iscolumn(bc_nodes)
+        bc_nodes = bc_nodes';
+    end
+    C1 = setdiff(nodeIDs(:), bc_nodes, 'rows');
+    Mobj.relaxBC_nodes(bb) = {C1};
+    % And now elements.
+    [C1,~] = ismember(Mobj.tri(:,1), nodeIDs(:), 'rows');
+    [C2,~] = ismember(Mobj.tri(:,2), nodeIDs(:), 'rows');
+    [C3,~] = ismember(Mobj.tri(:,3), nodeIDs(:), 'rows');
+    bc_elems = Mobj.relaxBC_elems{1:bb-1};
+    if ~iscolumn(bc_elems)
+        bc_elems = bc_elems';
+    end
+    C1 = setdiff(unique([find(C1); find(C2); find(C3)]), ...
+        bc_elems, 'rows');
+    Mobj.relaxBC_elems(bb) = {C1};
 end
+
+all_nest_elems = Mobj.relaxBC_elems{:};
+all_nest_nodes = Mobj.relaxBC_nodes{:};
+Mobj.relaxnBC_elems = length(all_nest_elems);
+Mobj.relaxnBC_nodes = length(all_nest_nodes);
 
 
 % figure(1)
