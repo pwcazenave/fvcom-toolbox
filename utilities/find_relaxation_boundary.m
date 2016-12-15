@@ -49,30 +49,30 @@ subname = 'find_boundary_elements';
 
 global ftbverbose
 if ftbverbose
-    fprintf('\n')
-    fprintf('begin : %s\n', subname)
+    fprintf('\nbegin : %s\n', subname)
 end
 
 nb = length(Mobj.read_obc_nodes); % number of boundaries
-bc_width=Mobj.relax_bc_Nnodes;
+bc_width = Mobj.relax_bc_Nnodes;
 obc_elems = cell(nb, 1);
 nObcElements = nan(nb, 1);
-
 
 for i = 1:nb
     
     % Do the current boundary's nodes
-    nodeIDs = Mobj.obc_nodes(i, Mobj.obc_nodes(i, :) ~= 0);
-    [C1,~] = ismember(Mobj.tri(:,1),nodeIDs(:), 'rows');
-    [C2,~] = ismember(Mobj.tri(:,2), nodeIDs(:),'rows');
-    [C3,~] = ismember(Mobj.tri(:,3), nodeIDs(:),'rows');
-    obc_elems{i}= unique([find(C1);find(C2);find(C3)]);
-    if iscolumn( obc_elems{i});obc_elems{i}=obc_elems{i}';end
+    nodeIDs = Mobj.read_obc_nodes{i};
+    [C1,~] = ismember(Mobj.tri(:,1), nodeIDs(:), 'rows');
+    [C2,~] = ismember(Mobj.tri(:,2), nodeIDs(:), 'rows');
+    [C3,~] = ismember(Mobj.tri(:,3), nodeIDs(:), 'rows');
+    obc_elems{i} = unique([find(C1); find(C2); find(C3)]);
+    if iscolumn(obc_elems{i})
+        obc_elems{i} = obc_elems{i}';
+    end
     nObcElements(i) = numel(obc_elems{i}(:));
     
 end
-Mobj.relaxBC_nodes={[Mobj.read_obc_nodes{:}]};
-Mobj.relaxBC_elems={[obc_elems{:}]};
+Mobj.relaxBC_nodes = {[Mobj.read_obc_nodes{:}]};
+Mobj.relaxBC_elems = {[obc_elems{:}]};
 
 for bb=2:bc_width
     nodeIDs = Mobj.tri(Mobj.relaxBC_elems{bb-1},:);
@@ -89,16 +89,6 @@ for bb=2:bc_width
 end
 
 
-% nodeIDs = Mobj.tri(Mobj.relaxBC_elems{bb},:);
-% nodeIDs=unique(nodeIDs(:));
-% C1 = setdiff(nodeIDs(:),...
-%     cat(1,Mobj.relaxBC_nodes{1:bb}), 'rows');
-% Mobj.relaxBC_nodes(bb+1)={C1};
-Mobj.relaxnBC_elems=length(cat(1,Mobj.relaxBC_elems{:}));
-Mobj.relaxnBC_nodes=length(cat(1,Mobj.relaxBC_nodes{:}));
-% % Check it's worked for the first model boundary.
-% xc = nodes2elems(Mobj.x, Mobj);
-% yc = nodes2elems(Mobj.y, Mobj);
 % figure(1)
 % clf
 %     triplot(Mobj.tri,Mobj.x,Mobj.y,'k');
