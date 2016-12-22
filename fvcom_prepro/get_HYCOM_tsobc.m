@@ -71,7 +71,7 @@ if nargin == 2
 else
     % We always want Depth because we need it to interpolate the vertical
     % component.
-    fields = unique(['Depth', varlist]);
+    fields = unique(['Depth', varlist], 'stable');
 end
 
 assert(isfield(hycom, 'Depth'), 'Require a depth vector to interpolate vertically.')
