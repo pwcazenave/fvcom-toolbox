@@ -115,7 +115,7 @@ end
 
 TR = triangulation(Mobj.tri, [Mobj.x, Mobj.y]);
 
-M = Mobj;
+Nested = Mobj;
 Nested.nObs = 0; % number of nodal levels is incremented for each level.
 
 % Make cell arrays to store the element IDs for each nested level as well
