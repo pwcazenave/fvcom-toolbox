@@ -238,10 +238,8 @@ for obc_idx = 1:Mobj.nObs
     end
 end
 
-Nested = M;
-Nested.read_obc_elems = et;
 % Update the clunky obc_nodes array with the new node IDs from
-% M.read_obc_nodes.
+% Nested.read_obc_nodes.
 for nidx = 1:length(Nested.read_obc_nodes)
     Nested.obc_nodes(nidx, 1:length(Nested.read_obc_nodes{nidx})) = Nested.read_obc_nodes{nidx};
 end
