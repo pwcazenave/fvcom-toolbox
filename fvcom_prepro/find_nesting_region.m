@@ -1,10 +1,10 @@
 function Nested = find_nesting_region(conf, Mobj)
 % Creates a nesting structure array for direct/indirect or weighted nesting
 %
-% function Nested = find_nesting_region(conf,M)
+% function Nested = find_nesting_region(conf, Mobj)
 %
 % DESCRIPTION:
-%   Uses the Mesh object M and the conf variable to search for the nodes
+%   Uses the Mesh object Mobj and the conf variable to search for the nodes
 %   and elements originating from the open boundaries into de domain
 %   interior for a specified number of levels.
 %
@@ -83,7 +83,7 @@ function Nested = find_nesting_region(conf, Mobj)
 %   Nested.nObcNodes = number of nodes in new nesting zone
 %   Nested.read_obc_nodes = nodes indices in nesting zone
 %   Nested.obc_type = Type of OBC as defined in mod_obcs.F [ values of 1-10]
-%   Nested.obc_nodes = matrix with node indices. Each row is a boundary  level.
+%   Nested.obc_nodes = matrix with node indices. Each row is a boundary level.
 %   Nested.nObs = total number of open boundary levels
 %   Nested.weight_node = weights for nodes if using weighted type [0-1] see
 %       FVCOM manual for further info (Chapter 6 section 4 in version 3.2)
@@ -99,7 +99,8 @@ function Nested = find_nesting_region(conf, Mobj)
 %   2015-11-01 First version based on Hakeem and Darren code as provided to
 %   Torres by Pierre.
 %   2016-01-19 Updated to a stand alone function and general tidy up.
-%   2016-12-14 Updated the help.
+%   2016-12-14 Updated the help. Also disabled the plot to ease automated
+%   runs.
 %   2016-12-22 Fairly major rewrite to make things clearer and less prone
 %   to subtle bugs.
 %
@@ -162,7 +163,7 @@ for obc_idx = 1:Mobj.nObs
         Nested.weight_cell{cumulative_elem_idx} = weights_elems;
     end
 
-    % Save the original open boundary nodes into the nested struct (M).
+    % Save the original open boundary nodes into the nested struct (Nested).
     Nested.read_obc_nodes{cumulative_node_idx} = Mobj.read_obc_nodes{obc_idx};
 
     % Given the current open boundary, find the elements connected to it
