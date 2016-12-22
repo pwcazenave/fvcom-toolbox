@@ -184,13 +184,14 @@ for obc_idx = 1:Mobj.nObs
         % plot(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 'ro')
         figure(2)
         scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
-    end
 
-    fprintf('Original open boundary %d\n', obc_idx)
-    fprintf('Nodes %d\n', length(Nested.read_obc_nodes))
-    fprintf('Node weights %d\n', length(Nested.weight_node))
-    fprintf('Element weights %d\n', length(Nested.weight_cell))
-    fprintf('\n')
+        fprintf('Original open boundary %d\n', obc_idx)
+        fprintf('Nodes %d\n', length(Nested.read_obc_nodes))
+        fprintf('Elements %d\n', length(Nested.read_obc_elems))
+        fprintf('Node weights %d\n', length(Nested.weight_node))
+        fprintf('Element weights %d\n', length(Nested.weight_cell))
+        fprintf('\n')
+    end
 
     % Now we have the original open boundary and the elements connected to
     % it we can move through the levels specified in conf.levels(obc_idx)
@@ -223,13 +224,14 @@ for obc_idx = 1:Mobj.nObs
                 figure(2)
                 scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
             end
-        end
 
-        fprintf('Nested open boundary %d\n', lev)
-        fprintf('Nodes %d\n', length(Nested.read_obc_nodes))
-        fprintf('Node weights %d\n', length(Nested.weight_node))
-        fprintf('Element weights %d\n', length(Nested.weight_cell))
-        fprintf('\n')
+            fprintf('Nested open boundary %d\n', lev)
+            fprintf('Nodes %d\n', length(Nested.read_obc_nodes))
+            fprintf('Elements %d\n', length(Nested.read_obc_elems))
+            fprintf('Node weights %d\n', length(Nested.weight_node))
+            fprintf('Element weights %d\n', length(Nested.weight_cell))
+            fprintf('\n')
+        end
 
         % Bump the node and element cumulative counters so the next loop
         % dumps everything into the right position in the cell arrays.
