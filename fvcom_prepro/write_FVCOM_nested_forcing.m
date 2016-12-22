@@ -62,6 +62,11 @@ function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 
 % We need the following variables:
 %
+% lon, lat:     Grid node positions             [node]
+% lonc, latc:   Grid element positions          [nele]
+% hc:           Grid node depths                [node]
+% hc:           Grid element depth              [nele]
+% nv:           Triangulation table             [nele, 3]
 % zeta:         Sea surface elevation           [node, time]
 % ua:           Vertically averaged x velocity  [node, time]
 % va:           Vertically averaged y velocity  [nele, time]
@@ -69,7 +74,7 @@ function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 % v:            Northward Water Velocity        [nele, siglay, time]
 % temp:         Temperature                     [node, siglay, time]
 % salinity:     Salinity                        [node, siglay, time]
-% hyw:          Hydro static vertical velocity  [node, siglev, time]
+% hyw:          Hydrostatic vertical velocity   [node, siglev, time]
 % weight_cell:  Weighting for elements          [nele]
 % weight_node:  Weighting for nodes             [node]
 % Itime:        Days since 1858-11-17 00:00:00  [time]
