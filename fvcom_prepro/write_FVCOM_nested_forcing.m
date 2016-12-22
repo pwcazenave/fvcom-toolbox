@@ -79,7 +79,7 @@ function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 % time:         Modified Julian Day             [time]
 % Times:        Gregorian dates                 [time, datestrlen]
 
-subname = 'write_FVCOM_nested_forcing';
+[~, subname] = fileparts(mfilename('fullpath'));
 
 global ftbverbose
 if ftbverbose
