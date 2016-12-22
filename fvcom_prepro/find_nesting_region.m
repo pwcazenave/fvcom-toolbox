@@ -125,13 +125,13 @@ Nested.read_obc_elems = cell(0);
 Nested.weight_cell = cell(0);
 Nested.weight_node = cell(0);
 
-if ftbverbose
-    figure(1)
-    clf
-    triplot(Nested.tri, Nested.x, Nested.y)
-    axis('equal', 'tight')
-    hold on
-end
+% if ftbverbose
+%     figure(1)
+%     clf
+%     triplot(Nested.tri, Nested.x, Nested.y)
+%     axis('equal', 'tight')
+%     hold on
+% end
 
 % Indices for the output cell arrays which are incremented for each nest
 % level and each open boundary.
@@ -174,10 +174,9 @@ for obc_idx = 1:Mobj.nObs
     Nested.obc_type(cumulative_node_idx) = conf.Nested_type(obc_idx);
 
     if ftbverbose
-        figure(1)
-        scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')
-        scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
-
+        % figure(1)
+        % scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')
+        % scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
         fprintf('Original open boundary %d\n', obc_idx)
     end
 
@@ -205,12 +204,11 @@ for obc_idx = 1:Mobj.nObs
         end
 
         if ftbverbose
-            figure(1)
-            scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')
-            if lev ~= conf.levels(obc_idx)
-                scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
-            end
-
+            % figure(1)
+            % scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')
+            % if lev ~= conf.levels(obc_idx)
+            %     scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
+            % end
             fprintf('Nested level %d\n', lev)
         end
 
@@ -231,8 +229,8 @@ for nidx = 1:length(Nested.read_obc_nodes)
 end
 
 if ftbverbose
-    figure(1)
-    colorbar
-    title('Nest weights')
+    % figure(1)
+    % colorbar
+    % title('Nest weights')
     fprintf('end   : %s \n', subname)
 end
