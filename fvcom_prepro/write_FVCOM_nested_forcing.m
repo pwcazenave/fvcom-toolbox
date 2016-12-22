@@ -126,7 +126,10 @@ end
 nsiglev = nsiglay + 1;
 [nodes, ~] = size(nest.zeta);
 
-nc = netcdf.create(ncfile, 'clobber');
+% Using the bitwise or for the mode didn't work.
+netcdf.setDefaultFormat('FORMAT_NETCDF4');
+mode = netcdf.getConstant('CLOBBER');
+nc = netcdf.create(ncfile, mode);
 
 % define global attributes
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'type', ...
