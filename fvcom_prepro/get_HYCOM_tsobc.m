@@ -88,17 +88,6 @@ end
 % Use the existing rectangular arrays for the nearest point lookup.
 [lon, lat] = deal(hycom.lon, hycom.lat);
 
-%oNodes = Mobj.obc_nodes(Mobj.obc_nodes ~= 0);
-% Change the way the nodes are listed to match the order in the
-% Casename_obc.dat file.
-tmpObcNodes = Mobj.obc_nodes';
-oNodes = tmpObcNodes(tmpObcNodes ~= 0)';
-
-fvlon = Mobj.lon(oNodes);
-fvlat = Mobj.lat(oNodes);
-
-% Number of boundary nodes
-nf = sum(Mobj.nObcNodes);
 % Number of sigma layers.
 fz = size(Mobj.siglayz, 2);
 
@@ -119,12 +108,38 @@ if ftbverbose
 end
 % Only do warnings about removing values outside some ranges once per
 % variable.
-warned = true(3, 1);
+warned = true(4, 1);
 for v = 1:length(fields)
 
     if ~(isfield(hycom.(fields{v}), 'data') && ndims(hycom.(fields{v}).data) > 3)
         continue
     end
+
+    % Supply FVCOM grid positions depending on whether we're working on the
+    % velocity data (on elements) or anything else (on nodes).
+    if any(strcmpi(fields{v}, {'u', 'v'}))
+        oNodes = [Mobj.read_obc_elems{:}];
+        fvlon = Mobj.lonc(oNodes);
+        fvlat = Mobj.latc(oNodes);
+        sigma = Mobj.siglayzc;
+        if ftbverbose
+            fprintf('Variable %s on elements (%d positions)\n', fields{v}, length(fvlon))
+        end
+    else
+        % Make sure the nodes are listed in the same way as in
+        % casename_obc.dat.
+        tmpObcNodes = Mobj.obc_nodes';
+        oNodes = tmpObcNodes(tmpObcNodes ~= 0)';
+        fvlon = Mobj.lon(oNodes);
+        fvlat = Mobj.lat(oNodes);
+        sigma = Mobj.siglayz;
+        if ftbverbose
+            fprintf('Variable %s on nodes (%d positions)\n', fields{v}, length(fvlon))
+        end
+    end
+
+    % Number of boundary nodes
+    nf = length(oNodes);
 
     fvtemp = nan(nf, fz, nt); % FVCOM interpolated data
 
@@ -182,6 +197,12 @@ for v = 1:length(fields)
                     if min(mask_alt(:)) == 1 &&  warned(3)
                         warned(3) = false;
                         warning('Removing sea surface height values below -20m from the HYCOM data.')
+                    end
+                case {'u', 'v'}
+                    mask_alt = tpctemp2 > 100;
+                    if min(mask_alt(:)) == 1 &&  warned(4)
+                        warned(3) = false;
+                        warning('Removing non-tidal velocities above 100m/s from the HYCOM data.')
                     end
                 otherwise
                     % Some other variable we won't mask.
@@ -352,7 +373,7 @@ for v = 1:length(fields)
 
         for pp = 1:nf
             % Get the FVCOM depths at this node
-            tfz = Mobj.siglayz(oNodes(pp), :);
+            tfz = sigma(oNodes(pp), :);
 
             % The HYCOM data is unusual in that the depths are fixed and
             % data are only saved at the depths shallower than the
