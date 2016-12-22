@@ -158,9 +158,6 @@ for obc_idx = 1:Mobj.nObs
             weights_elems = 1:conf.levels(obc_idx);
             weights_elems = 1./weights_elems.^conf.power;
         end
-        % Save the weights into the nested struct (M).
-        Nested.weight_node{cumulative_node_idx} = weights_nodes;
-        Nested.weight_cell{cumulative_elem_idx} = weights_elems;
     end
 
     % Save the original open boundary nodes into the nested struct (Nested).
@@ -170,6 +167,10 @@ for obc_idx = 1:Mobj.nObs
     % and give them some weights.
     ti = vertexAttachments(TR, double(Mobj.read_obc_nodes{obc_idx})');
     Nested.read_obc_elems{cumulative_elem_idx} = unique([ti{:}]);
+
+    % Save the weights into the nested struct (Nested).
+    Nested.weight_node{cumulative_node_idx} = repmat(weights_nodes(1), 1, length(Nested.read_obc_nodes{cumulative_node_idx}));
+    Nested.weight_cell{cumulative_elem_idx} = repmat(weights_elems(1), 1, length(Nested.read_obc_elems{cumulative_elem_idx}));
 
     % Also save the type of open boundary we've got and update the open
     % boundary counter and number of open boundary nodes.
@@ -208,10 +209,10 @@ for obc_idx = 1:Mobj.nObs
         Nested.obc_type(cumulative_node_idx) = conf.Nested_type(obc_idx);
         Nested.nObcNodes(cumulative_node_idx) = length(Nested.read_obc_nodes{cumulative_node_idx});
 
-        Nested.weight_node{cumulative_node_idx} = weights_nodes;
+        Nested.weight_node{cumulative_node_idx} = repmat(weights_nodes(lev + 1), 1, length(Nested.read_obc_nodes{cumulative_node_idx}));
         if lev ~= conf.levels(obc_idx)
             Nested.read_obc_elems{cumulative_elem_idx} = setdiff(unique([ti{:}]), [Nested.read_obc_elems{:}]);
-            Nested.weight_cell{cumulative_elem_idx} = weights_elems;
+            Nested.weight_cell{cumulative_elem_idx} = repmat(weights_elems(lev + 1), 1, length(Nested.read_obc_elems{cumulative_elem_idx}));
         end
 
         if ftbverbose
