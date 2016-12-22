@@ -100,6 +100,8 @@ function Nested = find_nesting_region(conf, Mobj)
 %   Torres by Pierre.
 %   2016-01-19 Updated to a stand alone function and general tidy up.
 %   2016-12-14 Updated the help.
+%   2016-12-22 Fairly major rewrite to make things clearer and less prone
+%   to subtle bugs.
 %
 %==========================================================================
 
@@ -110,105 +112,146 @@ if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
 
+TR = triangulation(Mobj.tri, [Mobj.x, Mobj.y]);
+
 M = Mobj;
-M.nObcNodes = M.nObcNodes.*(~isnan(conf.levels./conf.levels));
-nBC = sum(~isnan(conf.levels./conf.levels));
-TR = triangulation(M.tri, [M.x, M.y]);
-et = cell(sum(conf.levels), 1);
-M.weight_cell = cell(1, nBC*sum(conf.levels));
-for oo = 1:length(M.read_obc_nodes)
-    M.weight_node{oo} = ones(1, M.nObcNodes(oo));
-end
-nn = 0;
+Nested.nObs = 0; % number of nodal levels is incremented for each level.
+
+% Make cell arrays to store the element IDs for each nested level as well
+% as for the weights on the nodes and elements.
+Nested.read_obc_nodes = cell(0);
+Nested.read_obc_elems = cell(0);
+Nested.weight_cell = cell(0);
+Nested.weight_node = cell(0);
+
 if ftbverbose
-    figure,cla
-    patch('Vertices', [M.x, M.y], 'Faces', M.tri, ...
-        'Cdata', -M.h, 'edgecolor', 'b', 'facecolor', 'interp');
+    figure(1)
+    clf
+    triplot(Nested.tri, Nested.x, Nested.y)
+    axis('equal', 'tight')
+    hold on
+    figure(2)
+    clf
+    triplot(Nested.tri, Nested.x, Nested.y)
+    axis('equal', 'tight')
+    hold on
 end
 
-% The initial boundary is first in the order. The nested boundaries follow.
-etdx = 0;
-for oo=1:length(Mobj.read_obc_nodes)
-    if conf.Nested_type(oo) == 3
-        % probably best to have them as a linear decrease?
-        if conf.power ==0
-            % one should be the outermost boundary level which is why the vectors
-            % are flipped
-            weights_nodes = fliplr((1:conf.levels(oo))./conf.levels(oo));
-            weights_nodes(end+1) = 0;
-            
-            weights_elems = fliplr((1:conf.levels(oo)-1)./conf.levels(oo)-1);
-            weights_elems(end+1) = 0;
-            
+% Indices for the output cell arrays which are incremented for each nest
+% level and each open boundary.
+cumulative_node_idx = 1;
+cumulative_elem_idx = 1;
+for obc_idx = 1:Mobj.nObs
+    % Generate the weights for the elements and nodes.
+    if conf.Nested_type(obc_idx) == 3
+        if conf.power == 0
+            weights_nodes = nan(1, conf.levels(obc_idx) + 2);
+            weights_elems = nan(1, conf.levels(obc_idx) + 1);
+            weights_nodes(1:end - 1) = fliplr((1:conf.levels(obc_idx))./conf.levels(obc_idx));
+            weights_nodes(end) = 0;
+            weights_elems(1:end - 1) = fliplr((1:conf.levels(obc_idx) - 1)./conf.levels(obc_idx) - 1);
+            weights_elems(end) = 0;
         else
-            weights_nodes = 1:conf.levels(oo)+1;
+            weights_nodes = 1:conf.levels(obc_idx) + 1;
             weights_nodes = 1./weights_nodes.^conf.power;
-            weights_elems = 1:conf.levels(oo);
+            weights_elems = 1:conf.levels(obc_idx);
             weights_elems = 1./weights_elems.^conf.power;
         end
-        M.weight_node{oo} = repmat(weights_nodes(1), ...
-            1, M.nObcNodes(oo));
-        
+        % Save the weights into the nested struct (M).
+        Nested.weight_node{cumulative_node_idx} = weights_nodes;
+        Nested.weight_cell{cumulative_elem_idx} = weights_elems;
     end
-    for n = 1:conf.levels(oo)
-        nn = nn + 1;
-        etdx = etdx + 1;
-        if (oo > 1 && n == 1)
-            M.read_obc_nodes{nn + 1} = Mobj.read_obc_nodes{oo};
-            M.obc_type(nn + 1)=conf.Nested_type(oo);
-            M.nObcNodes(nn + 1) = length(Mobj.read_obc_nodes{oo});
-            M.obc_nodes(nn + 1, 1:Mobj.nObcNodes(oo)) = Mobj.read_obc_nodes{oo};
-            
-            ti = vertexAttachments(TR, double(M.read_obc_nodes{nn + 1})');
-            et{etdx} = setdiff(unique([ti{:}]),[et{1:end}]);
-            nn=nn + 1;
-            
-            M.read_obc_nodes{nn + 1} = int32(setdiff(unique(M.tri(et{etdx}, :)), ...
-                [M.read_obc_nodes{1:nn}]))';
-            M.obc_type(nn + 1) = conf.Nested_type(oo);
-            M.nObs =  M.nObs+1;
-            M.nObcNodes(nn + 1) = length(M.read_obc_nodes{nn + 1});
-            M.obc_nodes(nn + 1, 1:M.nObcNodes(nn + 1)) = M.read_obc_nodes{nn + 1};
-            
-        else
-            
-            ti = vertexAttachments(TR, double(M.read_obc_nodes{nn})');
-            et{etdx} = setdiff(unique([ti{:}]),[et{1:end}]);
-            M.read_obc_nodes{nn + 1} = int32(setdiff(unique(M.tri(et{etdx}, :)), ...
-                [M.read_obc_nodes{1:nn}]))';
-            M.obc_type(nn + 1)=M.obc_type(nn);
-            M.nObs =  M.nObs+1;
-            M.nObcNodes(nn + 1) = length(M.read_obc_nodes{nn + 1});
-            M.obc_nodes(nn + 1, 1:M.nObcNodes(nn + 1)) = M.read_obc_nodes{nn + 1};
-            
+
+    % Save the original open boundary nodes into the nested struct (M).
+    Nested.read_obc_nodes{cumulative_node_idx} = Mobj.read_obc_nodes{obc_idx};
+
+    % Given the current open boundary, find the elements connected to it
+    % and give them some weights.
+    ti = vertexAttachments(TR, double(Mobj.read_obc_nodes{obc_idx})');
+    Nested.read_obc_elems{cumulative_elem_idx} = unique([ti{:}]);
+
+    % Also save the type of open boundary we've got and update the open
+    % boundary counter and number of open boundary nodes.
+    Nested.nObcNodes(cumulative_node_idx) = length(Nested.read_obc_nodes{cumulative_node_idx});
+    Nested.nObs = Nested.nObs + 1;
+    Nested.obc_type(cumulative_node_idx) = conf.Nested_type(obc_idx);
+
+    if ftbverbose
+        figure(1)
+        scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')
+        % plot(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 'ro')
+        figure(2)
+        scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
+    end
+
+    fprintf('Original open boundary %d\n', obc_idx)
+    fprintf('Nodes %d\n', length(Nested.read_obc_nodes))
+    fprintf('Node weights %d\n', length(Nested.weight_node))
+    fprintf('Element weights %d\n', length(Nested.weight_cell))
+    fprintf('\n')
+
+    % Now we have the original open boundary and the elements connected to
+    % it we can move through the levels specified in conf.levels(obc_idx)
+    % and repeat the process. Bump the cumulative counters accordingly.
+    cumulative_node_idx = cumulative_node_idx + 1;
+    cumulative_elem_idx = cumulative_elem_idx + 1;
+
+    for lev = 1:conf.levels(obc_idx)
+        % Find the nodes and elements for this level and assign their
+        % weights. Use the most recent data in Nested.read_obc_nodes as the
+        % anchor from which to work.
+        Nested.read_obc_nodes{cumulative_node_idx} = int32(setdiff(unique(Nested.tri(Nested.read_obc_elems{cumulative_elem_idx - 1}, :)), ...
+            [Nested.read_obc_nodes{1:cumulative_node_idx - 1}]))';
+        ti = vertexAttachments(TR, double(Nested.read_obc_nodes{cumulative_node_idx})');
+        Nested.nObs = Nested.nObs + 1;
+        Nested.obc_type(cumulative_node_idx) = conf.Nested_type(obc_idx);
+        Nested.nObcNodes(cumulative_node_idx) = length(Nested.read_obc_nodes{cumulative_node_idx});
+
+        Nested.weight_node{cumulative_node_idx} = weights_nodes;
+        if lev ~= conf.levels(obc_idx)
+            Nested.read_obc_elems{cumulative_elem_idx} = setdiff(unique([ti{:}]), [Nested.read_obc_elems{:}]);
+            Nested.weight_cell{cumulative_elem_idx} = weights_elems;
         end
-        % Plot nesting region.
+
         if ftbverbose
-            if n == 1 || nn == 1
-                axis('equal', 'tight')
-                colormap('gray')
-                hold on
-                plot(M.x(M.read_obc_nodes{nn}), M.y(M.read_obc_nodes{nn}), 'wo')
-                plot(M.x(M.read_obc_nodes{nn + 1}), M.y(M.read_obc_nodes{nn + 1}), 'ro')
-                plot(M.xc(et{etdx}), M.yc(et{etdx}), 'wx')
-            else
-                plot(M.x(M.read_obc_nodes{nn + 1}), M.y(M.read_obc_nodes{nn + 1}), 'ro')
-                plot(M.xc(et{etdx}), M.yc(et{etdx}), 'wx')
+            figure(1)
+            scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')
+            % plot(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 'ro')
+            if lev ~= conf.levels(obc_idx)
+                figure(2)
+                scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
             end
         end
-        
-        
-        if conf.Nested_type(oo) == 3
-            M.weight_node{nn + 1} = repmat(weights_nodes(n+1), ...
-                1, M.nObcNodes(nn + 1));
-            M.weight_cell{etdx} = repmat(weights_elems(n), ...
-                1, length(et{etdx}), 1);
-        end
+
+        fprintf('Nested open boundary %d\n', lev)
+        fprintf('Nodes %d\n', length(Nested.read_obc_nodes))
+        fprintf('Node weights %d\n', length(Nested.weight_node))
+        fprintf('Element weights %d\n', length(Nested.weight_cell))
+        fprintf('\n')
+
+        % Bump the node and element cumulative counters so the next loop
+        % dumps everything into the right position in the cell arrays.
+        cumulative_node_idx = cumulative_node_idx + 1;
+        cumulative_elem_idx = cumulative_elem_idx + 1;
     end
 end
 
 Nested = M;
 Nested.read_obc_elems = et;
+% Update the clunky obc_nodes array with the new node IDs from
+% M.read_obc_nodes.
+for nidx = 1:length(Nested.read_obc_nodes)
+    Nested.obc_nodes(nidx, 1:length(Nested.read_obc_nodes{nidx})) = Nested.read_obc_nodes{nidx};
+end
+
+if ftbverbose
+    figure(1)
+    colorbar
+    title('Node weights')
+    figure(2)
+    colorbar
+    title('Element weights')
+end
 
 if ftbverbose
     fprintf('end   : %s \n', subname)
