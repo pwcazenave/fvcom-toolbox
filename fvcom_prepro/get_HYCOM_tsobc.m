@@ -146,7 +146,7 @@ for v = 1:length(fields)
     for t = 1:nt
 
         if ftbverbose
-            fprintf('%s : %i of %i %s timesteps... ', subname, t, nt, fields{v})
+            fprintf('%s : %i of %i %s timesteps... \n', subname, t, nt, fields{v})
         end
         % Get the current 3D array of HYCOM results.
         pctemp3 = hycom.(fields{v}).data(:, :, :, t);
@@ -163,7 +163,8 @@ for v = 1:length(fields)
             % Now extract the relevant layer from the 3D subsets.
             pctemp2 = pctemp3(:, :, j);
 
-            % Create new arrays which will be flattened when masking (below).
+            % Create new arrays which will be flattened when masking
+            % (below).
             tpctemp2 = pctemp2(:);
             tlon = lon(:);
             tlat = lat(:);
@@ -229,6 +230,10 @@ for v = 1:length(fields)
             % Preallocate the intermediate results array.
             itempobc = nan(nf, 1);
 
+            if ftbverbose
+                fprintf('   coarse data layer %d of %d\n', j, nz)
+            end
+
             % Speed up the tightest loop with a parallelized loop.
             parfor i = 1:nf
                 fx = fvlon(i);
@@ -286,9 +291,9 @@ for v = 1:length(fields)
                         itempobc(i) = tritemp(fx, fy);
                     catch err
                         if strcmp(err.identifier, 'MATLAB:subsassignnumelmismatch')
-                            warning(['Scatter points failed the ', ...
-                                ' triangular interpolation. Falling ', ...
-                                ' back to inverse distance weighted ', ...
+                            warning(['Scatter points failed the', ...
+                                ' triangular interpolation. Falling', ...
+                                ' back to inverse distance weighted', ...
                                 ' interpolation.'])
                             % Use the inverse distance weighted mean of the
                             % values for the interpolated value (the values
