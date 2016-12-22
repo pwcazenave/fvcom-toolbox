@@ -68,6 +68,8 @@ function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 %   2015-02-24 Add extra time variables, which although not strictly
 %   necessary for the model to run, makes sanity checking the time series a
 %   lot more straightforward.
+%   2016-12-20 Save as netCDF4 and add a new variable required for
+%   FVCOM4.0. Also updated the help.
 %
 %==========================================================================
 
