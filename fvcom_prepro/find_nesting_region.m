@@ -27,7 +27,7 @@ function Nested = find_nesting_region(conf, Mobj)
 %              boundary (if Nested_type is 3).
 %              - power = determines drop of weights from 1. 0 is linear,
 %              1-4 is 1/conf.levels.^conf.power.
-%  M        = Mesh object with the following fields:
+%  Mobj     = Mesh object with the following fields:
 %              - tri: Triangulation table as pupulated by read_sms_grid
 %              - x: Node x coordinates (cartesian)
 %              - y: Node y coordinates (cartesian)
@@ -44,12 +44,24 @@ function Nested = find_nesting_region(conf, Mobj)
 %              - nObs: number of open boundaries.
 %
 % OUTPUT:
-%  Nested  Mesh object with added nesting variables .
+%  Nested   = Mesh object with all the same fields as Mobj, plus the
+%             following added and modified fields:
+%              - read_obc_nodes: new nested boundary node IDs
+%              - read_obc_elems: new nested boundary element IDs
+%              - nObs: number of open boundaries (number of levels * number
+%              - nObcNodes: number of nodes in each nested level
+%              of original open boundaries)
+%              - obc_type: the type for each nested boundary
+%              - obc_nodes: the array-based nested boundary node IDs (for
+%              backwards compatibility)
+%              - weight_node: weights for each nested node boundary level
+%              - weight_cell: weights for each nested element boundary level
 %
 % EXAMPLE USAGE:
-%   conf.Nested_type = type of nesting  [1, 2 == direct nesting, 3 == weighted]
+%   conf.Nested_type = type of nesting [1, 2 == direct nesting, 3 == weighted]
 %   conf.levels = number of boundary bands to use for weighted option
-%   conf.power = determines drop of weights from 1 [0 is linear, 1-4 is 1/conf.levels.^conf.power]
+%   conf.power = determines drop of weights from 1 [0 is linear, anything
+%   else is 1/conf.levels.^conf.power]
 %   Mobj.tri = Triangulation table as pupulated by read_sms_grid
 %   Mobj.x = Nodes x coordinate [we should make it possible to use lon instead]
 %   Mobj.y = Nodes y coordinate [we should make it possible to use lat instead]
@@ -61,12 +73,12 @@ function Nested = find_nesting_region(conf, Mobj)
 %   Mobj.yc = Elements y coordinate [we should make it possible to use latc instead]
 %   Mobj.obc_nodes = matrix with node indices. Each row is a boundary  level.
 %   Mobj.nObs = total number of open boundary levels (I think this is set
-%       in setup_metrics.m
+%       in setup_metrics.m).
 %
 %   the global variable ftbverbose shows information at run time as well as
 %   generating a figure with the location of the nesting nodes and elements
 %
-%    Nested = find_nesting_region(conf,Mobj)
+%   Nested = find_nesting_region(conf,Mobj)
 %
 %   Nested.nObcNodes = number of nodes in new nesting zone
 %   Nested.read_obc_nodes = nodes indices in nesting zone
