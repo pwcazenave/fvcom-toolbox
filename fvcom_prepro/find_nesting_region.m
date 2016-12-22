@@ -131,11 +131,6 @@ if ftbverbose
     triplot(Nested.tri, Nested.x, Nested.y)
     axis('equal', 'tight')
     hold on
-    figure(2)
-    clf
-    triplot(Nested.tri, Nested.x, Nested.y)
-    axis('equal', 'tight')
-    hold on
 end
 
 % Indices for the output cell arrays which are incremented for each nest
@@ -181,16 +176,9 @@ for obc_idx = 1:Mobj.nObs
     if ftbverbose
         figure(1)
         scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')
-        % plot(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 'ro')
-        figure(2)
         scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
 
         fprintf('Original open boundary %d\n', obc_idx)
-        fprintf('Nodes %d\n', length(Nested.read_obc_nodes))
-        fprintf('Elements %d\n', length(Nested.read_obc_elems))
-        fprintf('Node weights %d\n', length(Nested.weight_node))
-        fprintf('Element weights %d\n', length(Nested.weight_cell))
-        fprintf('\n')
     end
 
     % Now we have the original open boundary and the elements connected to
@@ -219,24 +207,20 @@ for obc_idx = 1:Mobj.nObs
         if ftbverbose
             figure(1)
             scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')
-            % plot(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 'ro')
             if lev ~= conf.levels(obc_idx)
-                figure(2)
                 scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
             end
 
-            fprintf('Nested open boundary %d\n', lev)
-            fprintf('Nodes %d\n', length(Nested.read_obc_nodes))
-            fprintf('Elements %d\n', length(Nested.read_obc_elems))
-            fprintf('Node weights %d\n', length(Nested.weight_node))
-            fprintf('Element weights %d\n', length(Nested.weight_cell))
-            fprintf('\n')
+            fprintf('Nested level %d\n', lev)
         end
 
         % Bump the node and element cumulative counters so the next loop
         % dumps everything into the right position in the cell arrays.
         cumulative_node_idx = cumulative_node_idx + 1;
         cumulative_elem_idx = cumulative_elem_idx + 1;
+    end
+    if ftbverbose
+        fprintf('\n')
     end
 end
 
@@ -249,14 +233,6 @@ end
 if ftbverbose
     figure(1)
     colorbar
-    title('Node weights')
-    figure(2)
-    colorbar
-    title('Element weights')
-end
-
-if ftbverbose
+    title('Nest weights')
     fprintf('end   : %s \n', subname)
 end
-
-return
