@@ -103,10 +103,7 @@ function Nested = find_nesting_region(conf, Mobj)
 %
 %==========================================================================
 
-
-dump = dbstack;
-subname = dump.name;
-clear dump
+[~, subname] = fileparts(mfilename('fullpath'));
 
 global ftbverbose
 if ftbverbose
