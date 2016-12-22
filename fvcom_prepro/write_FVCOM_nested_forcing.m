@@ -31,6 +31,17 @@ function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 %
 % EXAMPLE USAGE:
 %   nest.time = time [modified julian days (floats)]
+%   nest.lon = node longitudes for the nest region [degrees]
+%   nest.lat = node latitudes for the nest region [degrees]
+%   nest.lonc = element longitudes for the nest region [degrees]
+%   nest.latc = element latitudes for the nest region [degrees]
+%   nest.x = node eastings for the nest region [metres]
+%   nest.y = node northings for the nest region [metres]
+%   nest.xc = element eastings for the nest region [metres]
+%   nest.yc = element northings for the nest region [metres]
+%   nest.h = water depth at nodes [metres]
+%   nest.hc = water depth at elements [metres]
+%   nest.nv = triangulation table
 %   nest.temp = Temperature [degrees celsius]
 %   nest.salinity = Salinity [PSU]
 %   nest.ua = Vertically averaged x velocity [ms^{-1}]
