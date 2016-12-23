@@ -141,8 +141,8 @@ for obc_idx = 1:Mobj.nObs
     % Generate the weights for the elements and nodes.
     if conf.Nested_type(obc_idx) == 3
         if conf.power == 0
-            weights_nodes = nan(1, conf.levels(obc_idx) + 2);
-            weights_elems = nan(1, conf.levels(obc_idx) + 1);
+            weights_nodes = nan(1, conf.levels(obc_idx) + 1);
+            weights_elems = nan(1, conf.levels(obc_idx));
             weights_nodes(1:end - 1) = fliplr((1:conf.levels(obc_idx))./conf.levels(obc_idx));
             weights_nodes(end) = 0;
             weights_elems(1:end - 1) = fliplr((1:conf.levels(obc_idx) - 1)./conf.levels(obc_idx) - 1);
