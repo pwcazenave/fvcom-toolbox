@@ -70,6 +70,11 @@ function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 %   lot more straightforward.
 %   2016-12-20 Save as netCDF4 and add a new variable required for
 %   FVCOM4.0. Also updated the help.
+%   2016-12-22 Add the sigma layer and level data as well as the depth. All
+%   new data are exported on both nodes and elements within the nested
+%   region.
+%   2016-12-23 Compress the time series data to save space. Requires
+%   netCDF4 in FVCOM.
 %
 %==========================================================================
 
@@ -77,7 +82,7 @@ function write_FVCOM_nested_forcing(nest, ncfile, nesttype)
 %
 % lon, lat:     Grid node positions             [node]
 % lonc, latc:   Grid element positions          [nele]
-% hc:           Grid node depths                [node]
+% h:            Grid node depths                [node]
 % hc:           Grid element depth              [nele]
 % nv:           Triangulation table             [nele, 3]
 % zeta:         Sea surface elevation           [node, time]
@@ -114,13 +119,15 @@ end
 % Check we have all the data we need.
 required = {'time', 'x', 'y', 'lon', 'lat', 'xc', 'yc', 'lonc', 'latc', ...
     'nv', 'h', 'hc', 'u', 'v', 'ua', 'va', 'temp', 'salinity', 'hyw', ...
-    'weight_cell', 'weight_node'};
+    'weight_cell', 'weight_node', 'siglay', 'siglayc', 'siglev', 'siglevc'};
 fields = fieldnames(nest);
 for f = required
     if any(strcmpi(f{1}, {'weight_node', 'weight_cell'})) && nesttype == 3
-        assert(any(strcmpi(f, fields)), 'Missing %s struct field', f{1});
+        assert(any(strcmpi(f, fields)), 'Missing %s input struct field', f{1});
     elseif any(strcmpi(f{1}, {'weight_node', 'weight_cell'})) && nesttype ~= 3
         continue
+    else
+        assert(any(strcmpi(f, fields)), 'Missing %s input struct field', f{1});
     end
 end
 
@@ -128,10 +135,12 @@ end
 nsiglev = nsiglay + 1;
 [nodes, ~] = size(nest.zeta);
 
-% Using the bitwise or for the mode didn't work.
-netcdf.setDefaultFormat('FORMAT_NETCDF4');
-mode = netcdf.getConstant('CLOBBER');
-nc = netcdf.create(ncfile, mode);
+% Can't use CLOBBER and NETCDF4 at the same time (the bitwise or didn't
+% work). Fall back to a horrible delete and then create instead.
+if exist(ncfile, 'file')
+    delete(ncfile)
+end
+nc = netcdf.create(ncfile, 'NETCDF4');
 
 % define global attributes
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'type', ...
@@ -190,11 +199,6 @@ xc_varid = netcdf.defVar(nc, 'xc', 'NC_FLOAT', ...
 netcdf.putAtt(nc, xc_varid, 'units', 'meters');
 netcdf.putAtt(nc, xc_varid, 'long_name', 'zonal x-coordinate');
 
-nv_varid = netcdf.defVar(nc, 'nv', 'NC_INT', ...
-    [elem_dimid, three_dimid]);
-netcdf.putAtt(nc, xc_varid, 'units', 'no units');
-netcdf.putAtt(nc, xc_varid, 'long_name', 'elements nodes indices');
-
 yc_varid = netcdf.defVar(nc, 'yc', 'NC_FLOAT', ...
     elem_dimid);
 netcdf.putAtt(nc, yc_varid, 'units', 'meters');
@@ -223,6 +227,11 @@ latc_varid = netcdf.defVar(nc, 'latc', 'NC_FLOAT', ...
 netcdf.putAtt(nc, latc_varid, 'units', 'degrees_north');
 netcdf.putAtt(nc, latc_varid, 'standard_name', 'latitude');
 netcdf.putAtt(nc, latc_varid, 'long_name', 'zonal latitude');
+
+nv_varid = netcdf.defVar(nc, 'nv', 'NC_INT', ...
+    [elem_dimid, three_dimid]);
+netcdf.putAtt(nc, xc_varid, 'units', 'no units');
+netcdf.putAtt(nc, xc_varid, 'long_name', 'elements nodes indices');
 
 zeta_varid = netcdf.defVar(nc, 'zeta', 'NC_FLOAT', ...
     [node_dimid, time_dimid]);
@@ -300,6 +309,62 @@ netcdf.putAtt(nc, hyw_varid, 'grid', 'fvcom_grid');
 netcdf.putAtt(nc, hyw_varid, 'type', 'data');
 netcdf.putAtt(nc, hyw_varid, 'coordinates', 'time siglay lat lon');
 
+siglay_varid = netcdf.defVar(nc, 'siglay', 'NC_FLOAT', ...
+    [node_dimid, siglay_dimid]);
+netcdf.putAtt(nc, siglay_varid, 'long_name', 'Sigma Layers');
+netcdf.putAtt(nc, siglay_varid, 'standard_name', 'ocean_sigma/general_coordinate');
+netcdf.putAtt(nc, siglay_varid, 'positive', 'up');
+netcdf.putAtt(nc, siglay_varid, 'valid_min', '-1.f');
+netcdf.putAtt(nc, siglay_varid, 'valid_max', '0.f');
+netcdf.putAtt(nc, siglay_varid, 'formula_terms', 'sigma: siglay eta: zeta depth: h');
+
+siglayc_varid = netcdf.defVar(nc, 'siglay_center', 'NC_FLOAT', ...
+    [elem_dimid, siglay_dimid]);
+netcdf.putAtt(nc, siglayc_varid, 'long_name', 'Sigma Layers');
+netcdf.putAtt(nc, siglayc_varid, 'standard_name', 'ocean_sigma/general_coordinate');
+netcdf.putAtt(nc, siglayc_varid, 'positive', 'up');
+netcdf.putAtt(nc, siglayc_varid, 'valid_min', '-1.f');
+netcdf.putAtt(nc, siglayc_varid, 'valid_max', '0.f');
+netcdf.putAtt(nc, siglayc_varid, 'formula_terms', 'sigma: siglay_center eta: zeta_center depth: h_center');
+
+siglev_varid = netcdf.defVar(nc, 'siglev', 'NC_FLOAT', ...
+    [node_dimid, siglev_dimid]);
+netcdf.putAtt(nc, siglev_varid, 'long_name', 'Sigma Levels');
+netcdf.putAtt(nc, siglev_varid, 'standard_name', 'ocean_sigma/general_coordinate');
+netcdf.putAtt(nc, siglev_varid, 'positive', 'up');
+netcdf.putAtt(nc, siglev_varid, 'valid_min', '-1.f');
+netcdf.putAtt(nc, siglev_varid, 'valid_max', '0.f');
+netcdf.putAtt(nc, siglev_varid, 'formula_terms', 'sigma:siglev eta: zeta depth: h');
+
+siglevc_varid = netcdf.defVar(nc, 'siglev_center', 'NC_FLOAT', ...
+    [elem_dimid, siglev_dimid]);
+netcdf.putAtt(nc, siglevc_varid, 'long_name', 'Sigma Layers');
+netcdf.putAtt(nc, siglevc_varid, 'standard_name', 'ocean_sigma/general_coordinate');
+netcdf.putAtt(nc, siglevc_varid, 'positive', 'up');
+netcdf.putAtt(nc, siglevc_varid, 'valid_min', '-1.f');
+netcdf.putAtt(nc, siglevc_varid, 'valid_max', '0.f');
+netcdf.putAtt(nc, siglevc_varid, 'formula_terms', 'sigma: siglev_center eta: zeta_center depth: h_center');
+
+h_varid = netcdf.defVar(nc, 'h', 'NC_FLOAT', ...
+    node_dimid);
+netcdf.putAtt(nc, h_varid, 'long_name', 'Bathymetry');
+netcdf.putAtt(nc, h_varid, 'standard_name', 'sea_floor_depth_below_geoid');
+netcdf.putAtt(nc, h_varid, 'units', 'm');
+netcdf.putAtt(nc, h_varid, 'positive', 'down');
+netcdf.putAtt(nc, h_varid, 'grid', 'Bathymetry_mesh');
+netcdf.putAtt(nc, h_varid, 'coordinates', 'x y');
+netcdf.putAtt(nc, h_varid, 'type', 'data');
+
+hc_varid = netcdf.defVar(nc, 'h_center', 'NC_FLOAT', ...
+    elem_dimid);
+netcdf.putAtt(nc, hc_varid, 'long_name', 'Bathymetry');
+netcdf.putAtt(nc, hc_varid, 'standard_name', 'sea_floor_depth_below_geoid');
+netcdf.putAtt(nc, hc_varid, 'units', 'm');
+netcdf.putAtt(nc, hc_varid, 'positive', 'down');
+netcdf.putAtt(nc, hc_varid, 'grid', 'grid1 grid3');
+netcdf.putAtt(nc, hc_varid, 'coordinates', 'latc lonc');
+netcdf.putAtt(nc, hc_varid, 'grid_location', 'center');
+
 if nesttype > 2
     cweights_varid = netcdf.defVar(nc, 'weight_cell', 'NC_FLOAT', ...
     [elem_dimid, time_dimid]);
@@ -317,6 +382,14 @@ if nesttype > 2
     netcdf.putAtt(nc, nweights_varid, 'grid', 'fvcom_grid');
     netcdf.putAtt(nc, nweights_varid, 'type', 'data');
 end
+
+% enable compression on the big variables.
+netcdf.defVarDeflate(nc, zeta_varid, true, true, 7);
+netcdf.defVarDeflate(nc, u_varid, true, true, 7);
+netcdf.defVarDeflate(nc, v_varid, true, true, 7);
+netcdf.defVarDeflate(nc, temp_varid, true, true, 7);
+netcdf.defVarDeflate(nc, salinity_varid, true, true, 7);
+netcdf.defVarDeflate(nc, hyw_varid, true, true, 7);
 
 % end definitions
 netcdf.endDef(nc);
@@ -366,6 +439,12 @@ netcdf.putVar(nc, v_varid, nest.v);
 netcdf.putVar(nc, temp_varid, nest.temp);
 netcdf.putVar(nc, salinity_varid, nest.salinity);
 netcdf.putVar(nc, hyw_varid, nest.hyw);
+netcdf.putVar(nc, siglay_varid, nest.siglay);
+netcdf.putVar(nc, siglayc_varid, nest.siglayc);
+netcdf.putVar(nc, siglev_varid, nest.siglev);
+netcdf.putVar(nc, siglevc_varid, nest.siglevc);
+netcdf.putVar(nc, h_varid, nest.h);
+netcdf.putVar(nc, hc_varid, nest.hc);
 if nesttype > 2
     netcdf.putVar(nc, cweights_varid, nest.weight_cell);
     netcdf.putVar(nc, nweights_varid, nest.weight_node);
