@@ -55,6 +55,7 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 %       with each contributing name separated by a hyphen (-).
 %   Mobj.river_time - Modified Julian Day time series for the river
 %       discharge data.
+%   Mobj.river_nemo_location - river locations (NEMO positions).
 %
 % EXAMPLE USAGE:
 %   Mobj = get_NEMO_rivers(Mobj, 0.15)
@@ -155,13 +156,6 @@ nemo.area = ncread(Mobj.rivers.river_flux, 'dA');
 %   flux from kg/m^{2}/s to m^{3}/s (divide by freshwater density)
 %   dic - no change whatsoever.
 
-% Convert units from grams to millimoles where appropriate.
-nemo.nh4 = (nemo.nh4 / 14) * 1000;
-nemo.no3 = (nemo.no3 / 14) * 1000;
-nemo.o = (nemo.o / 32) * 1000; % 2 x 16 for O2
-nemo.p = (nemo.p / 35.5) * 1000;
-nemo.sio3 = (nemo.sio3 / 28) * 1000;
-
 [~, ~, nt] = size(nemo.flux);
 
 % Flux in NEMO is specified in kg/m^{2}/s. FVCOM wants m^{3}/s. Divide by
@@ -170,6 +164,20 @@ nemo.sio3 = (nemo.sio3 / 28) * 1000;
 nemo.flux = nemo.flux / 1000;
 % Now multiply by the relevant area to (finally!) get to m^{3}/s.
 nemo.flux = nemo.flux .* repmat(nemo.area, 1, 1, nt);
+% Set zero values to a very small number instead.
+tmp = nemo.flux;
+tmp(tmp==0) = 1E-8;
+
+% Convert units from grams to millimoles where appropriate.
+nemo.nh4 = (nemo.nh4 / 14) *1000 ./  tmp; %g/s to mmol/m3
+nemo.no3 = (nemo.no3 / 14) *1000 ./  tmp;%g/s to mmol/m3
+nemo.o = (nemo.o / 16) *1000 ./ tmp; % Nemo oxygen concentrations are for O rather than O2
+nemo.p = (nemo.p / 35.5)*1000 ./ tmp;%g/s to mmol/m3
+nemo.sio3 = (nemo.sio3 / 28) *1000./ tmp;%g/2 to mmol/m3
+nemo.bioalk= nemo.bioalk./ tmp / 1000; % bioalk is in umol/s need umol/kg
+% total alkalinity is already in umol/Kg as expected by ERSEM.
+clear tmp
+
 
 % Now we've got the data, use the flux data to find the indices of the
 % rivers in the arrays and extract those as time series in a format
@@ -270,7 +278,7 @@ tlat = Mobj.lat(coast_nodes);
 
 fv_obc = nan;
 fv_names = cell(0);
-
+fv_location = [nan, nan];
 % Initialise the flow array with a 366 day long time series of nans. This
 % array will be appended to (unless all rivers are outside the domain).
 % Only do this if we're doing climatology (signified by a non-empty year).
@@ -362,6 +370,7 @@ for ff = 1:fv_nr
     % Add it to the list of valid rivers
     fv_obc(vc) = coast_nodes(idx);
     fv_names{vc} = nemo.rivers.names{ff};
+    fv_location(vc, :) = nemo.rivers.positions(ff, :);
 
     % Add the current river data to the relevant arrays.
     for n = 1:length(names)
@@ -395,6 +404,7 @@ fnames = fieldnames(fv);
 % dealing with either climatology or time series data.
 Mobj.river_nodes = fv_obc;
 Mobj.river_names = fv_names';
+Mobj.river_nemo_location = fv_location;
 Mobj.have_rivers = true;
 Mobj.nRivers = length(fv_obc);
 
@@ -440,7 +450,7 @@ for n = 1:length(fnames)
                   fv.(fnames{n})(1:daysinyr(2), :); ...
                   fv.(fnames{n})(1:daysinyr(3), :)];
 end
-
+Mobj.rivers_orig = nemo.rivers;
 if ftbverbose
     fprintf('included %d of %d rivers (skipped %d)\n', ...
         fv_nr - skipped, fv_nr, skipped)

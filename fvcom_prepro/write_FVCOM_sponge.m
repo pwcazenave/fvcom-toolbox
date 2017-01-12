@@ -34,6 +34,7 @@ function write_FVCOM_sponge(Mobj,filename)
 %   2016-04-20 Reconcile the original behaviour (single value at each open
 %   boundary) and the variable values for each node. Also update the help
 %   and general formatting of the code.
+%   2016-09-28 Allow for variable sponge coefficient and radious
 %
 %==============================================================================
 

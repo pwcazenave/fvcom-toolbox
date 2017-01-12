@@ -19,7 +19,9 @@ function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n
 %    n4n        : Ammonia (mmol N/m^3) (dimensions [time, nRivernodes])
 %    n5s        : Silicate (mmol Si/m^3) (dimensions [time, nRivernodes])
 %    dic        : Dissolved inorganic carbon (mmol C/m^3) (dimensions [time, nRivernodes])
-%    alkalinity : Alkalinity (umol C/m^3) (dimensions [time, nRivernodes])
+%    O2        : Dissolved Oxygen (mmol O_2/m^3) (dimensions [time, nRivernodes])
+%    bioalk        : Bio_alkalinity compartment carbon (mmol C/m^3) (dimensions [time, nRivernodes])
+%    Total_alk : Total Alkalinity (umol C/m^3) (dimensions [time, nRivernodes])
 %    RiverInfo1 : Global attribute title of file
 %    RiverInfo2 : Global attribute info of file
 %
@@ -40,6 +42,7 @@ function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n
 % Revision history
 %   2016-03-14 New version to export nutrients alongside the physical
 %   parameters for FVCOM-ERSEM. Based on write_FVCOM_river.
+%   2017-01-12 Add missing ERSEM variables (oxygen and alkalinity).
 %
 %==========================================================================
 
@@ -132,13 +135,22 @@ river_n5s_varid = netcdf.defVar(nc, 'N5_s', 'NC_FLOAT', [rivers_dimid, time_dimi
 netcdf.putAtt(nc, river_n5s_varid, 'long_name', 'silicate silicate');
 netcdf.putAtt(nc, river_n5s_varid, 'units', 'mmol Si/m^3');
 
+river_O2_varid = netcdf.defVar(nc, 'O2_o', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_O2_varid, 'long_name', 'dissolved Oxygen');
+netcdf.putAtt(nc, river_O2_varid, 'units', 'mmol O_2/m^3');
+
+river_TA_varid = netcdf.defVar(nc, 'O3_TA', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_TA_varid, 'long_name', 'carbonate total alkalinity');
+netcdf.putAtt(nc, river_TA_varid, 'units', 'mmol C/m^3');
+
+
 river_dic_varid = netcdf.defVar(nc, 'O3_c', 'NC_FLOAT', [rivers_dimid, time_dimid]);
 netcdf.putAtt(nc, river_dic_varid, 'long_name', 'carbonate total dissolved inorganic carbon');
 netcdf.putAtt(nc, river_dic_varid, 'units', 'mmol C/m^3');
 
-river_alk_varid = netcdf.defVar(nc, 'O3_bioalk', 'NC_FLOAT', [rivers_dimid, time_dimid]);
-netcdf.putAtt(nc, river_alk_varid, 'long_name', 'carbonate bioalkalinity');
-netcdf.putAtt(nc, river_alk_varid, 'units', 'umol/kg');
+river_bioalk_varid = netcdf.defVar(nc, 'O3_bioalk', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_bioalk_varid, 'long_name', 'carbonate bioalkalinity');
+netcdf.putAtt(nc, river_bioalk_varid, 'units', 'umol/kg');
 
 % end definitions
 netcdf.endDef(nc);
@@ -163,7 +175,9 @@ netcdf.putVar(nc, river_n3n_varid, n3n');
 netcdf.putVar(nc, river_n4n_varid, n4n');
 netcdf.putVar(nc, river_n5s_varid, n5s');
 netcdf.putVar(nc, river_dic_varid, dic');
-netcdf.putVar(nc, river_alk_varid, alkalinity');
+netcdf.putVar(nc, river_O2_varid, o2');
+netcdf.putVar(nc, river_TA_varid, alkalinity');
+netcdf.putVar(nc, river_bioalk_varid,bioalk');
 % build the time string and output to netCDF.
 nStringOut = char();
 [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(time);

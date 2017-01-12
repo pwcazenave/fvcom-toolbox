@@ -88,6 +88,9 @@ end
 % Use the existing rectangular arrays for the nearest point lookup.
 [lon, lat] = deal(hycom.lon, hycom.lat);
 
+% calcualte resolution of parent coarse model
+hdx = max([max(diff(lon(:,1))),max(diff(lat(1,:)))]);
+
 % Number of sigma layers.
 fz = size(Mobj.siglayz, 2);
 
@@ -250,10 +253,11 @@ for v = 1:length(fields)
 
                 % If the minimum distance away is greater than three times
                 % the HYCOM grid resolution, skip this point at this
-                % vertical level.
-                %if min(dist) > 3 * hdx
-                %    continue
-                %end
+                % vertical level. If this is not done, we can be grabbing
+                % data from a significant distance away
+                if min(dist) > 3 * hdx
+                    continue
+                end
 
                 % Get the variables into static variables for the
                 % parallelisation.
@@ -287,7 +291,7 @@ for v = 1:length(fields)
                     itempobc(i) = mean(ptemp);
                 else
                     try
-                        tritemp = TriScatteredInterp(plon, plat, ptemp, 'natural');
+                        tritemp = scatteredInterpolant(plon, plat, ptemp, 'natural', 'none');
                         itempobc(i) = tritemp(fx, fy);
                     catch err
                         if strcmp(err.identifier, 'MATLAB:subsassignnumelmismatch')
@@ -429,6 +433,16 @@ for v = 1:length(fields)
             end
         end
 
+        % Find and remove NaNs.
+        parfor pp=1:fz
+            test = fvtempz(:,pp);
+            if any(isnan(test))
+                igood = ~isnan(test);
+                ftri = scatteredInterpolant(fvlon(igood), fvlat(igood), test(igood), 'nearest', 'nearest');
+                fvtempz(:, pp) = ftri(fvlon,fvlat);
+            end
+        end
+
         % The horizontally- and vertically-interpolated values in the final
         % FVCOM results array.
         fvtemp(:, :, t) = fvtempz;
@@ -439,7 +453,7 @@ for v = 1:length(fields)
     end
     % Dump the data into a temporary structure.
     fvcom.(fields{v}) = fvtemp;
-end
+end % loop through variables
 if ftbverbose
     toc
 end

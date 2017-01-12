@@ -52,7 +52,7 @@ figure(plotOPTS.figure);clf
 % generate figure with correct projection lat and lon range ellipsoid and
 % zone.
 axesm('mercator','MapLatLimit',plotOPTS.range_lat,'MapLonLimit',[plotOPTS.range_lon],'MeridianLabel','on',...
-    'ParallelLabel','on','MLineLocation',[0.1],'PLineLocation',[0.1],'LabelUnits','dm')
+    'ParallelLabel','on','MLineLocation',[1],'PLineLocation',[1],'LabelUnits','dm')
 
 
 % add coastline if present
