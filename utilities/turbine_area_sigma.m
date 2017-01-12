@@ -2,18 +2,22 @@
 %
 % Example Usage:
 %
-% sigma_frac = turbine_area_sigma(H, Ht, r, plot_fig)
+% sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig)
 %
 % Input Parameters:     H  - mean sea level (m)
 %                       Ht - height of turbine hub above seabed (m)
 %                       r  - turbine rotor radius (m)
+%                       sigLay - number of sigma layers (not levels) in the model
 %                       plot_fig - flag to plot a figure (optional)
 %
 % Rory O'Hara Murray, 19-Nov-2014
 %
-function sigma_frac = turbine_area_sigma(H, Ht, r, plot_fig)
+function sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig)
 
-if nargin<4
+assert(nargin >= 4, 'Not enough arguments.');
+assert(isnumeric(sigLay) && sigLay - fix(sigLay) < eps, 'sigLay (4th parameter) must be an integer number of sigma layers.');
+
+if nargin<5
     plot_fig = false;
 end
 
@@ -23,8 +27,8 @@ depth = H + elev;
 
 dT = depth - Ht; % turbine hub depth
 
-sigLev = 11;
-sigLay = sigLev-1;
+assert(dT>r, 'Turbine will stick out of water');
+
 dLay = depth./sigLay;
 zLev = [0:-dLay:-depth]';
 
