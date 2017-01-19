@@ -127,7 +127,7 @@ end
 
 % Generate names for the variables we're going to use. These may not all be
 % used if you are not running ERSEM, but we build them in case.
-evars = {'flux', 'temp', 'salt', 'nh4', 'no3', 'o', 'p', 'sio3', 'dic', 'bioalk'};
+evars = {'flux', 'temp', 'salt', 'nh4', 'no3', 'o', 'p', 'sio3', 'dic', 'bioalk','alt'};
 enames = cell(length(evars));
 fnames = cell(length(evars));
 for e = 1:length(evars)

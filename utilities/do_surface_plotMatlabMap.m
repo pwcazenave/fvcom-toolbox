@@ -51,8 +51,19 @@ function [Plots]=do_surface_plotMatlabMap(plotOPTS,FVCOM)
 figure(plotOPTS.figure);clf
 % generate figure with correct projection lat and lon range ellipsoid and
 % zone.
+if isfield(plotOPTS,'Lontick')
+    MerTick = plotOPTS.Lontick;
+else
+    MerTick = 0.5;
+end
+if isfield(plotOPTS,'Lattick')
+    ParTick = plotOPTS.Lattick;
+else
+    ParTick = 0.5;
+end
+
 axesm('mercator','MapLatLimit',plotOPTS.range_lat,'MapLonLimit',[plotOPTS.range_lon],'MeridianLabel','on',...
-    'ParallelLabel','on','MLineLocation',[0.1],'PLineLocation',[0.1],'LabelUnits','dm')
+    'ParallelLabel','on','MLineLocation',MerTick,'PLineLocation',ParTick,'LabelUnits','dm')
 
 
 % add coastline if present

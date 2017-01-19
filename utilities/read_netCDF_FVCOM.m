@@ -164,13 +164,10 @@ file_netcdf=fullfile(netfile_dir, file_netcdf);
 filesINdir=dir(file_netcdf);
 file_netcdf= fullfile(netfile_dir,filesINdir(1).name);
 nc = netcdf.open(file_netcdf, 'NC_NOWRITE');
+[PATHSTR,NAME,EXT] = fileparts(file_netcdf)
+
 if ftbverbose
-    if length(file_netcdf) > 50
-        % Truncate output file name to display.
-        fprintf('NetCDF file ...%s opened successfully.\n', file_netcdf(end-70:end))
-    else
-        fprintf('NetCDF file %s opened successfully.\n', file_netcdf)
-    end
+        fprintf('NetCDF file %s opened successfully.\n', NAME)
 end
 % Get information from netcdf file
 info=ncinfo(file_netcdf);
@@ -204,8 +201,8 @@ try
 
     start_date=sum(start_d.*[1 1/(24*60*60*1000)]);     %hkj missing 1000 inserted
     end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       %hkj missing 1000 inserted
-    var_time =  netcdf.getVar(nc,Itime.ID,[0],[10],'double')+time_offset+...
-        netcdf.getVar(nc,Itime.ID+1,0,10,'double')./(24*600*6000) ;
+    var_time =  netcdf.getVar(nc,Itime.ID,[0],[min(last_entry,10)],'double')+time_offset+...
+        netcdf.getVar(nc,Itime.ID+1,0,min(last_entry,10),'double')./(24*600*6000) ;
 
     DeltaT=median(diff(var_time));
     var_time = start_date:DeltaT:(end_date-DeltaT);

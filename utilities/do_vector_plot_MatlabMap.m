@@ -51,7 +51,7 @@ figure(plotOPTS.figure);
 % zone.
 
 axesm('mercator','MapLatLimit',plotOPTS.range_lat,'MapLonLimit',[plotOPTS.range_lon],'MeridianLabel','on',...
-    'ParallelLabel','on','MLineLocation',[0.1],'PLineLocation',[0.1],'LabelUnits','dm')
+    'ParallelLabel','on','MLineLocation',[.5],'PLineLocation',[.5],'LabelUnits','dm')
 
 
 % add coastline if present

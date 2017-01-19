@@ -86,7 +86,7 @@ end
 if(ftbverbose); fprintf('minimum time step: %f seconds\n',min(ts)); end;
 Mobj.ts = ts;
 Mobj.have_ts = true;
-
+Mobj.lside=lside;
 if(ftbverbose)
     fprintf(['end   : ' subname '\n'])
 end
