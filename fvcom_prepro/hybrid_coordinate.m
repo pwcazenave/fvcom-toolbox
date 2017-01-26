@@ -68,10 +68,10 @@ if ftbverbose
 end
 
 % Limits on the optimisation run.
-optimisation_settings = optimset('MaxFunEvals', 5000, ...
-    'MaxIter', 5000, ...
-    'TolFun', 10e-5, ...
-    'TolX', 1e-7);
+optimisation_settings = optimset('MaxFunEvals', 15000, ...
+    'MaxIter', 15000, ...
+    'TolFun', 10e-8, ...
+    'TolX', 1e-9);
 
 % Extract the relevant information from the conf struct.
 nlev = conf.nlev;
@@ -88,9 +88,9 @@ end
 ZKU = repmat(DU./KU, 1, KU);
 ZKL = repmat(DL./KL, 1, KL);
 fparams = @(H)hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL);
-[Hmin, ~] = fminsearch(fparams, H0, optimisation_settings);
-
+[Hmin, minError] = fminsearch(fparams, H0, optimisation_settings);
 if ftbverbose
+    fprintf('Hmin found %f with a max error in Vertical distribution of %f metres, \n',Hmin,minError)
     fprintf('done.\n')
     fprintf('Saving to %s... ', conf.sigma_file)
 end
@@ -112,7 +112,7 @@ for ii = 1:length(ZKU)
 end
 fprintf(fout, '\n');
 fprintf(fout, 'ZKL = ');
-for ii = 1:length(ZKU)
+for ii = 1:length(ZKL)
     fprintf(fout, '%4.1f', ZKL(ii));
 end
 fprintf(fout,'\n');
@@ -122,6 +122,11 @@ if ftbverbose
     fprintf('done.\n')
     fprintf('Populating Mobj... ')
 end
+
+
+Mobj.siglev=zeros(Mobj.nVerts,nlev);
+Mobj.siglevc = zeros(Mobj.nElems,nlev);
+Mobj.siglayc = zeros(Mobj.nElems,nlev-1);
 
 % Create the arrays of the layer and level sigma coordinates.
 for xx = 1:length(Mobj.h)
@@ -177,10 +182,10 @@ function ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)
 % Author(s):
 %   Ricard Torres (Plymouth Marine Laboratory)
 
-if DU + DL > 1.25 * H;
-    disp('Depth too shallow for the chosen DU and DL values')
-    return
-end
+% if DU + DL > 1.25 * H;
+%     error('Depth %f too shallow for the chosen DU %f and DL %f values',H,DU,DL)
+%     
+% end
 
 Z0 = zeros(nlev, 1);
 Z2 = Z0;
@@ -219,7 +224,8 @@ for K = nlev - KL + 1:nlev
     KK = KK + 1;
     Z2(K, 1) = Z2(K - 1, 1) - (ZKL(KK) ./ H);
 end
-ZZ = max(diff(Z0) - diff(Z2));
+ZZ = max(H*(Z0) - H*(Z2));
+% ZZ = max(abs(diff(H*(Z0)) - diff(H*(Z2))));
 
 return
 
@@ -227,18 +233,19 @@ function debug_mode()
 % Test with made up data. This isn't actually used at all, but it's handy
 % to leave around for debugging things.
 
-Hmin=50;
+% Hmin=50;
 Hmax=Hmin + 200;
 y = 0:0.1:100;
-B = 100;
+B = 70;
 H = Hmax .* exp(-((y./B-0.15).^2./0.5.^2));
+% H = [Hmin,H]; H=sort(H);
 nlev = conf.nlev;
-
+Z2=[];
 % Loop through all nodes to create sigma coordinates.
 for xx=1:length(H)
     Z2(xx, :) = sigma_gen(nlev, DL, DU, KL, KU, ZKL, ZKU, H(xx), Hmin);
 end
 
-plot(Z2 .* repmat(H', 1, nlev))
+plot(y,Z2 .* repmat(H', 1, nlev))
 fprintf('Calculated minimum depth: %.2f\n', Hmin)
 

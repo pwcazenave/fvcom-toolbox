@@ -166,6 +166,8 @@ warning(['Chopping levels from nesting file. Assuming unique weight values for',
 % remove nodes and cells from each variable
 nodeid = netcdf.inqDimID(nc2read,'node');
 neleid = netcdf.inqDimID(nc2read,'nele');
+dropidxnode = nest.weight_node(:,1)<min(levels2keepN);
+dropidxele = nest.weight_cell(:,1)<min(levels2keepC);
 for f = required
         varid = netcdf.inqVarID(nc2read,f{1});
         [name,xtype,dimids,natts] = netcdf.inqVar(nc2read,varid); 
@@ -173,22 +175,22 @@ for f = required
         if any(dimids==nodeid)
             switch ndims (nest.(f{1}))
                 case 1
-            nest.(f{1})(nest.weight_node(:,1)<=min(levels2keepN))=[];
+            nest.(f{1})(dropidxnode)=[];
                 case 2
-            nest.(f{1})(nest.weight_node(:,1)<=min(levels2keepN),:)=[];
+            nest.(f{1})(dropidxnode,:)=[];
                     
                 case 3
-            nest.(f{1})(nest.weight_node(:,1)<=min(levels2keepN),:,:)=[];
+            nest.(f{1})(dropidxnode,:,:)=[];
             end
         elseif any(dimids==neleid)
             switch ndims (nest.(f{1}))
                 case 1
-            nest.(f{1})(nest.weight_cell(:,1)<=min(levels2keepC))=[];
+            nest.(f{1})(dropidxele)=[];
                 case 2
-            nest.(f{1})(nest.weight_cell(:,1)<=min(levels2keepC),:)=[];
+            nest.(f{1})(dropidxele,:)=[];
                     
                 case 3
-            nest.(f{1})(nest.weight_cell(:,1)<=min(levels2keepC),:,:)=[];
+            nest.(f{1})(dropidxele,:,:)=[];
             end
             
         end
@@ -199,6 +201,9 @@ end
 if exist(ncfile, 'file')
     delete(ncfile)
 end
+[elems, nsiglay, ntimes] = size(nest.u);
+nsiglev = nsiglay + 1;
+[nodes, ~] = size(nest.zeta);
 
 % output the new nesting file
 nc = netcdf.create(ncfile, 'NETCDF4');
@@ -501,11 +506,11 @@ netcdf.putVar(nc, temp_varid, nest.temp);
 netcdf.putVar(nc, salinity_varid, nest.salinity);
 netcdf.putVar(nc, hyw_varid, nest.hyw);
 netcdf.putVar(nc, siglay_varid, nest.siglay);
-netcdf.putVar(nc, siglayc_varid, nest.siglayc);
+netcdf.putVar(nc, siglayc_varid, nest.siglay_center);
 netcdf.putVar(nc, siglev_varid, nest.siglev);
-netcdf.putVar(nc, siglevc_varid, nest.siglevc);
+netcdf.putVar(nc, siglevc_varid, nest.siglev_center);
 netcdf.putVar(nc, h_varid, nest.h);
-netcdf.putVar(nc, hc_varid, nest.hc);
+netcdf.putVar(nc, hc_varid, nest.h_center);
 if nesttype > 2
     netcdf.putVar(nc, cweights_varid, nest.weight_cell);
     netcdf.putVar(nc, nweights_varid, nest.weight_node);

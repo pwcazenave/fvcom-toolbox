@@ -192,9 +192,9 @@ try
     Itime.idx=find(strcmpi(vars,'Itime'));
     Itime.ID=netcdf.inqVarID(nc,'Itime');
     Itime.Data(1)  = netcdf.getVar(nc,Itime.ID,0,1,'int32');
-    Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-1,1,'int32');
+    Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-2,1,'int32');
     Itime2.Data(1)  = netcdf.getVar(nc,Itime.ID+1,0,1,'int32');
-    Itime2.Data(2)  = netcdf.getVar(nc,Itime.ID+1,last_entry-1,1,'int32');
+    Itime2.Data(2)  = netcdf.getVar(nc,Itime.ID+1,last_entry-2,1,'int32');
 
     [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);
     [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
