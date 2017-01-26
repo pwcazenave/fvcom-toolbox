@@ -69,6 +69,10 @@ function data = get_HYCOM_forcing(Mobj, modelTime, varargin)
 %   2016-01-04 Add support for the three hourly output data for the 19.0
 %   and 19.1 experiments.
 %   2016-07-06 Add new data sets from the HYCOM server (post-2014).
+%   2017-01-26 Use ncread to download the data to automatically apply the
+%   scale and offset values from the server data. At some point (either in
+%   HYCOM's server upgrades or MATLAB updates), values being returned for
+%   2005 were raw values (not scaled and offset), which is obviously wrong.
 %
 %==========================================================================
 
@@ -403,16 +407,6 @@ for aa = 1:length(fields)
             elseif times(tt) >= greg2mjulian(2008, 09, 19, 0, 0, 0)
                 hycom.(fields{aa}) = [url, suffix.(fields{aa}){2}];
             end
-            % Close any existing open connections and reopen with
-            % the new URL.
-            netcdf.close(ncid)
-            ncid = netcdf.open(hycom.(fields{aa}));
-            try
-                varid = netcdf.inqVarID(ncid, suffix.(fields{aa}){1});
-            catch
-                varid = netcdf.inqVarID(ncid, suffix.(fields{aa}){2});
-            end
-
             c = c + 1;
         end
 
@@ -424,12 +418,12 @@ for aa = 1:length(fields)
             % netCDF starts at zero, hence -1.
             start = [xrange(1), yrange(1), ts] - 1;
             count = [nx, ny, 1];
-            data.(fields{aa}).data(:, :, tt) = netcdf.getVar(ncid, varid, start, count, 'double');
+            data.(fields{aa}).data(:, :, tt) = ncread(url, suffix.(fields{aa}){name_index}, start + 1, count);
         else
             % netCDF starts at zero, hence -1.
             start = [xrange(1), yrange(1), 1, ts] - 1;
             count = [nx, ny, nz, 1];
-            data.(fields{aa}).data(:, :, :, tt) = netcdf.getVar(ncid, varid, start, count, 'double');
+            data.(fields{aa}).data(:, :, :, tt) = ncread(url, suffix.(fields{aa}){name_index}, start + 1, count);
         end
 
         % Build an array of the HYCOM times. Only do so once so

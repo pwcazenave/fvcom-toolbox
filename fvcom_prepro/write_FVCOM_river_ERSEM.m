@@ -19,9 +19,9 @@ function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n
 %    n4n        : Ammonia (mmol N/m^3) (dimensions [time, nRivernodes])
 %    n5s        : Silicate (mmol Si/m^3) (dimensions [time, nRivernodes])
 %    dic        : Dissolved inorganic carbon (mmol C/m^3) (dimensions [time, nRivernodes])
-%    O2        : Dissolved Oxygen (mmol O_2/m^3) (dimensions [time, nRivernodes])
-%    bioalk        : Bio_alkalinity compartment carbon (mmol C/m^3) (dimensions [time, nRivernodes])
-%    Total_alk : Total Alkalinity (umol C/m^3) (dimensions [time, nRivernodes])
+%    o2         : Dissolved Oxygen (mmol O_2/m^3) (dimensions [time, nRivernodes])
+%    bioalk     : Bio_alkalinity compartment carbon (mmol C/m^3) (dimensions [time, nRivernodes])
+%    Total_alk  : Total Alkalinity (umol C/m^3) (dimensions [time, nRivernodes])
 %    RiverInfo1 : Global attribute title of file
 %    RiverInfo2 : Global attribute info of file
 %
@@ -42,6 +42,7 @@ function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n
 % Revision history
 %   2016-03-14 New version to export nutrients alongside the physical
 %   parameters for FVCOM-ERSEM. Based on write_FVCOM_river.
+%   2017-01-12 Add missing ERSEM variables (oxygen and alkalinity).
 %
 %==========================================================================
 

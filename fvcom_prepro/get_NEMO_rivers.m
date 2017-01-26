@@ -55,6 +55,7 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 %       with each contributing name separated by a hyphen (-).
 %   Mobj.river_time - Modified Julian Day time series for the river
 %       discharge data.
+%   Mobj.river_nemo_location - river locations (NEMO positions).
 %
 % EXAMPLE USAGE:
 %   Mobj = get_NEMO_rivers(Mobj, 0.15)
@@ -163,9 +164,9 @@ nemo.area = ncread(Mobj.rivers.river_flux, 'dA');
 nemo.flux = nemo.flux / 1000;
 % Now multiply by the relevant area to (finally!) get to m^{3}/s.
 nemo.flux = nemo.flux .* repmat(nemo.area, 1, 1, nt);
-% set zero values to a very small number
-tmp= nemo.flux;
-tmp(tmp==0)=1E-8;
+% Set zero values to a very small number instead.
+tmp = nemo.flux;
+tmp(tmp==0) = 1E-8;
 
 % Convert units from grams to millimoles where appropriate.
 nemo.nh4 = (nemo.nh4 / 14) *1000 ./  tmp; %g/s to mmol/m3
@@ -277,7 +278,7 @@ tlat = Mobj.lat(coast_nodes);
 
 fv_obc = nan;
 fv_names = cell(0);
-fv_location= [nan nan];
+fv_location = [nan, nan];
 % Initialise the flow array with a 366 day long time series of nans. This
 % array will be appended to (unless all rivers are outside the domain).
 % Only do this if we're doing climatology (signified by a non-empty year).
@@ -369,7 +370,7 @@ for ff = 1:fv_nr
     % Add it to the list of valid rivers
     fv_obc(vc) = coast_nodes(idx);
     fv_names{vc} = nemo.rivers.names{ff};
-    fv_location(vc,:) = nemo.rivers.positions(ff,:);
+    fv_location(vc, :) = nemo.rivers.positions(ff, :);
 
     % Add the current river data to the relevant arrays.
     for n = 1:length(names)
