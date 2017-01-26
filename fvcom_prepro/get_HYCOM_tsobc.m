@@ -242,7 +242,7 @@ for v = 1:length(fields)
                 fx = fvlon(i);
                 fy = fvlat(i);
 
-                [~, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
+                [dist, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
                 % Get the n nearest nodes from HYCOM data (more? fewer?).
                 np = 16;
                 if length(ii) < np
