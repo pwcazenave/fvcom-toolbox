@@ -58,6 +58,8 @@ function Mobj = hybrid_coordinate(conf, Mobj)
 %   2016-08-10 Updated the minimisation function to use the maximum of the
 %   difference between the two sets of vertical distributions rather than
 %   the median difference. Also tidy up the debug function.
+%   2017-01-26 Fix the transition depth optimisation and report the maximum
+%   difference between the two sigma level regions.
 %
 %==========================================================================
 
@@ -123,8 +125,7 @@ if ftbverbose
     fprintf('Populating Mobj... ')
 end
 
-
-Mobj.siglev=zeros(Mobj.nVerts,nlev);
+Mobj.siglev = zeros(Mobj.nVerts,nlev);
 Mobj.siglevc = zeros(Mobj.nElems,nlev);
 Mobj.siglayc = zeros(Mobj.nElems,nlev-1);
 
