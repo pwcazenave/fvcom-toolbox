@@ -177,7 +177,7 @@ function ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)
 % Author(s):
 %   Ricard Torres (Plymouth Marine Laboratory)
 
-if DU + DL > 1.25 * H;
+if DU + DL > 1.25 * H
     disp('Depth too shallow for the chosen DU and DL values')
     return
 end
