@@ -1,4 +1,4 @@
-function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n,n4n,n5s,dic,alkalinity,RiverInfo1,RiverInfo2)
+function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n,n4n,n5s,dic,o2,bioalk,alkalinity,RiverInfo1,RiverInfo2)
 % Write FVCOM 3.x netCDF river file
 %
 % function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n,n4n,n5s,dic,alkalinity,RiverInfo1,RiverInfo2)
@@ -19,9 +19,9 @@ function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n
 %    n4n        : Ammonia (mmol N/m^3) (dimensions [time, nRivernodes])
 %    n5s        : Silicate (mmol Si/m^3) (dimensions [time, nRivernodes])
 %    dic        : Dissolved inorganic carbon (mmol C/m^3) (dimensions [time, nRivernodes])
-%    O2        : Dissolved Oxygen (mmol O_2/m^3) (dimensions [time, nRivernodes])
-%    bioalk        : Bio_alkalinity compartment carbon (mmol C/m^3) (dimensions [time, nRivernodes])
-%    Total_alk : Total Alkalinity (umol C/m^3) (dimensions [time, nRivernodes])
+%    o2         : Dissolved Oxygen (mmol O_2/m^3) (dimensions [time, nRivernodes])
+%    bioalk     : Bio_alkalinity compartment carbon (mmol C/m^3) (dimensions [time, nRivernodes])
+%    Total_alk  : Total Alkalinity (umol C/m^3) (dimensions [time, nRivernodes])
 %    RiverInfo1 : Global attribute title of file
 %    RiverInfo2 : Global attribute info of file
 %
