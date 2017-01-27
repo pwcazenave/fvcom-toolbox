@@ -93,7 +93,6 @@ fparams = @(H)hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL);
 [Hmin, minError] = fminsearch(fparams, H0, optimisation_settings);
 if ftbverbose
     fprintf('Hmin found %f with a max error in Vertical distribution of %f metres, \n',Hmin,minError)
-    fprintf('done.\n')
     fprintf('Saving to %s... ', conf.sigma_file)
 end
 
