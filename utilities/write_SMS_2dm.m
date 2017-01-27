@@ -1,4 +1,4 @@
-function write_SMS_2dm(file, tri, x, y, bnd)
+function write_SMS_2dm(file, tri, x, y, z, bnd)
 % Output an SMS 2dm ASCII file from the triangulation given by tri, x and
 % y.
 %
@@ -12,6 +12,7 @@ function write_SMS_2dm(file, tri, x, y, bnd)
 %   file - file name to save to.
 %   tri  - triangulation matrix of the nodes in x and y.
 %   x, y - coordinate pairs for the unstructured grid.
+%   z    - array of matching length with x and y of depth values.
 %   bnd  - [optional] cell array of open boundary node ids to create node
 %          strings in SMS.
 % 
@@ -26,6 +27,7 @@ function write_SMS_2dm(file, tri, x, y, bnd)
 % 
 % Revision history:
 %   2013-03-11 First version.
+%   2017-01-27 Change the arguments to use a z value too.
 % 
 %==========================================================================
 
@@ -59,12 +61,12 @@ end
 
 % Add the list of nodes
 for n = 1:nn
-    fprintf(f, 'ND %i %.8e %.8e %.8e\n', n, x(n), y(n), 0);
+    fprintf(f, 'ND %i %.8e %.8e %.8e\n', n, x(n), y(n), z(n));
 end
 
 % Check we've got some open boundaries and create the relevant node string
 % output.
-if nargin == 5
+if nargin == 6
     for b = 1:length(bnd)
         c = 0; % counter for the weird nodestring format.
 
@@ -85,7 +87,7 @@ if nargin == 5
                 fprintf(f, 'NS %i ', node_id);
             elseif c > 0 && c < 10
                 fprintf(f, '%i ', node_id);
-            elseif c >= 10 || ns == length(nodestring);
+            elseif c >= 10 || ns == length(nodestring)
                 fprintf(f, '%i\n', node_id);
                 c = 0;
             end
