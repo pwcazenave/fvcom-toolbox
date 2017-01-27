@@ -48,6 +48,8 @@ function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)
 %    2016-03-15 Add fallback interpolation to inverse distance weighted if
 %    the triangular interpolation fails (which can happen if the points
 %    supplied are all in a line, for example).
+%    2017-01-27 Subset the coarse data (HYCOM, CMEMS etc.). This yields a
+%    significant performance improvement (both in memory usage and time).
 %
 %==========================================================================
 
@@ -88,7 +90,22 @@ end
 % Use the existing rectangular arrays for the nearest point lookup.
 [lon, lat] = deal(hycom.lon, hycom.lat);
 
-% calcualte resolution of parent coarse model
+% Find the indices of the coverage (padding by 1 either way) for the model
+% domain within the HYCOM data.
+xidx = nan(2, 1);
+yidx = nan(2, 1);
+[~, xidx(1)] = min(abs(lon(:) - min(Mobj.lon([Mobj.read_obc_nodes{:}]))));
+[xidx(1), ~] = ind2sub(size(lon), xidx(1));
+[~, xidx(2)] = min(abs(lon(:) - max(Mobj.lon([Mobj.read_obc_nodes{:}]))));
+[xidx(2), ~] = ind2sub(size(lon), xidx(2));
+[~, yidx(1)] = min(abs(lat(:) - min(Mobj.lat([Mobj.read_obc_nodes{:}]))));
+[~, yidx(1)] = ind2sub(size(lat), yidx(1));
+[~, yidx(2)] = min(abs(lat(:) - max(Mobj.lat([Mobj.read_obc_nodes{:}]))));
+[~, yidx(2)] = ind2sub(size(lat), yidx(2));
+xidx = xidx + [-1, 1]';
+yidx = yidx + [-1, 1]';
+
+% Calculate resolution of parent coarse model
 hdx = max([max(diff(lon(:,1))),max(diff(lat(1,:)))]);
 
 % Number of sigma layers.
@@ -105,6 +122,13 @@ mask = hycom.(fields{ff}).data(:, :, :, 1) > 1.26e29;
 % removal.
 % hdepth(mask) = nan;
 % landmask = hycom.(fields{ff}).data(:, :, 1, 1) > 1.26e29;
+
+% Ignore depth layers in the HYCOM data which are below the maximum depth
+% of the open boundary nodes so we don't waste time trying to interpolate
+% those data. Add a buffer of one layer in case I'm an idiot.
+max_obc_depth = max([max(Mobj.h([Mobj.read_obc_nodes{:}])), max(Mobj.hc([Mobj.read_obc_elems{:}]))]);
+[~, zidx] = min(abs(hycom.Depth.data - max_obc_depth));
+zidx = zidx + 1;
 
 if ftbverbose
     tic
@@ -151,8 +175,13 @@ for v = 1:length(fields)
         if ftbverbose
             fprintf('%s : %i of %i %s timesteps... \n', subname, t, nt, fields{v})
         end
-        % Get the current 3D array of HYCOM results.
-        pctemp3 = hycom.(fields{v}).data(:, :, :, t);
+        % Get the current 3D array of HYCOM results. Only load the data we
+        % need in both the vertical and horizontal (i.e. clip to a box
+        % which covers the model domain.
+        pctemp3 = hycom.(fields{v}).data(xidx(1):xidx(2), yidx(1):yidx(2), 1:zidx, t);
+        % pcolor(lon(xidx(1):xidx(2), yidx(1):yidx(2)), lat(xidx(1):xidx(2), yidx(1):yidx(2)), pctemp3(:, :, 1)); shading flat; axis('equal', 'tight'); colorbar
+        % hold on
+        % plot(fvlon, fvlat, 'ro')
         % Remove NaNs since we've assumed later on that everything above
         % some value is NaN instead (currently 1.26e29). Make the value
         % that we replace the NaNs with larger since we check for larger
@@ -163,14 +192,29 @@ for v = 1:length(fields)
         itempz = nan(nf, nz);
 
         for j = 1:nz
+            if j == zidx + 1
+                if ftbverbose
+                    fprintf('   skipping remaining coarse data layers (%d) as their depths are below the FVCOM open boundary depths)\n', nz - zidx - 1)
+                end
+                continue
+            elseif j > zidx
+                continue
+            else
+                if ftbverbose
+                    fprintf('   coarse data layer %d of %d\n', j, nz)
+                end
+            end
+
             % Now extract the relevant layer from the 3D subsets.
             pctemp2 = pctemp3(:, :, j);
 
             % Create new arrays which will be flattened when masking
             % (below).
             tpctemp2 = pctemp2(:);
-            tlon = lon(:);
-            tlat = lat(:);
+            tlon = lon(xidx(1):xidx(2), yidx(1):yidx(2));
+            tlat = lat(xidx(1):xidx(2), yidx(1):yidx(2));
+            tlon = tlon(:);
+            tlat = tlat(:);
 
             % Create and apply a mask to remove values outside the domain.
             % This inevitably flattens the arrays, but it shouldn't be a
@@ -232,10 +276,6 @@ for v = 1:length(fields)
 
             % Preallocate the intermediate results array.
             itempobc = nan(nf, 1);
-
-            if ftbverbose
-                fprintf('   coarse data layer %d of %d\n', j, nz)
-            end
 
             % Speed up the tightest loop with a parallelized loop.
             parfor i = 1:nf
