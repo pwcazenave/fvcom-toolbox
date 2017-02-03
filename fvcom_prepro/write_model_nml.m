@@ -20,7 +20,7 @@ function res = write_model_nml(conf, nml, fmt)
 %    2017-01-12 First version.
 %    2017-02-03 Fix output directory variable use.
 
-if exist(conf.fvcom_model,'dir') ~= 2
+if exist(conf.fvcom_model, 'dir') ~= 2
     mkdir(conf.fvcom_model);
 end
 fname = fullfile(conf.fvcom_model, [conf.casename, '.nml']);
