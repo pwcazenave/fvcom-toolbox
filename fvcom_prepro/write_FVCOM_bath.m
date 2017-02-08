@@ -24,10 +24,12 @@ function write_FVCOM_bath(Mobj,filename)
 %    2014-10-07 Removed loops to speed up writing the file
 %   
 %==============================================================================
-subname = 'write_FVCOM_bath';
+
+[~, subname] = fileparts(mfilename('fullpath'));
+
 global ftbverbose
 if ftbverbose
-    fprintf('begin : %s\n', subname);
+    fprintf('\nbegin : %s\n', subname);
 end
 
 %------------------------------------------------------------------------------
