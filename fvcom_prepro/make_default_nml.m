@@ -385,7 +385,7 @@ fmt.NML_ADDITIONAL_MODELS.ICE_CLOUD_COVER.format         = '%10.6f';
 %%
 
 nml.NML_PROBES = [];
-nml.NML_PROBES.PROBES_ON = 'T';
+nml.NML_PROBES.PROBES_ON = 'F';
 nml.NML_PROBES.PROBES_NUMBER = 56;%
 fmt.NML_PROBES.PROBES_NUMBER.format = '%u';%
 nml.NML_PROBES.PROBES_FILE = [conf.casename '_probes.nml'];
@@ -408,7 +408,7 @@ switch conf.version
     case 'ver4.0-ersem'
         nml.NML_FABM = [];
         nml.NML_FABM.STARTUP_FABM_TYPE = 'set values';
-        nml.NML_FABM.OFFLINE_FABM_FILE=  [conf.casename '_offline.dat'];%
+        nml.NML_FABM.OFFLINE_FABM_FILE=  [conf.casename '_offline.nc'];%
         nml.NML_FABM.USE_FABM_BOTTOM_THICKNESS= 'F';
         nml.NML_FABM.USE_FABM_SALINITY='F';
         nml.NML_FABM.FABM_DEBUG='F';

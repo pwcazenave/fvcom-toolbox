@@ -19,10 +19,10 @@ function res = write_model_nml(conf, nml, fmt)
 % Revision history
 %    2017-01-12 First version.
 
-if exist(outdir,'dir') ~= 2
+if exist(conf.outdir,'dir') ~= 2
     mkdir(outdir);
 end
-fname = fullfile(outdir, [conf.casename, '.nml']);
+fname = fullfile(conf.outdir, [conf.casename, '.nml']);
 fnml = fopen(fname, 'wt');
 
 nml_blocks = fieldnames(nml);
