@@ -37,7 +37,7 @@ for nn = 1:length(nml_blocks)
         if ischar(var_value)
             if any(strcmp(var_value, {'T','F'}))
                 formatstr = ' %s\t = %s';
-                
+
             else
                 formatstr=[' %s\t = ', '''', '%s', ''''];
             end
