@@ -85,7 +85,7 @@ end
 % Can't use CLOBBER and NETCDF4 at the same time (the bitwise or didn't
 % work). Fall back to a horrible delete and then create instead.
 if exist(ncfile2read, 'file')
-    nc2read = netcdf.open(ncfile2read,'WRITE');
+    nc2read = netcdf.open(ncfile2read,'NOWRITE');
     [PATHSTR,NAME,EXT] = fileparts(ncfile2read);
     % new file to hold the modified nesting data
     ncfile = fullfile(PATHSTR,[NAME,'modified',EXT])
