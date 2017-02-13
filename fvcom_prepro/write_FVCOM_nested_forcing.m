@@ -143,6 +143,9 @@ end
 nc = netcdf.create(ncfile, 'NETCDF4');
 
 % define global attributes
+if ftbverbose
+    fprintf('create attributes\n')
+end
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'type', ...
     'FVCOM nestING TIME SERIES FILE')
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'title', ...
@@ -154,6 +157,9 @@ netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'filename', ncfile)
 netcdf.putAtt(nc, netcdf.getConstant('NC_GLOBAL'), 'Conventions', 'CF-1.0')
 
 % define dimensions
+if ftbverbose
+    fprintf('define dimensions\n')
+end
 elem_dimid = netcdf.defDim(nc, 'nele', elems);
 node_dimid = netcdf.defDim(nc, 'node', nodes);
 three_dimid = netcdf.defDim(nc, 'three', 3);
@@ -163,6 +169,9 @@ siglev_dimid = netcdf.defDim(nc, 'siglev', nsiglev);
 datestrlen_dimid = netcdf.defDim(nc, 'DateStrLen', 26);
 
 % define variables
+if ftbverbose
+    fprintf('define variables\n')
+end
 time_varid = netcdf.defVar(nc, 'time', 'NC_FLOAT', time_dimid);
 netcdf.putAtt(nc, time_varid, 'long_name', 'time');
 netcdf.putAtt(nc, time_varid, 'units', 'days since 1858-11-17 00:00:00');
@@ -413,6 +422,9 @@ for i = 1:ntimes
     nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
     nStringOut = [nStringOut, sprintf('%-026s', datestr(datenum(nDate), 'yyyy-mm-dd HH:MM:SS.FFF'))];
 end
+if ftbverbose
+    fprintf('write time data\n')
+end
 netcdf.putVar(nc, itime_varid, 0, numel(nest.time), floor(nest.time));
 netcdf.putVar(nc, itime2_varid, 0, numel(nest.time), ...
     mod(nest.time, 1)*24*3600*1000);
@@ -420,6 +432,9 @@ netcdf.putVar(nc, Times_varid, nStringOut);
 netcdf.putVar(nc, time_varid, nest.time);
 
 % write grid information
+if ftbverbose
+    fprintf('write grid data\n')
+end
 netcdf.putVar(nc, nv_varid, nest.nv);
 netcdf.putVar(nc, x_varid, nest.x);
 netcdf.putVar(nc, y_varid, nest.y);
@@ -431,6 +446,9 @@ netcdf.putVar(nc, lonc_varid, nest.lonc);
 netcdf.putVar(nc, latc_varid, nest.latc);
 
 % dump data
+if ftbverbose
+    fprintf('write time varying data\n')
+end
 netcdf.putVar(nc, zeta_varid, nest.zeta);
 netcdf.putVar(nc, ua_varid, nest.ua);
 netcdf.putVar(nc, va_varid, nest.va);
