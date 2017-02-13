@@ -20,10 +20,14 @@ function res = write_model_nml(conf, nml, fmt)
 %    2017-01-12 First version.
 %    2017-02-03 Fix output directory variable use.
 
-if exist(conf.fvcom_model, 'dir') ~= 2
+if ~( exist(conf.fvcom_model, 'dir') )
     mkdir(conf.fvcom_model);
 end
-fname = fullfile(conf.fvcom_model, [conf.casename, '.nml']);
+if isfield(conf,'casename_out')
+    fname = fullfile(conf.fvcom_model, [conf.casename_out, '.nml']);
+else
+    fname = fullfile(conf.fvcom_model, [conf.casename, '.nml']);
+end
 fnml = fopen(fname, 'wt');
 
 nml_blocks = fieldnames(nml);
