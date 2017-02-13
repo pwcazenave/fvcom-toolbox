@@ -113,5 +113,5 @@ else
 end
 
 if ftbverbose
-    fprintf('\nend   : %s\n', subname)
+    fprintf('end   : %s\n', subname)
 end
