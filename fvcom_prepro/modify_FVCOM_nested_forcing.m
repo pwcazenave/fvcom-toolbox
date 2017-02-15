@@ -1,21 +1,21 @@
-function modify_FVCOM_nested_forcing(conf, ncfile2read,nesttype)
+function modify_FVCOM_nested_forcing(conf, ncfile2read, nesttype)
 % Creates an FVCOM nesting file.
 %
 % function modify_FVCOM_nested_forcing(conf, ncfile, nesttype)
 %
 % DESCRIPTION:
-%   Modifies Nested file to change weights or number of levels and writes a
+%   Modifies nested file to change weights or number of levels and writes a
 %   new Nested file suitable for types different from 3. you can only do
 %   one or the other. Changing weights and reducing the number of levels is
 %   not permitted in the current implementation. You can always cut the
 %   number of levels and then call it again to change the values of the
-%   weights. 
+%   weights.
 %
 %
 % INPUT:
-%   ncfile   = full path to the nesting file to be created.
-%   conf     = with either new_weights field or conf.nest.levels
-%   nesttype = [optional] nesting type (defaults to 1 = direct nesting).
+%   conf        = with either new_weights field or conf.nest.levels
+%   ncfile2read = full path to the nesting file to be created.
+%   nesttype    = [optional] nesting type (defaults to 1 = direct nesting).
 %
 % OUTPUT:
 %   FVCOM nesting file.
@@ -23,20 +23,18 @@ function modify_FVCOM_nested_forcing(conf, ncfile2read,nesttype)
 % EXAMPLE USAGE:
 %   conf.new_weight_cell = weights see manual for explanation [0-1]. It
 %           only requires nlevel values, not spatial or temporal dimension is
-%           expected. 
+%           expected.
 %   conf.new_weight_node = weights see manual for explanation [0-1]. It
 %           only requires nlevel values, not spatial or temporal dimension is
-%           expected. 
+%           expected.
 %   conf.nest.levels = [1]; The value reflect the inner most level to keep.
 %           1 will keep the most external boundary, 4 will keep 1-4 levels.
-%           
-%   modify_FVCOM_nested_forcing(conf, '/tmp/fvcom_nested.nc',1)
+%
+%   modify_FVCOM_nested_forcing(conf, '/tmp/fvcom_nested.nc', 1)
 %
 % Author(s):
 %   Ricardo Torres (Plymouth Marine Laboratory)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
-%   Darren Price (CH2MHill)
-%   Hakeem Johnson (CH2MHill)
 %
 % Revision history:
 %   2017-01-17 First version based on Pierre's write_FVCOM_nested_forcing.m
@@ -88,7 +86,7 @@ if exist(ncfile2read, 'file')
     nc2read = netcdf.open(ncfile2read,'NOWRITE');
     [PATHSTR,NAME,EXT] = fileparts(ncfile2read);
     % new file to hold the modified nesting data
-    ncfile = fullfile(PATHSTR,[NAME,'modified',EXT])
+    ncfile = fullfile(PATHSTR,[NAME,'modified',EXT]);
 else
     sprintf('I am stoping. The nesting file %s doesn''t exist',ncfile2read);
     error(['Aborting the script ',subname])
@@ -97,13 +95,12 @@ end
 required = {'time', 'x', 'y', 'lon', 'lat', 'xc', 'yc', 'lonc', 'latc', ...
     'nv','zeta', 'h', 'h_center', 'u', 'v', 'ua', 'va', 'temp', 'salinity', 'hyw', ...
     'weight_cell', 'weight_node', 'siglay', 'siglay_center', 'siglev', 'siglev_center'};
-fields = fieldnames(conf);
 for f = required
     nest.(f{1})=[];
 end
 % If we only need to change the weights we don't need to rewrite the entire
-% file 
-if isfield(conf,'new_weight_cell') & isfield(conf,'new_weight_node')
+% file
+if isfield(conf,'new_weight_cell') && isfield(conf,'new_weight_node')
     varid = netcdf.inqVarID(nc2read,'weight_cell');
     nest.weight_cell = netcdf.getVar(nc2read,varid,'double');
     weight_cell = unique(conf.new_weight_cell); % these are sorted
@@ -128,13 +125,13 @@ if isfield(conf,'new_weight_cell') & isfield(conf,'new_weight_node')
     end
     netcdf.putVar(nc2read, varid, nest.weight_node);
     sprintf('The weights have been changed in the original nesting file  %s ',ncfile2read);
-    disp(['Returning to the main script...'])
-    
+    disp('Returning to the main script...')
+
     return
-    
+
 end
-% Read all variables from the existing file 
-if ~isfield (conf,'nest') 
+% Read all variables from the existing file
+if ~isfield (conf,'nest')
             error('Missing conf.nest, aborting... ')
 end
 if ~isfield (conf.nest,'levels')
@@ -147,12 +144,12 @@ for f = required
     catch
         error( 'Missing %s variable from nesting file', f{1});
     end
-    
+
     nest.(f{1}) = netcdf.getVar(nc2read,varid,'double');
 end
-[elems, nsiglay, ntimes] = size(nest.u);
+[~, nsiglay, ~] = size(nest.u);
 nsiglev = nsiglay + 1;
-[nodes, ~] = size(nest.zeta);
+[~, ~] = size(nest.zeta);
 
 % Split nodes into the different levels
     Nweight_node = unique(nest.weight_node); % these are sorted increasing
@@ -170,7 +167,7 @@ dropidxnode = nest.weight_node(:,1)<min(levels2keepN);
 dropidxele = nest.weight_cell(:,1)<min(levels2keepC);
 for f = required
         varid = netcdf.inqVarID(nc2read,f{1});
-        [name,xtype,dimids,natts] = netcdf.inqVar(nc2read,varid); 
+        [~,~,dimids,~] = netcdf.inqVar(nc2read,varid);
 % check the variable has a node or element dimension
         if any(dimids==nodeid)
             switch ndims (nest.(f{1}))
@@ -178,7 +175,7 @@ for f = required
             nest.(f{1})(dropidxnode)=[];
                 case 2
             nest.(f{1})(dropidxnode,:)=[];
-                    
+
                 case 3
             nest.(f{1})(dropidxnode,:,:)=[];
             end
@@ -188,11 +185,11 @@ for f = required
             nest.(f{1})(dropidxele)=[];
                 case 2
             nest.(f{1})(dropidxele,:)=[];
-                    
+
                 case 3
             nest.(f{1})(dropidxele,:,:)=[];
             end
-            
+
         end
 end
 
