@@ -184,7 +184,6 @@ function ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)
 
 % if DU + DL > 1.25 * H;
 %     error('Depth %f too shallow for the chosen DU %f and DL %f values',H,DU,DL)
-%     
 % end
 
 Z0 = zeros(nlev, 1);
