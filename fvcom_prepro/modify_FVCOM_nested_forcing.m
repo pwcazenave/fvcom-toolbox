@@ -85,6 +85,10 @@ end
 if exist(ncfile2read, 'file')
     nc2read = netcdf.open(ncfile2read,'NOWRITE');
     [PATHSTR,NAME,EXT] = fileparts(ncfile2read);
+if ftbverbose
+    fprintf('\nProcessing file : %s\n', ncfile2read)
+end
+    
     % new file to hold the modified nesting data
     ncfile = fullfile(PATHSTR,[NAME,'modified',EXT]);
 else
