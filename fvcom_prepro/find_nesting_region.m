@@ -103,6 +103,7 @@ function Nested = find_nesting_region(conf, Mobj)
 %   runs.
 %   2016-12-22 Fairly major rewrite to make things clearer and less prone
 %   to subtle bugs.
+%   2017-02-16 Fix for direct nesting (no weights needed).
 %
 %==========================================================================
 
@@ -122,8 +123,10 @@ Nested.nObs = 0; % number of nodal levels is incremented for each level.
 % as for the weights on the nodes and elements.
 Nested.read_obc_nodes = cell(0);
 Nested.read_obc_elems = cell(0);
-Nested.weight_cell = cell(0);
-Nested.weight_node = cell(0);
+if any(conf.Nested_type ~= 1)
+    Nested.weight_cell = cell(0);
+    Nested.weight_node = cell(0);
+end
 
 % if ftbverbose
 %     figure(1)
@@ -164,8 +167,10 @@ for obc_idx = 1:Mobj.nObs
     Nested.read_obc_elems{cumulative_elem_idx} = unique([ti{:}]);
 
     % Save the weights into the nested struct (Nested).
-    Nested.weight_node{cumulative_node_idx} = repmat(weights_nodes(1), 1, length(Nested.read_obc_nodes{cumulative_node_idx}));
-    Nested.weight_cell{cumulative_elem_idx} = repmat(weights_elems(1), 1, length(Nested.read_obc_elems{cumulative_elem_idx}));
+    if conf.Nested_type(obc_idx) ~= 1
+        Nested.weight_node{cumulative_node_idx} = repmat(weights_nodes(1), 1, length(Nested.read_obc_nodes{cumulative_node_idx}));
+        Nested.weight_cell{cumulative_elem_idx} = repmat(weights_elems(1), 1, length(Nested.read_obc_elems{cumulative_elem_idx}));
+    end
 
     % Also save the type of open boundary we've got and update the open
     % boundary counter and number of open boundary nodes.
@@ -197,10 +202,14 @@ for obc_idx = 1:Mobj.nObs
         Nested.obc_type(cumulative_node_idx) = conf.Nested_type(obc_idx);
         Nested.nObcNodes(cumulative_node_idx) = length(Nested.read_obc_nodes{cumulative_node_idx});
 
-        Nested.weight_node{cumulative_node_idx} = repmat(weights_nodes(lev + 1), 1, length(Nested.read_obc_nodes{cumulative_node_idx}));
+        if conf.Nested_type(obc_idx) ~= 1
+            Nested.weight_node{cumulative_node_idx} = repmat(weights_nodes(lev + 1), 1, length(Nested.read_obc_nodes{cumulative_node_idx}));
+        end
         if lev ~= conf.levels(obc_idx)
             Nested.read_obc_elems{cumulative_elem_idx} = setdiff(unique([ti{:}]), [Nested.read_obc_elems{:}]);
-            Nested.weight_cell{cumulative_elem_idx} = repmat(weights_elems(lev + 1), 1, length(Nested.read_obc_elems{cumulative_elem_idx}));
+            if conf.Nested_type(obc_idx) ~= 1
+                Nested.weight_cell{cumulative_elem_idx} = repmat(weights_elems(lev + 1), 1, length(Nested.read_obc_elems{cumulative_elem_idx}));
+            end
         end
 
         if ftbverbose

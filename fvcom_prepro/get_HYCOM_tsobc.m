@@ -50,6 +50,8 @@ function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)
 %    supplied are all in a line, for example).
 %    2017-01-27 Subset the coarse data (HYCOM, CMEMS etc.). This yields a
 %    significant performance improvement (both in memory usage and time).
+%    2017-02-16 Further performance improvement by only using the coarse
+%    data in the vicinity of the open boundary nodes.
 %
 %==========================================================================
 
@@ -90,20 +92,27 @@ end
 % Use the existing rectangular arrays for the nearest point lookup.
 [lon, lat] = deal(hycom.lon, hycom.lat);
 
-% Find the indices of the coverage (padding by 1 either way) for the model
-% domain within the HYCOM data.
-xidx = nan(2, 1);
-yidx = nan(2, 1);
-[~, xidx(1)] = min(abs(lon(:) - min(Mobj.lon([Mobj.read_obc_nodes{:}]))));
-[xidx(1), ~] = ind2sub(size(lon), xidx(1));
-[~, xidx(2)] = min(abs(lon(:) - max(Mobj.lon([Mobj.read_obc_nodes{:}]))));
-[xidx(2), ~] = ind2sub(size(lon), xidx(2));
-[~, yidx(1)] = min(abs(lat(:) - min(Mobj.lat([Mobj.read_obc_nodes{:}]))));
-[~, yidx(1)] = ind2sub(size(lat), yidx(1));
-[~, yidx(2)] = min(abs(lat(:) - max(Mobj.lat([Mobj.read_obc_nodes{:}]))));
-[~, yidx(2)] = ind2sub(size(lat), yidx(2));
-xidx = xidx + [-1, 1]';
-yidx = yidx + [-1, 1]';
+% Find the indices of all the HYCOM data which cover the open boundary
+% nodes given by some distance. This should massively increase performance
+% by chopping out the vast majority of the data. Find the 6 closest ones
+% for each node/element.
+
+obc_hycom_idx = [];
+oElems = [Mobj.read_obc_elems{:}];
+oNodes = [Mobj.read_obc_nodes{:}];
+for obc_i = 1:length(oNodes)
+    [~, h_idx] = sort(sqrt((lon(:) - Mobj.lon(obc_i)).^2 + ...
+        (lat(:) - Mobj.lat(obc_i)).^2));
+    obc_hycom_idx = [obc_hycom_idx; h_idx(1:6)];
+end
+for obc_i = 1:length(oElems)
+    % Find the 6 closest ones.
+    [~, h_idx] = sort(sqrt((lon(:) - Mobj.lonc(obc_i)).^2 + ...
+        (lat(:) - Mobj.latc(obc_i)).^2));
+    obc_hycom_idx = [obc_hycom_idx; h_idx(1:20)];
+end
+obc_hycom_idx = unique(obc_hycom_idx, 'stable');
+[xidx, yidx] = ind2sub(size(lon), obc_hycom_idx);
 
 % Calculate resolution of parent coarse model
 hdx = max([max(diff(lon(:,1))),max(diff(lat(1,:)))]);
@@ -176,9 +185,12 @@ for v = 1:length(fields)
             fprintf('%s : %i of %i %s timesteps... \n', subname, t, nt, fields{v})
         end
         % Get the current 3D array of HYCOM results. Only load the data we
-        % need in both the vertical and horizontal (i.e. clip to a box
-        % which covers the model domain.
-        pctemp3 = hycom.(fields{v}).data(xidx(1):xidx(2), yidx(1):yidx(2), 1:zidx, t);
+        % need in both the vertical and horizontal (i.e. clip to the
+        % locations which cover the open boundary nodes only).
+        pctemp3 = nan(length(xidx), zidx, 1);
+        for oidx = 1:length(xidx)
+            pctemp3(oidx, :) = hycom.(fields{v}).data(xidx(oidx), yidx(oidx), 1:zidx, t);
+        end
         % pcolor(lon(xidx(1):xidx(2), yidx(1):yidx(2)), lat(xidx(1):xidx(2), yidx(1):yidx(2)), pctemp3(:, :, 1)); shading flat; axis('equal', 'tight'); colorbar
         % hold on
         % plot(fvlon, fvlat, 'ro')
@@ -206,15 +218,7 @@ for v = 1:length(fields)
             end
 
             % Now extract the relevant layer from the 3D subsets.
-            pctemp2 = pctemp3(:, :, j);
-
-            % Create new arrays which will be flattened when masking
-            % (below).
-            tpctemp2 = pctemp2(:);
-            tlon = lon(xidx(1):xidx(2), yidx(1):yidx(2));
-            tlat = lat(xidx(1):xidx(2), yidx(1):yidx(2));
-            tlon = tlon(:);
-            tlat = tlat(:);
+            tpctemp2 = pctemp3(:, j);
 
             % Create and apply a mask to remove values outside the domain.
             % This inevitably flattens the arrays, but it shouldn't be a
@@ -264,6 +268,10 @@ for v = 1:length(fields)
             % find positions outside the domain, effectively meaning if a
             % value is outside the domain, the nearest value to the
             % boundary node will be used.
+            % Extract the longitude and latitude data for the open boundary
+            % region.
+            tlon = lon(obc_hycom_idx);
+            tlat = lat(obc_hycom_idx);
             tlon(mask) = [];
             tlat(mask) = [];
 
@@ -305,25 +313,6 @@ for v = 1:length(fields)
                 plat = double(tlat(ixy));
                 ptemp = tpctemp2(ixy);
 
-                % Check we're interpolating at the surface correctly.
-                % figure(100)
-                % if i == 1
-                %     clf
-                %     pcolor(hycom.lon, hycom.lat, pctemp2); colorbar; hold on
-                %     shading flat
-                %     hold on
-                % end
-                % plot(tlon(ixy), tlat(ixy), 'ko')
-                % plot(fx, fy, 'rx')
-                % plot(tlon(ixy(1)), tlat(ixy(1)), 'gs')
-                % scatter(tlon(ixy(1)), tlat(ixy(1)), 20, ptemp(1), 'filled')
-                % disp(ptemp(1))
-                % caxis([34.5, 35.5])
-                % axis('equal', 'tight')
-                % axis([fx - 0.5, fx + 0.5, fy - 0.5, fy + 0.5])
-                % legend('Data', 'Candidate valid', 'FVCOM node', 'Nearest valid', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')
-                % legend('BoxOff')
-
                 % Use a triangulation to do the horizontal interpolation if
                 % we have enough points, otherwise take the mean of the two
                 % values.
@@ -352,6 +341,27 @@ for v = 1:length(fields)
                         end
                     end
                 end
+
+                % Check we're interpolating at the surface correctly.
+                % figure(100)
+                % if i == 1
+                %     clf
+                %     pcolor(hycom.lon - (hdx/2), hycom.lat - (hdx/2), hycom.(fields{v}).data(:, :, j, t)); colorbar; hold on
+                %     shading flat
+                %     hold on
+                % end
+                % plot(tlon(ixy), tlat(ixy), 'ko')
+                % plot(fx, fy, 'rx')
+                % plot(tlon(ixy(1)), tlat(ixy(1)), 'gs')
+                % scatter(tlon(ixy(1)), tlat(ixy(1)), 20, ptemp(1), 'filled', 'markeredgecolor', 'r')
+                % scatter(fx, fy, 20, ptemp(1), 'filled', 'markeredgecolor', 'g')
+                % disp(ptemp(1))
+                % caxis([-0.1, 0.1])
+                % axis('equal', 'tight')
+                % axis([fx - 0.5, fx + 0.5, fy - 0.5, fy + 0.5])
+                % legend('Data', 'Candidate valid', 'FVCOM node', 'Nearest valid', 'Interpolated', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')
+                % legend('BoxOff')
+                % pause(0.1)
 
                 if isnan(itempobc(i))
                     % Use the surface layer as the canonical land mask and
