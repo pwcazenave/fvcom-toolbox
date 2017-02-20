@@ -85,9 +85,9 @@ end
 if exist(ncfile2read, 'file')
     nc2read = netcdf.open(ncfile2read,'NOWRITE');
     [PATHSTR,NAME,EXT] = fileparts(ncfile2read);
-if ftbverbose
-    fprintf('\nProcessing file : %s\n', ncfile2read)
-end
+    if ftbverbose
+        fprintf('\nProcessing file : %s\n', ncfile2read)
+    end
     
     % new file to hold the modified nesting data
     ncfile = fullfile(PATHSTR,[NAME,'modified',EXT]);
@@ -102,8 +102,29 @@ required = {'time', 'x', 'y', 'lon', 'lat', 'xc', 'yc', 'lonc', 'latc', ...
 for f = required
     nest.(f{1})=[];
 end
-% If we only need to change the weights we don't need to rewrite the entire
-% file
+% Read all variables from the existing file
+if ~isfield (conf,'nest')
+    error('Missing conf.nest, aborting... ')
+end
+if ~isfield (conf.nest,'levels')
+    error('Missing conf.nest.levels, aborting... ')
+end
+
+for f = required
+    try
+        varid = netcdf.inqVarID(nc2read,f{1});
+    catch
+        error( 'Missing %s variable from nesting file', f{1});
+    end
+    
+    nest.(f{1}) = netcdf.getVar(nc2read,varid,'double');
+end
+[~, nsiglay, ~] = size(nest.u);
+nsiglev = nsiglay + 1;
+[~, ~] = size(nest.zeta);
+
+% Change weights if requested
+
 if isfield(conf,'new_weight_cell') && isfield(conf,'new_weight_node')
     varid = netcdf.inqVarID(nc2read,'weight_cell');
     nest.weight_cell = netcdf.getVar(nc2read,varid,'double');
@@ -115,7 +136,6 @@ if isfield(conf,'new_weight_cell') && isfield(conf,'new_weight_node')
     for rr=1:length(Nweight_cell)
         nest.weight_cell(nest.weight_cell==Nweight_cell(rr)) = weight_cell(rr);
     end
-    netcdf.putVar(nc2read, varid, nest.weight_cell);
     % now do the Node's weights
     varid = netcdf.inqVarID(nc2read,'weight_node');
     nest.weight_node = netcdf.getVar(nc2read,varid,'double');
@@ -127,76 +147,59 @@ if isfield(conf,'new_weight_cell') && isfield(conf,'new_weight_node')
     for rr=1:length(Nweight_node)
         nest.weight_node(nest.weight_node==Nweight_node(rr)) = weight_node(rr);
     end
-    netcdf.putVar(nc2read, varid, nest.weight_node);
     sprintf('The weights have been changed in the original nesting file  %s ',ncfile2read);
     disp('Returning to the main script...')
-
-    return
-
-end
-% Read all variables from the existing file
-if ~isfield (conf,'nest')
-            error('Missing conf.nest, aborting... ')
-end
-if ~isfield (conf.nest,'levels')
-            error('Missing conf.nest.levels, aborting... ')
+    
 end
 
-for f = required
-    try
-        varid = netcdf.inqVarID(nc2read,f{1});
-    catch
-        error( 'Missing %s variable from nesting file', f{1});
-    end
-
-    nest.(f{1}) = netcdf.getVar(nc2read,varid,'double');
-end
-[~, nsiglay, ~] = size(nest.u);
-nsiglev = nsiglay + 1;
-[~, ~] = size(nest.zeta);
-
-% Split nodes into the different levels
+if isfield(conf.nest,'levels')
+    % Split nodes into the different levels
     Nweight_node = unique(nest.weight_node); % these are sorted increasing
     Nweight_cell = unique(nest.weight_cell); % these are sorted increasing
     nlevs = unique(conf.nest.levels);
-% Decide how many levels to keep
-warning(['Chopping levels from nesting file. Assuming unique weight values for',...
-    'each nesting level. If there are repeated values, this function will not work'])
-    levels2keepN = Nweight_node(end:-1:end-nlevs+1); % these are now decreasing in order
-    levels2keepC = Nweight_cell(end:-1:end-nlevs+1); % these are now decreasing in order
-% remove nodes and cells from each variable
-nodeid = netcdf.inqDimID(nc2read,'node');
-neleid = netcdf.inqDimID(nc2read,'nele');
-dropidxnode = nest.weight_node(:,1)<min(levels2keepN);
-dropidxele = nest.weight_cell(:,1)<min(levels2keepC);
-for f = required
-        varid = netcdf.inqVarID(nc2read,f{1});
-        [~,~,dimids,~] = netcdf.inqVar(nc2read,varid);
-% check the variable has a node or element dimension
-        if any(dimids==nodeid)
-            switch ndims (nest.(f{1}))
-                case 1
-            nest.(f{1})(dropidxnode)=[];
-                case 2
-            nest.(f{1})(dropidxnode,:)=[];
-
-                case 3
-            nest.(f{1})(dropidxnode,:,:)=[];
+    if nlevs==conf.nest.levels
+        warning(['conf.nest.levels have been provided but it has the same number of levels',...
+            'as the original file. Nothing has changed unless you have provided new weights'])
+    else
+        % Decide how many levels to keep
+        warning(['Chopping levels from nesting file. Assuming unique weight values for',...
+            'each nesting level. If there are repeated values, this function will not work'])
+        levels2keepN = Nweight_node(end:-1:end-nlevs+1); % these are now decreasing in order
+        levels2keepC = Nweight_cell(end:-1:end-nlevs+1); % these are now decreasing in order
+        % remove nodes and cells from each variable
+        nodeid = netcdf.inqDimID(nc2read,'node');
+        neleid = netcdf.inqDimID(nc2read,'nele');
+        dropidxnode = nest.weight_node(:,1)<min(levels2keepN);
+        dropidxele = nest.weight_cell(:,1)<min(levels2keepC);
+        for f = required
+            varid = netcdf.inqVarID(nc2read,f{1});
+            [~,~,dimids,~] = netcdf.inqVar(nc2read,varid);
+            % check the variable has a node or element dimension
+            if any(dimids==nodeid)
+                switch ndims (nest.(f{1}))
+                    case 1
+                        nest.(f{1})(dropidxnode)=[];
+                    case 2
+                        nest.(f{1})(dropidxnode,:)=[];
+                        
+                    case 3
+                        nest.(f{1})(dropidxnode,:,:)=[];
+                end
+            elseif any(dimids==neleid)
+                switch ndims (nest.(f{1}))
+                    case 1
+                        nest.(f{1})(dropidxele)=[];
+                    case 2
+                        nest.(f{1})(dropidxele,:)=[];
+                        
+                    case 3
+                        nest.(f{1})(dropidxele,:,:)=[];
+                end
+                
             end
-        elseif any(dimids==neleid)
-            switch ndims (nest.(f{1}))
-                case 1
-            nest.(f{1})(dropidxele)=[];
-                case 2
-            nest.(f{1})(dropidxele,:)=[];
-
-                case 3
-            nest.(f{1})(dropidxele,:,:)=[];
-            end
-
         end
+    end
 end
-
 % Can't use CLOBBER and NETCDF4 at the same time (the bitwise or didn't
 % work). Fall back to a horrible delete and then create instead.
 if exist(ncfile, 'file')
@@ -434,17 +437,17 @@ netcdf.putAtt(nc, hc_varid, 'grid_location', 'center');
 
 if nesttype > 2
     cweights_varid = netcdf.defVar(nc, 'weight_cell', 'NC_FLOAT', ...
-    [elem_dimid, time_dimid]);
+        [elem_dimid, time_dimid]);
     netcdf.putAtt(nc, cweights_varid, 'long_name', ...
-    'Weights for elements in relaxation zone');
+        'Weights for elements in relaxation zone');
     netcdf.putAtt(nc, cweights_varid, 'units', 'no units');
     netcdf.putAtt(nc, cweights_varid, 'grid', 'fvcom_grid');
     netcdf.putAtt(nc, cweights_varid, 'type', 'data');
-
+    
     nweights_varid = netcdf.defVar(nc, 'weight_node', 'NC_FLOAT', ...
-    [node_dimid, time_dimid]);
+        [node_dimid, time_dimid]);
     netcdf.putAtt(nc, nweights_varid, 'long_name', ...
-    'Weights for nodes in relaxation zone');
+        'Weights for nodes in relaxation zone');
     netcdf.putAtt(nc, nweights_varid, 'units', 'no units');
     netcdf.putAtt(nc, nweights_varid, 'grid', 'fvcom_grid');
     netcdf.putAtt(nc, nweights_varid, 'type', 'data');

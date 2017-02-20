@@ -189,23 +189,34 @@ last_entry=DimsAll(idx).Length;
 Itime=[];Itime2=[];
 % tic
 try
-    Itime.idx=find(strcmpi(vars,'Itime'));
-    Itime.ID=netcdf.inqVarID(nc,'Itime');
-    Itime.Data(1)  = netcdf.getVar(nc,Itime.ID,0,1,'int32');
-    Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-1,1,'int32');
-    Itime2.Data(1)  = netcdf.getVar(nc,Itime.ID+1,0,1,'int32');
-    Itime2.Data(2)  = netcdf.getVar(nc,Itime.ID+1,last_entry-1,1,'int32');
+    % use character time instead 
+  
 
-    [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);
-    [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
-
-    start_date=sum(start_d.*[1 1/(24*60*60*1000)]);     %hkj missing 1000 inserted
-    end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       %hkj missing 1000 inserted
-    var_time =  netcdf.getVar(nc,Itime.ID,[0],[min(last_entry,10)],'double')+time_offset+...
-        netcdf.getVar(nc,Itime.ID+1,0,min(last_entry,10),'double')./(24*600*6000) ;
-
-    DeltaT=median(diff(var_time));
-    var_time = start_date:DeltaT:(end_date-DeltaT);
+    Itime.idx=find(strcmpi(vars,'Times'));
+    Itime.ID=netcdf.inqVarID(nc,'Times');
+    Itime.sData=ncread(file_netcdf,'Times')
+    Itime.Data(1) = datenum(Itime.sData(:,1)','yyyy-mm-ddTHH:MM:SS');
+    Itime.Data(2) = datenum(Itime.sData(:,end-1)','yyyy-mm-ddTHH:MM:SS');
+    start_date= Itime.Data(1);
+    end_date = Itime.Data(2);
+    var_time = datenum(Itime.sData(:,1:end-1)','yyyy-mm-ddTHH:MM:SS');
+%     Itime.idx=find(strcmpi(vars,'Itime'));
+%     Itime.ID=netcdf.inqVarID(nc,'Itime');
+%     Itime.Data(1)  = netcdf.getVar(nc,Itime.ID,0,1,'int32');
+%     Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-1,1,'int32');
+%     Itime2.Data(1)  = netcdf.getVar(nc,Itime.ID+1,0,1,'int32');
+%     Itime2.Data(2)  = netcdf.getVar(nc,Itime.ID+1,last_entry-1,1,'int32');
+% 
+%     [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);
+%     [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));
+% 
+%     start_date=sum(start_d.*[1 1/(24*60*60*1000)]);     %hkj missing 1000 inserted
+%     end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       %hkj missing 1000 inserted
+%     var_time =  netcdf.getVar(nc,Itime.ID,[0],[min(last_entry,10)],'double')+time_offset+...
+%         netcdf.getVar(nc,Itime.ID+1,0,min(last_entry,10),'double')./(24*600*6000) ;
+% 
+%     DeltaT=median(diff(var_time));
+%     var_time = start_date:DeltaT:(end_date-DeltaT);
 
 catch me
     if ftbverbose
