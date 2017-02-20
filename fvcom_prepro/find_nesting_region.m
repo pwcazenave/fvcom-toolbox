@@ -123,7 +123,7 @@ Nested.nObs = 0; % number of nodal levels is incremented for each level.
 % as for the weights on the nodes and elements.
 Nested.read_obc_nodes = cell(0);
 Nested.read_obc_elems = cell(0);
-if any(conf.Nested_type ~= 1)
+if any(conf.Nested_type == 3)
     Nested.weight_cell = cell(0);
     Nested.weight_node = cell(0);
 end
@@ -224,7 +224,9 @@ for obc_idx = 1:Mobj.nObs
         % Bump the node and element cumulative counters so the next loop
         % dumps everything into the right position in the cell arrays.
         cumulative_node_idx = cumulative_node_idx + 1;
-        cumulative_elem_idx = cumulative_elem_idx + 1;
+        if lev ~= conf.levels(obc_idx)
+            cumulative_elem_idx = cumulative_elem_idx + 1;
+        end
     end
     if ftbverbose
         fprintf('\n')
