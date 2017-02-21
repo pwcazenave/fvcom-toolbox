@@ -104,6 +104,8 @@ function Nested = find_nesting_region(conf, Mobj)
 %   2016-12-22 Fairly major rewrite to make things clearer and less prone
 %   to subtle bugs.
 %   2017-02-16 Fix for direct nesting (no weights needed).
+%   2017-02-20 Fix non-critical bug which added empty cells for the nest
+%   elements. Also make the node and element weight values match one another.
 %
 %==========================================================================
 
@@ -123,7 +125,7 @@ Nested.nObs = 0; % number of nodal levels is incremented for each level.
 % as for the weights on the nodes and elements.
 Nested.read_obc_nodes = cell(0);
 Nested.read_obc_elems = cell(0);
-if any(conf.Nested_type ~= 1)
+if any(conf.Nested_type == 3)
     Nested.weight_cell = cell(0);
     Nested.weight_node = cell(0);
 end
@@ -144,18 +146,14 @@ for obc_idx = 1:Mobj.nObs
     % Generate the weights for the elements and nodes.
     if conf.Nested_type(obc_idx) == 3
         if conf.power == 0
-            weights_nodes = nan(1, conf.levels(obc_idx) + 1);
-            weights_elems = nan(1, conf.levels(obc_idx));
-            weights_nodes(1:end - 1) = fliplr((1:conf.levels(obc_idx))./conf.levels(obc_idx));
-            weights_nodes(end) = 0;
-            weights_elems(1:end - 1) = fliplr((1:conf.levels(obc_idx) - 1)./conf.levels(obc_idx) - 1);
-            weights_elems(end) = 0;
+            weights_nodes = fliplr((1:conf.levels(obc_idx) + 1)./(conf.levels(obc_idx) + 1));
         else
             weights_nodes = 1:conf.levels(obc_idx) + 1;
             weights_nodes = 1./weights_nodes.^conf.power;
-            weights_elems = 1:conf.levels(obc_idx);
-            weights_elems = 1./weights_elems.^conf.power;
         end
+        % Use the same weights as the nodes, but drop the last level
+        % (elements is always 1 smaller).
+        weights_elems = weights_nodes(1:end - 1);
     end
 
     % Save the original open boundary nodes into the nested struct (Nested).
@@ -224,7 +222,9 @@ for obc_idx = 1:Mobj.nObs
         % Bump the node and element cumulative counters so the next loop
         % dumps everything into the right position in the cell arrays.
         cumulative_node_idx = cumulative_node_idx + 1;
-        cumulative_elem_idx = cumulative_elem_idx + 1;
+        if lev ~= conf.levels(obc_idx)
+            cumulative_elem_idx = cumulative_elem_idx + 1;
+        end
     end
     if ftbverbose
         fprintf('\n')
