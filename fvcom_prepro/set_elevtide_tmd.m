@@ -35,13 +35,13 @@ dates = dates_MJD([1 end]) + datenum('1858-11-17 00:00:00');
 time = dates(1):1/24/6:dates(2);
 time_MJD = time - datenum('1858-11-17 00:00:00');
 model_file = 'DATA\Model_ES2008';
-current_dir = pwd;
 %tmp = which('tmd_tide_pred_2.m');
 %a = strfind(tmp, 'tmd_tide_pred_2.m');
 %cd(tmp(1:a-1))
-cd(['C:\Matlab\ToolboxesExternal\TMD2.03\'])
+% current_dir = pwd;
+% cd([getenv('Hydro') '\Software\Matlab\ToolboxesExternal\TMD2.03\'])
 [eta, TMD_ConList] = tmd_tide_pred_2(model_file, time, lat, lon, 'z');
-cd(current_dir);
+% cd(current_dir);
 
 %%
 figure('position', [360   502   879   420])
