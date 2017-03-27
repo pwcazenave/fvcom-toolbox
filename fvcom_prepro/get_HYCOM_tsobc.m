@@ -427,9 +427,7 @@ for v = 1:length(fields)
         % Now we've interpolated in space, we can interpolate the z-values
         % to the sigma depths.
 
-        % Preallocate the output arrays
         fvtempz = nan(nf, fz);
-
         for pp = 1:nf
             % Get the FVCOM depths at this node
             tfz = sigma(oNodes(pp), :);
