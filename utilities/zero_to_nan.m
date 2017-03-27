@@ -1,13 +1,11 @@
-function [array] = zero_to_nan(array)
+function array = zero_to_nan(array)
 %
-% Replaces data outside error bands with an interpolated value
+% Replaces values of zero with NaN.
 %
-[rr,cc]=size(array);
-for ii=1:cc
-ix = find((array(:,ii))==0.);
-if ~isempty(ix)
-    for i = 1:length(ix); 
-     array(ix(i),ii) = NaN;
-    end
-end
-end
+% Author(s)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
+%
+% Revision history
+%    2017-03-27 Removed the loops and used logical indexing instead.
+
+array(array == 0) = nan;
