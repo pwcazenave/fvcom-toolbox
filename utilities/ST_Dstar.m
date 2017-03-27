@@ -4,7 +4,7 @@ function [dstar] = ST_Dstar(d,varargin)
 % function [dstar] = ST_Dstar(d,varargin)
 %
 % DESCRIPTION:
-%    Convert grain size from d (m) to dimensionless D 
+%    Convert grain size from d (m) to dimensionless D
 %
 % INPUT:
 %    d: sediment grain size in m
@@ -16,20 +16,21 @@ function [dstar] = ST_Dstar(d,varargin)
 %    Dstar:  nondimensional grain size
 %
 % EXAMPLE USAGE
-%    dstar = ST_Dstar(.0005,'temperature',10,'salinity',35,'sdens',2650) 
+%    dstar = ST_Dstar(.0005,'temperature',10,'salinity',35,'sdens',2650)
 %
-% Author(s):  
+% Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
+%    Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % Revision history
-%   
+%    2017-03-27 Add support for matrices and some minor syntax changes.
+%
 %==============================================================================
 
-subname = 'ST_Dstar';  
-%fprintf('\n')
-%fprintf(['begin : ' subname '\n'])
+[~, subname] = fileparts(mfilename('fullpath'));
+fprintf('\nbegin : %s\n', subname)
 
-% constants 
+% constants
 grav  = 9.8106;   %g
 T     = 10;       %T (C)
 S     = 35;       %S (PSU)
@@ -49,12 +50,11 @@ for i=1:2:length(varargin)-1
         case 'sal'
              S = varargin{i+1};
         case 'sde'
-             sdens = varargin{i+1}; 
+             sdens = varargin{i+1};
         otherwise
                 error(['Can''t understand value for:' keyword]);
         end; %switch keyword
 end;
-
 
 % calculate nu
 nu = SW_Kviscosity(T,S);
@@ -63,7 +63,12 @@ nu = SW_Kviscosity(T,S);
 dens = SW_Density(T,S);
 
 % calculate dstar
-s = sdens/dens;
-dstar = ([grav*(s-1)/(nu^2)])^(1/3)*d;
+if isscalar(dens)
+    s = sdens/dens;
+    dstar = ([grav*(s-1)/(nu^2)])^(1/3)*d;
+else
+    s = sdens ./ dens;
+    dstar = ([grav*(s-1)./(nu.^2)]).^(1/3).*d;
+end
 
-%fprintf(['end   : ' subname '\n'])
+fprintf('end   : %s\n', subname)
