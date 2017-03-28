@@ -1,5 +1,4 @@
 function [Mobj]  = add_stations_list(Mobj,Positions,Names,Dist)
-
 % Add a set of stations at which FVCOM will output time series.
 %
 % [Mobj] = add_stations_list(Mobj,Positions,Names,Dist)
