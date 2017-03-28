@@ -65,6 +65,10 @@ if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
 
+if nargin == 0
+    error('Not enough input arguments. See HELP %s', subname)
+end
+
 % Run jobs on multiple workers if we have that functionality. Not sure if
 % it's necessary, but check we have the Parallel Toolbox first.
 wasOpened = false;
@@ -159,13 +163,19 @@ for vv = 1:length(varlist);
 
             tic
             parfor zi = 1:fz
+                % Get the current depth layer's data and mask out the NaN
+                % values.
+                hytempzcurrent = hytempz(:, :, zi);
+
+                % Strip out NaNs so we can extrapolate with TriScatteredInterp.
+                nanmask = ~isnan(hytempzcurrent);
+                plonclean = plon(nanmask);
+                platclean = plat(nanmask);
+                hytempzclean = hytempzcurrent(nanmask);
                 % Set up the interpolation object and interpolate the
                 % current variable to the FVCOM unstructured grid.
-                % changed to do linear extrapolations 
-                % this should work ok for biology but probably not so well
-                % for physical variables. Before it was 'natural' and no
-                % extrapolation
-                ft = scatteredInterpolant(plon, plat, reshape(hytempz(:, :, zi), [], 1), 'nearest','linear');
+                ft = scatteredInterpolant(plonclean, platclean, ...
+                    hytempzclean, 'natural', 'nearest');
                 fvtemp(:, zi) = ft(flon, flat);
             end
             else
