@@ -16,7 +16,11 @@ function ST_example
 % Revision history
 %   
 %==============================================================================
-close all;
+
+global ftbverbose
+ftbverbose = false;
+
+close all
 fprintf('       phi          class       d(mm)    Dstar    wset(mm/s)  taucr (Pa)  erate x1e-3(kg/(m^2-s))\n')
 i = 0;
 for phi=-8:11
