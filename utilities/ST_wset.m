@@ -72,7 +72,11 @@ dens = SW_Density(T,S);
 dstar = ST_Dstar(d,'temp',T,'sal',S,'sdens',sdens);
 
 % calculate wset
-wset = (nu/d)*( sqrt(10.36^2 + 1.049*(dstar^3)) - 10.36); 
+if ismatrix(d)
+    wset = (nu./d).*( sqrt(10.36^2 + 1.049*(dstar.^3)) - 10.36);
+else
+    wset = (nu/d)*( sqrt(10.36^2 + 1.049*(dstar^3)) - 10.36); 
+end
 
 if ftbverbose
     fprintf('end   : %s\n', subname)
