@@ -283,13 +283,13 @@ for r = riv_idx
     % m^{3}s^{-1} and max_discharge is 2000 m^{3}s^{-1}, then you split
     % over 5 nodes.
     nsplit = ceil(max(tmp_struct.river_flux) / max_discharge);
-
+    tmp_struct.river_flux = tmp_struct.river_flux / nsplit;
     % Scale the data by nsplit.
-    for e = 1:length(enames)
-        if isfield(Mobj, enames{e})
-            tmp_struct.(enames{e}) = tmp_struct.(enames{e}) / nsplit;
-        end
-    end
+%     for e = 1:length(enames)
+%         if isfield(Mobj, enames{e})
+%             tmp_struct.(enames{e}) = tmp_struct.(enames{e}) / nsplit;
+%         end
+%     end
 
     % We can keep the original node, but we need to find the
     % remaining nsplit-1 nodes.

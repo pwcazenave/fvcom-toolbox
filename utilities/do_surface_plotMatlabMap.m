@@ -54,12 +54,12 @@ figure(plotOPTS.figure);clf
 if isfield(plotOPTS,'Lontick')
     MerTick = plotOPTS.Lontick;
 else
-    MerTick = 0.5;
+    MerTick = floor(10*(diff(plotOPTS.range_lon)/5))/10;
 end
 if isfield(plotOPTS,'Lattick')
     ParTick = plotOPTS.Lattick;
 else
-    ParTick = 0.5;
+    ParTick = floor(10*(diff(plotOPTS.range_lat)/5))/10;
 end
 
 axesm('mercator','MapLatLimit',plotOPTS.range_lat,'MapLonLimit',[plotOPTS.range_lon],'MeridianLabel','on',...

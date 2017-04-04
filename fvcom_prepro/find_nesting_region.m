@@ -176,10 +176,10 @@ for obc_idx = 1:Mobj.nObs
     Nested.nObs = Nested.nObs + 1;
     Nested.obc_type(cumulative_node_idx) = conf.Nested_type(obc_idx);
 
-    if ftbverbose
-        % figure(1)
-        % scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')
-        % scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
+    if ftbverbose && conf.Nested_type(obc_idx) ~= 1
+%         figure(1)
+%         scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')
+%         scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
         fprintf('Original open boundary %d\n', obc_idx)
     end
 
@@ -210,12 +210,12 @@ for obc_idx = 1:Mobj.nObs
             end
         end
 
-        if ftbverbose
-            % figure(1)
-            % scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')
-            % if lev ~= conf.levels(obc_idx)
-            %     scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
-            % end
+        if ftbverbose && conf.Nested_type(obc_idx) ~= 1
+%             figure(1)
+%             scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')
+%             if lev ~= conf.levels(obc_idx)
+%                 scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')
+%             end
             fprintf('Nested level %d\n', lev)
         end
 

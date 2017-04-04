@@ -157,14 +157,14 @@ if isfield(conf.nest,'levels')
     Nweight_node = unique(nest.weight_node); % these are sorted increasing
     Nweight_cell = unique(nest.weight_cell); % these are sorted increasing
     nlevs = unique(conf.nest.levels);
-    if nlevs==conf.nest.levels
+    if length(Nweight_node)==conf.nest.levels
         warning(['conf.nest.levels have been provided but it has the same number of levels',...
             'as the original file. Nothing has changed unless you have provided new weights'])
     else
         % Decide how many levels to keep
         warning(['Chopping levels from nesting file. Assuming unique weight values for',...
             'each nesting level. If there are repeated values, this function will not work'])
-        levels2keepN = Nweight_node(end:-1:end-nlevs+1); % these are now decreasing in order
+        levels2keepN = Nweight_node(end:-1:end-nlevs); % these are now decreasing in order
         levels2keepC = Nweight_cell(end:-1:end-nlevs+1); % these are now decreasing in order
         % remove nodes and cells from each variable
         nodeid = netcdf.inqDimID(nc2read,'node');
