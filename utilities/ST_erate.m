@@ -34,9 +34,11 @@ function [erate] = ST_erate(d,varargin)
 %   
 %==============================================================================
 
-subname = 'ST_erate';  
-%fprintf('\n')
-%fprintf(['begin : ' subname '\n'])
+global ftbverbose
+[~, subname] = fileparts(mfilename('fullpath'));
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
 
 % constants 
 grav  = 9.8106;   %g
@@ -70,6 +72,6 @@ wset = ST_wset(d,'temperature',T,'salinity',S,'sdens',sdens);
 % calculate erosion rate
 erate = 2.666e-4*wset*1000. - 2.51e-9*sdens;
 
-
-
-%fprintf(['end   : ' subname '\n'])
+if ftbverbose
+    fprintf('end   : %s\n', subname)
+end

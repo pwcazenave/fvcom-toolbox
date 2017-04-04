@@ -22,9 +22,11 @@ function [d] = ST_phi2d(phi)
 %   
 %==============================================================================
 
-%subname = 'ST_phid2';  
-%fprintf('\n')
-%fprintf(['begin : ' subname '\n'])
+global ftbverbose
+[~, subname] = fileparts(mfilename('fullpath'));
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
 
 %------------------------------------------------------------------------------
 % calculate d and convert to m
@@ -33,4 +35,6 @@ function [d] = ST_phi2d(phi)
 d = 2^(-phi);
 d = d*.001;
 
-%fprintf(['end   : ' subname '\n'])
+if ftbverbose
+    fprintf('end   : %s\n', subname)
+end

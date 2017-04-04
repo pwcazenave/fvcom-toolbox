@@ -38,6 +38,12 @@ function rho = SW_Density(T,S)
 %   range checking.
 %=========================================================================
 
+global ftbverbose
+[~, subname] = fileparts(mfilename('fullpath'));
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
+
 %----------------------
 % CHECK INPUT ARGUMENTS
 %----------------------
@@ -75,5 +81,8 @@ for i = 1:vectorsize(1,1)
         D_rho(i,j) = b1*s(i,j) + b2*s(i,j)*T(i,j) + b3*s(i,j)*T(i,j)^2 + b4*s(i,j)*T(i,j)^3 + b5*s(i,j)^2*T(i,j)^2;
         rho(i,j) = rho_w(i,j) + D_rho(i,j);
     end
-end;
+end
+
+if ftbverbose
+    fprintf('end   : %s\n', subname)
 end

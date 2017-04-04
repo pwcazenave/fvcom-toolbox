@@ -28,9 +28,11 @@ function [wset] = ST_wset(d,varargin)
 %   
 %==============================================================================
 
-subname = 'ST_wset';  
-%fprintf('\n')
-%fprintf(['begin : ' subname '\n'])
+global ftbverbose
+[~, subname] = fileparts(mfilename('fullpath'));
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
 
 % constants 
 grav  = 9.8106;   %g
@@ -72,5 +74,6 @@ dstar = ST_Dstar(d,'temp',T,'sal',S,'sdens',sdens);
 % calculate wset
 wset = (nu/d)*( sqrt(10.36^2 + 1.049*(dstar^3)) - 10.36); 
 
-
-%fprintf(['end   : ' subname '\n'])
+if ftbverbose
+    fprintf('end   : %s\n', subname)
+end
