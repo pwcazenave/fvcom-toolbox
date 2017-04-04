@@ -25,6 +25,7 @@ function write_FVCOM_bedflag(bedflag,filename,mytitle)
 % Revision history
 %    2016-02-18 Updated the code to use the MATLAB netCDF routines.
 %    2017-03-23 Add the supplied title to the generated netCDF file.
+%    2017-03-29 Write the flag as a float as FVCOM expects.
 %
 %==========================================================================
 
@@ -70,7 +71,7 @@ netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'title', mytitle)
 node_dimid=netcdf.defDim(nc, 'node', numel(bedflag));
 
 % define variables and attributes
-node_varid=netcdf.defVar(nc, 'bedflag', 'NC_INT', node_dimid);
+node_varid=netcdf.defVar(nc, 'bedflag', 'NC_FLOAT', node_dimid);
 netcdf.putAtt(nc,node_varid, 'long_name', 'bed deposition flag');
 netcdf.putAtt(nc,node_varid, 'units', '-');
 
