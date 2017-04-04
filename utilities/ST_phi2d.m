@@ -1,4 +1,4 @@
-function [d] = ST_phi2d(phi)
+function d = ST_phi2d(phi)
 % Convert sediment grain size from phi to d (m)
 %
 % function [d] = ST_phi2d(phi)

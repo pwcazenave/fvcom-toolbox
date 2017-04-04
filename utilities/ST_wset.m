@@ -34,7 +34,7 @@ if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
 
-% constants 
+% constants
 grav  = 9.8106;   %g
 T     = 10;       %T (C)
 S     = 35;       %S (PSU)

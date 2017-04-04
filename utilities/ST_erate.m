@@ -1,4 +1,4 @@
-function [erate] = ST_erate(d,varargin)
+function erate = ST_erate(d,varargin)
 % Calculate erosion rate in kg/(m^2-s)
 %
 % function [erate] = ST_erate(d,varargin)
@@ -40,7 +40,7 @@ if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
 
-% constants 
+% constants
 grav  = 9.8106;   %g
 T     = 10;       %T (C)
 S     = 35;       %S (PSU)

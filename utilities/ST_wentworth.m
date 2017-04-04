@@ -1,4 +1,4 @@
-function [Sclass] = wentworth(phi)
+function Sclass = ST_wentworth(phi)
 % Report wentworth class of a particular grain size phi 
 %
 % function wentworth(phi) 
