@@ -63,15 +63,15 @@ netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'), 'history', ...
 node_dimid = netcdf.defDim(nc, 'node', nVerts);
 
 % define variables and attributes
-erate_varid = netcdf.defVar(nc, 'erate', 'NC_INT', node_dimid);
+erate_varid = netcdf.defVar(nc, 'erate', 'NC_DOUBLE', node_dimid);
 netcdf.putAtt(nc, erate_varid, 'long_name', 'bed erodibility constant');
 netcdf.putAtt(nc, erate_varid, 'units', '-');
 
-tau_ce_varid = netcdf.defVar(nc, 'tau_ce', 'NC_INT', node_dimid);
+tau_ce_varid = netcdf.defVar(nc, 'tau_ce', 'NC_DOUBLE', node_dimid);
 netcdf.putAtt(nc, tau_ce_varid, 'long_name', 'critical shear stress for erosion');
 netcdf.putAtt(nc, tau_ce_varid, 'units', 'N/m^2');
 
-tau_cd_varid = netcdf.defVar(nc, 'tau_cd', 'NC_INT', node_dimid);
+tau_cd_varid = netcdf.defVar(nc, 'tau_cd', 'NC_DOUBLE', node_dimid);
 netcdf.putAtt(nc, tau_cd_varid, 'long_name', 'critical shear stress for deposition');
 netcdf.putAtt(nc, tau_cd_varid, 'units', 'N/m^2');
 
