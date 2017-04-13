@@ -1,4 +1,4 @@
-function [Sclass] = wentworth(phi)
+function Sclass = ST_wentworth(phi)
 % Report wentworth class of a particular grain size phi 
 %
 % function wentworth(phi) 
@@ -22,6 +22,12 @@ function [Sclass] = wentworth(phi)
 %   
 %==============================================================================
 
+global ftbverbose
+[~, subname] = fileparts(mfilename('fullpath'));
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
+
 ClassNames = {'boulder','cobble','pebble','granule','very coarse sand', ...
    'coarse sand','medium sand','fine sand','very fine sand','coarse silt', ...
    'medium silt','fine silt','very fine silt','coarse clay','medium clay','fine clay'}; 
@@ -30,3 +36,7 @@ pts = find(phi-ClassLbound > 0);
 ClassIndex = pts(end); 
 Sclass = char(ClassNames{ClassIndex});
 %fprintf('class of phi = %f is: %s\n',phi,class);
+
+if ftbverbose
+    fprintf('end   : %s\n', subname)
+end

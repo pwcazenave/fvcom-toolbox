@@ -19,6 +19,8 @@ function example_FVCOM_river()
 %    2016-02-18 TODO: This function uses add_var_FVCOM_river which in turn
 %    uses the old netCDF toolbox for MATLAB. That function needs to be
 %    updated to use the built in netCDF routines in MATLAB.
+%    2017-03-31 add_var_FVCOM_river now uses the native MATLAB netCDF
+%    routines, so this script should work fine.
 %
 %==============================================================================
 
@@ -49,22 +51,20 @@ RiverName = {'tstRiver'};
 write_FVCOM_river(RiverFile,RiverName,time,flux,temp,salt,RiverInfo1,RiverInfo2)
 
 % add sediment to the file
-if exist('netcdf') == 2
-    VarName = 'fine_sand';
-    VarLongName = 'concentration of fine sand';
-    VarUnits = 'kgm^-3';
-    VarData = .333*sedload;
-    add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
+VarName = 'fine_sand';
+VarLongName = 'concentration of fine sand';
+VarUnits = 'kgm^-3';
+VarData = .333*sedload;
+add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
 
-    VarName = 'coarse_silt';
-    VarLongName = 'concentration of coarse silt';
-    VarUnits = 'kgm^-3';
-    VarData = .333*sedload;
-    add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
+VarName = 'coarse_silt';
+VarLongName = 'concentration of coarse silt';
+VarUnits = 'kgm^-3';
+VarData = .333*sedload;
+add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
 
-    VarName = 'fine_silt';
-    VarLongName = 'concentration of fine silt';
-    VarUnits = 'kgm^-3';
-    VarData = .333*sedload;
-    add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)
-end
+VarName = 'fine_silt';
+VarLongName = 'concentration of fine silt';
+VarUnits = 'kgm^-3';
+VarData = .333*sedload;
+add_var_FVCOM_river(RiverFile,VarName,VarLongName,VarUnits,VarData)

@@ -19,6 +19,7 @@ function rho = SW_Density(T,S)
 %
 % AUTHOR:  
 %   Mostafa H. Sharqawy 12-18-2009, MIT (mhamed@mit.edu)
+%   Pierre Cazenave (Plymouth Marine Laboratory)
 %
 % DISCLAIMER:
 %   This software is provided "as is" without warranty of any kind.
@@ -36,7 +37,16 @@ function rho = SW_Density(T,S)
 %   substance, 1996.        
 %   UPDATED 09-23-2010 modified to now handle matrices and commented out
 %   range checking.
+% 
+% Revision history
+%   2017-03-31 Tidy up the code a bit.
 %=========================================================================
+
+global ftbverbose
+[~, subname] = fileparts(mfilename('fullpath'));
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
 
 %----------------------
 % CHECK INPUT ARGUMENTS
@@ -50,12 +60,16 @@ end
 [mt,nt] = size(T);
 
 % CHECK THAT S & T HAVE SAME SHAPE
-if (ms~=mt) | (ns~=nt)
+if (ms~=mt) || (ns~=nt)
     error('check_stp: S & T must have same dimensions')
 end
 
 % CHECK THAT S & T ARE WITHIN THE FUNCTION RANGE
 vectorsize=size(S);
+s = nan(vectorsize);
+rho_w = nan(vectorsize);
+D_rho = nan(vectorsize);
+rho = nan(vectorsize);
 for i = 1:vectorsize(1,1)
     for j = 1:vectorsize(1,2)
 %         if T(i,j)>180 | T(i,j)<0
@@ -75,5 +89,8 @@ for i = 1:vectorsize(1,1)
         D_rho(i,j) = b1*s(i,j) + b2*s(i,j)*T(i,j) + b3*s(i,j)*T(i,j)^2 + b4*s(i,j)*T(i,j)^3 + b5*s(i,j)^2*T(i,j)^2;
         rho(i,j) = rho_w(i,j) + D_rho(i,j);
     end
-end;
+end
+
+if ftbverbose
+    fprintf('end   : %s\n', subname)
 end

@@ -375,7 +375,7 @@ for ii = 1:numvars
                 fprintf('NEW DATA... ')
             end
             tmp_time = [];
-            for i = 1:nt;
+            for i = 1:nt
                 tmp_time = [tmp_time, sprintf('%-026s', datestr(datenum(out_date(i, :)), 'yyyy-mm-dd HH:MM:SS.FFF'))];
             end
             netcdf.putVar(ncout, varid, tmp_time)

@@ -27,8 +27,11 @@ function [dstar] = ST_Dstar(d,varargin)
 %
 %==============================================================================
 
+global ftbverbose
 [~, subname] = fileparts(mfilename('fullpath'));
-fprintf('\nbegin : %s\n', subname)
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
 
 % constants
 grav  = 9.8106;   %g
@@ -71,4 +74,6 @@ else
     dstar = ([grav*(s-1)./(nu.^2)]).^(1/3).*d;
 end
 
-fprintf('end   : %s\n', subname)
+if ftbverbose
+    fprintf('end   : %s\n', subname)
+end
