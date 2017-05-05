@@ -130,7 +130,7 @@ end
 %--------------------------------------------------------------------------
 % Set netCDF variables and dump to file
 %--------------------------------------------------------------------------
-if FileExist
+if FileExists
     % open boundary forcing
     nc = netcdf.open(tsOBCFile, 'WRITE');
     % read dimensions from the
@@ -268,27 +268,30 @@ if ~FileExists
     end
     for nuts=1:NNuts
         eval(['netcdf.putVar(nc,',varidN{nuts},',Mobj.(ERSEMdata(nuts).name));'])
-    end
+            disp(['Finished with variable, ',ERSEMdata(nuts).name])
+     end
     
 else % file exist and time could be different... check and interpolate if necessary
     if length(time) < length(file_timem)
         for nuts=1:NNuts
             data= Mobj.(ERSEMdata(nuts).name);
-            dataint = nans(size(data, 1),size(data, 2),length(file_timem));
+            dataint = nan(size(data, 1),size(data, 2),length(file_timem));
             for nn=1:size(data, 1)
-                [X1,Y1]=meshgrid(file_timem,siglay(nn,:));
+                [X1,Y1]=meshgrid(file_timem- 678942,siglay(nn,:));
                 [X,Y]=meshgrid(time,siglay(nn,:));
                 % interpolate ERSEMdata...
-                dataint(nn,:,:) = interp2(X,Y,squeeze(data(nn,:,:),X1,Y1));
+                dataint(nn,:,:) = interp2(X,Y,squeeze(data(nn,:,:)),X1,Y1);
             end
-            
-            netcdf.putVar(nc,varidN{nuts},dataint);
+            Nut_id= netcdf.inqVarID(nc,ERSEMdata(nuts).name);
+            netcdf.putVar(nc,Nut_id,dataint);
+            disp(['Finished with variable, ',ERSEMdata(nuts).name])
         end
     else
         % everything is in the same time frequency
         for nuts=1:NNuts
             eval(['netcdf.putVar(nc,',varidN{nuts},',Mobj.(ERSEMdata(nuts).name));'])
-        end
+            disp(['Finished with variable, ',ERSEMdata(nuts).name])
+         end
         
     end
 end

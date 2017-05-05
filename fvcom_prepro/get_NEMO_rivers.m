@@ -175,6 +175,7 @@ nemo.o = (nemo.o / 16) *1000 ./ tmp; % Nemo oxygen concentrations are for O rath
 nemo.p = (nemo.p / 35.5)*1000 ./ tmp;%g/s to mmol/m3
 nemo.sio3 = (nemo.sio3 / 28) *1000./ tmp;%g/2 to mmol/m3
 nemo.bioalk= nemo.bioalk./ tmp / 1000; % bioalk is in umol/s need umol/kg
+nemo.dic= nemo.dic./12./ tmp *1000; % dic is in gC/s need mmol/m3
 % total alkalinity is already in umol/Kg as expected by ERSEM.
 clear tmp
 
