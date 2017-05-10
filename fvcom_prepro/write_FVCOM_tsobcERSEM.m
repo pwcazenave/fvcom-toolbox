@@ -227,6 +227,9 @@ for nuts=1:NNuts
     eval(['netcdf.putAtt(nc,',varidN{nuts},',''long_name'',''',ERSEMdata(nuts).long_name,''');'])
     eval(['netcdf.putAtt(nc,',varidN{nuts},',''units'',''',ERSEMdata(nuts).units,''');'])
     eval(['netcdf.putAtt(nc,',varidN{nuts},',''grid'',''obc_grid'');'])
+% enable compression on the big variables.
+    eval(['netcdf.defVarDeflate(nc, ',varidN{nuts},', true, true, 7);'])
+
     % obc_salinity_varid=netcdf.defVar(nc,'obc_salinity','NC_FLOAT',[nobc_dimid,siglay_dimid,time_dimid]);
     % netcdf.putAtt(nc,obc_salinity_varid,'long_name','sea_water_salinity');
     % netcdf.putAtt(nc,obc_salinity_varid,'units','PSU');
@@ -283,6 +286,7 @@ else % file exist and time could be different... check and interpolate if necess
                 dataint(nn,:,:) = interp2(X,Y,squeeze(data(nn,:,:)),X1,Y1);
             end
             Nut_id= netcdf.inqVarID(nc,ERSEMdata(nuts).name);
+
             netcdf.putVar(nc,Nut_id,dataint);
             disp(['Finished with variable, ',ERSEMdata(nuts).name])
         end
@@ -290,6 +294,7 @@ else % file exist and time could be different... check and interpolate if necess
         % everything is in the same time frequency
         for nuts=1:NNuts
             eval(['netcdf.putVar(nc,',varidN{nuts},',Mobj.(ERSEMdata(nuts).name));'])
+            disp(['We have reversed the Z dimension of variable , ',ERSEMdata(nuts).name])
             disp(['Finished with variable, ',ERSEMdata(nuts).name])
          end
         
