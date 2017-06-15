@@ -29,7 +29,7 @@ function field = smoothfield(fieldin,Mobj,SmoothFactor,nLoops,SmoothPts)
 %==========================================================================
 
 global ftbverbose;
-subname = 'smoothfield';
+[~, subname] = fileparts(mfilename('fullpath'));
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
@@ -57,12 +57,12 @@ end
 % Smoothing Loops
 %--------------------------------------------------------------------------
 
-for ll = 1:nLoops;
+for ll = 1:nLoops
 	field = fieldin;
-	for ii = 1:nPts;
+	for ii = 1:nPts
   		i = SmoothPts(ii);
         ss = 0;
-        for k = 1:Mobj.ntsn(i);
+        for k = 1:Mobj.ntsn(i)
     		node = Mobj.nbsn(i,k);
     		ss = ss + field(node)/real(Mobj.ntsn(i));
         end

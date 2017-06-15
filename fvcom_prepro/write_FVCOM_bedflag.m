@@ -30,7 +30,7 @@ function write_FVCOM_bedflag(bedflag,filename,mytitle)
 %==========================================================================
 
 global ftbverbose
-subname = 'write_FVCOM_bedflag';
+[~, subname] = fileparts(mfilename('fullpath'));
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
