@@ -1,4 +1,4 @@
-function write_FVCOM_tsobcERSEM(basename,time,nSiglay,Mobj,ERSEMdata,varargin)
+function write_FVCOM_tsobcERSEM(tsOBCFile,FileExists,time,nSiglay,Mobj,ERSEMdata,varargin)
 % Export temperature and salinity forcing at the open boundary.
 %
 % function write_FVCOM_tsobc(basename,time,nSiglay,in_temp,in_salt)
@@ -9,17 +9,18 @@ function write_FVCOM_tsobcERSEM(basename,time,nSiglay,Mobj,ERSEMdata,varargin)
 %    sigma_layers, time).
 %
 % INPUT
-%    basename - Model case name (to find the bathymetry and open boundary
-%    .dat files).
+%    tsOBCFile - Filename to use as output
+%    FileExists - True if tsOBCFile already exists and we only want to add
+%    ERSEM variables to it.
 %    time - Time (Modified Julian Days)
 %    nSiglay - Number of sigma layers
-%    in_temp - Boundary temperature (Celsius)
-%    in_salt - Boundary salinity (psu)
 %    Mobj - Mesh Object with the following fields:
 %       - nObs - number of open boundaries
 %       - read_obc_nodes - open boundary node cell array (length = nObs)
 %       - siglay - sigma layer definitions
 %       - siglev - sigma level definitions
+%    ERSEMdata - struct with information to output to Netcdf File
+
 %    Optional keyword-argument pairs:
 %
 %    'strtime' = set to true to output the 'Times' variable
@@ -68,23 +69,15 @@ function write_FVCOM_tsobcERSEM(basename,time,nSiglay,Mobj,ERSEMdata,varargin)
 %    when converting from double to single format.
 % RJT Revision history
 %    2013-12-05 Added functionality to output ERSEM nutrients
+%    2017-04-10 Option to write to an existing file... i.e. a Nesting file
 %==============================================================================
 
 [~, subname] = fileparts(mfilename('fullpath'));
 global ftbverbose
 if ftbverbose
-  fprintf('\nbegin : %s\n', subname)
+    fprintf('\nbegin : %s\n', subname)
 end
-if nargin == 7
-    NNuts=length(ERSEMdata)
-    if NNuts==0
-        disp(['ERSEM fields are empty! no nutrients to be output!!!'])
-    else
-        disp(['We are adding nutrients to the BC file!!!',ERSEMdata(1:NNuts).name])
-        tsOBCFile = [basename, '_ERSEMobc.nc'];
-
-    end
-end
+NNuts=length(ERSEMdata)
 % Default to string times as FVCOM looks for these first.
 strtime = true;
 inttime = false;
@@ -137,66 +130,94 @@ end
 %--------------------------------------------------------------------------
 % Set netCDF variables and dump to file
 %--------------------------------------------------------------------------
-
-% open boundary forcing
-nc = netcdf.create(tsOBCFile, 'clobber');
-
-% define global attributes
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','Open boundary ERSEM nudging')
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM TIME SERIES OBC FABM FILE')
-netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
-
-
-% define dimensions
-nobc_dimid=netcdf.defDim(nc,'nobc',nObc);
-datestrlen_dimid=netcdf.defDim(nc,'DateStrLen',26);
-time_dimid=netcdf.defDim(nc,'time',netcdf.getConstant('NC_UNLIMITED'));
-siglay_dimid=netcdf.defDim(nc,'siglay',nSiglay);
-siglev_dimid=netcdf.defDim(nc,'siglev',nSiglev);
-
-% variables
-if strtime
-    Times_varid=netcdf.defVar(nc,'Times','NC_CHAR',[datestrlen_dimid, time_dimid]);
-    netcdf.putAtt(nc,Times_varid,'time_zone','UTC');
+if FileExists
+    % open boundary forcing
+    nc = netcdf.open(tsOBCFile, 'WRITE');
+    % read dimensions from the
+    % define dimensions
+    dimids = netcdf.inqDimIDs(nc);
+    for dd =1:length(dimids)
+        dimidname=netcdf.inqDim(nc,dimids(dd));
+        switch dimidname
+            case{'node'}
+                
+                nobc_dimid=netcdf.inqDimID(nc,dimidname);
+            case{'DateStrLen'}
+                datestrlen_dimid=netcdf.inqDimID(nc,dimidname);
+            case{'time'}
+                
+                time_dimid=netcdf.inqDimID(nc,dimidname);
+                % read time in case is different from data in file
+                file_times = netcdf.getVar(nc,netcdf.inqVarID(nc,'Times'))';
+                file_timem = datenum(file_times,'yyyy-mm-dd HH:MM:SS.FFF');
+            case{'siglay'}
+                
+                siglay_dimid=netcdf.inqDimID(nc,dimidname);
+            case{'siglev'}
+                siglev_dimid=netcdf.inqDimID(nc,dimidname);
+        end
+    end
+    netcdf.reDef(nc)
+else
+    % open boundary forcing
+    nc = netcdf.create(tsOBCFile, 'clobber');
+    
+    % define global attributes
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','Open boundary ERSEM nudging')
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM TIME SERIES OBC FABM FILE')
+    netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
+    
+    
+    % define dimensions
+    nobc_dimid=netcdf.defDim(nc,'nobc',nObc);
+    datestrlen_dimid=netcdf.defDim(nc,'DateStrLen',26);
+    time_dimid=netcdf.defDim(nc,'time',netcdf.getConstant('NC_UNLIMITED'));
+    siglay_dimid=netcdf.defDim(nc,'siglay',nSiglay);
+    siglev_dimid=netcdf.defDim(nc,'siglev',nSiglev);
+    
+    % variables
+    if strtime
+        Times_varid=netcdf.defVar(nc,'Times','NC_CHAR',[datestrlen_dimid, time_dimid]);
+        netcdf.putAtt(nc,Times_varid,'time_zone','UTC');
+    end
+    
+    if floattime
+        time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
+        netcdf.putAtt(nc,time_varid,'long_name','time');
+        netcdf.putAtt(nc,time_varid,'units','days since 1858-11-17 00:00:00');
+        netcdf.putAtt(nc,time_varid,'time_zone','UTC');
+    end
+    
+    if inttime
+        itime_varid=netcdf.defVar(nc,'Itime','NC_INT',time_dimid);
+        netcdf.putAtt(nc,itime_varid,'units','days since 1858-11-17 00:00:00');
+        netcdf.putAtt(nc,itime_varid,'format','modified julian day (MJD)');
+        netcdf.putAtt(nc,itime_varid,'time_zone','UTC');
+        
+        itime2_varid=netcdf.defVar(nc,'Itime2','NC_INT',time_dimid);
+        netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
+        netcdf.putAtt(nc,itime2_varid,'time_zone','UTC');
+    end
+    
+    nobc_varid=netcdf.defVar(nc,'obc_nodes','NC_INT',nobc_dimid);
+    netcdf.putAtt(nc,nobc_varid,'long_name','Open Boundary Node Number');
+    netcdf.putAtt(nc,nobc_varid,'grid','obc_grid');
+    netcdf.putAtt(nc,nobc_varid,'type','data');
+    
+    obc_h_varid=netcdf.defVar(nc,'obc_h','NC_FLOAT',nobc_dimid);
+    netcdf.putAtt(nc,obc_h_varid,'long_name','Open Boundary Depth');
+    netcdf.putAtt(nc,obc_h_varid,'units','m');
+    netcdf.putAtt(nc,obc_h_varid,'grid','obc_grid');
+    netcdf.putAtt(nc,obc_h_varid,'type','data');
+    
+    obc_siglev_varid=netcdf.defVar(nc,'siglev','NC_FLOAT',[nobc_dimid,siglev_dimid]);
+    netcdf.putAtt(nc,obc_siglev_varid,'long_name','ocean_sigma/general_coordinate');
+    netcdf.putAtt(nc,obc_siglev_varid,'grid','obc_grid');
+    
+    obc_siglay_varid=netcdf.defVar(nc,'siglay','NC_FLOAT',[nobc_dimid,siglay_dimid]);
+    netcdf.putAtt(nc,obc_siglay_varid,'long_name','ocean_sigma/general_coordinate');
+    netcdf.putAtt(nc,obc_siglay_varid,'grid','obc_grid');
 end
-
-if floattime
-    time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
-    netcdf.putAtt(nc,time_varid,'long_name','time');
-    netcdf.putAtt(nc,time_varid,'units','days since 1858-11-17 00:00:00');
-    netcdf.putAtt(nc,time_varid,'time_zone','UTC');
-end
-
-if inttime
-    itime_varid=netcdf.defVar(nc,'Itime','NC_INT',time_dimid);
-    netcdf.putAtt(nc,itime_varid,'units','days since 1858-11-17 00:00:00');
-    netcdf.putAtt(nc,itime_varid,'format','modified julian day (MJD)');
-    netcdf.putAtt(nc,itime_varid,'time_zone','UTC');
-
-    itime2_varid=netcdf.defVar(nc,'Itime2','NC_INT',time_dimid);
-    netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
-    netcdf.putAtt(nc,itime2_varid,'time_zone','UTC');
-end
-
-nobc_varid=netcdf.defVar(nc,'obc_nodes','NC_INT',nobc_dimid);
-netcdf.putAtt(nc,nobc_varid,'long_name','Open Boundary Node Number');
-netcdf.putAtt(nc,nobc_varid,'grid','obc_grid');
-netcdf.putAtt(nc,nobc_varid,'type','data');
-
-obc_h_varid=netcdf.defVar(nc,'obc_h','NC_FLOAT',nobc_dimid);
-netcdf.putAtt(nc,obc_h_varid,'long_name','Open Boundary Depth');
-netcdf.putAtt(nc,obc_h_varid,'units','m');
-netcdf.putAtt(nc,obc_h_varid,'grid','obc_grid');
-netcdf.putAtt(nc,obc_h_varid,'type','data');
-
-obc_siglev_varid=netcdf.defVar(nc,'siglev','NC_FLOAT',[nobc_dimid,siglev_dimid]);
-netcdf.putAtt(nc,obc_siglev_varid,'long_name','ocean_sigma/general_coordinate');
-netcdf.putAtt(nc,obc_siglev_varid,'grid','obc_grid');
-
-obc_siglay_varid=netcdf.defVar(nc,'siglay','NC_FLOAT',[nobc_dimid,siglay_dimid]);
-netcdf.putAtt(nc,obc_siglay_varid,'long_name','ocean_sigma/general_coordinate');
-netcdf.putAtt(nc,obc_siglay_varid,'grid','obc_grid');
-
 
 
 % nutrients here
@@ -206,6 +227,9 @@ for nuts=1:NNuts
     eval(['netcdf.putAtt(nc,',varidN{nuts},',''long_name'',''',ERSEMdata(nuts).long_name,''');'])
     eval(['netcdf.putAtt(nc,',varidN{nuts},',''units'',''',ERSEMdata(nuts).units,''');'])
     eval(['netcdf.putAtt(nc,',varidN{nuts},',''grid'',''obc_grid'');'])
+% enable compression on the big variables.
+    eval(['netcdf.defVarDeflate(nc, ',varidN{nuts},', true, true, 7);'])
+
     % obc_salinity_varid=netcdf.defVar(nc,'obc_salinity','NC_FLOAT',[nobc_dimid,siglay_dimid,time_dimid]);
     % netcdf.putAtt(nc,obc_salinity_varid,'long_name','sea_water_salinity');
     % netcdf.putAtt(nc,obc_salinity_varid,'units','PSU');
@@ -219,34 +243,63 @@ end
 % end definitions
 netcdf.endDef(nc);
 
-% write data
-netcdf.putVar(nc,nobc_varid,obc_nodes);
-netcdf.putVar(nc,obc_h_varid,obc_h);
-netcdf.putVar(nc,obc_siglev_varid,siglev);
-netcdf.putVar(nc,obc_siglay_varid,siglay);
-if strtime
-    nStringOut = char();
-    [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(time);
-    for i=1:nTimes
-        nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
-        nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%09.6f', nDate)];
+if ~FileExists
+    % grid and time information already exist in file...
+    % write data
+    netcdf.putVar(nc,nobc_varid,obc_nodes);
+    netcdf.putVar(nc,obc_h_varid,obc_h);
+    netcdf.putVar(nc,obc_siglev_varid,siglev);
+    netcdf.putVar(nc,obc_siglay_varid,siglay);
+    if strtime
+        nStringOut = char();
+        [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(time);
+        for i=1:nTimes
+            nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
+            nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%09.6f', nDate)];
+        end
+        netcdf.putVar(nc,Times_varid,[0, 0],[26, nTimes],nStringOut);
     end
-    netcdf.putVar(nc,Times_varid,[0, 0],[26, nTimes],nStringOut);
-end
-if floattime
-    netcdf.putVar(nc,time_varid,0,numel(time),time);
-end
-if inttime
-    netcdf.putVar(nc,itime_varid,floor(time));
-    % netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000); % PWC original
-    % KJA edit: avoids rounding errors when converting from double to single
-    % Rounds to nearest multiple of the number of msecs in an hour
-    netcdf.putVar(nc,itime2_varid,0,numel(time),round((mod(time,1)*24*3600*1000)/(3600*1000))*(3600*1000));
-end
-for nuts=1:NNuts
-    eval(['netcdf.putVar(nc,',varidN{nuts},',Mobj.(ERSEMdata(nuts).name));'])
-end
+    if floattime
+        netcdf.putVar(nc,time_varid,0,numel(time),time);
+    end
+    if inttime
+        netcdf.putVar(nc,itime_varid,floor(time));
+        % netcdf.putVar(nc,itime2_varid,0,numel(time),mod(time,1)*24*3600*1000); % PWC original
+        % KJA edit: avoids rounding errors when converting from double to single
+        % Rounds to nearest multiple of the number of msecs in an hour
+        netcdf.putVar(nc,itime2_varid,0,numel(time),round((mod(time,1)*24*3600*1000)/(3600*1000))*(3600*1000));
+    end
+    for nuts=1:NNuts
+        eval(['netcdf.putVar(nc,',varidN{nuts},',Mobj.(ERSEMdata(nuts).name));'])
+            disp(['Finished with variable, ',ERSEMdata(nuts).name])
+     end
+    
+else % file exist and time could be different... check and interpolate if necessary
+    if length(time) < length(file_timem)
+        for nuts=1:NNuts
+            data= Mobj.(ERSEMdata(nuts).name);
+            dataint = nan(size(data, 1),size(data, 2),length(file_timem));
+            for nn=1:size(data, 1)
+                [X1,Y1]=meshgrid(file_timem- 678942,siglay(nn,:));
+                [X,Y]=meshgrid(time,siglay(nn,:));
+                % interpolate ERSEMdata...
+                dataint(nn,:,:) = interp2(X,Y,squeeze(data(nn,:,:)),X1,Y1);
+            end
+            Nut_id= netcdf.inqVarID(nc,ERSEMdata(nuts).name);
 
+            netcdf.putVar(nc,Nut_id,dataint);
+            disp(['Finished with variable, ',ERSEMdata(nuts).name])
+        end
+    else
+        % everything is in the same time frequency
+        for nuts=1:NNuts
+            eval(['netcdf.putVar(nc,',varidN{nuts},',Mobj.(ERSEMdata(nuts).name));'])
+            disp(['We have reversed the Z dimension of variable , ',ERSEMdata(nuts).name])
+            disp(['Finished with variable, ',ERSEMdata(nuts).name])
+         end
+        
+    end
+end
 % close file
 netcdf.close(nc);
 
