@@ -31,11 +31,10 @@ function write_SMS_2dm(file, tri, x, y, z, bnd)
 % 
 %==========================================================================
 
-subname = 'write_SMS_2dm';
-
 global ftbverbose
+[~, subname] = fileparts(mfilename('fullpath'));
 if ftbverbose
-    fprintf('\n'); fprintf(['begin : ' subname '\n']);
+    fprintf('\nbegin : %s\n', subname)
 end
 
 f = fopen(file, 'w');

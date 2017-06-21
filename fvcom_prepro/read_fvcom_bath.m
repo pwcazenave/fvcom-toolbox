@@ -25,12 +25,11 @@ function [h] = read_fvcom_bath(bathfile)
 %   
 %==============================================================================
 
-subname = 'read_fvcom_bath';
 global ftbverbose
-if(ftbverbose)
-  fprintf('\n')
-  fprintf(['begin : ' subname '\n'])
-end;
+[~, subname] = fileparts(mfilename('fullpath'));
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
 
 %------------------------------------------------------------------------------
 % read in the FVCOM bathymetry data

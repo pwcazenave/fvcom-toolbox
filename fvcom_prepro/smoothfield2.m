@@ -25,9 +25,12 @@ function [field]  = smoothfield(fieldin,Mobj,nLoops,SmoothPts)
 % Revision history
 %   
 %==============================================================================
-subname = 'smoothfield';
-%fprintf('\n')
-%fprintf(['begin : ' subname '\n'])
+fprintf('\nbegin : %s\n', subname)
+endglobal ftbverbose
+[~, subname] = fileparts(mfilename('fullpath'));
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
 
 %------------------------------------------------------------------------------
 % Parse input
