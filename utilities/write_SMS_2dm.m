@@ -2,7 +2,7 @@ function write_SMS_2dm(file, tri, x, y, z, bnd)
 % Output an SMS 2dm ASCII file from the triangulation given by tri, x and
 % y.
 %
-% write_SMS_2dm(tri, x, y)
+% write_SMS_2dm('file.2dm', tri, x, y)
 % 
 % DESCRIPTION:
 %   Create an ASCII file in the SMS 2dm format of the triangulation in tri,
@@ -28,6 +28,7 @@ function write_SMS_2dm(file, tri, x, y, z, bnd)
 % Revision history:
 %   2013-03-11 First version.
 %   2017-01-27 Change the arguments to use a z value too.
+%   2017-04-11 Update the help to be more useful.
 % 
 %==========================================================================
 
