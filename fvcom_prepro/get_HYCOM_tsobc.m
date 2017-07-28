@@ -464,7 +464,7 @@ for v = 1:length(fields)
 
                 % Get the temperature and salinity values for this node and
                 % interpolate down the water column (from HYCOM to FVCOM).
-                if ~isnan(norm_tpz)
+                if any(~isnan(norm_tpz))
                     fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, ~mm), tfz, 'pchip', 'extrap');
 
                     %figure(800);
