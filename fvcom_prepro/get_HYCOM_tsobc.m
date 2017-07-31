@@ -206,7 +206,7 @@ for v = 1:length(fields)
         for j = 1:nz
             if j == zidx + 1
                 if ftbverbose
-                    fprintf('   skipping remaining coarse data layers (%d) as their depths are below the FVCOM open boundary depths\n', nz - zidx - 1)
+                    fprintf('   skipping remaining coarse data layers (%d) as their depths are below the FVCOM open boundary depths\n', nz - zidx)
                 end
                 continue
             elseif j > zidx
