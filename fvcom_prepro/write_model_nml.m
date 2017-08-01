@@ -19,6 +19,7 @@ function res = write_model_nml(conf, nml, fmt)
 % Revision history
 %    2017-01-12 First version.
 %    2017-02-03 Fix output directory variable use.
+%    2017-08-01 Remove tabs from the namelists.
 
 if ~( exist(conf.fvcom_model, 'dir') )
     mkdir(conf.fvcom_model);
@@ -40,13 +41,13 @@ for nn = 1:length(nml_blocks)
         var_value = nml.(nml_blocks{nn}).(nml_vars{vv});
         if ischar(var_value)
             if any(strcmp(var_value, {'T','F'}))
-                formatstr = ' %s\t = %s';
+                formatstr = ' %s = %s';
 
             else
-                formatstr=[' %s\t = ', '''', '%s', ''''];
+                formatstr=[' %s = ', '''', '%s', ''''];
             end
         else
-            formatstr= [' %s\t = ', repmat([fmt.(nml_blocks{nn}).(nml_vars{vv}).format, ','], 1, length(var_value))];
+            formatstr= [' %s = ', repmat([fmt.(nml_blocks{nn}).(nml_vars{vv}).format, ','], 1, length(var_value))];
         end
         line = sprintf(formatstr, nml_vars{vv}, var_value);
         fprintf(fnml, '%s\n', line);
