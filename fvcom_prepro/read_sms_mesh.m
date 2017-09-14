@@ -359,7 +359,7 @@ if have_strings
     Mobj.have_strings   = have_strings;
     Mobj.read_obc_nodes = read_obc_nodes;
 else
-    Mobj.have_strings;
+    Mobj.have_strings   = false;
 end
 if exist('addCoriolis', 'var') && addCoriolis
     Mobj.have_cor       = true;
