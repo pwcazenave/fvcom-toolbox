@@ -344,7 +344,7 @@ for ff = 1:fv_nr
         % the original river location (in fvcom_xy).
         [~, n_idx] = sort(sqrt( ...
             (nemo_xy(ff, 1) - Mobj.lon(n_tri)).^2 ...
-            + (nemo_xy(ff, 2) - Mobj.lon(n_tri)).^2));
+            + (nemo_xy(ff, 2) - Mobj.lat(n_tri)).^2));
 
         [row_2, ~] = find(Mobj.tri == n_tri(n_idx(1)));
         if length(n_idx) > 1
