@@ -138,8 +138,11 @@ end
 fnames = fieldnames(indata);
 nf = length(fnames);
 
+if exist(out_restart, 'file')
+    delete(out_restart)
+end
 nc = netcdf.open(fv_restart, 'NOWRITE');
-ncout = netcdf.create(out_restart, 'clobber');
+ncout = netcdf.create(out_restart, 'NETCDF4');
 
 [numdims, numvars, numglobatts, unlimdimID] = netcdf.inq(nc);
 
@@ -180,6 +183,8 @@ for ii = 1:numvars
 
     % Create the variables.
     varid = netcdf.defVar(ncout, varname, xtype, varDimIDs);
+    % Enable compression.
+    netcdf.defVarDeflate(ncout, varid, true, true, 7);
 
     % Get each attribute and add it to the current variable.
     for j = 1:varAtts
