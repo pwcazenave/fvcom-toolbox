@@ -87,7 +87,7 @@ function write_FVCOM_restart(fv_restart, out_restart, indata, varargin)
 %
 %==========================================================================
 
-subname = 'write_FVCOM_restart';
+[~, subname] = fileparts(mfilename('fullpath'));
 
 global ftbverbose
 if ftbverbose
