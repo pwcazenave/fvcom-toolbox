@@ -65,13 +65,16 @@ function write_FVCOM_restart(fv_restart, out_restart, indata, varargin)
 %   2013-02-15 Fix bug wherein only the last field in the new data would
 %   only be added to the output netCDF file.
 %   2013-03-13 Make the time rewriting optional and not just commented out.
-%   2014-02-04 Incorporate Karen's functionality (see revision history
-%   below), but with the ability to retain the existing behaviour (where a
-%   new start time is still optional). User-specified constants are also
-%   supported but instead of specifying a new input argument, if a single
-%   scalar value is given in the input struct but the output is non-scalar
-%   (i.e. an array), then that scalar is tiled to the size of the expected
-%   output array.
+%   2014-01-23 Add functionality to specify length of time series in output
+%   file (Karen Amoudry).
+%   2014-01-31 Add functionality to replace user-specified variables in the
+%   output file with user-specified constant values  (Karen Amoudry).
+%   2014-02-04 Incorporate Karen's functionality (see above) but with the
+%   ability to retain the existing behaviour (where a new start time is
+%   still optional). User-specified constants are also supported but
+%   instead of specifying a new input argument, if a single scalar value is
+%   given in the input struct but the output is non-scalar (i.e. an array),
+%   then that scalar is tiled to the size of the expected output array.
 %   2014-02-13 Fix output when only a single time step is in the input
 %   template restart file (fv_restart). Single time step files have the
 %   indata put in the time step (previously the ramping from model to
@@ -80,12 +83,7 @@ function write_FVCOM_restart(fv_restart, out_restart, indata, varargin)
 %   2014-07-08 Fix the creation of the Itime2 variable (milliseconds since
 %   midnight). Also update the help to better describe how the optional
 %   'out_date' argument works.
-%
-% KJA Revision history:
-%   2014-01-23 Add functionality to specify length of time series in output
-%   file.
-%   2014-01-31 Add functionality to replace user-specified variables in the
-%   output file with user-specified constant values.
+%   2017-08-01 Add netCDF4 compression to save on file size.
 %
 %==========================================================================
 
