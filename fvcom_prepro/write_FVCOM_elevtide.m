@@ -92,7 +92,11 @@ ObcNodes = tmpObcNodes(tmpObcNodes~=0)';
 %--------------------------------------------------------------------------
 % Sanity check on input and dimensions
 %--------------------------------------------------------------------------
-nTimes = numel(MJD);
+if ischar(MJD(1))
+    nTimes = size(MJD, 1);
+else
+    nTimes = numel(MJD);
+end
 if ftbverbose; fprintf('Number of time steps %d\n',nTimes); end
 
 nObcs = numel(ObcNodes);
@@ -166,21 +170,34 @@ netcdf.endDef(nc);
 % write data
 netcdf.putVar(nc,nobc_varid,ObcNodes);
 netcdf.putVar(nc,iint_varid,0,nTimes,1:nTimes);
+if strtime
+    % If out MJD data is characters, assume we've already got a suitable
+    % array of Time strings. Use those to create an MJD array to write to
+    % netCDF. This is sometimes preferable to having MJD as an array of
+    % floats in the case where we've read in a 'time' variable from a
+    % netCDF file and its precision is insufficient to actually store the
+    % times properly. netCDF, otherwise, create one assuming we've actually
+    % got Modified Julian Days. If we've been given an array of floats,
+    % then just dump those to netCDF as before.
+    if ischar(MJD(1))
+        nStringOut = MJD';
+        MJD = datenum(nStringOut', 'YYYY-mm-dd HH:MM:SS.FFF') - 678942;
+    else
+        nStringOut = char();
+        [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(MJD);
+        for i=1:nTimes
+            nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
+            nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%09.6f', nDate)];
+        end
+    end
+    netcdf.putVar(nc,Times_varid,nStringOut);
+end
 if floattime
     netcdf.putVar(nc,time_varid,0,nTimes,MJD);
 end
 if inttime
     netcdf.putVar(nc,itime_varid,floor(MJD));
     netcdf.putVar(nc,itime2_varid,0,nTimes,round(mod(MJD,1) * 24 * 60 * 60 * 1000));
-end
-if strtime
-    nStringOut = char();
-    [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(MJD);
-    for i=1:nTimes
-        nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
-        nStringOut = [nStringOut, sprintf('%04i/%02i/%02i %02i:%02i:%09.6f', nDate)];
-    end
-    netcdf.putVar(nc,Times_varid,nStringOut);
 end
 netcdf.putVar(nc,elevation_varid,Mobj.surfaceElevation);
 
