@@ -1,16 +1,23 @@
-function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType,plotFig)
-
+function Mobj = add_obc_nodes_list(Mobj, Nodelist, ObcName, ObcType, plotFig)
 % Add a set of obc nodes comprising a single obc boundary to Mesh structure
-% Using a list of nodes
+% using a list of nodes.
 %
-% [Mobj] = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType)
+% Mobj = add_obc_nodes_list(Mobj, Nodelist, ObcName, ObcType)
 %
 % DESCRIPTION:
-%    Select using ginput the set of nodes comprising an obc
+%    Add a set of open boundary nodes for a given boundary using a list of
+%    nodes.
 %
 % INPUT
-%    Mobj = Matlab mesh object
-%    Nlist = List of nodes
+%    Mobj = Matlab mesh object with fields:
+%       - nVerts - number of nodes in the domain
+%       - nativeCoords - coordinates in which the model runs (only for
+%       plotting the figure).
+%       - x, y, lon, lat - mesh node coordinates (either cartesian or
+%       spherical) (only for plotting the figure).
+%       - tri - model grid triangulation (only for plotting the figure)
+%       - h - model grid depths (only for plotting the figure)
+%    Nodelist = List of nodes
 %    ObcName = Name of the Open Boundary
 %    ObcType = FVCOM Flag for OBC Type
 %    plotFig = [optional] show a figure of the mesh (1 = yes)
@@ -19,7 +26,8 @@ function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType,plotFig)
 %    Mobj = Matlab mesh object with an additional obc nodelist
 %
 % EXAMPLE USAGE
-%    Mobj = add_obc_nodes_list(Mobj,Nlist,'OpenOcean')
+%    Nodelist = 1:100;
+%    Mobj = add_obc_nodes_list(Mobj, Nodelist, 'OpenOcean')
 %
 % Author(s):
 %    Geoff Cowles (University of Massachusetts Dartmouth)
@@ -32,10 +40,10 @@ function [Mobj]  = add_obc_nodes_list(Mobj,Nlist,ObcName,ObcType,plotFig)
 %    prevent it from sorting the values it returns. Amended by Pierre to
 %    support pre-2012 versions of MATLAB whilst giving the same result.
 %    2015-02-23 Output number of nodes if the verbose flag is set.
+%    2017-08-31 Update the help to clarify what's needed.
 %
 %==========================================================================
-subname = 'add_obc_nodes_list';
-
+[~, subname] = fileparts(mfilename('fullpath'));
 global ftbverbose
 if ftbverbose
   fprintf('\nbegin : %s\n', subname)
@@ -51,13 +59,10 @@ end
 %--------------------------------------------------------------------------
 % Make this works in versions of MATLAB older than 2012a (newer versions
 % can just use unique(A, 'stable'), but checking versions is a pain).
-[~, Nidx] = unique(Nlist);
-Nlist = Nlist(sort(Nidx));
+[~, Nidx] = unique(Nodelist);
+Nodelist = Nodelist(sort(Nidx));
 
-if max(Nlist) > Mobj.nVerts
-  fprintf('Your open boundary node number exceed the total number of nodes in the domain\n');
-  error('stopping...')
-end
+assert(max(Nodelist) < Mobj.nVerts, 'Your open boundary node number exceed the total number of nodes in the domain\n')
 
 %--------------------------------------------------------------------------
 % Plot the mesh
@@ -76,16 +81,16 @@ if plotFig == 1
         'Cdata', Mobj.h, 'edgecolor', 'k', 'facecolor', 'interp')
     hold on
     whos Nlist
-    plot(x(Nlist), y(Nlist), 'ro');
+    plot(x(Nodelist), y(Nodelist), 'ro');
     axis('equal', 'tight')
     title('open boundary nodes');
 end
 
 % add to mesh object
-npts = numel(Nlist);
+npts = numel(Nodelist);
 Mobj.nObs = Mobj.nObs + 1;
 Mobj.nObcNodes(Mobj.nObs) = npts;
-Mobj.obc_nodes(Mobj.nObs,1:npts) = Nlist;
+Mobj.obc_nodes(Mobj.nObs,1:npts) = Nodelist;
 Mobj.obc_name{Mobj.nObs} = ObcName;
 Mobj.obc_type(Mobj.nObs) = ObcType;
 
