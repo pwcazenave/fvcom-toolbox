@@ -323,8 +323,8 @@ siglay_varid = netcdf.defVar(nc, 'siglay', 'NC_FLOAT', ...
 netcdf.putAtt(nc, siglay_varid, 'long_name', 'Sigma Layers');
 netcdf.putAtt(nc, siglay_varid, 'standard_name', 'ocean_sigma/general_coordinate');
 netcdf.putAtt(nc, siglay_varid, 'positive', 'up');
-netcdf.putAtt(nc, siglay_varid, 'valid_min', '-1.f');
-netcdf.putAtt(nc, siglay_varid, 'valid_max', '0.f');
+netcdf.putAtt(nc, siglay_varid, 'valid_min', -1);
+netcdf.putAtt(nc, siglay_varid, 'valid_max', 0);
 netcdf.putAtt(nc, siglay_varid, 'formula_terms', 'sigma: siglay eta: zeta depth: h');
 
 siglayc_varid = netcdf.defVar(nc, 'siglay_center', 'NC_FLOAT', ...
@@ -332,8 +332,8 @@ siglayc_varid = netcdf.defVar(nc, 'siglay_center', 'NC_FLOAT', ...
 netcdf.putAtt(nc, siglayc_varid, 'long_name', 'Sigma Layers');
 netcdf.putAtt(nc, siglayc_varid, 'standard_name', 'ocean_sigma/general_coordinate');
 netcdf.putAtt(nc, siglayc_varid, 'positive', 'up');
-netcdf.putAtt(nc, siglayc_varid, 'valid_min', '-1.f');
-netcdf.putAtt(nc, siglayc_varid, 'valid_max', '0.f');
+netcdf.putAtt(nc, siglayc_varid, 'valid_min', -1);
+netcdf.putAtt(nc, siglayc_varid, 'valid_max', 0);
 netcdf.putAtt(nc, siglayc_varid, 'formula_terms', 'sigma: siglay_center eta: zeta_center depth: h_center');
 
 siglev_varid = netcdf.defVar(nc, 'siglev', 'NC_FLOAT', ...
@@ -341,8 +341,8 @@ siglev_varid = netcdf.defVar(nc, 'siglev', 'NC_FLOAT', ...
 netcdf.putAtt(nc, siglev_varid, 'long_name', 'Sigma Levels');
 netcdf.putAtt(nc, siglev_varid, 'standard_name', 'ocean_sigma/general_coordinate');
 netcdf.putAtt(nc, siglev_varid, 'positive', 'up');
-netcdf.putAtt(nc, siglev_varid, 'valid_min', '-1.f');
-netcdf.putAtt(nc, siglev_varid, 'valid_max', '0.f');
+netcdf.putAtt(nc, siglev_varid, 'valid_min', -1);
+netcdf.putAtt(nc, siglev_varid, 'valid_max', 0);
 netcdf.putAtt(nc, siglev_varid, 'formula_terms', 'sigma:siglev eta: zeta depth: h');
 
 siglevc_varid = netcdf.defVar(nc, 'siglev_center', 'NC_FLOAT', ...
@@ -350,8 +350,8 @@ siglevc_varid = netcdf.defVar(nc, 'siglev_center', 'NC_FLOAT', ...
 netcdf.putAtt(nc, siglevc_varid, 'long_name', 'Sigma Layers');
 netcdf.putAtt(nc, siglevc_varid, 'standard_name', 'ocean_sigma/general_coordinate');
 netcdf.putAtt(nc, siglevc_varid, 'positive', 'up');
-netcdf.putAtt(nc, siglevc_varid, 'valid_min', '-1.f');
-netcdf.putAtt(nc, siglevc_varid, 'valid_max', '0.f');
+netcdf.putAtt(nc, siglevc_varid, 'valid_min', -1);
+netcdf.putAtt(nc, siglevc_varid, 'valid_max', 0);
 netcdf.putAtt(nc, siglevc_varid, 'formula_terms', 'sigma: siglev_center eta: zeta_center depth: h_center');
 
 h_varid = netcdf.defVar(nc, 'h', 'NC_FLOAT', ...

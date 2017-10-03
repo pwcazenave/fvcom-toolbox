@@ -27,27 +27,25 @@ function [Mobj] = estimate_ts(Mobj,u,zeta)
 %    latitude and longitudes. Also add arguments to the function to define
 %    current velocity and tidal amplitudes.
 %    2016-02018 Update the help to reflect the required variables.
+%    2017-09-01 Tidy the code a bit.
 %
 %==============================================================================
 
-subname = 'estimate_ts';
+[~, subname] = fileparts(mfilename('fullpath'));
 global ftbverbose
-if(ftbverbose)
-    fprintf('\n')
-    fprintf(['begin : ' subname '\n'])
-end;
+if ftbverbose
+    fprintf('\nbegin : %s\n', subname)
+end
 
 %------------------------------------------------------------------------------
 % Set constants
 %------------------------------------------------------------------------------
 
-g    = 9.81; %gravitational acceleration
-%u    = 3.0;  %u-velocity
-%zeta = 11.0;  %tide amp
+g = 9.81; % gravitational acceleration
 
 if(~Mobj.have_bath)
     error('can''t estimate the time step without bathymetry')
-end;
+end
 
 %------------------------------------------------------------------------------
 % Compute the time step estimate
@@ -83,15 +81,17 @@ for i=1:nElems
     dpth  = max(dpth,1);
     ts(nds) = min(ts(nds),lside(i)/(sqrt(g*dpth) + u));
 end
-if(ftbverbose); fprintf('minimum time step: %f seconds\n',min(ts)); end;
+if ftbverbose
+    fprintf('minimum time step: %f seconds\n',min(ts));
+end
 Mobj.ts = ts;
 Mobj.have_ts = true;
 Mobj.lside=lside;
-if(ftbverbose)
-    fprintf(['end   : ' subname '\n'])
+if ftbverbose
+    fprintf('end   : %s\n', subname)
 end
 
-function [km]=haversine(lat1,lon1,lat2,lon2)
+function km=haversine(lat1,lon1,lat2,lon2)
 % Haversine function to calculate first order distance measurement. Assumes
 % spherical Earth surface. Lifted from:
 %

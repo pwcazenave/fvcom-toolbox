@@ -81,9 +81,9 @@ netcdf.putAtt(nc, tau_cd_varid, 'units', 'N/m^2');
 
 extra_fields = setdiff(fieldnames(sediment), {'tau_ce', 'tau_cd', 'erate'});
 for f = 1:length(extra_fields)
-    sediment_name = strrep(extra_fields{f}, '_bedfrac', '');
+    sediment_name = extra_fields{f};
     if ftbverbose
-        fprintf('Adding extra variable: %s\n', sediment_name)
+        fprintf('Defining extra variable: %s\n', sediment_name)
     end
     eval(sprintf('%s_varid = netcdf.defVar(nc, ''%s'', ''NC_DOUBLE'', node_dimid);\n', sediment_name, sediment_name))
     eval(sprintf('netcdf.putAtt(nc, %s_varid, ''long_name'', ''Fraction of %s in surface layer'');\n', sediment_name, sediment_name))
@@ -98,6 +98,15 @@ netcdf.endDef(nc);
 netcdf.putVar(nc, erate_varid, sediment.erate);
 netcdf.putVar(nc, tau_ce_varid, sediment.tau_ce);
 netcdf.putVar(nc, tau_cd_varid, sediment.tau_cd);
+
+% Add the extra data.
+for f = 1:length(extra_fields)
+    sediment_name = extra_fields{f};
+    if ftbverbose
+        fprintf('Adding extra variable: %s\n', sediment_name)
+    end
+    eval(sprintf('netcdf.putVar(nc, %s_varid, sediment.(sediment_name));', sediment_name))
+end
 
 % close netCDF
 netcdf.close(nc)

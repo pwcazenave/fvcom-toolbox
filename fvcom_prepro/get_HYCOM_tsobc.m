@@ -120,7 +120,6 @@ hdx = max([max(diff(lon(:,1))),max(diff(lat(1,:)))]);
 % Number of sigma layers.
 fz = size(Mobj.siglayz, 2);
 
-
 % Make a 3D array of the HYCOM depths and mask where we don't have data.
 % This can then be used in the interpolation instead of trying to deal with
 % this on the fly.
@@ -483,7 +482,7 @@ for v = 1:length(fields)
 
         % Find and remove NaNs.
         parfor pp=1:fz
-            test = fvtempz(:,pp);
+            test = fvtempz(:, pp);
             if any(isnan(test))
                 igood = ~isnan(test);
                 ftri = scatteredInterpolant(fvlon(igood), fvlat(igood), test(igood), 'nearest', 'nearest');
