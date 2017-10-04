@@ -38,6 +38,8 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 %       the new values and then the old values as (xnew,ynew,xold,yold).
 %       This is useful if you've manually moved the NEMO rivers onto more
 %       realistic locations.
+%   'remove_baltic' - [optional] remove the Baltic river inputs. Set to
+%       true to remove; defaults to false.
 %
 % OUTPUT:
 %   Mobj.river_flux - volume flux at the nodes within the model domain.
@@ -76,6 +78,8 @@ function Mobj = get_NEMO_rivers(Mobj, dist_thresh, varargin)
 %   to the outputs.
 %   2016-08-10 - Add new option to use a file specifying alternative river
 %   positions.
+%   2017-10-04 - Add new option to remove the Baltic Sea inputs from the
+%   river data.
 %
 %==========================================================================
 
@@ -114,6 +118,8 @@ elseif nargin > 3
             case 'alternate_positions'
                 alt_positions = true;
                 alternate_file = varargin{aa + 1};
+            case 'remove_baltic'
+                drop_baltic = true;
         end
     end
 end
@@ -138,6 +144,31 @@ nemo.alt = ncread(Mobj.rivers.river_flux, 'rototalk');
 nemo.bioalk = ncread(Mobj.rivers.river_flux, 'robioalk');
 % nemo.temp = ncread(Mobj.rivers.river_flux, 'rotemper');
 % nemo.salt = ncread(Mobj.rivers.river_flux, 'rosaline');
+
+if drop_baltic
+    % Set the data at the Baltic indices to zero before we get too carried
+    % away. Find the indices based on positions rather than hard-coding
+    % them so we can still do this for newer NEMO river inputs (assuming
+    % they still use the same approach for the Baltic).
+    baltic.lon = [10.7777, 12.5555];
+    baltic.lat = [55.5998, 56.1331];
+    names = fieldnames(nemo);
+    for pp = 1:length(baltic.lon)
+        [~, lon_idx] = min(abs(nemo.lon - baltic.lon(pp)));
+        [~, lat_idx] = min(abs(nemo.lat - baltic.lat(pp)));
+        for n = 1:length(names)
+            switch names{n}
+                case {'lon', 'lat', 'LON', 'LAT', 'time'}
+                    continue
+            end
+
+            % Drop the Baltic data (replace with zeros to match the other
+            % non-river data in the netCDF).
+            nemo.(names{n})(lon_idx, lat_idx, :) = 0;
+        end
+    end
+    clearvars lon_idx lat_idx baltic names n
+end
 
 % Now get the NEMO grid data.
 % nemo.e1t = ncread(Mobj.rivers.river_coordinates, 'e1t');
