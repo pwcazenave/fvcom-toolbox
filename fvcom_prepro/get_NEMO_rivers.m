@@ -105,6 +105,7 @@ yr = [];
 % help. This is going to bite me at some point in the future, I'm sure.
 dump_positions = false;
 alt_positions = false;
+drop_baltic = false;
 if nargin == 3
     yr = varargin{1};
 elseif nargin > 3
