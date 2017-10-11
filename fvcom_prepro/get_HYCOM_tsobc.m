@@ -11,8 +11,15 @@ function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)
 % INPUT:
 %   Mobj    = MATLAB mesh structure which must contain:
 %               - Mobj.siglayz - sigma layer depths for all model nodes.
+%               - Mobj.siglayzc - sigma layer depths for all model elements.
 %               - Mobj.lon, Mobj.lat - node coordinates (lat/long).
-%               - Mobj.obc_nodes - list of open boundary node inidices.
+%               - Mobj.read_obc_nodes - cell array of open boundary nodes.
+%               - Mobj.read_obc_elems - cell array of open boundary
+%               elements (only if using velocities - use find_nested_region
+%               to get these indices).
+%               - Mobj.h - water depths at nodes.
+%               - Mobj.tri - triangulation table for the grid (nv in FVCOM
+%               terms).
 %               - Mobj.nObcNodes - number of nodes in each open boundary.
 %   hycom   = Struct with HYCOM data covering the model domain. Unless
 %             varlist is specified (see below), all 4D fields will be
