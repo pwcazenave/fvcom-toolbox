@@ -150,7 +150,7 @@ if ~isfield(Mobj, 'hc')
 end
 max_obc_depth = max([max(Mobj.h([Mobj.read_obc_nodes{:}])), max(Mobj.hc([Mobj.read_obc_elems{:}]))]);
 [~, zidx] = min(abs(hycom.Depth.data - max_obc_depth));
-zidx = zidx + 1;
+zidx = min([zidx + 1, length(hycom.Depth.data)]);
 
 if ftbverbose
     tic
