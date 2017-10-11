@@ -167,9 +167,8 @@ for v = 1:length(fields)
     % Supply FVCOM grid positions depending on whether we're working on the
     % velocity data (on elements) or anything else (on nodes).
     if any(strcmpi(fields{v}, {'u', 'v'}))
-        oNodes = [Mobj.read_obc_elems{:}];
-        fvlon = Mobj.lonc(oNodes);
-        fvlat = Mobj.latc(oNodes);
+        fvlon = Mobj.lonc(oElems);
+        fvlat = Mobj.latc(oElems);
         sigma = Mobj.siglayzc;
         if ftbverbose
             fprintf('Variable %s on elements (%d positions)\n', fields{v}, length(fvlon))
@@ -177,8 +176,6 @@ for v = 1:length(fields)
     else
         % Make sure the nodes are listed in the same way as in
         % casename_obc.dat.
-        tmpObcNodes = Mobj.obc_nodes';
-        oNodes = tmpObcNodes(tmpObcNodes ~= 0)';
         fvlon = Mobj.lon(oNodes);
         fvlat = Mobj.lat(oNodes);
         sigma = Mobj.siglayz;
