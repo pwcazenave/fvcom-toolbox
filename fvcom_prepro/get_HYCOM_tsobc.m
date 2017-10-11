@@ -105,7 +105,11 @@ end
 % for each node/element.
 
 obc_hycom_idx = [];
-oElems = [Mobj.read_obc_elems{:}];
+if isfield(Mobj, 'read_obc_elems')
+    oElems = [Mobj.read_obc_elems{:}];
+else
+    oElems = [];
+end
 oNodes = [Mobj.read_obc_nodes{:}];
 for obc_i = 1:length(oNodes)
     [~, h_idx] = sort(sqrt((lon(:) - Mobj.lon(obc_i)).^2 + ...
@@ -141,6 +145,9 @@ mask = hycom.(fields{ff}).data(:, :, :, 1) > 1.26e29;
 % Ignore depth layers in the HYCOM data which are below the maximum depth
 % of the open boundary nodes so we don't waste time trying to interpolate
 % those data. Add a buffer of one layer in case I'm an idiot.
+if ~isfield(Mobj, 'hc')
+    Mobj.hc = nodes2elems(Mobj.h, Mobj);
+end
 max_obc_depth = max([max(Mobj.h([Mobj.read_obc_nodes{:}])), max(Mobj.hc([Mobj.read_obc_elems{:}]))]);
 [~, zidx] = min(abs(hycom.Depth.data - max_obc_depth));
 zidx = zidx + 1;
