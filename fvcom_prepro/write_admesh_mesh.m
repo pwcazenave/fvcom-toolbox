@@ -10,6 +10,7 @@ function write_admesh_mesh(Mobj,varargin)
 %   Mobj                   = needs bathymetry, nodes and triangulation
 %   table. read_sms_mesh provides everything it needs.
 %   [optional] output_directory       = directory to write mesh.14 file
+%   [optional] filename       = filename to use instead of default mesh(.14). Don't provide extension 
 %   [optional] native_coord = cartesian or spherical. Assumes cartesian if
 %   omitted.
 %
@@ -48,7 +49,7 @@ out_dir = pwd; % default is to write file to current directory
 native_coord = 'cartesian';
 have_xy = true;
 have_lonlat = false;
-
+filename = 'mesh'
 for i = 1:2:length(varargin) - 1
     keyword = lower(varargin{i});
     
@@ -57,6 +58,8 @@ for i = 1:2:length(varargin) - 1
     switch keyword
         case 'output_directory'
             out_dir = varargin{i + 1};
+        case 'filename'
+            filename = varargin{i + 1};
         case 'native_coord'
             coord = varargin{i + 1};
             if strcmpi(coord, 'spherical')
@@ -79,7 +82,7 @@ end
 %--------------------------------------------------------------------------
 % Open the output file
 %--------------------------------------------------------------------------
-gmsh_msh = fullfile(out_dir,'mesh.14');
+gmsh_msh = fullfile(out_dir,[filename '.14']);
 fid = fopen(gmsh_msh, 'wt');
 assert(fid >= 0, sprintf('file: %s could not be created\n',  gmsh_msh));
 
