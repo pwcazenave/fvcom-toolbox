@@ -461,7 +461,7 @@ for v = 1:length(fields)
 
             % Find the HYCOM depths which cover the modelled depth range.
             tpz = -hycom.Depth.data;
-            % Mask the HYCOM depths with the data array at this node.
+            % Mask the HYCOM depths with the data array at this position.
             mm = isnan(itempz(pp, :));
             tpz(mm) = [];
 
@@ -498,14 +498,14 @@ for v = 1:length(fields)
                     %legend('HYCOM', 'FVCOM')
                 else
                     warning('Should never see this... ') % because we test for NaNs when fetching the values.
-                    warning('FVCOM boundary node at %f, %f is outside the HYCOM domain. Skipping.', fvlon(pp), fvlat(pp))
+                    warning('FVCOM boundary position at %f, %f is outside the HYCOM domain. Skipping.', fvlon(pp), fvlat(pp))
                     continue
                 end
             end
         end
 
         % Find and remove NaNs.
-        parfor pp=1:fz
+        parfor pp = 1:fz
             test = fvtempz(:, pp);
             if any(isnan(test))
                 igood = ~isnan(test);
