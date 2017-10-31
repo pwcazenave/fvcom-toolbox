@@ -112,14 +112,15 @@ else
 end
 oNodes = [Mobj.read_obc_nodes{:}];
 for obc_i = 1:length(oNodes)
-    [~, h_idx] = sort(sqrt((lon(:) - Mobj.lon(obc_i)).^2 + ...
-        (lat(:) - Mobj.lat(obc_i)).^2));
-    obc_hycom_idx = [obc_hycom_idx; h_idx(1:6)];
+    % Find the 20 closest ones.
+    [~, h_idx] = sort(sqrt((lon(:) - Mobj.lon(oNodes(obc_i))).^2 + ...
+        (lat(:) - Mobj.lat(oNodes(obc_i))).^2));
+    obc_hycom_idx = [obc_hycom_idx; h_idx(1:20)];
 end
 for obc_i = 1:length(oElems)
-    % Find the 6 closest ones.
-    [~, h_idx] = sort(sqrt((lon(:) - Mobj.lonc(obc_i)).^2 + ...
-        (lat(:) - Mobj.latc(obc_i)).^2));
+    % Find the 20 closest ones.
+    [~, h_idx] = sort(sqrt((lon(:) - Mobj.lonc(oElems(obc_i))).^2 + ...
+        (lat(:) - Mobj.latc(oElems(obc_i))).^2));
     obc_hycom_idx = [obc_hycom_idx; h_idx(1:20)];
 end
 obc_hycom_idx = unique(obc_hycom_idx, 'stable');
