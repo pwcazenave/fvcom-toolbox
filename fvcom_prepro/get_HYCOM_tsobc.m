@@ -320,11 +320,11 @@ for v = 1:length(fields)
                 end
                 ixy = ii(1:np);
 
-                % If the minimum distance away is greater than three times
+                % If the minimum distance away is greater than five times
                 % the HYCOM grid resolution, skip this point at this
                 % vertical level. If this is not done, we can be grabbing
                 % data from a significant distance away
-                if min(dist) > 3 * hdx
+                if min(dist) > 5 * hdx
                     continue
                 end
 
