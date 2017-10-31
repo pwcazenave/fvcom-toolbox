@@ -206,7 +206,7 @@ for v = 1:length(fields)
         end
         % Get the current 3D array of HYCOM results. Only load the data we
         % need in both the vertical and horizontal (i.e. clip to the
-        % locations which cover the open boundary nodes only).
+        % locations which cover the open boundary positions only).
         pctemp3 = nan(length(xidx), zidx, 1);
         for oidx = 1:length(xidx)
             pctemp3(oidx, :) = hycom.(fields{v}).data(xidx(oidx), yidx(oidx), 1:zidx, t);
@@ -286,8 +286,8 @@ for v = 1:length(fields)
 
             % Also apply the masks to the position arrays so we can't even
             % find positions outside the domain, effectively meaning if a
-            % value is outside the domain, the nearest value to the
-            % boundary node will be used.
+            % value is outside the domain, the nearest value to the current
+            % boundary position will be used.
             % Extract the longitude and latitude data for the open boundary
             % region.
             tlon = lon(obc_hycom_idx);
@@ -311,7 +311,8 @@ for v = 1:length(fields)
                 fy = fvlat(i);
 
                 [dist, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
-                % Get the n nearest nodes from HYCOM data (more? fewer?).
+                % Get the n nearest positions from HYCOM data (more?
+                % fewer?).
                 np = 16;
                 if length(ii) < np
                     % Reset np to the number of points we actually have.
@@ -385,13 +386,14 @@ for v = 1:length(fields)
 
                 if isnan(itempobc(i))
                     % Use the surface layer as the canonical land mask and
-                    % check that the issue here is not just that the open
-                    % boundary node is shallower than this layer's depth.
-                    % In the case where we're at the surface, we always
-                    % want a value, so use the closest value, otherwise we
-                    % can skip this data and leave it as NaN. The vertical
-                    % interpolation will strip out the NaN depths so we
-                    % shouldn't have any problems from that perspective.
+                    % check that the issue here is not just that the
+                    % current open boundary position is shallower than this
+                    % layer's depth. In the case where we're at the
+                    % surface, we always want a value, so use the closest
+                    % value, otherwise we can skip this data and leave it
+                    % as NaN. The vertical interpolation will strip out the
+                    % NaN depths so we shouldn't have any problems from
+                    % that perspective.
 
                     % I used to check we were on land, but really,
                     % itempobc(i) will only equal NaN if we're on land for
@@ -482,8 +484,9 @@ for v = 1:length(fields)
                 D = min(tfz);
                 norm_tpz = (((D - C) * (tpz - A)) / (B - A)) + C;
 
-                % Get the temperature and salinity values for this node and
-                % interpolate down the water column (from HYCOM to FVCOM).
+                % Get the temperature and salinity values for this position
+                % and interpolate down the water column (from HYCOM to
+                % FVCOM).
                 if any(~isnan(norm_tpz))
                     fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, ~mm), tfz, 'pchip', 'extrap');
 
