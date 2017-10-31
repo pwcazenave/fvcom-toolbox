@@ -13,6 +13,7 @@ function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)
 %               - Mobj.siglayz - sigma layer depths for all model nodes.
 %               - Mobj.siglayzc - sigma layer depths for all model elements.
 %               - Mobj.lon, Mobj.lat - node coordinates (lat/long).
+%               - Mobj.lonc, Mobj.latc - element coordinates (lat/long).
 %               - Mobj.read_obc_nodes - cell array of open boundary nodes.
 %               - Mobj.read_obc_elems - cell array of open boundary
 %               elements (only if using velocities - use find_nested_region
