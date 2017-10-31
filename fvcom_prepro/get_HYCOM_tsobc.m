@@ -59,6 +59,9 @@ function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)
 %    significant performance improvement (both in memory usage and time).
 %    2017-02-16 Further performance improvement by only using the coarse
 %    data in the vicinity of the open boundary nodes.
+%    2017-10-12 Fix bug in indexing the open boundary positions which may
+%    have caused the interpolation to fail as the identified positions
+%    would be too far from the open boundary nodes.
 %
 %==========================================================================
 
@@ -171,6 +174,10 @@ for v = 1:length(fields)
         fvlon = Mobj.lonc(oElems);
         fvlat = Mobj.latc(oElems);
         sigma = Mobj.siglayzc;
+        grid_ids = oElems;
+        % Number of boundary elements to process
+        nf = length(oElems);
+
         if ftbverbose
             fprintf('Variable %s on elements (%d positions)\n', fields{v}, length(fvlon))
         end
@@ -180,13 +187,14 @@ for v = 1:length(fields)
         fvlon = Mobj.lon(oNodes);
         fvlat = Mobj.lat(oNodes);
         sigma = Mobj.siglayz;
+        grid_ids = oNodes;
+        % Number of boundary nodes
+        nf = length(oNodes);
+
         if ftbverbose
             fprintf('Variable %s on nodes (%d positions)\n', fields{v}, length(fvlon))
         end
     end
-
-    % Number of boundary nodes
-    nf = length(oNodes);
 
     fvtemp = nan(nf, fz, nt); % FVCOM interpolated data
 
@@ -440,8 +448,8 @@ for v = 1:length(fields)
 
         fvtempz = nan(nf, fz);
         for pp = 1:nf
-            % Get the FVCOM depths at this node
-            tfz = sigma(oNodes(pp), :);
+            % Get the FVCOM depths at this position
+            tfz = sigma(grid_ids(pp), :);  % grid_ids is oNodes or oElems
 
             % The HYCOM data is unusual in that the depths are fixed and
             % data are only saved at the depths shallower than the
