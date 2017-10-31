@@ -266,13 +266,13 @@ for v = 1:length(fields)
                     end
                 case 'ssh'
                     mask_alt = tpctemp2 < -20;
-                    if min(mask_alt(:)) == 1 &&  warned(3)
+                    if min(mask_alt(:)) == 1 && warned(3)
                         warned(3) = false;
                         warning('Removing sea surface height values below -20m from the HYCOM data.')
                     end
                 case {'u', 'v'}
                     mask_alt = tpctemp2 > 100 | tpctemp2 < -100 ;
-                    if min(mask_alt(:)) == 1 &&  warned(4)
+                    if min(mask_alt(:)) == 1 && warned(4)
                         warned(3) = false;
                         warning('Removing non-tidal velocities above/below +/-100m/s from the HYCOM data.')
                     end
