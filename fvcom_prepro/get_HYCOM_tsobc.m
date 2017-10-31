@@ -271,10 +271,10 @@ for v = 1:length(fields)
                         warning('Removing sea surface height values below -20m from the HYCOM data.')
                     end
                 case {'u', 'v'}
-                    mask_alt = tpctemp2 > 100;
+                    mask_alt = tpctemp2 > 100 | tpctemp2 < -100 ;
                     if min(mask_alt(:)) == 1 &&  warned(4)
                         warned(3) = false;
-                        warning('Removing non-tidal velocities above 100m/s from the HYCOM data.')
+                        warning('Removing non-tidal velocities above/below +/-100m/s from the HYCOM data.')
                     end
                 otherwise
                     % Some other variable we won't mask.
