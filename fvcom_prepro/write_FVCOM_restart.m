@@ -191,8 +191,11 @@ for ii = 1:numvars
 
         attname = netcdf.inqAttName(nc, varid, j - 1);
         attval = netcdf.getAtt(nc, varid, attname);
-
+       if startsWith(attname ,{'_FillValue'})
+           netcdf.defVarFill(ncout, varid,false,attval);
+       else
         netcdf.putAtt(ncout, varid, attname, attval);
+       end
     end
 end
 
