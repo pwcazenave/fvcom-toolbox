@@ -89,11 +89,11 @@ end
 
 if ftbverbose
     fprintf('Progress:\n');
-    fprintf([repmat('.', 1, length(file_list)), '\n\n']);
+    fprintf([repmat('.', 1, length(file_list)), '\n']);
 end
 parfor ff = 1:length(file_list)
     if ftbverbose
-        fprintf('\b|\n');
+        fprintf('|');
     end
     sst_eo = ncread(file_list{ff}, 'analysed_sst') - 273.15;
     mask = ncread(file_list{ff}, 'mask');
