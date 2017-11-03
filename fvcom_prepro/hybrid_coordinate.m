@@ -232,7 +232,26 @@ function debug_mode()
 % Test with made up data. This isn't actually used at all, but it's handy
 % to leave around for debugging things.
 
-% Hmin=50;
+conf.nlev = 25; % vertical levels (layers + 1)
+conf.H0 = 30; % threshold depth for the transition (metres)
+conf.DU = 3; % upper water boundary thickness
+conf.DL = 3; % lower water boundary thickness
+conf.KU = 3; % layer number in the water column of DU (maximum of 5 m thickness)
+conf.KL = 3; % layer number in the water column of DL (maximum of 5m thickness)
+
+
+Mobj = hybrid_coordinate(conf, Mobj);
+
+nlev = conf.nlev;
+H0 = conf.H0;
+DU = conf.DU;
+DL = conf.DL;
+KU = conf.KU;
+KL = conf.KL;
+ZKU = repmat(DU./KU, 1, KU);
+ZKL = repmat(DL./KL, 1, KL);
+
+ Hmin=24;
 Hmax=Hmin + 200;
 y = 0:0.1:100;
 B = 70;
@@ -245,6 +264,8 @@ for xx=1:length(H)
     Z2(xx, :) = sigma_gen(nlev, DL, DU, KL, KU, ZKL, ZKU, H(xx), Hmin);
 end
 
-plot(y,Z2 .* repmat(H', 1, nlev))
+clf
+plot(y,Z2 .* repmat(H', 1, nlev));hold on
+plot(y,ones(size(y)).*-Hmin)
 fprintf('Calculated minimum depth: %.2f\n', Hmin)
 
