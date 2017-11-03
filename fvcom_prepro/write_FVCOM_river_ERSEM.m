@@ -43,6 +43,10 @@ function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n
 %   2016-03-14 New version to export nutrients alongside the physical
 %   parameters for FVCOM-ERSEM. Based on write_FVCOM_river.
 %   2017-01-12 Add missing ERSEM variables (oxygen and alkalinity).
+%   2017-11-03 Add conflict variables that causes FABM debug efforts. At
+%   the moment these are all the zooplankton variables. Set to a very low
+%   number by default. The one used in ERSEM to maintain low population
+%   backgrounds. (Riqui)
 %
 %==========================================================================
 
@@ -151,6 +155,12 @@ netcdf.putAtt(nc, river_dic_varid, 'units', 'mmol C/m^3');
 river_bioalk_varid = netcdf.defVar(nc, 'O3_bioalk', 'NC_FLOAT', [rivers_dimid, time_dimid]);
 netcdf.putAtt(nc, river_bioalk_varid, 'long_name', 'carbonate bioalkalinity');
 netcdf.putAtt(nc, river_bioalk_varid, 'units', 'umol/kg');
+
+% Additional zooplankton variables
+
+
+
+
 
 % end definitions
 netcdf.endDef(nc);
