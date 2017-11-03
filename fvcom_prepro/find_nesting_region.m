@@ -226,6 +226,17 @@ for obc_idx = 1:Mobj.nObs
             cumulative_elem_idx = cumulative_elem_idx + 1;
         end
     end
+    % Check if all possible elements have been correctly identified
+    % colapse all nodes into an array and extract all elements connected to
+    % those nodes
+    % find the elements that are attached to 3 nodes in the nesting region
+    %      
+    candidate= find(all(ismember(Mobj.tri,[Nested.read_obc_nodes{end}]),2));
+    % test if it is different from existing elements
+    [truecandidate]=setdiff(candidate,[Nested.read_obc_elems{:}]);
+    % add to existing list. Catenate will ignore an empty results from
+    % setdiff
+    Nested.read_obc_elems{end} = cat(2,Nested.read_obc_elems{end},truecandidate);
     if ftbverbose
         fprintf('\n')
     end
