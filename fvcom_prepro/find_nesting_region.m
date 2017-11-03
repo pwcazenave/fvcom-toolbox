@@ -237,6 +237,7 @@ for obc_idx = 1:Mobj.nObs
     % add to existing list. Catenate will ignore an empty results from
     % setdiff
     Nested.read_obc_elems{end} = cat(2,Nested.read_obc_elems{end},truecandidate);
+    Nested.weight_cell{end} = cat(2,Nested.weight_cell{end},Nested.weight_cell{end}(end));
     if ftbverbose
         fprintf('\n')
     end
