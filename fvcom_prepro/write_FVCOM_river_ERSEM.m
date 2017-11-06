@@ -157,6 +157,23 @@ netcdf.putAtt(nc, river_bioalk_varid, 'long_name', 'carbonate bioalkalinity');
 netcdf.putAtt(nc, river_bioalk_varid, 'units', 'umol/kg');
 
 % Additional zooplankton variables
+zoo_vars = {'Z5','Z6'};
+zuu_nuts = {'n','p','c'}
+zoo_long = {'microzooplankton','nanoflagellates'}
+nuts_long = {'nitrogen','phosphorus','nitrogen'}
+nuts_units = {'mmol N/m^3','mmol P/m^3','mg C/m^3'}
+
+river_Z4c_varid = netcdf.defVar(nc, 'Z4_c', 'NC_FLOAT', [rivers_dimid, time_dimid]);
+netcdf.putAtt(nc, river_z4c_varid, 'long_name', 'mesozooplankton carbon');
+netcdf.putAtt(nc, river_z4c_varid, 'units', 'mg C/m^3');
+
+for zz=1:length(zoo_vars)
+    for nn=1:length(zuu_nuts)
+        eval(['river_',zoo_vars{zz},zuu_nuts{nn},'_varid = netcdf.defVar(nc, ''',zoo_vars{zz},'_',zuu_nuts{nn},''', ''NC_FLOAT'', [rivers_dimid, time_dimid]);'])
+        eval(['netcdf.putAtt(nc, river_',zoo_vars{zz},zuu_nuts{nn},'_varid, ''long_name'', ''',zoo_long{zz},' ',nuts_long{nn},''');'])
+        eval(['netcdf.putAtt(nc, river_',zoo_vars{zz},zuu_nuts{nn},'_varid, ''units'', ''',nuts_units{nn},''');'])
+    end
+end
 
 
 
@@ -188,6 +205,17 @@ netcdf.putVar(nc, river_dic_varid, dic');
 netcdf.putVar(nc, river_O2_varid, o2');
 netcdf.putVar(nc, river_TA_varid, alkalinity');
 netcdf.putVar(nc, river_bioalk_varid,bioalk');
+% add small zooplankton values
+% taken to be 10^-6 of L4 initial conditions. 
+fac = 10^-6;
+netcdf.putVar(nc, river_Z4c_varid,ones(size(bioalk')).*1.2*fac);
+netcdf.putVar(nc, river_Z5c_varid,ones(size(bioalk')).*7.2*fac);
+netcdf.putVar(nc, river_Z5n_varid,ones(size(bioalk')).*0.12*fac);
+netcdf.putVar(nc, river_Z5p_varid,ones(size(bioalk')).*0.0113*fac);
+netcdf.putVar(nc, river_Z6c_varid,ones(size(bioalk')).*2.4*fac);
+netcdf.putVar(nc, river_Z6n_varid,ones(size(bioalk')).*0.0505*fac);
+netcdf.putVar(nc, river_Z6p_varid,ones(size(bioalk')).*0.0047*fac); % not quite the initiall values in fabm.yaml... but they are not in carbon balance...
+
 % build the time string and output to netCDF.
 nStringOut = char();
 [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(time);
