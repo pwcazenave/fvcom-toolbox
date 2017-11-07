@@ -234,10 +234,14 @@ for obc_idx = 1:Mobj.nObs
     candidate= find(all(ismember(Mobj.tri,[Nested.read_obc_nodes{end}]),2));
     % test if it is different from existing elements
     [truecandidate]=setdiff(candidate,[Nested.read_obc_elems{:}]);
-    % add to existing list. Catenate will ignore an empty results from
+    % add to existing list. Catenate will ignore an empty result from
     % setdiff
-    Nested.read_obc_elems{end} = cat(2,Nested.read_obc_elems{end},truecandidate);
+    if ~isempty(truecandidate)
+        for dd=1:length(truecandidate)
+    Nested.read_obc_elems{end} = cat(2,Nested.read_obc_elems{end},truecandidate(dd));
     Nested.weight_cell{end} = cat(2,Nested.weight_cell{end},Nested.weight_cell{end}(end));
+    end
+    end
     if ftbverbose
         fprintf('\n')
     end
