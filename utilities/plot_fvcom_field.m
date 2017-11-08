@@ -129,9 +129,17 @@ elseif size(plot_field,1)==size(x,1) % plot on nodes
     end
 end
 
-if not(fig_flag)
+if fig_flag
+    if fig.Type(1)=='f'
+        the_axes = axes;
+    elseif fig.Type(1)=='a'
+        the_axes = fig;
+    end
+else
     fig = figure;
+    the_axes = axes;
 end
+axes(the_axes);
 
 for ii=1:size(plot_field,2)
     if ishandle(fig)==0 break; end
