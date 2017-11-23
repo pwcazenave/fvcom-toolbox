@@ -164,8 +164,8 @@ nuts_long = {'nitrogen','phosphorus','nitrogen'}
 nuts_units = {'mmol N/m^3','mmol P/m^3','mg C/m^3'}
 
 river_Z4c_varid = netcdf.defVar(nc, 'Z4_c', 'NC_FLOAT', [rivers_dimid, time_dimid]);
-netcdf.putAtt(nc, river_z4c_varid, 'long_name', 'mesozooplankton carbon');
-netcdf.putAtt(nc, river_z4c_varid, 'units', 'mg C/m^3');
+netcdf.putAtt(nc, river_Z4c_varid, 'long_name', 'mesozooplankton carbon');
+netcdf.putAtt(nc, river_Z4c_varid, 'units', 'mg C/m^3');
 
 for zz=1:length(zoo_vars)
     for nn=1:length(zuu_nuts)
@@ -194,16 +194,49 @@ netcdf.putVar(nc, river_names_varid, rString);
 netcdf.putVar(nc, time_varid, 0, nTimes, time);
 netcdf.putVar(nc, itime_varid, 0, nTimes, floor(time));
 netcdf.putVar(nc, itime2_varid, 0, nTimes, mod(time, 1)*24*3600*1000);
+if any(isnan(flux(:)))
+    error('NaNs in river flux varaible')
+end
 netcdf.putVar(nc, river_flux_varid, flux');
+if any(isnan(temp(:)))
+    error('NaNs in river temp varaible')
+end
 netcdf.putVar(nc, river_temp_varid, temp');
+if any(isnan(salt(:)))
+    error('NaNs in river salt varaible')
+end
 netcdf.putVar(nc, river_salt_varid, salt');
+if any(isnan(n1p(:)))
+    error('NaNs in river n1p varaible')
+end
 netcdf.putVar(nc, river_n1p_varid, n1p');
+if any(isnan(n3n(:)))
+    error('NaNs in river n3n varaible')
+end
 netcdf.putVar(nc, river_n3n_varid, n3n');
+if any(isnan(n4n(:)))
+    error('NaNs in river n4n varaible')
+end
 netcdf.putVar(nc, river_n4n_varid, n4n');
+if any(isnan(n5s(:)))
+    error('NaNs in river n5s varaible')
+end
 netcdf.putVar(nc, river_n5s_varid, n5s');
+if any(isnan(dic(:)))
+    error('NaNs in river dic varaible')
+end
 netcdf.putVar(nc, river_dic_varid, dic');
+if any(isnan(o2(:)))
+    error('NaNs in river o2 varaible')
+end
 netcdf.putVar(nc, river_O2_varid, o2');
+if any(isnan(alkalinity(:)))
+    error('NaNs in river alkalinity varaible')
+end
 netcdf.putVar(nc, river_TA_varid, alkalinity');
+if any(isnan(bioalk(:)))
+    error('NaNs in river bioalk varaible')
+end
 netcdf.putVar(nc, river_bioalk_varid,bioalk');
 % add small zooplankton values
 % taken to be 10^-6 of L4 initial conditions. 
