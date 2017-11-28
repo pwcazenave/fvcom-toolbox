@@ -5,7 +5,7 @@ function [Mobj]  = add_sponge_nodes_list(Mobj,SpongeList,SpongeName,SpongeRadius
 % [Mobj] = add_sponge_nodes(Mobj)
 %
 % DESCRIPTION:
-%    Select using ginput the set of nodes comprising a sponge layer
+%    Add the sponge parameters at the given nodes.
 %
 % INPUT
 %    Mobj = Matlab mesh object
