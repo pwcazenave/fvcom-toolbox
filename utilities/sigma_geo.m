@@ -34,10 +34,10 @@ if p_sigma == 1
         dist(k) = -((k-1)/(kb-1))^p_sigma;
     end
 else
-    for k = 1:(kb+1)/2
+    for k = 1:floor((kb+1)/2)
         dist(k) = -((k-1)/((kb+1)/2-1))^p_sigma/2;
     end
-    for k = (kb+1)/2+1:kb
+    for k = floor((kb+1)/2)+1:kb
         dist(k) = ((kb-k)/((kb+1)/2-1))^p_sigma/2-1.0;
     end
 end
