@@ -26,7 +26,7 @@ function dist = sigma_tanh(nlev,dl,du)
 % Revision history
 %   2013-04-23 Added help on the function and reformatted the code.
 
-dist = nan(1, nlev);
+dist = zeros(1, nlev);
 
 for k = 1:nlev
     x1 = dl+du;
