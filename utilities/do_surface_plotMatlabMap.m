@@ -48,7 +48,12 @@ function [Plots]=do_surface_plotMatlabMap(plotOPTS,FVCOM)
 % adds m_map to matlab paths. file is in utilities directory.
 % amend according to your m_map installation paths
 
-figure(plotOPTS.figure);clf
+figure(plotOPTS.figure);
+try delete(plotOPTS.PlotoutS(plotOPTS.figure).handles)
+catch 
+        clf
+end
+
 % generate figure with correct projection lat and lon range ellipsoid and
 % zone.
 if isfield(plotOPTS,'Lontick')
@@ -68,8 +73,12 @@ axesm('mercator','MapLatLimit',plotOPTS.range_lat,'MapLonLimit',[plotOPTS.range_
 
 % add coastline if present
 if (isfield(plotOPTS,'coastline_file') && ~isempty(plotOPTS.coastline_file) )
-    coast=load(plotOPTS.coastline_file);
-    geoshow([coast.ncst(:,2)],[coast.ncst(:,1)],'Color','black')
+    if isfield (plotOPTS,'PlotoutS') && ~isempty(plotOPTS.PlotoutS(plotOPTS.figure).handles)
+    else
+%     coast=load(plotOPTS.coastline_file);
+    geoshow(plotOPTS.coastline_file,'Color','black')
+        
+    end
 
 end
 %------------------------------------------------------------------------------

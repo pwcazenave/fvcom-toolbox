@@ -47,6 +47,10 @@ function [Plots]=do_vector_plot_MatlabMap(plotOPTS,FVCOM)
 % adds m_map to matlab paths. file is in utilities directory.
 % ammend according to your m_map installation paths
 figure(plotOPTS.figure);
+try delete(plotOPTS.PlotoutV(plotOPTS.figure).handles{1})
+catch 
+        clf
+end
 % generate figure with correct projection lat and lon range ellipsoid and
 % zone.
 if isfield(plotOPTS,'Lontick')
@@ -61,15 +65,18 @@ else
 end
 
 
-axesm('mercator','MapLatLimit',plotOPTS.range_lat,'MapLonLimit',[plotOPTS.range_lon],'MeridianLabel','on',...
-    'ParallelLabel','on','MLineLocation',MerTick,'PLineLocation',ParTick,'LabelUnits','dm')
 
+H=axesm('mercator','MapLatLimit',plotOPTS.range_lat,'MapLonLimit',[plotOPTS.range_lon],'MeridianLabel','on',...
+    'ParallelLabel','on','MLineLocation',MerTick,'PLineLocation',ParTick,'LabelUnits','dm')
 
 % add coastline if present
 if (isfield(plotOPTS,'coastline_file') && ~isempty(plotOPTS.coastline_file) )
-    coast=load(plotOPTS.coastline_file);
-    geoshow([coast.ncst(:,2)],[coast.ncst(:,1)],'Color','black')
-
+    if isfield (plotOPTS,'PlotoutV') && ~isempty(plotOPTS.PlotoutV(plotOPTS.figure).handles)
+    else
+%     coast=load(plotOPTS.coastline_file);
+    geoshow(plotOPTS.coastline_file,'Color','black','LineWidth',2)
+    setm (H,'MapLatLimit',plotOPTS.range_lat,'MapLonLimit',[plotOPTS.range_lon])    
+    end
 end
 %-----------------------------------------------------------------------
 % Convert element positions from FVCOM to lat and lon using m_ll2ll.m from
