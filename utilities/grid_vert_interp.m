@@ -31,7 +31,7 @@ function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask, varargin)
 %   specifies the coordinates to use for the extrapolation (e.g.
 %   'extrapolate', [Mobj.lonc, Mobj.latc] to extrapolate onto the element
 %   centres). Defaults to the element nodes (i.e. [Mobj.lon, Mobj.lat]).
-%   
+%
 % OUTPUT:
 %   x by y by z array of vertically interpolated values at each regular
 %   grid location.
@@ -43,7 +43,7 @@ function dataz = grid_vert_interp(Mobj, lon, lat, data, depth, mask, varargin)
 %   Extrapolate using the element centres.
 %       grid_vert_interp(Mobj, lon, lat, data, depth, mask, ...
 %           'extrapolate', [Mobj.lonc, Mobj.latc])
-% 
+%
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
 %
@@ -131,7 +131,7 @@ parfor xi = 1:nx
     xdata = squeeze(data(xi, :, :));
     xdepth = squeeze(depth(xi, :, :));
     xmask = mask(xi, :);
-    
+
     % Preallocate the arrays for the inner loop.
     ydata = nan(ny, fz);
     for yi = 1:ny
@@ -152,7 +152,7 @@ parfor xi = 1:nx
         else
             % Use the FVCOM node's sigma depths to interpolate this regular
             % grid position's temperature and salinity data.
-            
+
             % Get the FVCOM depths closest to this regular grid position.
             try
                 tfz = Mobj.siglayz(mi, :);
