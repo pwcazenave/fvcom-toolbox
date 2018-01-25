@@ -10,6 +10,7 @@ function write_FVCOM_z0(z0,filename,mytitle,cbcmin)
 % INPUT
 %   z0        = user defined roughness field (m)
 %               roughness is defined on the elements
+%               expect values between 3 10^-3 (gravel) and .2 10^-3 (i.e. 0.0002) for mud
 %   filename  = filename to dump to
 %   mytitle   = title of the case (set as global attribute)
 %   cbcmin    = minimum value of CBC (optional, defaults to 0.0018 if
