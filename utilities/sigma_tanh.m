@@ -28,7 +28,7 @@ function dist = sigma_tanh(nlev,dl,du)
 
 dist = zeros(1, nlev);
 
-for k = 1:nlev
+for k = 1:nlev-1
     x1 = dl+du;
     x1 = x1*(nlev-1-k)/(nlev-1);
     x1 = x1-dl;

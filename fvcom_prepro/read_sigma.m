@@ -126,6 +126,10 @@ if ftbverbose
         fprintf('zku\t%d\n', zku)
         fprintf('zkl\t%d\n', zkl)
     end
+        if strcmpi(sigtype, 'TANH')
+        fprintf('du\t%d\n', du)
+        fprintf('dl\t%d\n', dl)
+    end
 end
 
 % Calculate the sigma distributions at each grid node.
@@ -146,6 +150,8 @@ switch lower(sigtype)
         z = repmat(sigma_geo(nlev, 1), [nx, 1]);
     case 'geometric'
         z = repmat(sigma_geo(nlev, sigpow), [nx, 1]);
+    case 'tanh'
+        z = repmat(sigma_tanh(nlev, dl,du), [nx, 1]);
     otherwise
         error('Don''t recognise sigtype %s (is it supported?)', sigtype)
 end
