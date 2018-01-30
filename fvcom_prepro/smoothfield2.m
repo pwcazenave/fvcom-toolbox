@@ -1,4 +1,4 @@
-function [field]  = smoothfield(fieldin,Mobj,nLoops,SmoothPts)
+function [field]  = smoothfield2(fieldin,Mobj,nLoops,SmoothPts)
 
 % Smooth a vertex-based field using minimum value of surrounding nodes 
 %
@@ -25,8 +25,7 @@ function [field]  = smoothfield(fieldin,Mobj,nLoops,SmoothPts)
 % Revision history
 %   
 %==============================================================================
-fprintf('\nbegin : %s\n', subname)
-endglobal ftbverbose
+global ftbverbose
 [~, subname] = fileparts(mfilename('fullpath'));
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
@@ -43,8 +42,8 @@ end;
 if(exist('SmoothPts'))
 	nPts = length(SmoothPts);
 else
-	nPts       = Mobj.nVerts;
-	SmoothPts  = 1:Mobj.nVerts;
+	nPts       = Mobj.nElems;
+	SmoothPts  = 1:Mobj.nElems;
 end;
 
 if(~Mobj.have_mets)
