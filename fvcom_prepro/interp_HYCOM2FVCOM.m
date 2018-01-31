@@ -133,7 +133,11 @@ for vv = 1:length(varlist)
             end
 
             [hx, hy, ~, ~] = size(hycom.(currvar).data);
-            hdepth = permute(repmat(-hycom.Depth.data, [1, hx, hy]), [2, 3, 1]);
+            if iscolumn(hycom.Depth.data)
+                hdepth = permute(repmat(-hycom.Depth.data, [1, hx, hy]), [2, 3, 1]);
+            else
+                hdepth = -hycom.Depth.data;
+            end
 
             % Make a land mask of the HYCOM domain (based on the surface
             % layer from the first time step).
