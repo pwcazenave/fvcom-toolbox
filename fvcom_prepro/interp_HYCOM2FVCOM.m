@@ -94,7 +94,7 @@ stime = greg2mjulian(start_date(1), start_date(2), ...
     start_date(5), start_date(6));
 [~, tidx] = min(abs(hycom.time - stime));
 
-for vv = 1:length(varlist);
+for vv = 1:length(varlist)
 
     currvar = varlist{vv};
 
