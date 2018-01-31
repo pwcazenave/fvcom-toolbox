@@ -158,10 +158,10 @@ netcdf.putAtt(nc, river_bioalk_varid, 'units', 'umol/kg');
 
 % Additional zooplankton variables
 zoo_vars = {'Z5','Z6'};
-zuu_nuts = {'n','p','c'}
-zoo_long = {'microzooplankton','nanoflagellates'}
-nuts_long = {'nitrogen','phosphorus','nitrogen'}
-nuts_units = {'mmol N/m^3','mmol P/m^3','mg C/m^3'}
+zuu_nuts = {'n','p','c'};
+zoo_long = {'microzooplankton','nanoflagellates'};
+nuts_long = {'nitrogen','phosphorus','nitrogen'};
+nuts_units = {'mmol N/m^3','mmol P/m^3','mg C/m^3'};
 
 river_Z4c_varid = netcdf.defVar(nc, 'Z4_c', 'NC_FLOAT', [rivers_dimid, time_dimid]);
 netcdf.putAtt(nc, river_Z4c_varid, 'long_name', 'mesozooplankton carbon');
@@ -174,10 +174,6 @@ for zz=1:length(zoo_vars)
         eval(['netcdf.putAtt(nc, river_',zoo_vars{zz},zuu_nuts{nn},'_varid, ''units'', ''',nuts_units{nn},''');'])
     end
 end
-
-
-
-
 
 % end definitions
 netcdf.endDef(nc);
