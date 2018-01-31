@@ -32,12 +32,11 @@ function [Mobj]  = add_sponge_nodes_list(Mobj,SpongeList,SpongeName,SpongeRadius
 %    2013-01-18 Added support for variable sponge radius
 %   
 %==============================================================================
-subname = 'add_sponge_nodes';
+[~, subname] = fileparts(mfilename('fullpath'));
 
 global ftbverbose
-if(ftbverbose)
-    fprintf('\n')
-    fprintf(['begin : ' subname '\n'])
+if ftbverbose
+    fprintf('\nbegin : %s\m', subname)
 end
 
 % Do we want a figure showing how we're getting along?
@@ -50,7 +49,7 @@ end
 %------------------------------------------------------------------------------
 
 if plotFig == 1
-    if(lower(Mobj.nativeCoords(1:3)) == 'car')
+    if lower(Mobj.nativeCoords(1:3)) == 'car'
         x = Mobj.x;
         y = Mobj.y;
     else
@@ -68,19 +67,20 @@ end
 
 npts = length(SpongeList);
 
-if(npts == 0)
+if npts == 0
 	fprintf('No points in given list')
-	fprintf(['end   : ' subname '\n'])
+	fprintf('end   : %s\n', subname)
 	return
 end
-if(ftbverbose)
-    fprintf('%d points provided\n',npts)
+
+if ftbverbose
+    fprintf('%d points provided\n', npts)
 end
 
 % add to mesh object
 Mobj.nSponge = Mobj.nSponge + 1;
 Mobj.nSpongeNodes(Mobj.nSponge) = npts;
-Mobj.sponge_nodes(Mobj.nSponge,1:npts) = SpongeList;
+Mobj.sponge_nodes(Mobj.nSponge, 1:npts) = SpongeList;
 Mobj.sponge_name{Mobj.nSponge} = SpongeName;
 Mobj.sponge_fac(Mobj.nSponge) = SpongeCoeff;
 
@@ -90,7 +90,7 @@ else    % if you have a variable sponge radius
     Mobj.sponge_rad(Mobj.nSponge,1:npts) = SpongeRadius;
 end
 
-if(ftbverbose)
-    fprintf(['end   : ' subname '\n'])
+if ftbverbose
+    fprintf('end   : %s\n', subname)
 end
 
