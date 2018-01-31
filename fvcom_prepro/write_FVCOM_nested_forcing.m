@@ -239,8 +239,8 @@ netcdf.putAtt(nc, latc_varid, 'long_name', 'zonal latitude');
 
 nv_varid = netcdf.defVar(nc, 'nv', 'NC_INT', ...
     [elem_dimid, three_dimid]);
-netcdf.putAtt(nc, xc_varid, 'units', 'no units');
-netcdf.putAtt(nc, xc_varid, 'long_name', 'elements nodes indices');
+netcdf.putAtt(nc, xc_varid, 'units', 'meters');
+netcdf.putAtt(nc, xc_varid, 'long_name', 'zonal x-coordinate');
 
 zeta_varid = netcdf.defVar(nc, 'zeta', 'NC_FLOAT', ...
     [node_dimid, time_dimid]);
