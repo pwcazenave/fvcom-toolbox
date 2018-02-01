@@ -1,0 +1,165 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of densatp</title>
+  <meta name="keywords" content="densatp">
+  <meta name="description" content="densatp.m                                      by:  Edward T Peltzer, MBARI">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; densatp.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>densatp
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>densatp.m                                      by:  Edward T Peltzer, MBARI</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [rhp]=densatp(S,T,P) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> densatp.m                                      by:  Edward T Peltzer, MBARI
+                                                  revised:  29 Jan 98.
+
+ CALCULATE THE DENSITY OF SEAWATER AT A GIVEN S, T and P.
+ Equation of State is from Millero &amp; Poisson (1981) DSR V28: 625-629.
+
+ INPUT:           Salinity (S) in g/kg or pss.
+        Temperature (T) in degrees C.
+        Pressure (P) in decibar.
+
+ OUTPUT:    Density [rhp] in g/cc:
+
+            rhp = densatp(S,T,P).</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">% densatp.m                                      by:  Edward T Peltzer, MBARI</span>
+0002 <span class="comment">%                                                  revised:  29 Jan 98.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% CALCULATE THE DENSITY OF SEAWATER AT A GIVEN S, T and P.</span>
+0005 <span class="comment">% Equation of State is from Millero &amp; Poisson (1981) DSR V28: 625-629.</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% INPUT:           Salinity (S) in g/kg or pss.</span>
+0008 <span class="comment">%        Temperature (T) in degrees C.</span>
+0009 <span class="comment">%        Pressure (P) in decibar.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% OUTPUT:    Density [rhp] in g/cc:</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">%            rhp = densatp(S,T,P).</span>
+0014 
+0015 <a name="_sub0" href="#_subfunctions" class="code">function [rhp]=densatp(S,T,P)</a>
+0016 
+0017 <span class="comment">% DEFINE CONSTANTS FOR EQUATION OF STATE</span>
+0018 
+0019   R0=+9.99842594E2;
+0020   R1=+6.793952E-2;
+0021   R2=-9.095290E-3;
+0022   R3=+1.001685E-4;
+0023   R4=-1.120083E-6;
+0024   R5=+6.536332E-9;
+0025 
+0026   A0=+8.24493E-1;
+0027   A1=-4.0899E-3;
+0028   A2=+7.6438E-5;
+0029   A3=-8.2467E-7;
+0030   A4=+5.3875E-9;
+0031 
+0032   B0=-5.72466E-3;
+0033   B1=+1.0227E-4;
+0034   B2=-1.6546E-6;
+0035 
+0036   C=+4.8314E-4;
+0037 
+0038 <span class="comment">% CALCULATE RHO</span>
+0039 
+0040     SR=sqrt(S);
+0041 
+0042     RHO0=R0+T.*(R1+T.*(R2+T.*(R3+T.*(R4+T.*R5))));
+0043     A=A0+T.*(A1+T.*(A2+T.*(A3+T.*A4)));
+0044     B=B0+T.*(B1+T.*B2);
+0045 
+0046     RHO=RHO0+S.*(A+B.*SR+C.*S);
+0047 
+0048 <span class="comment">% DEFINE CONSTANTS FOR SECANT BULK MODULUS</span>
+0049 
+0050   D0=+1.965221E+4;
+0051   D1=+1.484206E+2;
+0052   D2=-2.327105E+0;
+0053   D3=+1.360477E-2;
+0054   D4=-5.155288E-5;
+0055 
+0056   E0=+5.46746E+1;
+0057   E1=-6.03459E-1;
+0058   E2=+1.09987E-2;
+0059   E3=-6.1670E-5;
+0060 
+0061   F0=+7.944E-2;
+0062   F1=+1.6483E-2;
+0063   F2=-5.3009E-4;
+0064 
+0065   G0=+3.239908E+0;
+0066   G1=+1.43713E-3;
+0067   G2=+1.16092E-4;
+0068   G3=-5.77905E-7;
+0069 
+0070   H0=+2.2838E-3;
+0071   H1=-1.0981E-5;
+0072   H2=-1.6078E-6;
+0073   H3=+1.91075E-4;
+0074 
+0075   I0=+8.50935E-5;
+0076   I1=-6.12293E-6;
+0077   I2=+5.2787E-8;
+0078 
+0079   J0=-9.9348E-7;
+0080   J1=+2.0816E-8;
+0081   J2=+9.1697E-10;
+0082 
+0083 <span class="comment">% CORRECT P IN DECI-BARS TO BARS</span>
+0084 
+0085     Pc=P./10.;
+0086 
+0087 <span class="comment">% CALCULATE K</span>
+0088 
+0089     H=H0+T.*(H1+T.*H2)+H3.*SR;
+0090     J=J0+T.*(J1+T.*J2);
+0091 
+0092     K1=D0+T.*(D1+T.*(D2+T.*(D3+T.*D4)));
+0093     K2=E0+T.*(E1+T.*(E2+T.*E3));
+0094     K3=F0+T.*(F1+T.*F2);
+0095     K4=G0+T.*(G1+T.*(G2+T.*G3))+S.*H;
+0096     K5=I0+T.*(I1+T.*I2)+S.*J;
+0097 
+0098     K=K1+S.*(K2+SR.*K3)+Pc.*(K4+Pc.*K5);
+0099 
+0100 <span class="comment">% CORRECT FOR PRESSURE</span>
+0101 
+0102     RHP=RHO.*(1./(1-Pc./K));
+0103 
+0104 <span class="comment">% CONVERT KG/M3 TO g/cc</span>
+0105 
+0106     rhp = RHP ./ 1000;</pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

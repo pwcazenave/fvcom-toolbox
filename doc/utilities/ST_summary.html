@@ -60,7 +60,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="ST_Dstar.html" class="code" title="function [dstar] = ST_Dstar(d,varargin)">ST_Dstar</a>	Calculate non-dimensional grain size D*</li><li><a href="ST_d2phi.html" class="code" title="function [phi] = ST_d2phi(d)">ST_d2phi</a>	Convert sediment diameter (m) to phi</li><li><a href="ST_erate.html" class="code" title="function [erate] = ST_erate(d,varargin)">ST_erate</a>	Calculate erosion rate in kg/(m^2-s)</li><li><a href="ST_taucr.html" class="code" title="function [taucr] = ST_taucr(d,varargin)">ST_taucr</a>	Calculate critical shear stress in Pascals</li><li><a href="ST_wentworth.html" class="code" title="function [Sclass] = wentworth(phi)">ST_wentworth</a>	Report wentworth class of a particular grain size phi</li><li><a href="ST_wset.html" class="code" title="function [wset] = ST_wset(d,varargin)">ST_wset</a>	Calculate settling velocity of particle diameter d (m) in m/s</li></ul>
+<li><a href="ST_Dstar.html" class="code" title="function [dstar] = ST_Dstar(d,varargin)">ST_Dstar</a>	Calculate non-dimensional grain size D*</li><li><a href="ST_d2phi.html" class="code" title="function [phi] = ST_d2phi(d)">ST_d2phi</a>	Convert sediment diameter (m) to phi</li><li><a href="ST_erate.html" class="code" title="function erate = ST_erate(d,varargin)">ST_erate</a>	Calculate erosion rate in kg/(m^2-s)</li><li><a href="ST_taucr.html" class="code" title="function [taucr] = ST_taucr(d,varargin)">ST_taucr</a>	Calculate critical shear stress in Pascals (equivalent to N/m^2)</li><li><a href="ST_wentworth.html" class="code" title="function Sclass = ST_wentworth(phi)">ST_wentworth</a>	Report wentworth class of a particular grain size phi</li><li><a href="ST_wset.html" class="code" title="function [wset] = ST_wset(d,varargin)">ST_wset</a>	Calculate settling velocity of particle diameter d (m) in m/s</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
 </ul>
@@ -132,14 +132,14 @@ This function is called by:
 0061 fprintf(<span class="string">'       phi          class       d(mm)    Dstar    wset(mm/s)  taucr (Pa)  erate x1e-3(kg/(m^2-s))\n'</span>)
 0062 
 0063 phi         = <a href="ST_d2phi.html" class="code" title="function [phi] = ST_d2phi(d)">ST_d2phi</a>(d);
-0064 phiclass    = <a href="ST_wentworth.html" class="code" title="function [Sclass] = wentworth(phi)">ST_wentworth</a>(phi);
+0064 phiclass    = <a href="ST_wentworth.html" class="code" title="function Sclass = ST_wentworth(phi)">ST_wentworth</a>(phi);
 0065 Dstar       = <a href="ST_Dstar.html" class="code" title="function [dstar] = ST_Dstar(d,varargin)">ST_Dstar</a>(d);
 0066 Wset        = <a href="ST_wset.html" class="code" title="function [wset] = ST_wset(d,varargin)">ST_wset</a>(d);
 0067 Taucr       = <a href="ST_taucr.html" class="code" title="function [taucr] = ST_taucr(d,varargin)">ST_taucr</a>(d);
-0068 erate       = <a href="ST_erate.html" class="code" title="function [erate] = ST_erate(d,varargin)">ST_erate</a>(d);
+0068 erate       = <a href="ST_erate.html" class="code" title="function erate = ST_erate(d,varargin)">ST_erate</a>(d);
 0069 fprintf(<span class="string">'%10d %20s %8.4f %8.2f %9.4f %8.3f %8.3f\n'</span>,phi,phiclass,d*1000,Dstar,Wset*1000,Taucr,1000*erate)
 0070 
 0071</pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

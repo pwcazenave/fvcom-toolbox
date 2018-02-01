@@ -77,10 +77,10 @@
        land within which nodes will be removed from the river data arrays.
 
    The following optional keyword-argument pairs are also supported:
-   'depth_optimise' - set to true to search for the deepest node to use
-       for the river within the distance threshold (dist_thresh)
-       specified. This increases the stability of FVCOM. Defaults to
-       false.
+   'depth_optimise' - set to a depth beyond which a search for the deepest
+       node to use is triggered for the river within the distance
+       threshold (dist_thresh) specified. This increases the stability of
+       FVCOM. Defaults to false.
    'debug' - set to true to plot adjusted river nodes from the depth
        optimisation procedure. Defaults to false.
 
@@ -116,6 +116,11 @@
    2016-05-13 Move the removal of invalid coastline nodes into the
    function to read coastline nodes rather than having it in the splitting
    function.
+   2016-08-11 Clarify the warning about the minimum water depth to
+   indicate which way is down.
+   2016-08-15 Make the depth optimisation take a depth as an argument
+   rather than a boolean so we can only deepen nodes which are shallower
+   than the given depth.
 
 ==========================================================================</pre></div>
 
@@ -131,7 +136,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function coast_nodes_valid = get_coastline(Mobj)</a></li><li><a href="#_sub2" class="code">function Mobj = clear_boundary_nodes(Mobj, dist_thresh, enames)</a></li><li><a href="#_sub3" class="code">function Mobj = split_big_rivers(Mobj, max_discharge, coast_nodes, enames, fnames)</a></li><li><a href="#_sub4" class="code">function Mobj = optimise_depth(Mobj, dist_thresh, coast_nodes, debug)</a></li></ul>
+<li><a href="#_sub1" class="code">function coast_nodes_valid = get_coastline(Mobj)</a></li><li><a href="#_sub2" class="code">function Mobj = clear_boundary_nodes(Mobj, dist_thresh, enames)</a></li><li><a href="#_sub3" class="code">function Mobj = split_big_rivers(Mobj, max_discharge, coast_nodes, enames, fnames)</a></li><li><a href="#_sub4" class="code">function Mobj = optimise_depth(Mobj, depth_threshold, dist_thresh, coast_nodes, debug)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = fix_river_nodes(Mobj, max_discharge, dist_thresh, varargin)</a>
@@ -185,10 +190,10 @@ This function is called by:
 0049 <span class="comment">%       land within which nodes will be removed from the river data arrays.</span>
 0050 <span class="comment">%</span>
 0051 <span class="comment">%   The following optional keyword-argument pairs are also supported:</span>
-0052 <span class="comment">%   'depth_optimise' - set to true to search for the deepest node to use</span>
-0053 <span class="comment">%       for the river within the distance threshold (dist_thresh)</span>
-0054 <span class="comment">%       specified. This increases the stability of FVCOM. Defaults to</span>
-0055 <span class="comment">%       false.</span>
+0052 <span class="comment">%   'depth_optimise' - set to a depth beyond which a search for the deepest</span>
+0053 <span class="comment">%       node to use is triggered for the river within the distance</span>
+0054 <span class="comment">%       threshold (dist_thresh) specified. This increases the stability of</span>
+0055 <span class="comment">%       FVCOM. Defaults to false.</span>
 0056 <span class="comment">%   'debug' - set to true to plot adjusted river nodes from the depth</span>
 0057 <span class="comment">%       optimisation procedure. Defaults to false.</span>
 0058 <span class="comment">%</span>
@@ -224,378 +229,385 @@ This function is called by:
 0088 <span class="comment">%   2016-05-13 Move the removal of invalid coastline nodes into the</span>
 0089 <span class="comment">%   function to read coastline nodes rather than having it in the splitting</span>
 0090 <span class="comment">%   function.</span>
-0091 <span class="comment">%</span>
-0092 <span class="comment">%==========================================================================</span>
-0093 
-0094 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
-0095 
-0096 <span class="keyword">global</span> ftbverbose
-0097 <span class="keyword">if</span> ftbverbose
-0098     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
-0099 <span class="keyword">end</span>
+0091 <span class="comment">%   2016-08-11 Clarify the warning about the minimum water depth to</span>
+0092 <span class="comment">%   indicate which way is down.</span>
+0093 <span class="comment">%   2016-08-15 Make the depth optimisation take a depth as an argument</span>
+0094 <span class="comment">%   rather than a boolean so we can only deepen nodes which are shallower</span>
+0095 <span class="comment">%   than the given depth.</span>
+0096 <span class="comment">%</span>
+0097 <span class="comment">%==========================================================================</span>
+0098 
+0099 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
 0100 
-0101 depth_optimise = false;
-0102 debug = false;
-0103 <span class="keyword">for</span> aa = 1:2:length(varargin)
-0104     <span class="keyword">switch</span> varargin{aa}
-0105         <span class="keyword">case</span> <span class="string">'depth_optimise'</span>
-0106             depth_optimise = varargin{aa + 1};
-0107         <span class="keyword">case</span> <span class="string">'debug'</span>
-0108             debug = varargin{aa + 1};
-0109     <span class="keyword">end</span>
-0110 <span class="keyword">end</span>
-0111 
-0112 <span class="comment">% Check we actually have some rivers to process.</span>
-0113 <span class="keyword">if</span> Mobj.nRivers &lt; 1
-0114     warning(<span class="string">'No rivers specified in the domain.'</span>)
-0115 
-0116     <span class="keyword">if</span> ftbverbose
-0117         fprintf(<span class="string">'end   : %s\n'</span>, subname)
-0118     <span class="keyword">end</span>
-0119     <span class="keyword">return</span>
-0120 <span class="keyword">end</span>
+0101 <span class="keyword">global</span> ftbverbose
+0102 <span class="keyword">if</span> ftbverbose
+0103     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0104 <span class="keyword">end</span>
+0105 
+0106 depth_optimise = false;
+0107 debug = false;
+0108 <span class="keyword">for</span> aa = 1:2:length(varargin)
+0109     <span class="keyword">switch</span> varargin{aa}
+0110         <span class="keyword">case</span> <span class="string">'depth_optimise'</span>
+0111             depth_optimise = true;
+0112             depth_threshold = varargin{aa + 1};
+0113         <span class="keyword">case</span> <span class="string">'debug'</span>
+0114             debug = varargin{aa + 1};
+0115     <span class="keyword">end</span>
+0116 <span class="keyword">end</span>
+0117 
+0118 <span class="comment">% Check we actually have some rivers to process.</span>
+0119 <span class="keyword">if</span> Mobj.nRivers &lt; 1
+0120     warning(<span class="string">'No rivers specified in the domain.'</span>)
 0121 
-0122 <span class="comment">% Generate names for the variables we're going to use. These may not all be</span>
-0123 <span class="comment">% used if you are not running ERSEM, but we build them in case.</span>
-0124 evars = {<span class="string">'flux'</span>, <span class="string">'temp'</span>, <span class="string">'salt'</span>, <span class="string">'nh4'</span>, <span class="string">'no3'</span>, <span class="string">'o'</span>, <span class="string">'p'</span>, <span class="string">'sio3'</span>, <span class="string">'dic'</span>, <span class="string">'bioalk'</span>};
-0125 enames = cell(length(evars));
-0126 fnames = cell(length(evars));
-0127 <span class="keyword">for</span> e = 1:length(evars)
-0128     enames{e} = sprintf(<span class="string">'river_%s'</span>, evars{e});
-0129     fnames{e} = sprintf(<span class="string">'fv_%s'</span>, evars{e});
-0130 <span class="keyword">end</span>
-0131 
-0132 <span class="comment">% Find the model coastline.</span>
-0133 coast_nodes = <a href="#_sub1" class="code" title="subfunction coast_nodes_valid = get_coastline(Mobj)">get_coastline</a>(Mobj);
-0134 
-0135 <span class="comment">% Remove river nodes close to the open boundaries.</span>
-0136 Mobj = <a href="#_sub2" class="code" title="subfunction Mobj = clear_boundary_nodes(Mobj, dist_thresh, enames)">clear_boundary_nodes</a>(Mobj, dist_thresh, enames);
+0122     <span class="keyword">if</span> ftbverbose
+0123         fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0124     <span class="keyword">end</span>
+0125     <span class="keyword">return</span>
+0126 <span class="keyword">end</span>
+0127 
+0128 <span class="comment">% Generate names for the variables we're going to use. These may not all be</span>
+0129 <span class="comment">% used if you are not running ERSEM, but we build them in case.</span>
+0130 evars = {<span class="string">'flux'</span>, <span class="string">'temp'</span>, <span class="string">'salt'</span>, <span class="string">'nh4'</span>, <span class="string">'no3'</span>, <span class="string">'o'</span>, <span class="string">'p'</span>, <span class="string">'sio3'</span>, <span class="string">'dic'</span>, <span class="string">'bioalk'</span>, <span class="string">'alt'</span>};
+0131 enames = cell(length(evars));
+0132 fnames = cell(length(evars));
+0133 <span class="keyword">for</span> e = 1:length(evars)
+0134     enames{e} = sprintf(<span class="string">'river_%s'</span>, evars{e});
+0135     fnames{e} = sprintf(<span class="string">'fv_%s'</span>, evars{e});
+0136 <span class="keyword">end</span>
 0137 
-0138 <span class="comment">% Split big rivers over adjacent nodes.</span>
-0139 Mobj = <a href="#_sub3" class="code" title="subfunction Mobj = split_big_rivers(Mobj, max_discharge, coast_nodes, enames, fnames)">split_big_rivers</a>(Mobj, max_discharge, coast_nodes, enames, fnames);
+0138 <span class="comment">% Find the model coastline.</span>
+0139 coast_nodes = <a href="#_sub1" class="code" title="subfunction coast_nodes_valid = get_coastline(Mobj)">get_coastline</a>(Mobj);
 0140 
-0141 <span class="comment">% If we've been asked to optimise the depth of nodes, do that now. We may</span>
-0142 <span class="comment">% have to rerun some of the checks above. I don't know yet.</span>
-0143 <span class="keyword">if</span> depth_optimise
-0144     Mobj = <a href="#_sub4" class="code" title="subfunction Mobj = optimise_depth(Mobj, dist_thresh, coast_nodes, debug)">optimise_depth</a>(Mobj, dist_thresh, coast_nodes, debug);
-0145 <span class="keyword">end</span>
+0141 <span class="comment">% Remove river nodes close to the open boundaries.</span>
+0142 Mobj = <a href="#_sub2" class="code" title="subfunction Mobj = clear_boundary_nodes(Mobj, dist_thresh, enames)">clear_boundary_nodes</a>(Mobj, dist_thresh, enames);
+0143 
+0144 <span class="comment">% Split big rivers over adjacent nodes.</span>
+0145 Mobj = <a href="#_sub3" class="code" title="subfunction Mobj = split_big_rivers(Mobj, max_discharge, coast_nodes, enames, fnames)">split_big_rivers</a>(Mobj, max_discharge, coast_nodes, enames, fnames);
 0146 
-0147 <span class="comment">% Update the number of rivers we have.</span>
-0148 Mobj.nRivers = length(Mobj.river_nodes);
-0149 
-0150 <span class="keyword">if</span> ftbverbose
-0151     fprintf(<span class="string">'end   : %s\n'</span>, subname)
-0152 <span class="keyword">end</span>
-0153 
-0154 <a name="_sub1" href="#_subfunctions" class="code">function coast_nodes_valid = get_coastline(Mobj)</a>
-0155 <span class="comment">% Find the appropriate nodes from the coastline nodes. This is mostly</span>
-0156 <span class="comment">% lifted from get_EHYPE_rivers.m.</span>
-0157 [~, ~, ~, bnd] = connectivity([Mobj.lon, Mobj.lat], Mobj.tri);
-0158 boundary_nodes = 1:Mobj.nVerts;
-0159 boundary_nodes = boundary_nodes(bnd);
-0160 coast_nodes = boundary_nodes(~ismember(boundary_nodes, <span class="keyword">...</span>
-0161     [Mobj.read_obc_nodes{:}]));
-0162 
-0163 <span class="comment">% Remove invalid coastline nodes (from the perspective of rivers). Those</span>
-0164 <span class="comment">% are which are connected to two land nodes. I can't think of an elegant</span>
-0165 <span class="comment">% way of doing this, so brute force it is. This is a bit slow (~10 seconds)</span>
-0166 <span class="comment">% on my grid with ~13000 coastal nodes.</span>
-0167 nogood = nan(size(coast_nodes)); <span class="comment">% clear out the nans later.</span>
-0168 <span class="keyword">for</span> nn = 1:length(coast_nodes)
-0169     [row, ~] = find(Mobj.tri == coast_nodes(nn));
-0170     <span class="keyword">if</span> length(row) == 1
-0171         nogood(nn) = coast_nodes(nn);
-0172     <span class="keyword">end</span>
-0173 <span class="keyword">end</span>
-0174 nogood = nogood(~isnan(nogood));
-0175 coast_nodes_valid = setdiff(coast_nodes, nogood);
-0176 
-0177 
-0178 <a name="_sub2" href="#_subfunctions" class="code">function Mobj = clear_boundary_nodes(Mobj, dist_thresh, enames)</a>
-0179 <span class="comment">% Remove nodes close to the open boundary joint with the coastline.</span>
-0180 <span class="comment">% Identifying the coastline/open boundary joining nodes is simply a case of</span>
-0181 <span class="comment">% taking the first and last node ID for each open boundary. Using that</span>
-0182 <span class="comment">% position, we can find any river nodes which fall within that distance and</span>
-0183 <span class="comment">% simply remove their data from the relevant Mobj.river_* arrays.</span>
-0184 
-0185 <span class="keyword">global</span> ftbverbose
-0186 
-0187 obc_land_nodes = nan(Mobj.nObs, 2);
-0188 <span class="keyword">for</span> n = 1:Mobj.nObs
-0189     obc_land_nodes(n, :) = [Mobj.read_obc_nodes{n}(1), <span class="keyword">...</span>
-0190         Mobj.read_obc_nodes{n}(end)];
-0191     <span class="keyword">for</span> d = 1:2
-0192         [dist, idx] = sort(sqrt(<span class="keyword">...</span>
-0193             (Mobj.lon(obc_land_nodes(n, d)) - Mobj.lon(Mobj.river_nodes)).^2 + <span class="keyword">...</span>
-0194             (Mobj.lat(obc_land_nodes(n, d)) - Mobj.lat(Mobj.river_nodes)).^2 <span class="keyword">...</span>
-0195             ));
-0196         <span class="keyword">if</span> min(dist) &lt; dist_thresh
-0197             <span class="comment">% Delete the positions with indices less than the threshold.</span>
-0198             <span class="comment">% This could be more than one river node.</span>
-0199             inds = find(dist &lt; dist_thresh);
-0200             <span class="keyword">if</span> ftbverbose
-0201                 <span class="comment">% Have to loop through the indices because fprint'ing a</span>
-0202                 <span class="comment">% cell array (the river names) is tough...</span>
-0203                 <span class="keyword">for</span> i = 1:length(inds)
-0204                     fprintf(<span class="string">'Remove river %s at %.2f, %.2f\n'</span>, <span class="keyword">...</span>
-0205                         Mobj.river_names{idx(inds(i))}, <span class="keyword">...</span>
-0206                         Mobj.lon(Mobj.river_nodes(idx(inds(i)))), <span class="keyword">...</span>
-0207                         Mobj.lat(Mobj.river_nodes(idx(inds(i)))))
-0208                 <span class="keyword">end</span>
-0209             <span class="keyword">end</span>
-0210             Mobj.river_nodes(idx(inds)) = [];
-0211             Mobj.river_flux(:, idx(inds)) = [];
-0212             Mobj.river_names(idx(inds)) = [];
-0213             <span class="comment">% Also trim the temperature, salinity and ERSEM variables,</span>
-0214             <span class="comment">% if we have them.</span>
-0215             <span class="keyword">for</span> e = 1:length(enames)
-0216                 <span class="keyword">if</span> isfield(Mobj, enames{e})
-0217                     Mobj.(enames{e})(:, idx(inds)) = [];
-0218                 <span class="keyword">end</span>
-0219             <span class="keyword">end</span>
-0220         <span class="keyword">end</span>
-0221     <span class="keyword">end</span>
-0222 <span class="keyword">end</span>
-0223 
-0224 <a name="_sub3" href="#_subfunctions" class="code">function Mobj = split_big_rivers(Mobj, max_discharge, coast_nodes, enames, fnames)</a>
-0225 <span class="comment">% For some of the rivers, the discharge is very large and is the source of</span>
-0226 <span class="comment">% model instability (e.g. the Rhine crashes my irish_sea_v20 grid). So,</span>
-0227 <span class="comment">% identify discharges in excess of some value and split that discharge over</span>
-0228 <span class="comment">% adjacent elements, making sure they're still valid nodes and not used for</span>
-0229 <span class="comment">% another river. Do this second so we don't have to worry about removing</span>
-0230 <span class="comment">% nodes based on their distance from the land/open boundary joint which</span>
-0231 <span class="comment">% have been split, which is the case if these two steps are reversed.</span>
-0232 
-0233 <span class="keyword">global</span> ftbverbose
-0234 
-0235 riv_idx = 1:size(Mobj.river_flux, 2);
-0236 riv_idx = riv_idx(max(Mobj.river_flux) &gt; max_discharge);
-0237 
-0238 <span class="keyword">if</span> ftbverbose
-0239     fprintf(<span class="string">'%i river(s) exceed the specified discharge threshold (%.2f m^{3}s^{-1}).\n'</span>, length(riv_idx), max_discharge)
-0240 <span class="keyword">end</span>
-0241 
-0242 <span class="keyword">for</span> r = riv_idx
-0243     <span class="comment">% Based on the flux data, find adjacent nodes over which to split the</span>
-0244     <span class="comment">% data and then split all variables (both physics and, optionally,</span>
-0245     <span class="comment">% ERSEM data).</span>
-0246 
-0247     <span class="comment">% Eliminate any existing river nodes from the list of candidates.</span>
-0248     candidates = setdiff(coast_nodes, Mobj.river_nodes);
-0249 
-0250     <span class="comment">% Extract the river data for the rivers in excess of the threshold so</span>
-0251     <span class="comment">% we can remove them from the existing arrays.</span>
-0252     <span class="keyword">for</span> e = 1:length(enames)
-0253         <span class="keyword">if</span> isfield(Mobj, enames{e})
-0254             tmp_struct.(enames{e}) = Mobj.(enames{e})(:, r);
-0255         <span class="keyword">end</span>
-0256     <span class="keyword">end</span>
-0257 
-0258     <span class="comment">% Save the nodes and names of this river.</span>
-0259     river_node = Mobj.river_nodes(r);
-0260     river_names = Mobj.river_names(r);
-0261 
-0262     <span class="comment">% Replace the current time series with NaNs. We'll remove them after</span>
-0263     <span class="comment">% we've split the rivers in riv_idx. If we remove them here, then the</span>
-0264     <span class="comment">% indices in riv_idx get offset by some amount (1 position each time).</span>
-0265     <span class="comment">% Doing that is hard to track, so we'll replace with NaNs and remove</span>
-0266     <span class="comment">% afterwards.</span>
-0267     <span class="keyword">for</span> e = 1:length(enames)
-0268         <span class="keyword">if</span> isfield(Mobj, enames{e})
-0269             Mobj.(enames{e})(:, r) = nan;
-0270         <span class="keyword">end</span>
-0271     <span class="keyword">end</span>
-0272     Mobj.river_nodes(r) = nan;
-0273     Mobj.river_names{r} = <span class="string">'REMOVEME'</span>;
-0274 
-0275     <span class="comment">% Split the discharge based on the number of times the specified</span>
-0276     <span class="comment">% maximum fits into the actual maximum. So, if the maximum is 10000</span>
-0277     <span class="comment">% m^{3}s^{-1} and max_discharge is 2000 m^{3}s^{-1}, then you split</span>
-0278     <span class="comment">% over 5 nodes.</span>
-0279     nsplit = ceil(max(tmp_struct.river_flux) / max_discharge);
+0147 <span class="comment">% If we've been asked to optimise the depth of nodes, do that now. We may</span>
+0148 <span class="comment">% have to rerun some of the checks above. I don't know yet.</span>
+0149 <span class="keyword">if</span> depth_optimise
+0150     Mobj = <a href="#_sub4" class="code" title="subfunction Mobj = optimise_depth(Mobj, depth_threshold, dist_thresh, coast_nodes, debug)">optimise_depth</a>(Mobj, depth_threshold, dist_thresh, coast_nodes, debug);
+0151 <span class="keyword">end</span>
+0152 
+0153 <span class="comment">% Update the number of rivers we have.</span>
+0154 Mobj.nRivers = length(Mobj.river_nodes);
+0155 
+0156 <span class="keyword">if</span> ftbverbose
+0157     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0158 <span class="keyword">end</span>
+0159 
+0160 <a name="_sub1" href="#_subfunctions" class="code">function coast_nodes_valid = get_coastline(Mobj)</a>
+0161 <span class="comment">% Find the appropriate nodes from the coastline nodes. This is mostly</span>
+0162 <span class="comment">% lifted from get_EHYPE_rivers.m.</span>
+0163 [~, ~, ~, bnd] = connectivity([Mobj.lon, Mobj.lat], Mobj.tri);
+0164 boundary_nodes = 1:Mobj.nVerts;
+0165 boundary_nodes = boundary_nodes(bnd);
+0166 coast_nodes = boundary_nodes(~ismember(boundary_nodes, <span class="keyword">...</span>
+0167     [Mobj.read_obc_nodes{:}]));
+0168 
+0169 <span class="comment">% Remove invalid coastline nodes (from the perspective of rivers). Those</span>
+0170 <span class="comment">% are which are connected to two land nodes. I can't think of an elegant</span>
+0171 <span class="comment">% way of doing this, so brute force it is. This is a bit slow (~10 seconds)</span>
+0172 <span class="comment">% on my grid with ~13000 coastal nodes.</span>
+0173 nogood = nan(size(coast_nodes)); <span class="comment">% clear out the nans later.</span>
+0174 <span class="keyword">for</span> nn = 1:length(coast_nodes)
+0175     [row, ~] = find(Mobj.tri == coast_nodes(nn));
+0176     <span class="keyword">if</span> length(row) == 1
+0177         nogood(nn) = coast_nodes(nn);
+0178     <span class="keyword">end</span>
+0179 <span class="keyword">end</span>
+0180 nogood = nogood(~isnan(nogood));
+0181 coast_nodes_valid = setdiff(coast_nodes, nogood);
+0182 
+0183 
+0184 <a name="_sub2" href="#_subfunctions" class="code">function Mobj = clear_boundary_nodes(Mobj, dist_thresh, enames)</a>
+0185 <span class="comment">% Remove nodes close to the open boundary joint with the coastline.</span>
+0186 <span class="comment">% Identifying the coastline/open boundary joining nodes is simply a case of</span>
+0187 <span class="comment">% taking the first and last node ID for each open boundary. Using that</span>
+0188 <span class="comment">% position, we can find any river nodes which fall within that distance and</span>
+0189 <span class="comment">% simply remove their data from the relevant Mobj.river_* arrays.</span>
+0190 
+0191 <span class="keyword">global</span> ftbverbose
+0192 
+0193 obc_land_nodes = nan(Mobj.nObs, 2);
+0194 <span class="keyword">for</span> n = 1:Mobj.nObs
+0195     obc_land_nodes(n, :) = [Mobj.read_obc_nodes{n}(1), <span class="keyword">...</span>
+0196         Mobj.read_obc_nodes{n}(end)];
+0197     <span class="keyword">for</span> d = 1:2
+0198         [dist, idx] = sort(sqrt(<span class="keyword">...</span>
+0199             (Mobj.lon(obc_land_nodes(n, d)) - Mobj.lon(Mobj.river_nodes)).^2 + <span class="keyword">...</span>
+0200             (Mobj.lat(obc_land_nodes(n, d)) - Mobj.lat(Mobj.river_nodes)).^2 <span class="keyword">...</span>
+0201             ));
+0202         <span class="keyword">if</span> min(dist) &lt; dist_thresh
+0203             <span class="comment">% Delete the positions with indices less than the threshold.</span>
+0204             <span class="comment">% This could be more than one river node.</span>
+0205             inds = find(dist &lt; dist_thresh);
+0206             <span class="keyword">if</span> ftbverbose
+0207                 <span class="comment">% Have to loop through the indices because fprint'ing a</span>
+0208                 <span class="comment">% cell array (the river names) is tough...</span>
+0209                 <span class="keyword">for</span> i = 1:length(inds)
+0210                     fprintf(<span class="string">'Remove river %s at %.2f, %.2f\n'</span>, <span class="keyword">...</span>
+0211                         Mobj.river_names{idx(inds(i))}, <span class="keyword">...</span>
+0212                         Mobj.lon(Mobj.river_nodes(idx(inds(i)))), <span class="keyword">...</span>
+0213                         Mobj.lat(Mobj.river_nodes(idx(inds(i)))))
+0214                 <span class="keyword">end</span>
+0215             <span class="keyword">end</span>
+0216             Mobj.river_nodes(idx(inds)) = [];
+0217             Mobj.river_flux(:, idx(inds)) = [];
+0218             Mobj.river_names(idx(inds)) = [];
+0219             <span class="comment">% Also trim the temperature, salinity and ERSEM variables,</span>
+0220             <span class="comment">% if we have them.</span>
+0221             <span class="keyword">for</span> e = 1:length(enames)
+0222                 <span class="keyword">if</span> isfield(Mobj, enames{e})
+0223                     Mobj.(enames{e})(:, idx(inds)) = [];
+0224                 <span class="keyword">end</span>
+0225             <span class="keyword">end</span>
+0226         <span class="keyword">end</span>
+0227     <span class="keyword">end</span>
+0228 <span class="keyword">end</span>
+0229 
+0230 <a name="_sub3" href="#_subfunctions" class="code">function Mobj = split_big_rivers(Mobj, max_discharge, coast_nodes, enames, fnames)</a>
+0231 <span class="comment">% For some of the rivers, the discharge is very large and is the source of</span>
+0232 <span class="comment">% model instability (e.g. the Rhine crashes my irish_sea_v20 grid). So,</span>
+0233 <span class="comment">% identify discharges in excess of some value and split that discharge over</span>
+0234 <span class="comment">% adjacent elements, making sure they're still valid nodes and not used for</span>
+0235 <span class="comment">% another river. Do this second so we don't have to worry about removing</span>
+0236 <span class="comment">% nodes based on their distance from the land/open boundary joint which</span>
+0237 <span class="comment">% have been split, which is the case if these two steps are reversed.</span>
+0238 
+0239 <span class="keyword">global</span> ftbverbose
+0240 
+0241 riv_idx = 1:size(Mobj.river_flux, 2);
+0242 riv_idx = riv_idx(max(Mobj.river_flux) &gt; max_discharge);
+0243 
+0244 <span class="keyword">if</span> ftbverbose
+0245     fprintf(<span class="string">'%i river(s) exceed the specified discharge threshold (%.2f m^{3}s^{-1}).\n'</span>, length(riv_idx), max_discharge)
+0246 <span class="keyword">end</span>
+0247 
+0248 <span class="keyword">for</span> r = riv_idx
+0249     <span class="comment">% Based on the flux data, find adjacent nodes over which to split the</span>
+0250     <span class="comment">% data and then split all variables (both physics and, optionally,</span>
+0251     <span class="comment">% ERSEM data).</span>
+0252 
+0253     <span class="comment">% Eliminate any existing river nodes from the list of candidates.</span>
+0254     candidates = setdiff(coast_nodes, Mobj.river_nodes);
+0255 
+0256     <span class="comment">% Extract the river data for the rivers in excess of the threshold so</span>
+0257     <span class="comment">% we can remove them from the existing arrays.</span>
+0258     <span class="keyword">for</span> e = 1:length(enames)
+0259         <span class="keyword">if</span> isfield(Mobj, enames{e})
+0260             tmp_struct.(enames{e}) = Mobj.(enames{e})(:, r);
+0261         <span class="keyword">end</span>
+0262     <span class="keyword">end</span>
+0263 
+0264     <span class="comment">% Save the nodes and names of this river.</span>
+0265     river_node = Mobj.river_nodes(r);
+0266     river_names = Mobj.river_names(r);
+0267 
+0268     <span class="comment">% Replace the current time series with NaNs. We'll remove them after</span>
+0269     <span class="comment">% we've split the rivers in riv_idx. If we remove them here, then the</span>
+0270     <span class="comment">% indices in riv_idx get offset by some amount (1 position each time).</span>
+0271     <span class="comment">% Doing that is hard to track, so we'll replace with NaNs and remove</span>
+0272     <span class="comment">% afterwards.</span>
+0273     <span class="keyword">for</span> e = 1:length(enames)
+0274         <span class="keyword">if</span> isfield(Mobj, enames{e})
+0275             Mobj.(enames{e})(:, r) = nan;
+0276         <span class="keyword">end</span>
+0277     <span class="keyword">end</span>
+0278     Mobj.river_nodes(r) = nan;
+0279     Mobj.river_names{r} = <span class="string">'REMOVEME'</span>;
 0280 
-0281     <span class="comment">% Scale the data by nsplit.</span>
-0282     <span class="keyword">for</span> e = 1:length(enames)
-0283         <span class="keyword">if</span> isfield(Mobj, enames{e})
-0284             tmp_struct.(enames{e}) = tmp_struct.(enames{e}) / nsplit;
-0285         <span class="keyword">end</span>
-0286     <span class="keyword">end</span>
-0287 
-0288     <span class="comment">% We can keep the original node, but we need to find the</span>
-0289     <span class="comment">% remaining nsplit-1 nodes.</span>
-0290     fv_obc = river_node;
-0291     fv_names = {sprintf(<span class="string">'%s_%i'</span>, river_names{1}, 1)};
-0292     <span class="keyword">for</span> e = 1:length(fnames)
-0293         <span class="keyword">if</span> isfield(Mobj, enames{e})
-0294             tmp_struct.(fnames{e}) = repmat(tmp_struct.(enames{e}), [1, nsplit]);
-0295         <span class="keyword">end</span>
-0296     <span class="keyword">end</span>
-0297 
-0298     <span class="keyword">for</span> ff = 2:nsplit
-0299         <span class="comment">% Update the list of candidates to exclude those we've just found.</span>
-0300         candidates = setdiff(candidates, fv_obc);
-0301 
-0302         [~, idx] = min(sqrt( <span class="keyword">...</span>
-0303             (Mobj.lon(river_node) - Mobj.lon(candidates)).^2 + <span class="keyword">...</span>
-0304             (Mobj.lat(river_node) - Mobj.lat(candidates)).^2));
-0305 
-0306         <span class="comment">% Now we can check if this node is an FVCOM-compatible one</span>
-0307         <span class="comment">% (element of which it's a part has no more than one land</span>
-0308         <span class="comment">% boundary).</span>
-0309         [row, ~] = find(Mobj.tri == candidates(idx));
-0310 
-0311         <span class="keyword">if</span> length(row) == 1
-0312             <span class="comment">% This is a bad node because it is a part of only one element.</span>
-0313             <span class="comment">% The rivers need two adjacent elements to work reliably (?).</span>
-0314             <span class="comment">% So, we need to repeat the process above until we find a node</span>
-0315             <span class="comment">% that's connected to two elements. We'll try the other nodes</span>
-0316             <span class="comment">% in the current element before searching the rest of the</span>
-0317             <span class="comment">% coastline (which is computationally expensive).</span>
-0318 
-0319             <span class="comment">% Remove the current node index from the list of candidates</span>
-0320             <span class="comment">% (i.e. leave only the two other nodes in the element).</span>
-0321             mask = Mobj.tri(row, :) ~= candidates(idx);
-0322             n_tri = Mobj.tri(row, mask);
-0323 
-0324             <span class="comment">% Remove values which aren't coastline values (we don't want to</span>
-0325             <span class="comment">% set the river node to an open water node).</span>
-0326             n_tri = intersect(n_tri, candidates);
-0327 
-0328             <span class="comment">% Of the remaining nodes in the element, find the closest one</span>
-0329             <span class="comment">% to the original river location.</span>
-0330             [~, n_idx] = sort(sqrt( <span class="keyword">...</span>
-0331                 (Mobj.rivers.positions(r, 1) - Mobj.lon(n_tri)).^2 <span class="keyword">...</span>
-0332                 + (Mobj.rivers.positions(r, 2) - Mobj.lon(n_tri)).^2));
+0281     <span class="comment">% Split the discharge based on the number of times the specified</span>
+0282     <span class="comment">% maximum fits into the actual maximum. So, if the maximum is 10000</span>
+0283     <span class="comment">% m^{3}s^{-1} and max_discharge is 2000 m^{3}s^{-1}, then you split</span>
+0284     <span class="comment">% over 5 nodes.</span>
+0285     nsplit = ceil(max(tmp_struct.river_flux) / max_discharge);
+0286     tmp_struct.river_flux = tmp_struct.river_flux / nsplit;
+0287     <span class="comment">% Scale the data by nsplit.</span>
+0288 <span class="comment">%     for e = 1:length(enames)</span>
+0289 <span class="comment">%         if isfield(Mobj, enames{e})</span>
+0290 <span class="comment">%             tmp_struct.(enames{e}) = tmp_struct.(enames{e}) / nsplit;</span>
+0291 <span class="comment">%         end</span>
+0292 <span class="comment">%     end</span>
+0293 
+0294     <span class="comment">% We can keep the original node, but we need to find the</span>
+0295     <span class="comment">% remaining nsplit-1 nodes.</span>
+0296     fv_obc = river_node;
+0297     fv_names = {sprintf(<span class="string">'%s_%i'</span>, river_names{1}, 1)};
+0298     <span class="keyword">for</span> e = 1:length(fnames)
+0299         <span class="keyword">if</span> isfield(Mobj, enames{e})
+0300             tmp_struct.(fnames{e}) = repmat(tmp_struct.(enames{e}), [1, nsplit]);
+0301         <span class="keyword">end</span>
+0302     <span class="keyword">end</span>
+0303 
+0304     <span class="keyword">for</span> ff = 2:nsplit
+0305         <span class="comment">% Update the list of candidates to exclude those we've just found.</span>
+0306         candidates = setdiff(candidates, fv_obc);
+0307 
+0308         [~, idx] = min(sqrt( <span class="keyword">...</span>
+0309             (Mobj.lon(river_node) - Mobj.lon(candidates)).^2 + <span class="keyword">...</span>
+0310             (Mobj.lat(river_node) - Mobj.lat(candidates)).^2));
+0311 
+0312         <span class="comment">% Now we can check if this node is an FVCOM-compatible one</span>
+0313         <span class="comment">% (element of which it's a part has no more than one land</span>
+0314         <span class="comment">% boundary).</span>
+0315         [row, ~] = find(Mobj.tri == candidates(idx));
+0316 
+0317         <span class="keyword">if</span> length(row) == 1
+0318             <span class="comment">% This is a bad node because it is a part of only one element.</span>
+0319             <span class="comment">% The rivers need two adjacent elements to work reliably (?).</span>
+0320             <span class="comment">% So, we need to repeat the process above until we find a node</span>
+0321             <span class="comment">% that's connected to two elements. We'll try the other nodes</span>
+0322             <span class="comment">% in the current element before searching the rest of the</span>
+0323             <span class="comment">% coastline (which is computationally expensive).</span>
+0324 
+0325             <span class="comment">% Remove the current node index from the list of candidates</span>
+0326             <span class="comment">% (i.e. leave only the two other nodes in the element).</span>
+0327             mask = Mobj.tri(row, :) ~= candidates(idx);
+0328             n_tri = Mobj.tri(row, mask);
+0329 
+0330             <span class="comment">% Remove values which aren't coastline values (we don't want to</span>
+0331             <span class="comment">% set the river node to an open water node).</span>
+0332             n_tri = intersect(n_tri, candidates);
 0333 
-0334             [row_2, ~] = find(Mobj.tri == n_tri(n_idx(1)));
-0335             <span class="keyword">if</span> length(n_idx) &gt; 1
-0336                 [row_3, ~] = find(Mobj.tri == n_tri(n_idx(2)));
-0337             <span class="keyword">end</span>
-0338             <span class="comment">% Closest first</span>
-0339             <span class="keyword">if</span> length(row_2) &gt; 1
-0340                 idx = find(candidates == n_tri(n_idx(1)));
-0341                 <span class="comment">% The other one (only if we have more than one node to</span>
-0342                 <span class="comment">% consider).</span>
-0343             <span class="keyword">elseif</span> length(n_idx) &gt; 1 &amp;&amp; length(row_3) &gt; 1
-0344                 idx = find(candidates == n_tri(n_idx(2)));
-0345                 <span class="comment">% OK, we need to search across all the other coastline</span>
-0346                 <span class="comment">% nodes.</span>
-0347             <span class="keyword">else</span>
-0348                 <span class="comment">% TODO: Implement a search of all the other coastline</span>
-0349                 <span class="comment">% nodes. My testing indicates that we never get here (at</span>
-0350                 <span class="comment">% least for the grids I've tested). I'd be interested to</span>
-0351                 <span class="comment">% see the mesh which does get here...</span>
-0352                 <span class="keyword">continue</span>
-0353             <span class="keyword">end</span>
-0354             fprintf(<span class="string">'alternate node '</span>)
-0355         <span class="keyword">end</span>
-0356 
-0357         <span class="comment">% Update the node ID list and the river names list. The flux we've</span>
-0358         <span class="comment">% already done because we know it's just river_flux/nsplit in</span>
-0359         <span class="comment">% nsplit columns.</span>
-0360         fv_obc(ff) = candidates(idx);
-0361         fv_names{ff} = sprintf(<span class="string">'%s_%i'</span>, river_names{1}, ff);
-0362     <span class="keyword">end</span>
-0363 
-0364     <span class="keyword">if</span> ftbverbose
-0365         fprintf(<span class="string">'Split river %s over %i nodes.\n'</span>, river_names{1}, nsplit)
-0366     <span class="keyword">end</span>
-0367 
-0368     <span class="comment">% Now we can append these new rivers to the existing list of</span>
-0369     <span class="comment">% discharges, nodes and names.</span>
-0370     <span class="keyword">for</span> e = 1:length(enames)
-0371         <span class="keyword">if</span> isfield(Mobj, enames{e})
-0372             Mobj.(enames{e}) = [Mobj.(enames{e}), tmp_struct.(fnames{e})];
-0373         <span class="keyword">end</span>
-0374     <span class="keyword">end</span>
-0375     Mobj.river_names = [Mobj.river_names; fv_names'];
-0376     Mobj.river_nodes = [Mobj.river_nodes, fv_obc];
-0377 <span class="keyword">end</span>
-0378 
-0379 <span class="comment">% Remove all the original river data for the split rivers. Check we're</span>
-0380 <span class="comment">% doing the right columns by checking if the first row of the fluxes are</span>
-0381 <span class="comment">% all NaNs for the riv_idx indices.</span>
-0382 <span class="keyword">if</span> all(isnan(Mobj.river_flux(1, riv_idx)))
-0383     <span class="keyword">for</span> e = 1:length(enames)
-0384         <span class="keyword">if</span> isfield(Mobj, enames{e})
-0385             Mobj.(enames{e})(:, riv_idx) = [];
-0386         <span class="keyword">end</span>
-0387     <span class="keyword">end</span>
-0388     Mobj.river_nodes(riv_idx) = [];
-0389     Mobj.river_names(riv_idx) = [];
-0390 <span class="keyword">end</span>
-0391 
-0392 <a name="_sub4" href="#_subfunctions" class="code">function Mobj = optimise_depth(Mobj, dist_thresh, coast_nodes, debug)</a>
-0393 <span class="comment">% For each river node, search within the distance threshold given and pick</span>
-0394 <span class="comment">% the deepest coastline node for that river.</span>
-0395 
-0396 <span class="keyword">global</span> ftbverbose
+0334             <span class="comment">% Of the remaining nodes in the element, find the closest one</span>
+0335             <span class="comment">% to the original river location.</span>
+0336             [~, n_idx] = sort(sqrt( <span class="keyword">...</span>
+0337                 (Mobj.rivers.positions(r, 1) - Mobj.lon(n_tri)).^2 <span class="keyword">...</span>
+0338                 + (Mobj.rivers.positions(r, 2) - Mobj.lon(n_tri)).^2));
+0339 
+0340             [row_2, ~] = find(Mobj.tri == n_tri(n_idx(1)));
+0341             <span class="keyword">if</span> length(n_idx) &gt; 1
+0342                 [row_3, ~] = find(Mobj.tri == n_tri(n_idx(2)));
+0343             <span class="keyword">end</span>
+0344             <span class="comment">% Closest first</span>
+0345             <span class="keyword">if</span> length(row_2) &gt; 1
+0346                 idx = find(candidates == n_tri(n_idx(1)));
+0347                 <span class="comment">% The other one (only if we have more than one node to</span>
+0348                 <span class="comment">% consider).</span>
+0349             <span class="keyword">elseif</span> length(n_idx) &gt; 1 &amp;&amp; length(row_3) &gt; 1
+0350                 idx = find(candidates == n_tri(n_idx(2)));
+0351                 <span class="comment">% OK, we need to search across all the other coastline</span>
+0352                 <span class="comment">% nodes.</span>
+0353             <span class="keyword">else</span>
+0354                 <span class="comment">% TODO: Implement a search of all the other coastline</span>
+0355                 <span class="comment">% nodes. My testing indicates that we never get here (at</span>
+0356                 <span class="comment">% least for the grids I've tested). I'd be interested to</span>
+0357                 <span class="comment">% see the mesh which does get here...</span>
+0358                 <span class="keyword">continue</span>
+0359             <span class="keyword">end</span>
+0360             fprintf(<span class="string">'alternate node '</span>)
+0361         <span class="keyword">end</span>
+0362 
+0363         <span class="comment">% Update the node ID list and the river names list. The flux we've</span>
+0364         <span class="comment">% already done because we know it's just river_flux/nsplit in</span>
+0365         <span class="comment">% nsplit columns.</span>
+0366         fv_obc(ff) = candidates(idx);
+0367         fv_names{ff} = sprintf(<span class="string">'%s_%i'</span>, river_names{1}, ff);
+0368     <span class="keyword">end</span>
+0369 
+0370     <span class="keyword">if</span> ftbverbose
+0371         fprintf(<span class="string">'Split river %s over %i nodes.\n'</span>, river_names{1}, nsplit)
+0372     <span class="keyword">end</span>
+0373 
+0374     <span class="comment">% Now we can append these new rivers to the existing list of</span>
+0375     <span class="comment">% discharges, nodes and names.</span>
+0376     <span class="keyword">for</span> e = 1:length(enames)
+0377         <span class="keyword">if</span> isfield(Mobj, enames{e})
+0378             Mobj.(enames{e}) = [Mobj.(enames{e}), tmp_struct.(fnames{e})];
+0379         <span class="keyword">end</span>
+0380     <span class="keyword">end</span>
+0381     Mobj.river_names = [Mobj.river_names; fv_names'];
+0382     Mobj.river_nodes = [Mobj.river_nodes, fv_obc];
+0383 <span class="keyword">end</span>
+0384 
+0385 <span class="comment">% Remove all the original river data for the split rivers. Check we're</span>
+0386 <span class="comment">% doing the right columns by checking if the first row of the fluxes are</span>
+0387 <span class="comment">% all NaNs for the riv_idx indices.</span>
+0388 <span class="keyword">if</span> all(isnan(Mobj.river_flux(1, riv_idx)))
+0389     <span class="keyword">for</span> e = 1:length(enames)
+0390         <span class="keyword">if</span> isfield(Mobj, enames{e})
+0391             Mobj.(enames{e})(:, riv_idx) = [];
+0392         <span class="keyword">end</span>
+0393     <span class="keyword">end</span>
+0394     Mobj.river_nodes(riv_idx) = [];
+0395     Mobj.river_names(riv_idx) = [];
+0396 <span class="keyword">end</span>
 0397 
-0398 coast_depth = Mobj.h(coast_nodes);
-0399 coast_lon = Mobj.lon(coast_nodes);
-0400 coast_lat = Mobj.lat(coast_nodes);
+0398 <a name="_sub4" href="#_subfunctions" class="code">function Mobj = optimise_depth(Mobj, depth_threshold, dist_thresh, coast_nodes, debug)</a>
+0399 <span class="comment">% For each river node, search within the distance threshold given and pick</span>
+0400 <span class="comment">% the deepest coastline node for that river.</span>
 0401 
-0402 <span class="keyword">for</span> r = 1:length(Mobj.river_nodes)
+0402 <span class="keyword">global</span> ftbverbose
 0403 
-0404     <span class="comment">% The current river index in the global arrays.</span>
-0405     ri = Mobj.river_nodes(r);
-0406 
-0407     <span class="comment">% Find the nearest nodes.</span>
-0408     [distance, candidates] = sort(sqrt((coast_lon - Mobj.lon(ri)).^2 + <span class="keyword">...</span>
-0409         (coast_lat - Mobj.lat(ri)).^2));
-0410     candidate_nodes = candidates(distance &lt; dist_thresh);
-0411     <span class="comment">% Find the deepest node within the search radius.</span>
-0412     [deepest_depth, deepest_index] = max(coast_depth(candidates(distance &lt; dist_thresh)));
-0413     <span class="comment">% Update if we've deepened this node.</span>
-0414     <span class="keyword">if</span> ri ~= candidate_nodes(deepest_index)
-0415         <span class="comment">% Only update if we improve matters (deepen a river input node).</span>
-0416         <span class="keyword">if</span> deepest_depth &gt; Mobj.h(ri)
-0417             <span class="comment">% Let everyone know what's going on.</span>
-0418             <span class="keyword">if</span> ftbverbose
-0419                 fprintf([<span class="string">'Moving river %s to a node with depth %.2f'</span>, <span class="keyword">...</span>
-0420                     <span class="string">' from one with a depth of %.2f (%.2fm deeper).\n'</span>], <span class="keyword">...</span>
-0421                     Mobj.river_names{r}, <span class="keyword">...</span>
-0422                     Mobj.h(coast_nodes(candidate_nodes(deepest_index))), <span class="keyword">...</span>
-0423                     Mobj.h(Mobj.river_nodes(r)), <span class="keyword">...</span>
-0424                     Mobj.h(coast_nodes(candidate_nodes(deepest_index))) - Mobj.h(ri))
-0425             <span class="keyword">end</span>
-0426 
-0427             <span class="comment">% Update the mesh object.</span>
-0428             Mobj.river_nodes(r) = coast_nodes(candidate_nodes(deepest_index));
-0429 
-0430             <span class="keyword">if</span> debug
-0431                 figure(1)
-0432                 clf
-0433                 triplot(Mobj.tri, Mobj.lon, Mobj.lat, <span class="string">'k'</span>)
-0434                 hold on
-0435                 plot(coast_lon, coast_lat, <span class="string">'r.'</span>)
-0436                 scatter(coast_lon(candidates(distance &lt; dist_thresh)), <span class="keyword">...</span>
-0437                     coast_lat(candidates(distance &lt; dist_thresh)), <span class="keyword">...</span>
-0438                     30, <span class="keyword">...</span>
-0439                     -coast_depth(candidates(distance &lt; dist_thresh)), <span class="keyword">...</span>
-0440                     <span class="string">'filled'</span>)
-0441                 colorbar
-0442                 plot(Mobj.lon(ri), Mobj.lat(ri), <span class="string">'r^'</span>, <span class="string">'MarkerSize'</span>, 20)
-0443                 plot(coast_lon(candidate_nodes(deepest_index)), <span class="keyword">...</span>
-0444                     coast_lat(candidate_nodes(deepest_index)), <span class="keyword">...</span>
-0445                     <span class="string">'b^'</span>, <span class="keyword">...</span>
-0446                     <span class="string">'MarkerSize'</span>, 20)
-0447                 axis(<span class="string">'tight'</span>, <span class="string">'equal'</span>)
-0448                 legend(<span class="string">'grid'</span>, <span class="string">'coastline'</span>, <span class="string">'depths'</span>, <span class="string">'original'</span>, <span class="string">'new'</span>)
-0449                 legend(<span class="string">'BoxOff'</span>)
-0450                 xlim([Mobj.lon(ri) - dist_thresh * 2, Mobj.lon(ri) + dist_thresh * 2])
-0451                 ylim([Mobj.lat(ri) - dist_thresh * 2, Mobj.lat(ri) + dist_thresh * 2])
-0452                 fprintf(<span class="string">'Press any key to continue... \n'</span>)
-0453                 pause
-0454             <span class="keyword">end</span>
-0455         <span class="keyword">else</span>
-0456             <span class="keyword">continue</span>
-0457         <span class="keyword">end</span>
-0458     <span class="keyword">end</span>
-0459 <span class="keyword">end</span>
-0460 <span class="keyword">if</span> ftbverbose
-0461     fprintf(<span class="string">'Minimum river depth is: %.2f\n'</span>, min(Mobj.h(Mobj.river_nodes)))
-0462 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0404 coast_depth = Mobj.h(coast_nodes);
+0405 coast_lon = Mobj.lon(coast_nodes);
+0406 coast_lat = Mobj.lat(coast_nodes);
+0407 
+0408 <span class="keyword">for</span> r = 1:length(Mobj.river_nodes)
+0409 
+0410     <span class="comment">% The current river index in the global arrays.</span>
+0411     ri = Mobj.river_nodes(r);
+0412 
+0413     <span class="comment">% Find the nearest nodes.</span>
+0414     [distance, candidates] = sort(sqrt((coast_lon - Mobj.lon(ri)).^2 + <span class="keyword">...</span>
+0415         (coast_lat - Mobj.lat(ri)).^2));
+0416     candidate_nodes = candidates(distance &lt; dist_thresh);
+0417     <span class="comment">% Find the deepest node within the search radius.</span>
+0418     [deepest_depth, deepest_index] = max(coast_depth(candidates(distance &lt; dist_thresh)));
+0419     <span class="comment">% Update if we've deepened this node.</span>
+0420     <span class="keyword">if</span> ri ~= candidate_nodes(deepest_index)
+0421         <span class="comment">% Only update if we improve matters (deepen a river input node) and</span>
+0422         <span class="comment">% are shallower than the threshold depth given.</span>
+0423         <span class="keyword">if</span> deepest_depth &gt; Mobj.h(ri) &amp;&amp; Mobj.h(ri) &lt; depth_threshold
+0424             <span class="comment">% Let everyone know what's going on.</span>
+0425             <span class="keyword">if</span> ftbverbose
+0426                 fprintf([<span class="string">'Moving river %s to a node with depth %.2f'</span>, <span class="keyword">...</span>
+0427                     <span class="string">' from one with a depth of %.2f (%.2fm deeper).\n'</span>], <span class="keyword">...</span>
+0428                     Mobj.river_names{r}, <span class="keyword">...</span>
+0429                     Mobj.h(coast_nodes(candidate_nodes(deepest_index))), <span class="keyword">...</span>
+0430                     Mobj.h(Mobj.river_nodes(r)), <span class="keyword">...</span>
+0431                     Mobj.h(coast_nodes(candidate_nodes(deepest_index))) - Mobj.h(ri))
+0432             <span class="keyword">end</span>
+0433 
+0434             <span class="comment">% Update the mesh object.</span>
+0435             Mobj.river_nodes(r) = coast_nodes(candidate_nodes(deepest_index));
+0436 
+0437             <span class="keyword">if</span> debug
+0438                 figure(1)
+0439                 clf
+0440                 triplot(Mobj.tri, Mobj.lon, Mobj.lat, <span class="string">'k'</span>)
+0441                 hold on
+0442                 plot(coast_lon, coast_lat, <span class="string">'r.'</span>)
+0443                 scatter(coast_lon(candidates(distance &lt; dist_thresh)), <span class="keyword">...</span>
+0444                     coast_lat(candidates(distance &lt; dist_thresh)), <span class="keyword">...</span>
+0445                     30, <span class="keyword">...</span>
+0446                     -coast_depth(candidates(distance &lt; dist_thresh)), <span class="keyword">...</span>
+0447                     <span class="string">'filled'</span>)
+0448                 colorbar
+0449                 plot(Mobj.lon(ri), Mobj.lat(ri), <span class="string">'r^'</span>, <span class="string">'MarkerSize'</span>, 20)
+0450                 plot(coast_lon(candidate_nodes(deepest_index)), <span class="keyword">...</span>
+0451                     coast_lat(candidate_nodes(deepest_index)), <span class="keyword">...</span>
+0452                     <span class="string">'b^'</span>, <span class="keyword">...</span>
+0453                     <span class="string">'MarkerSize'</span>, 20)
+0454                 axis(<span class="string">'tight'</span>, <span class="string">'equal'</span>)
+0455                 legend(<span class="string">'grid'</span>, <span class="string">'coastline'</span>, <span class="string">'depths'</span>, <span class="string">'original'</span>, <span class="string">'new'</span>)
+0456                 legend(<span class="string">'BoxOff'</span>)
+0457                 xlim([Mobj.lon(ri) - dist_thresh * 2, Mobj.lon(ri) + dist_thresh * 2])
+0458                 ylim([Mobj.lat(ri) - dist_thresh * 2, Mobj.lat(ri) + dist_thresh * 2])
+0459                 fprintf(<span class="string">'Press any key to continue... \n'</span>)
+0460                 pause
+0461             <span class="keyword">end</span>
+0462         <span class="keyword">else</span>
+0463             <span class="keyword">continue</span>
+0464         <span class="keyword">end</span>
+0465     <span class="keyword">end</span>
+0466 <span class="keyword">end</span>
+0467 <span class="keyword">if</span> ftbverbose
+0468     fprintf(<span class="string">'Minimum river depth is: %.2f (positive down)\n'</span>, min(Mobj.h(Mobj.river_nodes)))
+0469 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

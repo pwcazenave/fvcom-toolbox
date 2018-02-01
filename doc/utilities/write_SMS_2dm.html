@@ -24,13 +24,13 @@
 <div class="box"><strong>Output an SMS 2dm ASCII file from the triangulation given by tri, x and</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function write_SMS_2dm(file, tri, x, y, bnd) </strong></div>
+<div class="box"><strong>function write_SMS_2dm(file, tri, x, y, z, bnd) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Output an SMS 2dm ASCII file from the triangulation given by tri, x and
  y.
 
- write_SMS_2dm(tri, x, y)
+ write_SMS_2dm('file.2dm', tri, x, y)
  
  DESCRIPTION:
    Create an ASCII file in the SMS 2dm format of the triangulation in tri,
@@ -40,6 +40,7 @@
    file - file name to save to.
    tri  - triangulation matrix of the nodes in x and y.
    x, y - coordinate pairs for the unstructured grid.
+   z    - array of matching length with x and y of depth values.
    bnd  - [optional] cell array of open boundary node ids to create node
           strings in SMS.
  
@@ -54,6 +55,8 @@
  
  Revision history:
    2013-03-11 First version.
+   2017-01-27 Change the arguments to use a z value too.
+   2017-04-11 Update the help to be more useful.
  
 ==========================================================================</pre></div>
 
@@ -70,11 +73,11 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_SMS_2dm(file, tri, x, y, bnd)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_SMS_2dm(file, tri, x, y, z, bnd)</a>
 0002 <span class="comment">% Output an SMS 2dm ASCII file from the triangulation given by tri, x and</span>
 0003 <span class="comment">% y.</span>
 0004 <span class="comment">%</span>
-0005 <span class="comment">% write_SMS_2dm(tri, x, y)</span>
+0005 <span class="comment">% write_SMS_2dm('file.2dm', tri, x, y)</span>
 0006 <span class="comment">%</span>
 0007 <span class="comment">% DESCRIPTION:</span>
 0008 <span class="comment">%   Create an ASCII file in the SMS 2dm format of the triangulation in tri,</span>
@@ -84,97 +87,99 @@ This function is called by:
 0012 <span class="comment">%   file - file name to save to.</span>
 0013 <span class="comment">%   tri  - triangulation matrix of the nodes in x and y.</span>
 0014 <span class="comment">%   x, y - coordinate pairs for the unstructured grid.</span>
-0015 <span class="comment">%   bnd  - [optional] cell array of open boundary node ids to create node</span>
-0016 <span class="comment">%          strings in SMS.</span>
-0017 <span class="comment">%</span>
-0018 <span class="comment">% OUTPUT:</span>
-0019 <span class="comment">%   file - ASCII file in SMS 2dm format.</span>
-0020 <span class="comment">%</span>
-0021 <span class="comment">% EXAMPLE USAGE:</span>
-0022 <span class="comment">%   write_SMS_2dm('/tmp/test.2dm', Mobj.tri, Mobj.x, Mobj.y)</span>
-0023 <span class="comment">%</span>
-0024 <span class="comment">% Author(s):</span>
-0025 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
-0026 <span class="comment">%</span>
-0027 <span class="comment">% Revision history:</span>
-0028 <span class="comment">%   2013-03-11 First version.</span>
-0029 <span class="comment">%</span>
-0030 <span class="comment">%==========================================================================</span>
-0031 
-0032 subname = <span class="string">'write_SMS_2dm'</span>;
-0033 
-0034 <span class="keyword">global</span> ftbverbose
-0035 <span class="keyword">if</span> ftbverbose
-0036     fprintf(<span class="string">'\n'</span>); fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>]);
-0037 <span class="keyword">end</span>
-0038 
-0039 f = fopen(file, <span class="string">'w'</span>);
-0040 <span class="keyword">if</span> f &lt; 0
-0041     error(<span class="string">'Unable to open output file (check permissions?)'</span>)
-0042 <span class="keyword">end</span>
-0043 
-0044 <span class="keyword">if</span> length(x) ~= length(y)
-0045     error(<span class="string">'Input coordinate array lengths do not match.'</span>)
-0046 <span class="keyword">else</span>
-0047     nn = length(x);
-0048 <span class="keyword">end</span>
-0049 
-0050 nt = size(tri, 1);
+0015 <span class="comment">%   z    - array of matching length with x and y of depth values.</span>
+0016 <span class="comment">%   bnd  - [optional] cell array of open boundary node ids to create node</span>
+0017 <span class="comment">%          strings in SMS.</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% OUTPUT:</span>
+0020 <span class="comment">%   file - ASCII file in SMS 2dm format.</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% EXAMPLE USAGE:</span>
+0023 <span class="comment">%   write_SMS_2dm('/tmp/test.2dm', Mobj.tri, Mobj.x, Mobj.y)</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% Author(s):</span>
+0026 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% Revision history:</span>
+0029 <span class="comment">%   2013-03-11 First version.</span>
+0030 <span class="comment">%   2017-01-27 Change the arguments to use a z value too.</span>
+0031 <span class="comment">%   2017-04-11 Update the help to be more useful.</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">%==========================================================================</span>
+0034 
+0035 <span class="keyword">global</span> ftbverbose
+0036 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0037 <span class="keyword">if</span> ftbverbose
+0038     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0039 <span class="keyword">end</span>
+0040 
+0041 f = fopen(file, <span class="string">'w'</span>);
+0042 <span class="keyword">if</span> f &lt; 0
+0043     error(<span class="string">'Unable to open output file (check permissions?)'</span>)
+0044 <span class="keyword">end</span>
+0045 
+0046 <span class="keyword">if</span> length(x) ~= length(y)
+0047     error(<span class="string">'Input coordinate array lengths do not match.'</span>)
+0048 <span class="keyword">else</span>
+0049     nn = length(x);
+0050 <span class="keyword">end</span>
 0051 
-0052 <span class="comment">% Header</span>
-0053 fprintf(f, <span class="string">'MESH2D\nMESHNAME &quot;mesh&quot;\n'</span>);
-0054 
-0055 <span class="comment">% Add the connectivity table</span>
-0056 <span class="keyword">for</span> t = 1:nt
-0057     fprintf(f, <span class="string">'E3T %i %i %i %i 1\n'</span>, t, tri(t, :));
-0058 <span class="keyword">end</span>
-0059 
-0060 <span class="comment">% Add the list of nodes</span>
-0061 <span class="keyword">for</span> n = 1:nn
-0062     fprintf(f, <span class="string">'ND %i %.8e %.8e %.8e\n'</span>, n, x(n), y(n), 0);
-0063 <span class="keyword">end</span>
-0064 
-0065 <span class="comment">% Check we've got some open boundaries and create the relevant node string</span>
-0066 <span class="comment">% output.</span>
-0067 <span class="keyword">if</span> nargin == 5
-0068     <span class="keyword">for</span> b = 1:length(bnd)
-0069         c = 0; <span class="comment">% counter for the weird nodestring format.</span>
-0070 
-0071         nodestring = bnd{b}; <span class="comment">% current open boundary nodestring indices.</span>
-0072         <span class="keyword">for</span> ns = 1:length(nodestring)
-0073             <span class="comment">% If we're at the end of the nodestring, create a negative node</span>
-0074             <span class="comment">% ID.</span>
-0075             <span class="keyword">if</span> ns == length(nodestring)
-0076                 node_id = -nodestring(ns);
-0077             <span class="keyword">else</span>
-0078                 node_id = nodestring(ns);
-0079             <span class="keyword">end</span>
-0080 
-0081             <span class="comment">% Increment the counter.</span>
-0082             c = c + 1;
-0083             <span class="keyword">if</span> c == 1
-0084                 <span class="comment">% Add the nodestring line prefix and the current node ID.</span>
-0085                 fprintf(f, <span class="string">'NS %i '</span>, node_id);
-0086             <span class="keyword">elseif</span> c &gt; 0 &amp;&amp; c &lt; 10
-0087                 fprintf(f, <span class="string">'%i '</span>, node_id);
-0088             <span class="keyword">elseif</span> c &gt;= 10 || ns == length(nodestring);
-0089                 fprintf(f, <span class="string">'%i\n'</span>, node_id);
-0090                 c = 0;
-0091             <span class="keyword">end</span>
-0092         <span class="keyword">end</span>
-0093         <span class="comment">% Add a newline at the end of the current nodestring.</span>
-0094         fprintf(f, <span class="string">'\n'</span>);
-0095     <span class="keyword">end</span>
-0096 <span class="keyword">end</span>
-0097 
-0098 <span class="comment">% Dump all the (apparently ignored) footer information.</span>
-0099 fprintf(f, <span class="string">'BEGPARAMDEF\nGM  &quot;Mesh&quot;\nSI  0\nDY  0\nTU  &quot;&quot;\nTD  0  0\nNUME  3\nBCPGC  0\nBEDISP  0 0 0 0 1 0 1 0 0 0 0 1\nBEFONT  0 2\nBEDISP  1 0 0 0 1 0 1 0 0 0 0 1\nBEFONT  1 2\nBEDISP  2 0 0 0 1 0 1 0 0 0 0 1\nBEFONT  2 2\nENDPARAMDEF\nBEG2DMBC\nMAT  1 &quot;material 01&quot;\nEND2DMBC\n'</span>);
-0100 
-0101 fclose(f);
+0052 nt = size(tri, 1);
+0053 
+0054 <span class="comment">% Header</span>
+0055 fprintf(f, <span class="string">'MESH2D\nMESHNAME &quot;mesh&quot;\n'</span>);
+0056 
+0057 <span class="comment">% Add the connectivity table</span>
+0058 <span class="keyword">for</span> t = 1:nt
+0059     fprintf(f, <span class="string">'E3T %i %i %i %i 1\n'</span>, t, tri(t, :));
+0060 <span class="keyword">end</span>
+0061 
+0062 <span class="comment">% Add the list of nodes</span>
+0063 <span class="keyword">for</span> n = 1:nn
+0064     fprintf(f, <span class="string">'ND %i %.8e %.8e %.8e\n'</span>, n, x(n), y(n), z(n));
+0065 <span class="keyword">end</span>
+0066 
+0067 <span class="comment">% Check we've got some open boundaries and create the relevant node string</span>
+0068 <span class="comment">% output.</span>
+0069 <span class="keyword">if</span> nargin == 6
+0070     <span class="keyword">for</span> b = 1:length(bnd)
+0071         c = 0; <span class="comment">% counter for the weird nodestring format.</span>
+0072 
+0073         nodestring = bnd{b}; <span class="comment">% current open boundary nodestring indices.</span>
+0074         <span class="keyword">for</span> ns = 1:length(nodestring)
+0075             <span class="comment">% If we're at the end of the nodestring, create a negative node</span>
+0076             <span class="comment">% ID.</span>
+0077             <span class="keyword">if</span> ns == length(nodestring)
+0078                 node_id = -nodestring(ns);
+0079             <span class="keyword">else</span>
+0080                 node_id = nodestring(ns);
+0081             <span class="keyword">end</span>
+0082 
+0083             <span class="comment">% Increment the counter.</span>
+0084             c = c + 1;
+0085             <span class="keyword">if</span> c == 1
+0086                 <span class="comment">% Add the nodestring line prefix and the current node ID.</span>
+0087                 fprintf(f, <span class="string">'NS %i '</span>, node_id);
+0088             <span class="keyword">elseif</span> c &gt; 0 &amp;&amp; c &lt; 10
+0089                 fprintf(f, <span class="string">'%i '</span>, node_id);
+0090             <span class="keyword">elseif</span> c &gt;= 10 || ns == length(nodestring)
+0091                 fprintf(f, <span class="string">'%i\n'</span>, node_id);
+0092                 c = 0;
+0093             <span class="keyword">end</span>
+0094         <span class="keyword">end</span>
+0095         <span class="comment">% Add a newline at the end of the current nodestring.</span>
+0096         fprintf(f, <span class="string">'\n'</span>);
+0097     <span class="keyword">end</span>
+0098 <span class="keyword">end</span>
+0099 
+0100 <span class="comment">% Dump all the (apparently ignored) footer information.</span>
+0101 fprintf(f, <span class="string">'BEGPARAMDEF\nGM  &quot;Mesh&quot;\nSI  0\nDY  0\nTU  &quot;&quot;\nTD  0  0\nNUME  3\nBCPGC  0\nBEDISP  0 0 0 0 1 0 1 0 0 0 0 1\nBEFONT  0 2\nBEDISP  1 0 0 0 1 0 1 0 0 0 0 1\nBEFONT  1 2\nBEDISP  2 0 0 0 1 0 1 0 0 0 0 1\nBEFONT  2 2\nENDPARAMDEF\nBEG2DMBC\nMAT  1 &quot;material 01&quot;\nEND2DMBC\n'</span>);
 0102 
-0103 <span class="keyword">if</span> ftbverbose
-0104     fprintf(<span class="string">'end   : %s\n'</span>, subname)
-0105 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0103 fclose(f);
+0104 
+0105 <span class="keyword">if</span> ftbverbose
+0106     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0107 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -59,7 +59,7 @@
    specifies the coordinates to use for the extrapolation (e.g.
    'extrapolate', [Mobj.lonc, Mobj.latc] to extrapolate onto the element
    centres). Defaults to the element nodes (i.e. [Mobj.lon, Mobj.lat]).
-   
+
  OUTPUT:
    x by y by z array of vertically interpolated values at each regular
    grid location.
@@ -71,7 +71,7 @@
    Extrapolate using the element centres.
        grid_vert_interp(Mobj, lon, lat, data, depth, mask, ...
            'extrapolate', [Mobj.lonc, Mobj.latc])
- 
+
  Author(s):
    Pierre Cazenave (Plymouth Marine Laboratory)
 
@@ -238,7 +238,7 @@ This function is called by:
 0131     xdata = squeeze(data(xi, :, :));
 0132     xdepth = squeeze(depth(xi, :, :));
 0133     xmask = mask(xi, :);
-0134     
+0134 
 0135     <span class="comment">% Preallocate the arrays for the inner loop.</span>
 0136     ydata = nan(ny, fz);
 0137     <span class="keyword">for</span> yi = 1:ny
@@ -259,7 +259,7 @@ This function is called by:
 0152         <span class="keyword">else</span>
 0153             <span class="comment">% Use the FVCOM node's sigma depths to interpolate this regular</span>
 0154             <span class="comment">% grid position's temperature and salinity data.</span>
-0155             
+0155 
 0156             <span class="comment">% Get the FVCOM depths closest to this regular grid position.</span>
 0157             <span class="keyword">try</span>
 0158                 tfz = Mobj.siglayz(mi, :);
@@ -304,6 +304,6 @@ This function is called by:
 0197 <span class="keyword">if</span> ftbverbose
 0198     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
 0199 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

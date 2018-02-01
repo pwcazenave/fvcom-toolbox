@@ -1,0 +1,423 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of interp_POLCOMS2FVCOMv1</title>
+  <meta name="keywords" content="interp_POLCOMS2FVCOMv1">
+  <meta name="description" content="Use an FVCOM restart file to seed a model run with spatially varying">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; interp_POLCOMS2FVCOMv1.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>interp_POLCOMS2FVCOMv1
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Use an FVCOM restart file to seed a model run with spatially varying</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Mobj = interp_POLCOMS2FVCOMv1(Mobj, hycom, start_date, varlist) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Use an FVCOM restart file to seed a model run with spatially varying
+ versions of otherwise constant variables.
+
+ function interp_HYCOM2FVCOM(Mobj, hycom, start_date, varlist)
+
+ DESCRIPTION:
+    FVCOM does not yet support spatially varying temperature and salinity
+    inputs as initial conditions. To avoid having to run a model for a
+    long time in order for temperature and salinity to settle within the
+    model from the atmospheric and boundary forcing, we can use a restart
+    file to cheat. For this, we need temperature and salinity
+    (potentially other variables too) interpolated onto the unstructured
+    grid. The interpolated data can then be written out with
+    write_FVCOM_restart.m.
+
+ INPUT:
+   Mobj        = MATLAB mesh structure which must contain:
+                   - Mobj.lon, Mobj.lat and/or Mobj.lonc, Mobj.latc - node
+                   or element centre coordinates (long/lat). Dependent on
+                   the variable being interpolated (u and v need lonc,
+                   latc whilst temperature and salinity need lat and lon).
+                   - Mobj.siglayz - sigma layer depths for all model
+                   nodes.
+                   - Mobj.ts_times - Modified Julian Day times for the
+                   model run.
+   hycom       = Struct output by get_HYCOM_forcing. Must include fields:
+                   - hycom.lon, hycom.lat - rectangular arrays.
+                   - hycom.Depth - HYCOM depth levels.
+   start_date  = Gregorian start date array (YYYY, MM, DD, hh, mm, ss).
+   varlist     = cell array of fields to use from the HYCOM struct.
+
+ OUTPUT:
+   Mobj.restart = struct whose field names are the variables which have
+   been interpolated (e.g. Mobj.restart.temperature for HYCOM
+   temperature).
+
+ EXAMPLE USAGE
+   interp_HYCOM2FVCOM(Mobj, hycom, [2006, 01, 01, 00, 00, 00], ...
+       {'lon', 'lat', 'time', 'temperature', 'salinity'})
+
+ Author(s):
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+   2013-09-10 First version based on interp_POLCOMS2FVCOM.m.
+   2013-12-10 Fix the identification of the time index in the HYCOM data
+   (use hycom.time instead of Mobj.ts_times). Also ignore a field name of
+   'MT' if supplied in varlist.
+   2014-04-28 Fix bug when interpolating velocity data due to incorrectly
+   sized preallocated array. Make the way the data to be interpolated onto
+   the element centres (i.e. the velocity data), as opposed to the element
+   nodes, more understandable. This is done by having a single block which
+   deals with setting up the variables dependent on the number of points
+   onto which to interpolate. Also update the parallel pool code to use
+   the new parpool function instead of matlabpool in anticipation of the
+   latter's eventual removal from MATLAB.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = interp_POLCOMS2FVCOMv1(Mobj, hycom, start_date, varlist)</a>
+0002 <span class="comment">% Use an FVCOM restart file to seed a model run with spatially varying</span>
+0003 <span class="comment">% versions of otherwise constant variables.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function interp_HYCOM2FVCOM(Mobj, hycom, start_date, varlist)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    FVCOM does not yet support spatially varying temperature and salinity</span>
+0009 <span class="comment">%    inputs as initial conditions. To avoid having to run a model for a</span>
+0010 <span class="comment">%    long time in order for temperature and salinity to settle within the</span>
+0011 <span class="comment">%    model from the atmospheric and boundary forcing, we can use a restart</span>
+0012 <span class="comment">%    file to cheat. For this, we need temperature and salinity</span>
+0013 <span class="comment">%    (potentially other variables too) interpolated onto the unstructured</span>
+0014 <span class="comment">%    grid. The interpolated data can then be written out with</span>
+0015 <span class="comment">%    write_FVCOM_restart.m.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% INPUT:</span>
+0018 <span class="comment">%   Mobj        = MATLAB mesh structure which must contain:</span>
+0019 <span class="comment">%                   - Mobj.lon, Mobj.lat and/or Mobj.lonc, Mobj.latc - node</span>
+0020 <span class="comment">%                   or element centre coordinates (long/lat). Dependent on</span>
+0021 <span class="comment">%                   the variable being interpolated (u and v need lonc,</span>
+0022 <span class="comment">%                   latc whilst temperature and salinity need lat and lon).</span>
+0023 <span class="comment">%                   - Mobj.siglayz - sigma layer depths for all model</span>
+0024 <span class="comment">%                   nodes.</span>
+0025 <span class="comment">%                   - Mobj.ts_times - Modified Julian Day times for the</span>
+0026 <span class="comment">%                   model run.</span>
+0027 <span class="comment">%   hycom       = Struct output by get_HYCOM_forcing. Must include fields:</span>
+0028 <span class="comment">%                   - hycom.lon, hycom.lat - rectangular arrays.</span>
+0029 <span class="comment">%                   - hycom.Depth - HYCOM depth levels.</span>
+0030 <span class="comment">%   start_date  = Gregorian start date array (YYYY, MM, DD, hh, mm, ss).</span>
+0031 <span class="comment">%   varlist     = cell array of fields to use from the HYCOM struct.</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">% OUTPUT:</span>
+0034 <span class="comment">%   Mobj.restart = struct whose field names are the variables which have</span>
+0035 <span class="comment">%   been interpolated (e.g. Mobj.restart.temperature for HYCOM</span>
+0036 <span class="comment">%   temperature).</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">% EXAMPLE USAGE</span>
+0039 <span class="comment">%   interp_HYCOM2FVCOM(Mobj, hycom, [2006, 01, 01, 00, 00, 00], ...</span>
+0040 <span class="comment">%       {'lon', 'lat', 'time', 'temperature', 'salinity'})</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">% Author(s):</span>
+0043 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0044 <span class="comment">%</span>
+0045 <span class="comment">% Revision history</span>
+0046 <span class="comment">%   2013-09-10 First version based on interp_POLCOMS2FVCOM.m.</span>
+0047 <span class="comment">%   2013-12-10 Fix the identification of the time index in the HYCOM data</span>
+0048 <span class="comment">%   (use hycom.time instead of Mobj.ts_times). Also ignore a field name of</span>
+0049 <span class="comment">%   'MT' if supplied in varlist.</span>
+0050 <span class="comment">%   2014-04-28 Fix bug when interpolating velocity data due to incorrectly</span>
+0051 <span class="comment">%   sized preallocated array. Make the way the data to be interpolated onto</span>
+0052 <span class="comment">%   the element centres (i.e. the velocity data), as opposed to the element</span>
+0053 <span class="comment">%   nodes, more understandable. This is done by having a single block which</span>
+0054 <span class="comment">%   deals with setting up the variables dependent on the number of points</span>
+0055 <span class="comment">%   onto which to interpolate. Also update the parallel pool code to use</span>
+0056 <span class="comment">%   the new parpool function instead of matlabpool in anticipation of the</span>
+0057 <span class="comment">%   latter's eventual removal from MATLAB.</span>
+0058 <span class="comment">%</span>
+0059 <span class="comment">%==========================================================================</span>
+0060 
+0061 subname = <span class="string">'interp_POLCOMS2FVCOMv1'</span>;
+0062 
+0063 <span class="keyword">global</span> ftbverbose;
+0064 <span class="keyword">if</span> ftbverbose
+0065     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0066 <span class="keyword">end</span>
+0067 
+0068 <span class="keyword">if</span> nargin == 0
+0069     error(<span class="string">'Not enough input arguments. See HELP %s'</span>, subname)
+0070 <span class="keyword">end</span>
+0071 
+0072 <span class="comment">% Run jobs on multiple workers if we have that functionality. Not sure if</span>
+0073 <span class="comment">% it's necessary, but check we have the Parallel Toolbox first.</span>
+0074 wasOpened = false;
+0075 <span class="keyword">if</span> license(<span class="string">'test'</span>, <span class="string">'Distrib_Computing_Toolbox'</span>)
+0076     <span class="comment">% We have the Parallel Computing Toolbox, so launch a bunch of workers.</span>
+0077     <span class="comment">% New version for MATLAB 2014a (I think) onwards.</span>
+0078     <span class="keyword">if</span> isempty(gcp(<span class="string">'nocreate'</span>))
+0079         pool = parpool(<span class="string">'local'</span>);
+0080         wasOpened = true;
+0081     <span class="keyword">end</span>
+0082 <span class="keyword">end</span>
+0083 
+0084 <span class="comment">% Given our input time (in start_date), find the nearest time index for</span>
+0085 <span class="comment">% the HYCOM data.</span>
+0086 stime = greg2mjulian(start_date(1), start_date(2), <span class="keyword">...</span>
+0087     start_date(3), start_date(4), <span class="keyword">...</span>
+0088     start_date(5), start_date(6));
+0089 [~, tidx] = min(abs(hycom.time - stime));
+0090 
+0091 <span class="keyword">for</span> vv = 1:length(varlist);
+0092     
+0093     currvar = varlist{vv};
+0094 
+0095     <span class="keyword">switch</span> currvar
+0096         <span class="keyword">case</span> {<span class="string">'lon'</span>, <span class="string">'lat'</span>, <span class="string">'longitude'</span>, <span class="string">'latitude'</span>, <span class="string">'t_1'</span>, <span class="string">'time'</span>, <span class="string">'Depth'</span>, <span class="string">'MT'</span>}
+0097             <span class="keyword">continue</span>
+0098 
+0099         <span class="keyword">otherwise</span>
+0100 
+0101             <span class="comment">%--------------------------------------------------------------</span>
+0102             <span class="comment">% Interpolate the regularly gridded data onto the FVCOM grid</span>
+0103             <span class="comment">% (vertical grid first).</span>
+0104             <span class="comment">%--------------------------------------------------------------</span>
+0105 
+0106             <span class="comment">% Set up all the constants which are based on the model and</span>
+0107             <span class="comment">% data grids.</span>
+0108             [~, fz] = size(Mobj.siglayz);
+0109             <span class="keyword">if</span> strcmpi(currvar, <span class="string">'u'</span>) || strcmpi(currvar, <span class="string">'v'</span>)
+0110                 plon = hycom.lon(:);
+0111                 plat = hycom.lat(:);
+0112                 flon = Mobj.lonc;
+0113                 flat = Mobj.latc;
+0114                 fn = numel(flon);
+0115                 fvtemp = nan(fn, fz);
+0116             <span class="keyword">else</span>
+0117                 plon = hycom.lon(:);
+0118                 plat = hycom.lat(:);
+0119                 flon = Mobj.lon;
+0120                 flat = Mobj.lat;
+0121                 fn = numel(flon);
+0122                 fvtemp = nan(fn, fz);
+0123             <span class="keyword">end</span>
+0124 
+0125             <span class="keyword">if</span> ftbverbose
+0126                 fprintf(<span class="string">'%s : interpolate %s vertically... '</span>, subname, currvar)
+0127             <span class="keyword">end</span>
+0128 
+0129             [hx, hy, ~, ~] = size(hycom.(currvar));
+0130             hdepth = hycom.Depth;
+0131             <span class="comment">% Make a land mask of the HYCOM domain (based on the surface</span>
+0132             <span class="comment">% layer from the first time step).</span>
+0133             landmask = isnan(hycom.(currvar)(:, :, 1, 1));
+0134 
+0135 
+0136             ftbverbose = false;
+0137             <span class="comment">% flip data upside down</span>
+0138             hdepth = flip(hdepth,3);
+0139             <span class="comment">% CHECK HERE IF 2D OR 3D VARIABLE</span>
+0140             <span class="keyword">if</span> (ndims(hycom.(currvar))&gt;2)
+0141             datain= squeeze(hycom.(currvar)(:, :, :, tidx));
+0142             datain = flip(datain,3);
+0143             <span class="comment">% DO NOT INTERPOLATE 2D VARIABLES!!!</span>
+0144             
+0145             hyinterp.(currvar) = grid_vert_interp(Mobj, <span class="keyword">...</span>
+0146                 hycom.lon, hycom.lat, <span class="keyword">...</span>
+0147                 datain, <span class="keyword">...</span>
+0148                 hdepth, landmask, <span class="string">'extrapolate'</span>, [flon, flat]);
+0149             ftbverbose = true;
+0150             <span class="comment">%--------------------------------------------------------------</span>
+0151             <span class="comment">% Now we have vertically interpolated data, we can interpolate</span>
+0152             <span class="comment">% each sigma layer onto the FVCOM unstructured grid ready to</span>
+0153             <span class="comment">% write out to NetCDF. We'll use the triangular interpolation</span>
+0154             <span class="comment">% in MATLAB with the natural method (gives pretty good results,</span>
+0155             <span class="comment">% at least qualitatively).</span>
+0156             <span class="comment">%--------------------------------------------------------------</span>
+0157 
+0158             <span class="keyword">if</span> ftbverbose
+0159                 fprintf(<span class="string">'horizontally... '</span>)
+0160             <span class="keyword">end</span>
+0161 
+0162             hytempz = hyinterp.(currvar);
+0163 
+0164             tic
+0165             parfor zi = 1:fz
+0166                 <span class="comment">% Get the current depth layer's data and mask out the NaN</span>
+0167                 <span class="comment">% values.</span>
+0168                 hytempzcurrent = hytempz(:, :, zi);
+0169 
+0170                 <span class="comment">% Strip out NaNs so we can extrapolate with TriScatteredInterp.</span>
+0171                 nanmask = ~isnan(hytempzcurrent);
+0172                 plonclean = plon(nanmask);
+0173                 platclean = plat(nanmask);
+0174                 hytempzclean = hytempzcurrent(nanmask);
+0175                 <span class="comment">% Set up the interpolation object and interpolate the</span>
+0176                 <span class="comment">% current variable to the FVCOM unstructured grid.</span>
+0177                 ft = scatteredInterpolant(plonclean, platclean, <span class="keyword">...</span>
+0178                     hytempzclean, <span class="string">'natural'</span>, <span class="string">'nearest'</span>);
+0179                 fvtemp(:, zi) = ft(flon, flat);
+0180             <span class="keyword">end</span>
+0181             <span class="keyword">else</span>
+0182                 ft = scatteredInterpolant(plon, plat, reshape(hycom.(currvar), [], 1), <span class="string">'nearest'</span>,<span class="string">'linear'</span>);
+0183                 fvtemp = ft(flon, flat);
+0184             ftbverbose = true;
+0185             <span class="keyword">end</span>
+0186 
+0187             <span class="comment">% Unfortunately, TriScatteredInterp won't extrapolate,</span>
+0188             <span class="comment">% returning instead NaNs outside the original data's extents.</span>
+0189             <span class="comment">% So, for each NaN position, find the nearest non-NaN value and</span>
+0190             <span class="comment">% use that instead. The order in which the NaN-nodes are found</span>
+0191             <span class="comment">% will determine the spatial pattern of the extrapolation.</span>
+0192 
+0193             <span class="comment">% We can assume that all layers will have NaNs in the same</span>
+0194             <span class="comment">% place (horizontally), so just use the surface layer (1) for</span>
+0195             <span class="comment">% the identification of NaNs. Also store the finite values so</span>
+0196             <span class="comment">% we can find the nearest real value to the current NaN node</span>
+0197             <span class="comment">% and use its temperature and salinity values.</span>
+0198             fvidx = 1:fn;
+0199             fvnanidx = fvidx(isnan(fvtemp(:, 1)));
+0200             fvfinidx = fvidx(~isnan(fvtemp(:, 1)));
+0201 
+0202             <span class="keyword">for</span> ni = 1:length(fvnanidx)
+0203                 <span class="comment">% Find the nearest non-nan data (temp, salinity, u or v)</span>
+0204                 <span class="comment">% value.</span>
+0205                 xx = flon(fvnanidx(ni));
+0206                 yy = flat(fvnanidx(ni));
+0207                 [~, di] = min(sqrt((flon(fvfinidx) - xx).^2 + (flat(fvfinidx) - yy).^2));
+0208                 fvtemp(fvnanidx(ni), :) = fvtemp(fvfinidx(di), :);
+0209             <span class="keyword">end</span>
+0210 
+0211             clear plon plat flon flat ptempz
+0212 
+0213             Mobj.restart.(currvar) = fvtemp;
+0214 
+0215             te = toc;
+0216 
+0217             <span class="keyword">if</span> ftbverbose
+0218                 fprintf(<span class="string">'done. (elapsed time = %.2f seconds)\n'</span>, te) 
+0219             <span class="keyword">end</span>
+0220 
+0221     <span class="keyword">end</span>
+0222 <span class="keyword">end</span>
+0223 
+0224 <span class="comment">% Close the MATLAB pool if we opened it.</span>
+0225 <span class="keyword">if</span> wasOpened
+0226     pool.delete
+0227 <span class="keyword">end</span>
+0228 
+0229 <span class="keyword">if</span> ftbverbose
+0230     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0231 <span class="keyword">end</span>
+0232 
+0233 <span class="comment">%% Debugging figure</span>
+0234 
+0235 <span class="comment">% close all</span>
+0236 <span class="comment">%</span>
+0237 <span class="comment">% ri = 85; % column index</span>
+0238 <span class="comment">% ci = 95; % row index</span>
+0239 <span class="comment">%</span>
+0240 <span class="comment">% [~, idx] = min(sqrt((Mobj.lon - lon(ri, ci)).^2 + (Mobj.lat - lat(ri, ci)).^2));</span>
+0241 <span class="comment">%</span>
+0242 <span class="comment">% % Vertical profiles</span>
+0243 <span class="comment">% figure</span>
+0244 <span class="comment">% clf</span>
+0245 <span class="comment">%</span>
+0246 <span class="comment">% % The top row shows the temperature/salinity values as plotted against</span>
+0247 <span class="comment">% % index (i.e. position in the array). I had thought POLCOMS stored its data</span>
+0248 <span class="comment">% % from seabed to sea surface, but looking at the NetCDF files in ncview,</span>
+0249 <span class="comment">% % it's clear that the data are in fact stored surface to seabed (like</span>
+0250 <span class="comment">% % FVCOM). As such, the two plots in the top row should be upside down (i.e.</span>
+0251 <span class="comment">% % surface values at the bottom of the plot). The two lower rows should have</span>
+0252 <span class="comment">% % three lines which all match: the raw POLCOMS data, the POLCOMS data for</span>
+0253 <span class="comment">% % the current time step (i.e. that in 'temperature' and 'salinity') and the</span>
+0254 <span class="comment">% % interpolated FVCOM data against depth.</span>
+0255 <span class="comment">% %</span>
+0256 <span class="comment">% % Also worth noting, the pc.* have the rows and columns flipped, so</span>
+0257 <span class="comment">% % (ci, ri) in pc.* and (ri, ci) in 'temperature', 'salinity' and</span>
+0258 <span class="comment">% % 'depth'. Needless to say, the two lines in the lower plots should</span>
+0259 <span class="comment">% % overlap.</span>
+0260 <span class="comment">%</span>
+0261 <span class="comment">% subplot(2,2,1)</span>
+0262 <span class="comment">% plot(squeeze(pc.ETWD(ci, ri, :, tidx)), 1:size(depth, 3), 'rx:')</span>
+0263 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
+0264 <span class="comment">% ylabel('Array index')</span>
+0265 <span class="comment">% title('Array Temperature')</span>
+0266 <span class="comment">%</span>
+0267 <span class="comment">% subplot(2,2,2)</span>
+0268 <span class="comment">% plot(squeeze(pc.x1XD(ci, ri, :, tidx)), 1:size(depth, 3), 'rx:')</span>
+0269 <span class="comment">% xlabel('Salinity')</span>
+0270 <span class="comment">% ylabel('Array index')</span>
+0271 <span class="comment">% title('Array Salinity')</span>
+0272 <span class="comment">%</span>
+0273 <span class="comment">% subplot(2,2,3)</span>
+0274 <span class="comment">% % Although POLCOMS stores its temperature values from seabed to surface,</span>
+0275 <span class="comment">% % the depths are stored surface to seabed. Nice. Flip the</span>
+0276 <span class="comment">% % temperature/salinity data accordingly. The lines here should match one</span>
+0277 <span class="comment">% % another.</span>
+0278 <span class="comment">% plot(squeeze(pc.ETWD(ci, ri, :, tidx)), squeeze(pc.depth(ci, ri, :, tidx)), 'rx-')</span>
+0279 <span class="comment">% hold on</span>
+0280 <span class="comment">% plot(squeeze(temperature(ri, ci, :)), squeeze(depth(ri, ci, :)), '.:')</span>
+0281 <span class="comment">% % Add the equivalent interpolated FVCOM data point</span>
+0282 <span class="comment">% plot(fvtemp(idx, :), Mobj.siglayz(idx, :), 'g.-')</span>
+0283 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
+0284 <span class="comment">% ylabel('Depth (m)')</span>
+0285 <span class="comment">% title('Depth Temperature')</span>
+0286 <span class="comment">% legend('pc', 'temp', 'fvcom', 'location', 'north')</span>
+0287 <span class="comment">% legend('boxoff')</span>
+0288 <span class="comment">%</span>
+0289 <span class="comment">% subplot(2,2,4)</span>
+0290 <span class="comment">% % Although POLCOMS stores its temperature values from seabed to surface,</span>
+0291 <span class="comment">% % the depths are stored surface to seabed. Nice. Flip the</span>
+0292 <span class="comment">% % temperature/salinity data accordingly. The lines here should match one</span>
+0293 <span class="comment">% % another.</span>
+0294 <span class="comment">% plot(squeeze(pc.x1XD(ci, ri, :, tidx)), squeeze(pc.depth(ci, ri, :, tidx)), 'rx-')</span>
+0295 <span class="comment">% hold on</span>
+0296 <span class="comment">% plot(squeeze(salinity(ri, ci, :)), squeeze(depth(ri, ci, :)), '.:')</span>
+0297 <span class="comment">% % Add the equivalent interpolated FVCOM data point</span>
+0298 <span class="comment">% plot(fvsalt(idx, :), Mobj.siglayz(idx, :), 'g.-')</span>
+0299 <span class="comment">% xlabel('Salinity')</span>
+0300 <span class="comment">% ylabel('Depth (m)')</span>
+0301 <span class="comment">% title('Depth Salinity')</span>
+0302 <span class="comment">% legend('pc', 'salt', 'fvcom', 'location', 'north')</span>
+0303 <span class="comment">% legend('boxoff')</span>
+0304 <span class="comment">%</span>
+0305 <span class="comment">% %% Plot the sample location</span>
+0306 <span class="comment">% figure</span>
+0307 <span class="comment">% dx = mean(diff(pc.lon));</span>
+0308 <span class="comment">% dy = mean(diff(pc.lat));</span>
+0309 <span class="comment">% z = depth(:, :, end); % water depth (bottom layer depth)</span>
+0310 <span class="comment">% z(mask) = 0; % clear out nonsense values</span>
+0311 <span class="comment">% pcolor(lon - (dx / 2), lat - (dy / 2), z)</span>
+0312 <span class="comment">% shading flat</span>
+0313 <span class="comment">% axis('equal', 'tight')</span>
+0314 <span class="comment">% daspect([1.5, 1, 1])</span>
+0315 <span class="comment">% colorbar</span>
+0316 <span class="comment">% caxis([-150, 0])</span>
+0317 <span class="comment">% hold on</span>
+0318 <span class="comment">% plot(lon(ri, ci), lat(ri, ci), 'ko', 'MarkerFaceColor', 'w')</span>
+0319</pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

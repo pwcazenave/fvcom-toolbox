@@ -1,6 +1,19 @@
 /* Created by mdot for Matlab */
 digraph m2html {
+  do_residual_plot -> do_residual;
+  example_surface_plot -> do_surface_plot;
+  example_surface_plot -> do_vector_plot;
 
   README [URL="README.html"];
+  do_residual [URL="do_residual.html"];
+  do_residual_plot [URL="do_residual_plot.html"];
+  do_surface_plot [URL="do_surface_plot.html"];
+  do_surface_plotMatlabMap [URL="do_surface_plotMatlabMap.html"];
+  do_surface_plotVel [URL="do_surface_plotVel.html"];
+  do_surface_plotVelMatlabMap [URL="do_surface_plotVelMatlabMap.html"];
+  do_transect_plot [URL="do_transect_plot.html"];
+  do_vector_plot [URL="do_vector_plot.html"];
+  do_vector_plot_MatlabMap [URL="do_vector_plot_MatlabMap.html"];
+  do_vector_plot_MatlabMapC [URL="do_vector_plot_MatlabMapC.html"];
   example_surface_plot [URL="example_surface_plot.html"];
 }

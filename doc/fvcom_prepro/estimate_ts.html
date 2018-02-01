@@ -54,6 +54,7 @@
     latitude and longitudes. Also add arguments to the function to define
     current velocity and tidal amplitudes.
     2016-02018 Update the help to reflect the required variables.
+    2017-09-01 Tidy the code a bit.
 
 ==============================================================================</pre></div>
 
@@ -69,7 +70,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function [km]=haversine(lat1,lon1,lat2,lon2)</a></li></ul>
+<li><a href="#_sub1" class="code">function km=haversine(lat1,lon1,lat2,lon2)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = estimate_ts(Mobj,u,zeta)</a>
@@ -101,71 +102,71 @@ This function is called by:
 0027 <span class="comment">%    latitude and longitudes. Also add arguments to the function to define</span>
 0028 <span class="comment">%    current velocity and tidal amplitudes.</span>
 0029 <span class="comment">%    2016-02018 Update the help to reflect the required variables.</span>
-0030 <span class="comment">%</span>
-0031 <span class="comment">%==============================================================================</span>
-0032 
-0033 subname = <span class="string">'estimate_ts'</span>;
-0034 <span class="keyword">global</span> ftbverbose
-0035 <span class="keyword">if</span>(ftbverbose)
-0036     fprintf(<span class="string">'\n'</span>)
-0037     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
-0038 <span class="keyword">end</span>;
+0030 <span class="comment">%    2017-09-01 Tidy the code a bit.</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">%==============================================================================</span>
+0033 
+0034 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0035 <span class="keyword">global</span> ftbverbose
+0036 <span class="keyword">if</span> ftbverbose
+0037     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0038 <span class="keyword">end</span>
 0039 
 0040 <span class="comment">%------------------------------------------------------------------------------</span>
 0041 <span class="comment">% Set constants</span>
 0042 <span class="comment">%------------------------------------------------------------------------------</span>
 0043 
-0044 g    = 9.81; <span class="comment">%gravitational acceleration</span>
-0045 <span class="comment">%u    = 3.0;  %u-velocity</span>
-0046 <span class="comment">%zeta = 11.0;  %tide amp</span>
-0047 
-0048 <span class="keyword">if</span>(~Mobj.have_bath)
-0049     error(<span class="string">'can''t estimate the time step without bathymetry'</span>)
-0050 <span class="keyword">end</span>;
-0051 
+0044 g = 9.81; <span class="comment">% gravitational acceleration</span>
+0045 
+0046 <span class="keyword">if</span>(~Mobj.have_bath)
+0047     error(<span class="string">'can''t estimate the time step without bathymetry'</span>)
+0048 <span class="keyword">end</span>
+0049 
+0050 <span class="comment">%------------------------------------------------------------------------------</span>
+0051 <span class="comment">% Compute the time step estimate</span>
 0052 <span class="comment">%------------------------------------------------------------------------------</span>
-0053 <span class="comment">% Compute the time step estimate</span>
-0054 <span class="comment">%------------------------------------------------------------------------------</span>
-0055 <span class="keyword">if</span> Mobj.have_xy
-0056     x = Mobj.x;
-0057     y = Mobj.y;
-0058 <span class="keyword">else</span>
-0059     <span class="comment">% Will convert to metres when calculating element edge length</span>
-0060     x = Mobj.lon;
-0061     y = Mobj.lat;
-0062 <span class="keyword">end</span>
-0063 h = max(Mobj.h,0);
-0064 tri = Mobj.tri;
-0065 nVerts = Mobj.nVerts;
-0066 nElems = Mobj.nElems;
-0067 
-0068 ts = inf(nVerts,1);
-0069 lside = zeros(nVerts,1);
-0070 <span class="keyword">for</span> i=1:nElems
-0071     n1 = tri(i,1);
-0072     n2 = tri(i,2);
-0073     n3 = tri(i,3);
-0074     nds = [n1 n2 n3];
-0075     <span class="comment">% Check whether we have x and y values and use great circle</span>
-0076     <span class="comment">% approximations if we don't.</span>
-0077     <span class="keyword">if</span> Mobj.have_xy
-0078         lside(i) = sqrt((x(n1)-x(n2))^2 + (y(n1)-y(n2))^2);
-0079     <span class="keyword">else</span>
-0080         lside(i) = <a href="#_sub1" class="code" title="subfunction [km]=haversine(lat1,lon1,lat2,lon2)">haversine</a>(x(n1),y(n1),x(n2),y(n2));
-0081     <span class="keyword">end</span>
-0082     dpth  = max(h(nds))+zeta;
-0083     dpth  = max(dpth,1);
-0084     ts(nds) = min(ts(nds),lside(i)/(sqrt(g*dpth) + u));
-0085 <span class="keyword">end</span>
-0086 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'minimum time step: %f seconds\n'</span>,min(ts)); <span class="keyword">end</span>;
+0053 <span class="keyword">if</span> Mobj.have_xy
+0054     x = Mobj.x;
+0055     y = Mobj.y;
+0056 <span class="keyword">else</span>
+0057     <span class="comment">% Will convert to metres when calculating element edge length</span>
+0058     x = Mobj.lon;
+0059     y = Mobj.lat;
+0060 <span class="keyword">end</span>
+0061 h = max(Mobj.h,0);
+0062 tri = Mobj.tri;
+0063 nVerts = Mobj.nVerts;
+0064 nElems = Mobj.nElems;
+0065 
+0066 ts = inf(nVerts,1);
+0067 lside = zeros(nVerts,1);
+0068 <span class="keyword">for</span> i=1:nElems
+0069     n1 = tri(i,1);
+0070     n2 = tri(i,2);
+0071     n3 = tri(i,3);
+0072     nds = [n1 n2 n3];
+0073     <span class="comment">% Check whether we have x and y values and use great circle</span>
+0074     <span class="comment">% approximations if we don't.</span>
+0075     <span class="keyword">if</span> Mobj.have_xy
+0076         lside(i) = sqrt((x(n1)-x(n2))^2 + (y(n1)-y(n2))^2);
+0077     <span class="keyword">else</span>
+0078         lside(i) = <a href="#_sub1" class="code" title="subfunction km=haversine(lat1,lon1,lat2,lon2)">haversine</a>(x(n1),y(n1),x(n2),y(n2));
+0079     <span class="keyword">end</span>
+0080     dpth  = max(h(nds))+zeta;
+0081     dpth  = max(dpth,1);
+0082     ts(nds) = min(ts(nds),lside(i)/(sqrt(g*dpth) + u));
+0083 <span class="keyword">end</span>
+0084 <span class="keyword">if</span> ftbverbose
+0085     fprintf(<span class="string">'minimum time step: %f seconds\n'</span>,min(ts));
+0086 <span class="keyword">end</span>
 0087 Mobj.ts = ts;
 0088 Mobj.have_ts = true;
-0089 
-0090 <span class="keyword">if</span>(ftbverbose)
-0091     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0089 Mobj.lside=lside;
+0090 <span class="keyword">if</span> ftbverbose
+0091     fprintf(<span class="string">'end   : %s\n'</span>, subname)
 0092 <span class="keyword">end</span>
 0093 
-0094 <a name="_sub1" href="#_subfunctions" class="code">function [km]=haversine(lat1,lon1,lat2,lon2)</a>
+0094 <a name="_sub1" href="#_subfunctions" class="code">function km=haversine(lat1,lon1,lat2,lon2)</a>
 0095 <span class="comment">% Haversine function to calculate first order distance measurement. Assumes</span>
 0096 <span class="comment">% spherical Earth surface. Lifted from:</span>
 0097 <span class="comment">%</span>
@@ -179,6 +180,6 @@ This function is called by:
 0105 c = 2 * atan2(sqrt(a), sqrt(1-a));
 0106 km = R * c;                     <span class="comment">% distance in metres</span>
 0107</pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

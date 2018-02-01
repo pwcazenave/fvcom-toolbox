@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of merge_bathymetry</title>
+  <meta name="keywords" content="merge_bathymetry">
+  <meta name="description" content="Blend two sources of bathymetry">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; merge_bathymetry.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>merge_bathymetry
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Blend two sources of bathymetry</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [ new_bat ] = merge_bathymetry( dist_OB,coarse_bat,fine_bat,d0,d1 ) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Blend two sources of bathymetry 
+
+ [ new_bat ] = merge_bathymetry( dist_OB,coarse_bat,fine_bat,d0,d1 )
+
+ DESCRIPTION:
+   This script uses a blending function to combine two bathymetry sources
+    over a common spatial extent (High-resolution, unstructured meshes for hydrodynamic models of the Great Barrier Reef, Australia,
+    Estuarine Coastal and Shelf Science 68:36-46 · June 2006
+    DOI: 10.1016/j.ecss.2005.08.017 )</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <span class="comment">% Blend two sources of bathymetry</span>
+0002 <a name="_sub0" href="#_subfunctions" class="code">function [ new_bat ] = merge_bathymetry( dist_OB,coarse_bat,fine_bat,d0,d1 )</a>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% [ new_bat ] = merge_bathymetry( dist_OB,coarse_bat,fine_bat,d0,d1 )</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   This script uses a blending function to combine two bathymetry sources</span>
+0008 <span class="comment">%    over a common spatial extent (High-resolution, unstructured meshes for hydrodynamic models of the Great Barrier Reef, Australia,</span>
+0009 <span class="comment">%    Estuarine Coastal and Shelf Science 68:36-46 · June 2006</span>
+0010 <span class="comment">%    DOI: 10.1016/j.ecss.2005.08.017 )</span>
+0011 
+0012 <span class="comment">% INPUT [keyword pairs]:</span>
+0013 <span class="comment">%  dist_OB:     a length metric used to combine the two sources</span>
+0014 <span class="comment">%  coarse_bat:  Bathymetry data to combine at lower distance</span>
+0015 <span class="comment">%  fine_bat:    Bathymetry data to combine at longer distances</span>
+0016 <span class="comment">%  d0:          is the plateau distance</span>
+0017 <span class="comment">%  d1:          is the end distance limiting factor</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">%  the blending function is a piecewise polynomial function as</span>
+0021 <span class="comment">%  f1d= 3.*( (dist_OB-d0)./(d1-d0) ).^2 - 2.*( (dist_OB-d0)./(d1-d0) ).^3;</span>
+0022 <span class="comment">% % restric closes points</span>
+0023 <span class="comment">% f1d(dist_OB&lt;=d0)=0;</span>
+0024 <span class="comment">% f1d(dist_OB&gt;=d1)=1;</span>
+0025 <span class="comment">% f1d=abs(f1d-1);</span>
+0026 <span class="comment">% % % Example</span>
+0027 <span class="comment">% d0=50;d1=2000;dist_OB = 0:100:12000;</span>
+0028 <span class="comment">% f1d= 3.*( (dist_OB-d0)./(d1-d0) ).^2 - 2.*( (dist_OB-d0)./(d1-d0) ).^3;</span>
+0029 <span class="comment">% % restric closes points</span>
+0030 <span class="comment">% f1d(dist_OB&lt;=d0)=0;</span>
+0031 <span class="comment">% f1d(dist_OB&gt;=d1)=1;</span>
+0032 <span class="comment">% plot(dist_OB,abs(f1d-1));</span>
+0033 <span class="comment">% EXAMPLE USAGE</span>
+0034 <span class="comment">%    Mobj_all.sub.z_merged = merge_bathymetry( Distance_from_nodestring,Mobj_all.z,Mobj_all.z1,100,2000 );</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% Author(s):</span>
+0037 <span class="comment">%    Ricardo Torres (Plymouth Marine Laboratory)</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">% Revision history</span>
+0040 <span class="comment">%</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">%==============================================================================</span>
+0043 
+0044 
+0045 
+0046 f1d= 3.*( (dist_OB-d0)./(d1-d0) ).^2 - 2.*( (dist_OB-d0)./(d1-d0) ).^3;
+0047 <span class="comment">% restric closes points</span>
+0048 f1d(dist_OB&lt;=d0)=0;
+0049 f1d(dist_OB&gt;=d1)=1;
+0050 f1d=abs(f1d-1);
+0051 new_bat=f1d.*coarse_bat+((1-f1d).*fine_bat);
+0052 <span class="keyword">return</span>
+0053</pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

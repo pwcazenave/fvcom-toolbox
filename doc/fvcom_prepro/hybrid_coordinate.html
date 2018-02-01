@@ -86,6 +86,8 @@
    2016-08-10 Updated the minimisation function to use the maximum of the
    difference between the two sets of vertical distributions rather than
    the median difference. Also tidy up the debug function.
+   2017-01-26 Fix the transition depth optimisation and report the maximum
+   difference between the two sigma level regions.
 
 ==========================================================================</pre></div>
 
@@ -93,10 +95,10 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>	Transfer a field from vertices to elements</li></ul>
+<li><a href="hybrid_coordinate.html" class="code" title="function Mobj = hybrid_coordinate(conf, Mobj)">hybrid_coordinate</a>	Create a hybrid vertical coordinates file.</li><li><a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>	Transfer a field from vertices to elements</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-</ul>
+<li><a href="hybrid_coordinate.html" class="code" title="function Mobj = hybrid_coordinate(conf, Mobj)">hybrid_coordinate</a>	Create a hybrid vertical coordinates file.</li></ul>
 <!-- crossreference -->
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -164,190 +166,217 @@ This function is called by:
 0058 <span class="comment">%   2016-08-10 Updated the minimisation function to use the maximum of the</span>
 0059 <span class="comment">%   difference between the two sets of vertical distributions rather than</span>
 0060 <span class="comment">%   the median difference. Also tidy up the debug function.</span>
-0061 <span class="comment">%</span>
-0062 <span class="comment">%==========================================================================</span>
-0063 
-0064 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
-0065 <span class="keyword">global</span> ftbverbose
-0066 <span class="keyword">if</span> ftbverbose
-0067     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
-0068 <span class="keyword">end</span>
-0069 
-0070 <span class="comment">% Limits on the optimisation run.</span>
-0071 optimisation_settings = optimset(<span class="string">'MaxFunEvals'</span>, 5000, <span class="keyword">...</span>
-0072     <span class="string">'MaxIter'</span>, 5000, <span class="keyword">...</span>
-0073     <span class="string">'TolFun'</span>, 10e-5, <span class="keyword">...</span>
-0074     <span class="string">'TolX'</span>, 1e-7);
-0075 
-0076 <span class="comment">% Extract the relevant information from the conf struct.</span>
-0077 nlev = conf.nlev;
-0078 H0 = conf.H0;
-0079 DU = conf.DU;
-0080 DL = conf.DL;
-0081 KU = conf.KU;
-0082 KL = conf.KL;
-0083 
-0084 <span class="comment">% Solve for Z0-Z2 to find Hmin parameter</span>
-0085 <span class="keyword">if</span> ftbverbose
-0086     fprintf(<span class="string">'Optimising the hybrid coordinates... '</span>)
-0087 <span class="keyword">end</span>
-0088 ZKU = repmat(DU./KU, 1, KU);
-0089 ZKL = repmat(DL./KL, 1, KL);
-0090 fparams = @(H)<a href="#_sub1" class="code" title="subfunction ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)">hybrid_coordinate_hmin</a>(H, nlev, DU, DL, KU, KL, ZKU, ZKL);
-0091 [Hmin, ~] = fminsearch(fparams, H0, optimisation_settings);
-0092 
-0093 <span class="keyword">if</span> ftbverbose
-0094     fprintf(<span class="string">'done.\n'</span>)
-0095     fprintf(<span class="string">'Saving to %s... '</span>, conf.sigma_file)
-0096 <span class="keyword">end</span>
-0097 
-0098 <span class="comment">% Save to the given file name.</span>
-0099 fout = fopen(conf.sigma_file, <span class="string">'wt'</span>);
-0100 assert(fout &gt;= 0, <span class="string">'Error opening sigma file: %s'</span>, conf.sigma_file)
-0101 fprintf(fout, <span class="string">'NUMBER OF SIGMA LEVELS = %d\n'</span>, nlev);
-0102 fprintf(fout, <span class="string">'SIGMA COORDINATE TYPE = GENERALIZED\n'</span>);
-0103 fprintf(fout, <span class="string">'DU = %4.1f\n'</span>, DU);
-0104 fprintf(fout, <span class="string">'DL = %4.1f\n'</span>, DL);
-0105 fprintf(fout, <span class="string">'MIN CONSTANT DEPTH = %10.1f\n'</span>, round(Hmin));
-0106 fprintf(fout, <span class="string">'KU = %d\n'</span>, KU);
-0107 fprintf(fout, <span class="string">'KL = %d\n'</span>, KL);
-0108 <span class="comment">% Add the thicknesses with a loop.</span>
-0109 fprintf(fout, <span class="string">'ZKU = '</span>);
-0110 <span class="keyword">for</span> ii = 1:length(ZKU)
-0111     fprintf(fout, <span class="string">'%4.1f'</span>, ZKU(ii));
-0112 <span class="keyword">end</span>
-0113 fprintf(fout, <span class="string">'\n'</span>);
-0114 fprintf(fout, <span class="string">'ZKL = '</span>);
-0115 <span class="keyword">for</span> ii = 1:length(ZKU)
-0116     fprintf(fout, <span class="string">'%4.1f'</span>, ZKL(ii));
-0117 <span class="keyword">end</span>
-0118 fprintf(fout,<span class="string">'\n'</span>);
-0119 fclose(fout);
-0120 
-0121 <span class="keyword">if</span> ftbverbose
-0122     fprintf(<span class="string">'done.\n'</span>)
-0123     fprintf(<span class="string">'Populating Mobj... '</span>)
-0124 <span class="keyword">end</span>
-0125 
-0126 <span class="comment">% Create the arrays of the layer and level sigma coordinates.</span>
-0127 <span class="keyword">for</span> xx = 1:length(Mobj.h)
-0128     Mobj.siglev(xx,:) = sigma_gen(nlev,DL,DU,KL,KU,ZKL,ZKU,Mobj.h(xx),Hmin);
-0129 <span class="keyword">end</span>
-0130 Mobj.siglay = Mobj.siglev(:,1:end-1) + (diff(Mobj.siglev,1,2)/2);
-0131 <span class="comment">% Turn off ftbverbose for this loop.</span>
-0132 old = ftbverbose;
-0133 ftbverbose = 0;
-0134 <span class="keyword">for</span> zz = 1:nlev-1
-0135     Mobj.siglevc(:, zz) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.siglev(:, zz), Mobj);
-0136     Mobj.siglayc(:, zz) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.siglay(:, zz), Mobj);
-0137 <span class="keyword">end</span>
-0138 <span class="comment">% An extra level compared with layers.</span>
-0139 Mobj.siglevc(:, zz + 1) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.siglev(:, zz + 1), Mobj);
-0140 ftbverbose = old;
-0141 clear old
-0142 
-0143 <span class="comment">% Create a depth array for the element centres.</span>
-0144 <span class="keyword">if</span> ~isfield(Mobj, <span class="string">'hc'</span>)
-0145     Mobj.hc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.h, Mobj);
-0146 <span class="keyword">end</span>
+0061 <span class="comment">%   2017-01-26 Fix the transition depth optimisation and report the maximum</span>
+0062 <span class="comment">%   difference between the two sigma level regions.</span>
+0063 <span class="comment">%</span>
+0064 <span class="comment">%==========================================================================</span>
+0065 
+0066 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0067 <span class="keyword">global</span> ftbverbose
+0068 <span class="keyword">if</span> ftbverbose
+0069     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0070 <span class="keyword">end</span>
+0071 
+0072 <span class="comment">% Limits on the optimisation run.</span>
+0073 optimisation_settings = optimset(<span class="string">'MaxFunEvals'</span>, 5000, <span class="keyword">...</span>
+0074     <span class="string">'MaxIter'</span>, 5000, <span class="keyword">...</span>
+0075     <span class="string">'TolFun'</span>, 10e-5, <span class="keyword">...</span>
+0076     <span class="string">'TolX'</span>, 1e-7);
+0077 
+0078 <span class="comment">% Extract the relevant information from the conf struct.</span>
+0079 nlev = conf.nlev;
+0080 H0 = conf.H0;
+0081 DU = conf.DU;
+0082 DL = conf.DL;
+0083 KU = conf.KU;
+0084 KL = conf.KL;
+0085 
+0086 <span class="comment">% Solve for Z0-Z2 to find Hmin parameter</span>
+0087 <span class="keyword">if</span> ftbverbose
+0088     fprintf(<span class="string">'Optimising the hybrid coordinates... '</span>)
+0089 <span class="keyword">end</span>
+0090 ZKU = repmat(DU./KU, 1, KU);
+0091 ZKL = repmat(DL./KL, 1, KL);
+0092 fparams = @(H)<a href="#_sub1" class="code" title="subfunction ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)">hybrid_coordinate_hmin</a>(H, nlev, DU, DL, KU, KL, ZKU, ZKL);
+0093 [Hmin, minError] = fminsearch(fparams, H0, optimisation_settings);
+0094 <span class="keyword">if</span> ftbverbose
+0095     fprintf(<span class="string">'Hmin found %f with a max error in Vertical distribution of %f metres, \n'</span>,Hmin,minError)
+0096     fprintf(<span class="string">'Saving to %s... '</span>, conf.sigma_file)
+0097 <span class="keyword">end</span>
+0098 
+0099 <span class="comment">% Save to the given file name.</span>
+0100 fout = fopen(conf.sigma_file, <span class="string">'wt'</span>);
+0101 assert(fout &gt;= 0, <span class="string">'Error opening sigma file: %s'</span>, conf.sigma_file)
+0102 fprintf(fout, <span class="string">'NUMBER OF SIGMA LEVELS = %d\n'</span>, nlev);
+0103 fprintf(fout, <span class="string">'SIGMA COORDINATE TYPE = GENERALIZED\n'</span>);
+0104 fprintf(fout, <span class="string">'DU = %4.1f\n'</span>, DU);
+0105 fprintf(fout, <span class="string">'DL = %4.1f\n'</span>, DL);
+0106 fprintf(fout, <span class="string">'MIN CONSTANT DEPTH = %10.1f\n'</span>, round(Hmin));
+0107 fprintf(fout, <span class="string">'KU = %d\n'</span>, KU);
+0108 fprintf(fout, <span class="string">'KL = %d\n'</span>, KL);
+0109 <span class="comment">% Add the thicknesses with a loop.</span>
+0110 fprintf(fout, <span class="string">'ZKU = '</span>);
+0111 <span class="keyword">for</span> ii = 1:length(ZKU)
+0112     fprintf(fout, <span class="string">'%4.1f'</span>, ZKU(ii));
+0113 <span class="keyword">end</span>
+0114 fprintf(fout, <span class="string">'\n'</span>);
+0115 fprintf(fout, <span class="string">'ZKL = '</span>);
+0116 <span class="keyword">for</span> ii = 1:length(ZKL)
+0117     fprintf(fout, <span class="string">'%4.1f'</span>, ZKL(ii));
+0118 <span class="keyword">end</span>
+0119 fprintf(fout,<span class="string">'\n'</span>);
+0120 fclose(fout);
+0121 
+0122 <span class="keyword">if</span> ftbverbose
+0123     fprintf(<span class="string">'done.\n'</span>)
+0124     fprintf(<span class="string">'Populating Mobj... '</span>)
+0125 <span class="keyword">end</span>
+0126 
+0127 Mobj.siglev = zeros(Mobj.nVerts,nlev);
+0128 Mobj.siglevc = zeros(Mobj.nElems,nlev);
+0129 Mobj.siglayc = zeros(Mobj.nElems,nlev-1);
+0130 
+0131 <span class="comment">% Create the arrays of the layer and level sigma coordinates.</span>
+0132 <span class="keyword">for</span> xx = 1:length(Mobj.h)
+0133     Mobj.siglev(xx,:) = sigma_gen(nlev,DL,DU,KL,KU,ZKL,ZKU,Mobj.h(xx),Hmin);
+0134 <span class="keyword">end</span>
+0135 Mobj.siglay = Mobj.siglev(:,1:end-1) + (diff(Mobj.siglev,1,2)/2);
+0136 <span class="comment">% Turn off ftbverbose for this loop.</span>
+0137 old = ftbverbose;
+0138 ftbverbose = 0;
+0139 <span class="keyword">for</span> zz = 1:nlev-1
+0140     Mobj.siglevc(:, zz) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.siglev(:, zz), Mobj);
+0141     Mobj.siglayc(:, zz) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.siglay(:, zz), Mobj);
+0142 <span class="keyword">end</span>
+0143 <span class="comment">% An extra level compared with layers.</span>
+0144 Mobj.siglevc(:, zz + 1) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.siglev(:, zz + 1), Mobj);
+0145 ftbverbose = old;
+0146 clear old
 0147 
-0148 <span class="comment">% Finally, make some [depth, sigma] arrays.</span>
-0149 Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* Mobj.siglev;
-0150 Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* Mobj.siglay;
-0151 Mobj.siglevzc = repmat(Mobj.hc, 1, nlev) .* Mobj.siglevc;
-0152 Mobj.siglayzc = repmat(Mobj.hc, 1, nlev-1) .* Mobj.siglayc;
-0153 
-0154 <span class="keyword">if</span> ftbverbose
-0155     fprintf(<span class="string">'done.\n'</span>)
-0156     fprintf(<span class="string">'end   : %s\n'</span>, subname)
-0157 <span class="keyword">end</span>
+0148 <span class="comment">% Create a depth array for the element centres.</span>
+0149 <span class="keyword">if</span> ~isfield(Mobj, <span class="string">'hc'</span>)
+0150     Mobj.hc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.h, Mobj);
+0151 <span class="keyword">end</span>
+0152 
+0153 <span class="comment">% Finally, make some [depth, sigma] arrays.</span>
+0154 Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* Mobj.siglev;
+0155 Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* Mobj.siglay;
+0156 Mobj.siglevzc = repmat(Mobj.hc, 1, nlev) .* Mobj.siglevc;
+0157 Mobj.siglayzc = repmat(Mobj.hc, 1, nlev-1) .* Mobj.siglayc;
 0158 
-0159 <span class="keyword">return</span>
-0160 
-0161 <a name="_sub1" href="#_subfunctions" class="code">function ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)</a>
-0162 <span class="comment">% Helper function to find the relevant minimum depth. I think.</span>
-0163 <span class="comment">%</span>
-0164 <span class="comment">%   ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)</span>
-0165 <span class="comment">%</span>
-0166 <span class="comment">% INPUT:</span>
-0167 <span class="comment">%   H: transition depth of the hybrid coordinates?</span>
-0168 <span class="comment">%   nlev: number of vertical levels (layers + 1)</span>
-0169 <span class="comment">%   DU: upper water boundary thickness (metres)</span>
-0170 <span class="comment">%   DL: lower water boundary thickness (metres)</span>
-0171 <span class="comment">%   KU: layer number in the water column of DU</span>
-0172 <span class="comment">%   KL: layer number in the water column of DL</span>
-0173 <span class="comment">%</span>
-0174 <span class="comment">% OUTPUT:</span>
-0175 <span class="comment">%   ZZ: minimum water depth?</span>
-0176 <span class="comment">%</span>
-0177 <span class="comment">% Author(s):</span>
-0178 <span class="comment">%   Ricard Torres (Plymouth Marine Laboratory)</span>
-0179 
-0180 <span class="keyword">if</span> DU + DL &gt; 1.25 * H;
-0181     disp(<span class="string">'Depth too shallow for the chosen DU and DL values'</span>)
-0182     <span class="keyword">return</span>
-0183 <span class="keyword">end</span>
+0159 <span class="keyword">if</span> ftbverbose
+0160     fprintf(<span class="string">'done.\n'</span>)
+0161     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0162 <span class="keyword">end</span>
+0163 
+0164 <span class="keyword">return</span>
+0165 
+0166 <a name="_sub1" href="#_subfunctions" class="code">function ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)</a>
+0167 <span class="comment">% Helper function to find the relevant minimum depth. I think.</span>
+0168 <span class="comment">%</span>
+0169 <span class="comment">%   ZZ = hybrid_coordinate_hmin(H, nlev, DU, DL, KU, KL, ZKU, ZKL)</span>
+0170 <span class="comment">%</span>
+0171 <span class="comment">% INPUT:</span>
+0172 <span class="comment">%   H: transition depth of the hybrid coordinates?</span>
+0173 <span class="comment">%   nlev: number of vertical levels (layers + 1)</span>
+0174 <span class="comment">%   DU: upper water boundary thickness (metres)</span>
+0175 <span class="comment">%   DL: lower water boundary thickness (metres)</span>
+0176 <span class="comment">%   KU: layer number in the water column of DU</span>
+0177 <span class="comment">%   KL: layer number in the water column of DL</span>
+0178 <span class="comment">%</span>
+0179 <span class="comment">% OUTPUT:</span>
+0180 <span class="comment">%   ZZ: minimum water depth?</span>
+0181 <span class="comment">%</span>
+0182 <span class="comment">% Author(s):</span>
+0183 <span class="comment">%   Ricard Torres (Plymouth Marine Laboratory)</span>
 0184 
-0185 Z0 = zeros(nlev, 1);
-0186 Z2 = Z0;
-0187 Z0(1, 1) = 0;
-0188 DL2 = 0.001;
-0189 DU2 = 0.001;
-0190 KBM1 = nlev - 1;
-0191 <span class="keyword">for</span> nn = 1:nlev - 1
-0192     X1 = DL2 + DU2;
-0193     X1 = X1 * (KBM1 - nn) / KBM1;
-0194     X1 = X1 - DL2;
-0195     X1 = tanh(X1);
-0196     X2 = tanh(DL2);
-0197     X3 = X2 + tanh(DU2);
-0198 
-0199     Z0(nn + 1, 1)=((X1 + X2) / X3) - 1;
-0200 <span class="keyword">end</span>
-0201 
-0202 <span class="comment">% s-coordinates</span>
-0203 X1 = (H - DU - DL);
-0204 X2 = X1 ./ H;
-0205 DR = X2 ./ (nlev - KU - KL - 1);
-0206 
-0207 Z2(1,1) = 0.0;
-0208 
-0209 <span class="keyword">for</span> K = 2:KU + 1
-0210     Z2(K, 1) = Z2(K - 1, 1) - (ZKU(K - 1) ./ H);
-0211 <span class="keyword">end</span>
+0185 <span class="comment">% if DU + DL &gt; 1.25 * H;</span>
+0186 <span class="comment">%     error('Depth %f too shallow for the chosen DU %f and DL %f values',H,DU,DL)</span>
+0187 <span class="comment">% end</span>
+0188 
+0189 Z0 = zeros(nlev, 1);
+0190 Z2 = Z0;
+0191 Z0(1, 1) = 0;
+0192 DL2 = 0.001;
+0193 DU2 = 0.001;
+0194 KBM1 = nlev - 1;
+0195 <span class="keyword">for</span> nn = 1:nlev - 1
+0196     X1 = DL2 + DU2;
+0197     X1 = X1 * (KBM1 - nn) / KBM1;
+0198     X1 = X1 - DL2;
+0199     X1 = tanh(X1);
+0200     X2 = tanh(DL2);
+0201     X3 = X2 + tanh(DU2);
+0202 
+0203     Z0(nn + 1, 1)=((X1 + X2) / X3) - 1;
+0204 <span class="keyword">end</span>
+0205 
+0206 <span class="comment">% s-coordinates</span>
+0207 X1 = (H - DU - DL);
+0208 X2 = X1 ./ H;
+0209 DR = X2 ./ (nlev - KU - KL - 1);
+0210 
+0211 Z2(1,1) = 0.0;
 0212 
-0213 <span class="keyword">for</span> K= KU + 2:nlev - KL
-0214     Z2(K, 1) = Z2(K - 1, 1) - DR;
+0213 <span class="keyword">for</span> K = 2:KU + 1
+0214     Z2(K, 1) = Z2(K - 1, 1) - (ZKU(K - 1) ./ H);
 0215 <span class="keyword">end</span>
 0216 
-0217 KK = 0;
-0218 <span class="keyword">for</span> K = nlev - KL + 1:nlev
-0219     KK = KK + 1;
-0220     Z2(K, 1) = Z2(K - 1, 1) - (ZKL(KK) ./ H);
-0221 <span class="keyword">end</span>
-0222 ZZ = max(diff(Z0) - diff(Z2));
-0223 
-0224 <span class="keyword">return</span>
-0225 
-0226 <a name="_sub2" href="#_subfunctions" class="code">function debug_mode()</a>
-0227 <span class="comment">% Test with made up data. This isn't actually used at all, but it's handy</span>
-0228 <span class="comment">% to leave around for debugging things.</span>
-0229 
-0230 Hmin=50;
-0231 Hmax=Hmin + 200;
-0232 y = 0:0.1:100;
-0233 B = 100;
-0234 H = Hmax .* exp(-((y./B-0.15).^2./0.5.^2));
-0235 nlev = conf.nlev;
-0236 
-0237 <span class="comment">% Loop through all nodes to create sigma coordinates.</span>
-0238 <span class="keyword">for</span> xx=1:length(H)
-0239     Z2(xx, :) = sigma_gen(nlev, DL, DU, KL, KU, ZKL, ZKU, H(xx), Hmin);
-0240 <span class="keyword">end</span>
+0217 <span class="keyword">for</span> K= KU + 2:nlev - KL
+0218     Z2(K, 1) = Z2(K - 1, 1) - DR;
+0219 <span class="keyword">end</span>
+0220 
+0221 KK = 0;
+0222 <span class="keyword">for</span> K = nlev - KL + 1:nlev
+0223     KK = KK + 1;
+0224     Z2(K, 1) = Z2(K - 1, 1) - (ZKL(KK) ./ H);
+0225 <span class="keyword">end</span>
+0226 ZZ = max(H*(Z0) - H*(Z2));
+0227 <span class="comment">% ZZ = max(abs(diff(H*(Z0)) - diff(H*(Z2))));</span>
+0228 
+0229 <span class="keyword">return</span>
+0230 
+0231 <a name="_sub2" href="#_subfunctions" class="code">function debug_mode()</a>
+0232 <span class="comment">% Test with made up data. This isn't actually used at all, but it's handy</span>
+0233 <span class="comment">% to leave around for debugging things.</span>
+0234 
+0235 conf.nlev = 25; <span class="comment">% vertical levels (layers + 1)</span>
+0236 conf.H0 = 30; <span class="comment">% threshold depth for the transition (metres)</span>
+0237 conf.DU = 3; <span class="comment">% upper water boundary thickness</span>
+0238 conf.DL = 3; <span class="comment">% lower water boundary thickness</span>
+0239 conf.KU = 3; <span class="comment">% layer number in the water column of DU (maximum of 5 m thickness)</span>
+0240 conf.KL = 3; <span class="comment">% layer number in the water column of DL (maximum of 5m thickness)</span>
 0241 
-0242 plot(Z2 .* repmat(H', 1, nlev))
-0243 fprintf(<span class="string">'Calculated minimum depth: %.2f\n'</span>, Hmin)
-0244</pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0242 
+0243 Mobj = <a href="hybrid_coordinate.html" class="code" title="function Mobj = hybrid_coordinate(conf, Mobj)">hybrid_coordinate</a>(conf, Mobj);
+0244 
+0245 nlev = conf.nlev;
+0246 H0 = conf.H0;
+0247 DU = conf.DU;
+0248 DL = conf.DL;
+0249 KU = conf.KU;
+0250 KL = conf.KL;
+0251 ZKU = repmat(DU./KU, 1, KU);
+0252 ZKL = repmat(DL./KL, 1, KL);
+0253 
+0254  Hmin=24;
+0255 Hmax=Hmin + 200;
+0256 y = 0:0.1:100;
+0257 B = 70;
+0258 H = Hmax .* exp(-((y./B-0.15).^2./0.5.^2));
+0259 <span class="comment">% H = [Hmin,H]; H=sort(H);</span>
+0260 nlev = conf.nlev;
+0261 Z2=[];
+0262 <span class="comment">% Loop through all nodes to create sigma coordinates.</span>
+0263 <span class="keyword">for</span> xx=1:length(H)
+0264     Z2(xx, :) = sigma_gen(nlev, DL, DU, KL, KU, ZKL, ZKU, H(xx), Hmin);
+0265 <span class="keyword">end</span>
+0266 
+0267 clf
+0268 plot(y,Z2 .* repmat(H', 1, nlev));hold on
+0269 plot(y,ones(size(y)).*-Hmin)
+0270 fprintf(<span class="string">'Calculated minimum depth: %.2f\n'</span>, Hmin)
+0271</pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

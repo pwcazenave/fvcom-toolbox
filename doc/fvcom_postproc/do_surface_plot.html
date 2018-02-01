@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of do_surface_plot</title>
+  <meta name="keywords" content="do_surface_plot">
+  <meta name="description" content="">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_postproc</a> &gt; do_surface_plot.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_postproc&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>do_surface_plot
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong></strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Plots]=do_surface_plot(plotOPTS,FVCOM) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">
+ Function to display color maps of FVCOM variables (i.e. temperature)
+
+  [Plots]=do_surface_plot(plotOPTS,FVCOM)
+
+ DESCRIPTION:
+    Generates maps of variables using m_map toolbox (patch
+
+ INPUT:
+   plotOPTS   = structure array with predefined options for generating the
+   maps
+   FVCOM  = data extracted from FVCOM NC file. See read_netCDF_FVCOM for
+   details
+
+   plotOPTS.range_lat: [50.1000 50.4000]
+   plotOPTS.range_lon: [-4.5000 -3.8500]
+   plotOPTS.fig_name: 'co2_S5_slowleak'
+   plotOPTS.mesh: [1x1 struct]
+   plotOPTS.coastline_file: '../mat/tamar3_0coast.mat'
+   plotOPTS.zone: 30
+   plotOPTS.ell: 'grs80'
+   plotOPTS.var_plot: 'PH'
+   plotOPTS.clims: [6 8]
+   plotOPTS.do_mesh: 0
+   plotOPTS.nz_plot: 1
+   plotOPTS.figure: 1
+   plotOPTS.Time_record: 7.3271e+05
+   plotOPTS.nz_plot_vec: 1
+   plotOPTS.data_dec: 5
+   plotOPTS.vel_sca: 5
+   plotOPTS.pause: 0.5000</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="example_surface_plot.html" class="code" title="">example_surface_plot</a>	Sample script to extract and generate m_map contours of tracer variables</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Plots]=do_surface_plot(plotOPTS,FVCOM)</a>
+0002 <span class="comment">%</span>
+0003 <span class="comment">% Function to display color maps of FVCOM variables (i.e. temperature)</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">%  [Plots]=do_surface_plot(plotOPTS,FVCOM)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Generates maps of variables using m_map toolbox (patch</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   plotOPTS   = structure array with predefined options for generating the</span>
+0012 <span class="comment">%   maps</span>
+0013 <span class="comment">%   FVCOM  = data extracted from FVCOM NC file. See read_netCDF_FVCOM for</span>
+0014 <span class="comment">%   details</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">%   plotOPTS.range_lat: [50.1000 50.4000]</span>
+0017 <span class="comment">%   plotOPTS.range_lon: [-4.5000 -3.8500]</span>
+0018 <span class="comment">%   plotOPTS.fig_name: 'co2_S5_slowleak'</span>
+0019 <span class="comment">%   plotOPTS.mesh: [1x1 struct]</span>
+0020 <span class="comment">%   plotOPTS.coastline_file: '../mat/tamar3_0coast.mat'</span>
+0021 <span class="comment">%   plotOPTS.zone: 30</span>
+0022 <span class="comment">%   plotOPTS.ell: 'grs80'</span>
+0023 <span class="comment">%   plotOPTS.var_plot: 'PH'</span>
+0024 <span class="comment">%   plotOPTS.clims: [6 8]</span>
+0025 <span class="comment">%   plotOPTS.do_mesh: 0</span>
+0026 <span class="comment">%   plotOPTS.nz_plot: 1</span>
+0027 <span class="comment">%   plotOPTS.figure: 1</span>
+0028 <span class="comment">%   plotOPTS.Time_record: 7.3271e+05</span>
+0029 <span class="comment">%   plotOPTS.nz_plot_vec: 1</span>
+0030 <span class="comment">%   plotOPTS.data_dec: 5</span>
+0031 <span class="comment">%   plotOPTS.vel_sca: 5</span>
+0032 <span class="comment">%   plotOPTS.pause: 0.5000</span>
+0033 
+0034 <span class="comment">%</span>
+0035 <span class="comment">% OUTPUT:</span>
+0036 <span class="comment">%   Plots = structure array with figure handles</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">% EXAMPLE USAGE</span>
+0039 <span class="comment">%    [Plots]=do_surface_plot(plotOPTS,FVCOM)</span>
+0040 <span class="comment">%</span>
+0041 <span class="comment">% Author(s):</span>
+0042 <span class="comment">%    Ricardo Torres and Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0043 <span class="comment">%</span>
+0044 <span class="comment">% Revision history</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">%==============================================================================</span>
+0047 <span class="comment">%</span>
+0048 m_mappath;
+0049 <span class="comment">% adds m_map to matlab paths. file is in utilities directory.</span>
+0050 <span class="comment">% amend according to your m_map installation paths</span>
+0051 
+0052 figure(plotOPTS.figure);clf
+0053 <span class="comment">% generate figure with correct projection lat and lon range ellipsoid and</span>
+0054 <span class="comment">% zone.</span>
+0055 m_proj(<span class="string">'UTM'</span>,<span class="string">'lon'</span>,[ plotOPTS.range_lon],<span class="string">'lat'</span>,[plotOPTS.range_lat],<span class="string">'zon'</span>,plotOPTS.zone,<span class="string">'ell'</span>,plotOPTS.ell)
+0056 m_grid(<span class="string">'box'</span>,<span class="string">'fancy'</span>)
+0057 <span class="comment">% add coastline if present</span>
+0058 <span class="keyword">if</span> (isfield(plotOPTS,<span class="string">'coastline_file'</span>) &amp;&amp; ~isempty(plotOPTS.coastline_file) )
+0059     m_usercoast(plotOPTS.coastline_file,<span class="string">'Color'</span>,<span class="string">'k'</span>,<span class="string">'LineWidth'</span>,3);
+0060 <span class="keyword">end</span>
+0061 
+0062 [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0063 <span class="comment">%------------------------------------------------------------------------------</span>
+0064 <span class="comment">% Generate maps at a give level</span>
+0065 <span class="comment">%------------------------------------------------------------------------------</span>
+0066 
+0067 <span class="keyword">for</span> aa=1:length(plotOPTS.Time_record)
+0068     fprintf(<span class="string">'Time step %i of %i\n'</span>,aa,length(plotOPTS.Time_record));
+0069     <span class="comment">%plot map</span>
+0070     hold on
+0071     Plots(plotOPTS.figure).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0072         <span class="string">'Cdata'</span>,squeeze(FVCOM.(plotOPTS.var_plot)(:,plotOPTS.nz_plot,aa)),<span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0073 
+0074     caxis(plotOPTS.clims)
+0075     colorbar
+0076     <span class="comment">% check if mesh elements are required</span>
+0077     <span class="keyword">if</span> plotOPTS.do_mesh
+0078         <span class="comment">%plot vertices</span>
+0079         [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0080         Plots(plotOPTS.figure).mesh=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0081             <span class="string">'EdgeColor'</span>,[0.6 0.6 0.6],<span class="string">'FaceColor'</span>,<span class="string">'none'</span>);hold on
+0082 
+0083     <span class="keyword">end</span>
+0084     <span class="comment">%-----------------------------------------------------------------------</span>
+0085     <span class="comment">% Only in my case it needs adding 6 because proj automatically determines a</span>
+0086     <span class="comment">% reference long in strides of 6deg while m_map doesn't</span>
+0087     <span class="comment">%------------------------------------------------------------------------</span>
+0088     pause(.2)
+0089     <span class="keyword">if</span> aa~=length(plotOPTS.Time_record)
+0090         delete(Plots(plotOPTS.figure).handles(:))
+0091     <span class="keyword">end</span>
+0092 
+0093 <span class="keyword">end</span>
+0094 
+0095 <span class="keyword">return</span>
+0096</pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

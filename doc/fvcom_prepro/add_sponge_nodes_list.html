@@ -32,7 +32,7 @@
  [Mobj] = add_sponge_nodes(Mobj)
 
  DESCRIPTION:
-    Select using ginput the set of nodes comprising a sponge layer
+    Add the sponge parameters at the given nodes.
 
  INPUT
     Mobj = Matlab mesh object
@@ -80,7 +80,7 @@ This function is called by:
 0005 <span class="comment">% [Mobj] = add_sponge_nodes(Mobj)</span>
 0006 <span class="comment">%</span>
 0007 <span class="comment">% DESCRIPTION:</span>
-0008 <span class="comment">%    Select using ginput the set of nodes comprising a sponge layer</span>
+0008 <span class="comment">%    Add the sponge parameters at the given nodes.</span>
 0009 <span class="comment">%</span>
 0010 <span class="comment">% INPUT</span>
 0011 <span class="comment">%    Mobj = Matlab mesh object</span>
@@ -107,55 +107,55 @@ This function is called by:
 0032 <span class="comment">%    2013-01-18 Added support for variable sponge radius</span>
 0033 <span class="comment">%</span>
 0034 <span class="comment">%==============================================================================</span>
-0035 subname = <span class="string">'add_sponge_nodes'</span>;
+0035 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
 0036 
 0037 <span class="keyword">global</span> ftbverbose
-0038 <span class="keyword">if</span>(ftbverbose)
-0039     fprintf(<span class="string">'\n'</span>)
-0040     fprintf([<span class="string">'begin : '</span> subname <span class="string">'\n'</span>])
-0041 <span class="keyword">end</span>
-0042 
-0043 <span class="comment">% Do we want a figure showing how we're getting along?</span>
-0044 <span class="keyword">if</span> nargin == 5
-0045     plotFig = 0;
-0046 <span class="keyword">end</span>
-0047 
-0048 <span class="comment">%------------------------------------------------------------------------------</span>
-0049 <span class="comment">% Plot the mesh</span>
-0050 <span class="comment">%------------------------------------------------------------------------------</span>
-0051 
-0052 <span class="keyword">if</span> plotFig == 1
-0053     <span class="keyword">if</span>(lower(Mobj.nativeCoords(1:3)) == <span class="string">'car'</span>)
-0054         x = Mobj.x;
-0055         y = Mobj.y;
-0056     <span class="keyword">else</span>
-0057         x = Mobj.lon;
-0058         y = Mobj.lat;
-0059     <span class="keyword">end</span>
-0060 
-0061     figure
-0062     patch(<span class="string">'Vertices'</span>,[x,y],<span class="string">'Faces'</span>,Mobj.tri,<span class="keyword">...</span>
-0063             <span class="string">'Cdata'</span>,Mobj.h,<span class="string">'edgecolor'</span>,<span class="string">'k'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
-0064     hold on;
-0065     plot(x(SpongeList),y(SpongeList),<span class="string">'wx'</span>)
-0066     axis(<span class="string">'equal'</span>,<span class="string">'tight'</span>)
-0067 <span class="keyword">end</span>
-0068 
-0069 npts = length(SpongeList);
-0070 
-0071 <span class="keyword">if</span>(npts == 0)
-0072     fprintf(<span class="string">'No points in given list'</span>)
-0073     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
-0074     <span class="keyword">return</span>
-0075 <span class="keyword">end</span>
-0076 <span class="keyword">if</span>(ftbverbose)
-0077     fprintf(<span class="string">'%d points provided\n'</span>,npts)
+0038 <span class="keyword">if</span> ftbverbose
+0039     fprintf(<span class="string">'\nbegin : %s\m'</span>, subname)
+0040 <span class="keyword">end</span>
+0041 
+0042 <span class="comment">% Do we want a figure showing how we're getting along?</span>
+0043 <span class="keyword">if</span> nargin == 5
+0044     plotFig = 0;
+0045 <span class="keyword">end</span>
+0046 
+0047 <span class="comment">%------------------------------------------------------------------------------</span>
+0048 <span class="comment">% Plot the mesh</span>
+0049 <span class="comment">%------------------------------------------------------------------------------</span>
+0050 
+0051 <span class="keyword">if</span> plotFig == 1
+0052     <span class="keyword">if</span> lower(Mobj.nativeCoords(1:3)) == <span class="string">'car'</span>
+0053         x = Mobj.x;
+0054         y = Mobj.y;
+0055     <span class="keyword">else</span>
+0056         x = Mobj.lon;
+0057         y = Mobj.lat;
+0058     <span class="keyword">end</span>
+0059 
+0060     figure
+0061     patch(<span class="string">'Vertices'</span>,[x,y],<span class="string">'Faces'</span>,Mobj.tri,<span class="keyword">...</span>
+0062             <span class="string">'Cdata'</span>,Mobj.h,<span class="string">'edgecolor'</span>,<span class="string">'k'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0063     hold on;
+0064     plot(x(SpongeList),y(SpongeList),<span class="string">'wx'</span>)
+0065     axis(<span class="string">'equal'</span>,<span class="string">'tight'</span>)
+0066 <span class="keyword">end</span>
+0067 
+0068 npts = length(SpongeList);
+0069 
+0070 <span class="keyword">if</span> npts == 0
+0071     fprintf(<span class="string">'No points in given list'</span>)
+0072     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0073     <span class="keyword">return</span>
+0074 <span class="keyword">end</span>
+0075 
+0076 <span class="keyword">if</span> ftbverbose
+0077     fprintf(<span class="string">'%d points provided\n'</span>, npts)
 0078 <span class="keyword">end</span>
 0079 
 0080 <span class="comment">% add to mesh object</span>
 0081 Mobj.nSponge = Mobj.nSponge + 1;
 0082 Mobj.nSpongeNodes(Mobj.nSponge) = npts;
-0083 Mobj.sponge_nodes(Mobj.nSponge,1:npts) = SpongeList;
+0083 Mobj.sponge_nodes(Mobj.nSponge, 1:npts) = SpongeList;
 0084 Mobj.sponge_name{Mobj.nSponge} = SpongeName;
 0085 Mobj.sponge_fac(Mobj.nSponge) = SpongeCoeff;
 0086 
@@ -165,10 +165,10 @@ This function is called by:
 0090     Mobj.sponge_rad(Mobj.nSponge,1:npts) = SpongeRadius;
 0091 <span class="keyword">end</span>
 0092 
-0093 <span class="keyword">if</span>(ftbverbose)
-0094     fprintf([<span class="string">'end   : '</span> subname <span class="string">'\n'</span>])
+0093 <span class="keyword">if</span> ftbverbose
+0094     fprintf(<span class="string">'end   : %s\n'</span>, subname)
 0095 <span class="keyword">end</span>
 0096</pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
