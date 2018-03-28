@@ -226,21 +226,14 @@ nodeStrings = find(allNodes < 0);
 startp1 = 10*ceil(nodeStrings./10)+1;
 ns_range = [[1; startp1(1:end-1)], nodeStrings];
 
-% Add a new field to Mobj with all the nodestrings as a cell array.
-read_obc_nodes = cell(1, length(nodeStrings));
-for nString = 1:size(ns_range,1)
-    read_obc_nodes{nString} = abs(allNodes(ns_range(nString,1):ns_range(nString,2)));
-
-    % Check for closed nodestrings (which we don't really want).
-    if read_obc_nodes{nString}(1) == read_obc_nodes{nString}(end)
-        % Drop the end one.
-        warning('Closed node string found. Opening it.')
-        read_obc_nodes{nString} = read_obc_nodes{nString}(1:end - 1);
-    end
-end
-
 if nStrings > 0
     have_strings = true;
+    
+    % Add a new field to Mobj with all the nodestrings as a cell array.
+    read_obc_nodes = cell(1, length(nodeStrings));
+    for nString = 1:size(ns_range,1)
+        read_obc_nodes{nString} = abs(allNodes(ns_range(nString,1):ns_range(nString,2)));
+    end
 end
 
 have_lonlat = false;
