@@ -130,13 +130,13 @@ if any(conf.Nested_type == 3)
     Nested.weight_node = cell(0);
 end
 
-% if ftbverbose
-%     figure(1)
-%     clf
-%     triplot(Nested.tri, Nested.x, Nested.y)
-%     axis('equal', 'tight')
-%     hold on
-% end
+if ftbverbose
+    figure(1)
+    clf
+    triplot(Nested.tri, Nested.x, Nested.y)
+    axis('equal', 'tight')
+    hold on
+end
 
 % Indices for the output cell arrays which are incremented for each nest
 % level and each open boundary.

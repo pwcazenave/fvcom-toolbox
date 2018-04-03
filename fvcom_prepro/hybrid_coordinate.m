@@ -109,12 +109,12 @@ fprintf(fout, 'KL = %d\n', KL);
 % Add the thicknesses with a loop.
 fprintf(fout, 'ZKU = ');
 for ii = 1:length(ZKU)
-    fprintf(fout, '%4.1f', ZKU(ii));
+    fprintf(fout, '%4.1f ', ZKU(ii));
 end
 fprintf(fout, '\n');
 fprintf(fout, 'ZKL = ');
 for ii = 1:length(ZKL)
-    fprintf(fout, '%4.1f', ZKL(ii));
+    fprintf(fout, '%4.1f ', ZKL(ii));
 end
 fprintf(fout,'\n');
 fclose(fout);
