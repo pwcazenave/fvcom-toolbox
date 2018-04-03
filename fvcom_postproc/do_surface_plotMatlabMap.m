@@ -76,8 +76,7 @@ if (isfield(plotOPTS,'coastline_file') && ~isempty(plotOPTS.coastline_file) )
     if isfield (plotOPTS,'PlotoutS') && ~isempty(plotOPTS.PlotoutS(plotOPTS.figure).handles)
     else
 %     coast=load(plotOPTS.coastline_file);
-    geoshow(plotOPTS.coastline_file,'Color','black')
-        
+geoshow(plotOPTS.coastline_file,'Facecolor',[0.7 .7 .7])        
     end
 
 end
