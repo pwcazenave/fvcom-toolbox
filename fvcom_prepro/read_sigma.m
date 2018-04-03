@@ -126,7 +126,7 @@ if ftbverbose
         fprintf('zku\t%d\n', zku)
         fprintf('zkl\t%d\n', zkl)
     end
-        if strcmpi(sigtype, 'TANH')
+    if strcmpi(sigtype, 'TANH')
         fprintf('du\t%d\n', du)
         fprintf('dl\t%d\n', dl)
     end
