@@ -62,7 +62,7 @@ end
 [~, Nidx] = unique(Nodelist);
 Nodelist = Nodelist(sort(Nidx));
 
-assert(max(Nodelist) < Mobj.nVerts, 'Your open boundary node number exceed the total number of nodes in the domain\n')
+assert(max(Nodelist) <= Mobj.nVerts, 'Your open boundary node number (%d) exceeds the total number of nodes in the domain (%d)', max(Nodelist), Mobj.nVerts)
 
 %--------------------------------------------------------------------------
 % Plot the mesh
