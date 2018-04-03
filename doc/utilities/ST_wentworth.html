@@ -24,7 +24,7 @@
 <div class="box"><strong>Report wentworth class of a particular grain size phi</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [Sclass] = wentworth(phi) </strong></div>
+<div class="box"><strong>function Sclass = ST_wentworth(phi) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Report wentworth class of a particular grain size phi 
@@ -63,7 +63,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Sclass] = wentworth(phi)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Sclass = ST_wentworth(phi)</a>
 0002 <span class="comment">% Report wentworth class of a particular grain size phi</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% function wentworth(phi)</span>
@@ -87,14 +87,24 @@ This function is called by:
 0022 <span class="comment">%</span>
 0023 <span class="comment">%==============================================================================</span>
 0024 
-0025 ClassNames = {<span class="string">'boulder'</span>,<span class="string">'cobble'</span>,<span class="string">'pebble'</span>,<span class="string">'granule'</span>,<span class="string">'very coarse sand'</span>, <span class="keyword">...</span>
-0026    <span class="string">'coarse sand'</span>,<span class="string">'medium sand'</span>,<span class="string">'fine sand'</span>,<span class="string">'very fine sand'</span>,<span class="string">'coarse silt'</span>, <span class="keyword">...</span>
-0027    <span class="string">'medium silt'</span>,<span class="string">'fine silt'</span>,<span class="string">'very fine silt'</span>,<span class="string">'coarse clay'</span>,<span class="string">'medium clay'</span>,<span class="string">'fine clay'</span>}; 
-0028 ClassLbound = [-1e6,-8,-6,-2,-1,0,1,2,3,4,5,6,7,8,9,10]; 
-0029 pts = find(phi-ClassLbound &gt; 0);
-0030 ClassIndex = pts(end); 
-0031 Sclass = char(ClassNames{ClassIndex});
-0032 <span class="comment">%fprintf('class of phi = %f is: %s\n',phi,class);</span></pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0025 <span class="keyword">global</span> ftbverbose
+0026 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0027 <span class="keyword">if</span> ftbverbose
+0028     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0029 <span class="keyword">end</span>
+0030 
+0031 ClassNames = {<span class="string">'boulder'</span>,<span class="string">'cobble'</span>,<span class="string">'pebble'</span>,<span class="string">'granule'</span>,<span class="string">'very coarse sand'</span>, <span class="keyword">...</span>
+0032    <span class="string">'coarse sand'</span>,<span class="string">'medium sand'</span>,<span class="string">'fine sand'</span>,<span class="string">'very fine sand'</span>,<span class="string">'coarse silt'</span>, <span class="keyword">...</span>
+0033    <span class="string">'medium silt'</span>,<span class="string">'fine silt'</span>,<span class="string">'very fine silt'</span>,<span class="string">'coarse clay'</span>,<span class="string">'medium clay'</span>,<span class="string">'fine clay'</span>}; 
+0034 ClassLbound = [-1e6,-8,-6,-2,-1,0,1,2,3,4,5,6,7,8,9,10]; 
+0035 pts = find(phi-ClassLbound &gt; 0);
+0036 ClassIndex = pts(end); 
+0037 Sclass = char(ClassNames{ClassIndex});
+0038 <span class="comment">%fprintf('class of phi = %f is: %s\n',phi,class);</span>
+0039 
+0040 <span class="keyword">if</span> ftbverbose
+0041     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0042 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

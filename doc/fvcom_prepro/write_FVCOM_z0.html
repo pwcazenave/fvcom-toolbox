@@ -38,6 +38,7 @@
  INPUT
    z0        = user defined roughness field (m)
                roughness is defined on the elements
+               expect values between 3 10^-3 (gravel) and .2 10^-3 (i.e. 0.0002) for mud
    filename  = filename to dump to
    mytitle   = title of the case (set as global attribute)
    cbcmin    = minimum value of CBC (optional, defaults to 0.0018 if
@@ -86,100 +87,101 @@ This function is called by:
 0010 <span class="comment">% INPUT</span>
 0011 <span class="comment">%   z0        = user defined roughness field (m)</span>
 0012 <span class="comment">%               roughness is defined on the elements</span>
-0013 <span class="comment">%   filename  = filename to dump to</span>
-0014 <span class="comment">%   mytitle   = title of the case (set as global attribute)</span>
-0015 <span class="comment">%   cbcmin    = minimum value of CBC (optional, defaults to 0.0018 if</span>
-0016 <span class="comment">%               omitted).</span>
-0017 <span class="comment">%</span>
-0018 <span class="comment">% OUTPUT:</span>
-0019 <span class="comment">%    netCDF file called `filename'</span>
-0020 <span class="comment">%</span>
-0021 <span class="comment">% EXAMPLE USAGE</span>
-0022 <span class="comment">%    write_FVCOM_z0(z0field, 'tst_z0.nc', 'z0 tst domain')</span>
-0023 <span class="comment">%</span>
-0024 <span class="comment">% Author(s):</span>
-0025 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0026 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">% Revision history</span>
-0029 <span class="comment">%    2012-06-15 Added support for native MATLAB NetCDF routines. Requires</span>
-0030 <span class="comment">%    MATLAB 2010a or higher.</span>
-0031 <span class="comment">%    2016-08-09 Added new variable (cbcmin) to support FVCOM version 4.</span>
-0032 <span class="comment">%    Also tidied up the code a bit.</span>
-0033 <span class="comment">%</span>
-0034 <span class="comment">%==============================================================================</span>
-0035 
-0036 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
-0037 <span class="keyword">global</span> ftbverbose;
-0038 <span class="keyword">if</span> ftbverbose
-0039     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname);
-0040 <span class="keyword">end</span>
-0041 
-0042 <span class="comment">%------------------------------------------------------------------------------</span>
-0043 <span class="comment">% Parse input arguments</span>
-0044 <span class="comment">%------------------------------------------------------------------------------</span>
-0045 <span class="keyword">if</span> ~exist(<span class="string">'z0'</span>, <span class="string">'var'</span>)
-0046     error(<span class="string">'incorrect usage of write_FVCOM_z0, must provide z0 field'</span>)
-0047 <span class="keyword">end</span>
-0048 <span class="keyword">if</span> ~exist(<span class="string">'filename'</span>, <span class="string">'var'</span>)
-0049     error(<span class="string">'incorrect usage of write_FVCOM_z0, must provide filename'</span>)
-0050 <span class="keyword">end</span>
-0051 <span class="keyword">if</span> ~exist(<span class="string">'mytitle'</span>, <span class="string">'var'</span>)
-0052     error(<span class="string">'incorrect usage of write_FVCOM_z0, must provide title field'</span>)
-0053 <span class="keyword">end</span>
-0054 
-0055 <span class="comment">% check dimensions</span>
-0056 nElems = numel(z0);
-0057 <span class="keyword">if</span> nElems == 0
-0058     error(<span class="string">'Number of elements in z0 is 0.'</span>)
-0059 <span class="keyword">end</span>
-0060 
-0061 <span class="comment">% If we haven't been given a value of cbc min, set it to the example from</span>
-0062 <span class="comment">% Jianzhong Ge.</span>
-0063 <span class="keyword">if</span> nargin == 3
-0064     cbcmin = repmat(0.0018, nElems, 1);
-0065 <span class="keyword">end</span>
-0066 
-0067 <span class="comment">%------------------------------------------------------------------------------</span>
-0068 <span class="comment">% Dump to variables to the netCDF file</span>
-0069 <span class="comment">%------------------------------------------------------------------------------</span>
-0070 <span class="keyword">if</span> ftbverbose
-0071   fprintf(<span class="string">'Dumping to z0 NetCDF file: %s\n'</span>, filename);
-0072   fprintf(<span class="string">'Size of z0 array: %i\n'</span>, nElems);
-0073 <span class="keyword">end</span>
-0074 nc = netcdf.create(filename, <span class="string">'clobber'</span>);
-0075 
-0076 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'title'</span>, mytitle)
-0077 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, <span class="keyword">...</span>
-0078     sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
-0079 
-0080 <span class="comment">% dimensions</span>
-0081 nele_dimid = netcdf.defDim(nc, <span class="string">'nele'</span>, nElems);
-0082 
-0083 <span class="comment">% variables and attributes</span>
-0084 z0b_varid = netcdf.defVar(nc, <span class="string">'z0b'</span>, <span class="string">'NC_FLOAT'</span>, nele_dimid);
-0085 netcdf.putAtt(nc, z0b_varid, <span class="string">'long_name'</span>, <span class="string">'bottom roughness'</span>);
-0086 netcdf.putAtt(nc, z0b_varid, <span class="string">'units'</span>, <span class="string">'m'</span>);
-0087 netcdf.putAtt(nc, z0b_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
-0088 
-0089 cbcmin_varid=netcdf.defVar(nc, <span class="string">'cbcmin'</span>, <span class="string">'NC_FLOAT'</span>, nele_dimid);
-0090 netcdf.putAtt(nc, cbcmin_varid, <span class="string">'long_name'</span>, <span class="string">'bottom roughness minimum'</span>);
-0091 netcdf.putAtt(nc, cbcmin_varid, <span class="string">'units'</span>, <span class="string">'None'</span>);
-0092 netcdf.putAtt(nc, cbcmin_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
-0093 
-0094 <span class="comment">% end definitions</span>
-0095 netcdf.endDef(nc);
-0096 
-0097 <span class="comment">% write data</span>
-0098 netcdf.putVar(nc, z0b_varid, z0);
-0099 netcdf.putVar(nc, cbcmin_varid, cbcmin);
-0100 
-0101 <span class="comment">% close file</span>
-0102 netcdf.close(nc);
-0103 
-0104 <span class="keyword">if</span> ftbverbose
-0105   fprintf(<span class="string">'end   : %s\n'</span>, subname)
-0106 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0013 <span class="comment">%               expect values between 3 10^-3 (gravel) and .2 10^-3 (i.e. 0.0002) for mud</span>
+0014 <span class="comment">%   filename  = filename to dump to</span>
+0015 <span class="comment">%   mytitle   = title of the case (set as global attribute)</span>
+0016 <span class="comment">%   cbcmin    = minimum value of CBC (optional, defaults to 0.0018 if</span>
+0017 <span class="comment">%               omitted).</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% OUTPUT:</span>
+0020 <span class="comment">%    netCDF file called `filename'</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% EXAMPLE USAGE</span>
+0023 <span class="comment">%    write_FVCOM_z0(z0field, 'tst_z0.nc', 'z0 tst domain')</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% Author(s):</span>
+0026 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0027 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Revision history</span>
+0030 <span class="comment">%    2012-06-15 Added support for native MATLAB NetCDF routines. Requires</span>
+0031 <span class="comment">%    MATLAB 2010a or higher.</span>
+0032 <span class="comment">%    2016-08-09 Added new variable (cbcmin) to support FVCOM version 4.</span>
+0033 <span class="comment">%    Also tidied up the code a bit.</span>
+0034 <span class="comment">%</span>
+0035 <span class="comment">%==============================================================================</span>
+0036 
+0037 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0038 <span class="keyword">global</span> ftbverbose;
+0039 <span class="keyword">if</span> ftbverbose
+0040     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname);
+0041 <span class="keyword">end</span>
+0042 
+0043 <span class="comment">%------------------------------------------------------------------------------</span>
+0044 <span class="comment">% Parse input arguments</span>
+0045 <span class="comment">%------------------------------------------------------------------------------</span>
+0046 <span class="keyword">if</span> ~exist(<span class="string">'z0'</span>, <span class="string">'var'</span>)
+0047     error(<span class="string">'incorrect usage of write_FVCOM_z0, must provide z0 field'</span>)
+0048 <span class="keyword">end</span>
+0049 <span class="keyword">if</span> ~exist(<span class="string">'filename'</span>, <span class="string">'var'</span>)
+0050     error(<span class="string">'incorrect usage of write_FVCOM_z0, must provide filename'</span>)
+0051 <span class="keyword">end</span>
+0052 <span class="keyword">if</span> ~exist(<span class="string">'mytitle'</span>, <span class="string">'var'</span>)
+0053     error(<span class="string">'incorrect usage of write_FVCOM_z0, must provide title field'</span>)
+0054 <span class="keyword">end</span>
+0055 
+0056 <span class="comment">% check dimensions</span>
+0057 nElems = numel(z0);
+0058 <span class="keyword">if</span> nElems == 0
+0059     error(<span class="string">'Number of elements in z0 is 0.'</span>)
+0060 <span class="keyword">end</span>
+0061 
+0062 <span class="comment">% If we haven't been given a value of cbc min, set it to the example from</span>
+0063 <span class="comment">% Jianzhong Ge.</span>
+0064 <span class="keyword">if</span> nargin == 3
+0065     cbcmin = repmat(0.0018, nElems, 1);
+0066 <span class="keyword">end</span>
+0067 
+0068 <span class="comment">%------------------------------------------------------------------------------</span>
+0069 <span class="comment">% Dump to variables to the netCDF file</span>
+0070 <span class="comment">%------------------------------------------------------------------------------</span>
+0071 <span class="keyword">if</span> ftbverbose
+0072   fprintf(<span class="string">'Dumping to z0 NetCDF file: %s\n'</span>, filename);
+0073   fprintf(<span class="string">'Size of z0 array: %i\n'</span>, nElems);
+0074 <span class="keyword">end</span>
+0075 nc = netcdf.create(filename, <span class="string">'clobber'</span>);
+0076 
+0077 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'title'</span>, mytitle)
+0078 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, <span class="keyword">...</span>
+0079     sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
+0080 
+0081 <span class="comment">% dimensions</span>
+0082 nele_dimid = netcdf.defDim(nc, <span class="string">'nele'</span>, nElems);
+0083 
+0084 <span class="comment">% variables and attributes</span>
+0085 z0b_varid = netcdf.defVar(nc, <span class="string">'z0b'</span>, <span class="string">'NC_FLOAT'</span>, nele_dimid);
+0086 netcdf.putAtt(nc, z0b_varid, <span class="string">'long_name'</span>, <span class="string">'bottom roughness'</span>);
+0087 netcdf.putAtt(nc, z0b_varid, <span class="string">'units'</span>, <span class="string">'m'</span>);
+0088 netcdf.putAtt(nc, z0b_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0089 
+0090 cbcmin_varid=netcdf.defVar(nc, <span class="string">'cbcmin'</span>, <span class="string">'NC_FLOAT'</span>, nele_dimid);
+0091 netcdf.putAtt(nc, cbcmin_varid, <span class="string">'long_name'</span>, <span class="string">'bottom roughness minimum'</span>);
+0092 netcdf.putAtt(nc, cbcmin_varid, <span class="string">'units'</span>, <span class="string">'None'</span>);
+0093 netcdf.putAtt(nc, cbcmin_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0094 
+0095 <span class="comment">% end definitions</span>
+0096 netcdf.endDef(nc);
+0097 
+0098 <span class="comment">% write data</span>
+0099 netcdf.putVar(nc, z0b_varid, z0);
+0100 netcdf.putVar(nc, cbcmin_varid, cbcmin);
+0101 
+0102 <span class="comment">% close file</span>
+0103 netcdf.close(nc);
+0104 
+0105 <span class="keyword">if</span> ftbverbose
+0106   fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0107 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

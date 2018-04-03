@@ -1,0 +1,737 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of interp_coarse_to_obc</title>
+  <meta name="keywords" content="interp_coarse_to_obc">
+  <meta name="description" content="Read an arbitrary 4D field (x, y, z, time) from the coarse struct and">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; interp_coarse_to_obc.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>interp_coarse_to_obc
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Read an arbitrary 4D field (x, y, z, time) from the coarse struct and</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Mobj = interp_coarse_to_obc(Mobj, coarse, varlist) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Read an arbitrary 4D field (x, y, z, time) from the coarse struct and
+ interpolate onto the open boundaries in Mobj.
+
+ function Mobj = interp_coarse_to_obc(Mobj, coarse, varlist)
+
+ DESCRIPTION:
+    Interpolate 4D field values onto the FVCOM open boundaries at all
+    sigma levels.
+
+ INPUT:
+   Mobj    = MATLAB mesh structure which must contain:
+               - Mobj.siglayz - sigma layer depths for all model nodes.
+               - Mobj.siglayzc - sigma layer depths for all model elements.
+               - Mobj.lon, Mobj.lat - node coordinates (lat/long).
+               - Mobj.lonc, Mobj.latc - element coordinates (lat/long).
+               - Mobj.read_obc_nodes - cell array of open boundary nodes.
+               - Mobj.read_obc_elems - cell array of open boundary
+               elements (only if using velocities - use find_nested_region
+               to get these indices).
+               - Mobj.h - water depths at nodes.
+               - Mobj.tri - triangulation table for the grid (nv in FVCOM
+               terms).
+               - Mobj.nObcNodes - number of nodes in each open boundary.
+   coarse   = Struct with coarse data covering the model domain. Unless
+             varlist is specified (see below), all 4D fields will be
+             interpolated onto the open boundaries (1-3D data will be
+             ignored).
+   varlist = [optional] cell array of variable (field) names to use from
+             coarse. If omitted, all fields are processed.
+
+ OUTPUT:
+    Mobj = MATLAB structure with new fields whose names match those given
+    in coarse. The fields have sizes (sum(Mobj.nObcNodes), sigma, time).
+    The time dimension is determined based on the number of time steps in
+    coarse. The ts_time variable is just the input file times in Modified
+    Julian Day.
+
+ EXAMPLE USAGE
+    coarse = get_HYCOM_forcing(Mobj, [51500, 51531]);
+    Mobj = interp_coarse_to_obc(Mobj, coarse, {'u', 'v', 'temperature', 'salinity'})
+
+ Author(s):
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+    2013-09-03 First version based on get_POLCOMS_tsobc.m.
+    2014-04-28 Update interp1 function to use pchip instead of csap as the
+    latter will be removed in a future version of MATLAB and the
+    innumerable warnings were doing my nut in. I checked the output using
+    the new interp1 call and it's identical to the old version. Also
+    update the parallel toolbox stuff for the same reason (future
+    removal).
+    2015-05-21 Remove the old parallel processing bits and replace with
+    the current versions.
+    2016-03-15 Add fallback interpolation to inverse distance weighted if
+    the triangular interpolation fails (which can happen if the points
+    supplied are all in a line, for example).
+    2017-01-27 Subset the coarse data (HYCOM, CMEMS etc.). This yields a
+    significant performance improvement (both in memory usage and time).
+    2017-02-16 Further performance improvement by only using the coarse
+    data in the vicinity of the open boundary nodes.
+    2017-10-12 Fix bug in indexing the open boundary positions which may
+    have caused the interpolation to fail as the identified positions
+    would be too far from the open boundary nodes.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>	Transfer a field from vertices to elements</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="get_HYCOM_tsobc.html" class="code" title="function Mobj = get_HYCOM_tsobc(Mobj, hycom, varlist)">get_HYCOM_tsobc</a>	Read temperature, salinity, u and v data from the HYCOM model output</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = interp_coarse_to_obc(Mobj, coarse, varlist)</a>
+0002 <span class="comment">% Read an arbitrary 4D field (x, y, z, time) from the coarse struct and</span>
+0003 <span class="comment">% interpolate onto the open boundaries in Mobj.</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function Mobj = interp_coarse_to_obc(Mobj, coarse, varlist)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Interpolate 4D field values onto the FVCOM open boundaries at all</span>
+0009 <span class="comment">%    sigma levels.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% INPUT:</span>
+0012 <span class="comment">%   Mobj    = MATLAB mesh structure which must contain:</span>
+0013 <span class="comment">%               - Mobj.siglayz - sigma layer depths for all model nodes.</span>
+0014 <span class="comment">%               - Mobj.siglayzc - sigma layer depths for all model elements.</span>
+0015 <span class="comment">%               - Mobj.lon, Mobj.lat - node coordinates (lat/long).</span>
+0016 <span class="comment">%               - Mobj.lonc, Mobj.latc - element coordinates (lat/long).</span>
+0017 <span class="comment">%               - Mobj.read_obc_nodes - cell array of open boundary nodes.</span>
+0018 <span class="comment">%               - Mobj.read_obc_elems - cell array of open boundary</span>
+0019 <span class="comment">%               elements (only if using velocities - use find_nested_region</span>
+0020 <span class="comment">%               to get these indices).</span>
+0021 <span class="comment">%               - Mobj.h - water depths at nodes.</span>
+0022 <span class="comment">%               - Mobj.tri - triangulation table for the grid (nv in FVCOM</span>
+0023 <span class="comment">%               terms).</span>
+0024 <span class="comment">%               - Mobj.nObcNodes - number of nodes in each open boundary.</span>
+0025 <span class="comment">%   coarse   = Struct with coarse data covering the model domain. Unless</span>
+0026 <span class="comment">%             varlist is specified (see below), all 4D fields will be</span>
+0027 <span class="comment">%             interpolated onto the open boundaries (1-3D data will be</span>
+0028 <span class="comment">%             ignored).</span>
+0029 <span class="comment">%   varlist = [optional] cell array of variable (field) names to use from</span>
+0030 <span class="comment">%             coarse. If omitted, all fields are processed.</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% OUTPUT:</span>
+0033 <span class="comment">%    Mobj = MATLAB structure with new fields whose names match those given</span>
+0034 <span class="comment">%    in coarse. The fields have sizes (sum(Mobj.nObcNodes), sigma, time).</span>
+0035 <span class="comment">%    The time dimension is determined based on the number of time steps in</span>
+0036 <span class="comment">%    coarse. The ts_time variable is just the input file times in Modified</span>
+0037 <span class="comment">%    Julian Day.</span>
+0038 <span class="comment">%</span>
+0039 <span class="comment">% EXAMPLE USAGE</span>
+0040 <span class="comment">%    coarse = get_HYCOM_forcing(Mobj, [51500, 51531]);</span>
+0041 <span class="comment">%    Mobj = interp_coarse_to_obc(Mobj, coarse, {'u', 'v', 'temperature', 'salinity'})</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">% Author(s):</span>
+0044 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">% Revision history</span>
+0047 <span class="comment">%    2013-09-03 First version based on get_POLCOMS_tsobc.m.</span>
+0048 <span class="comment">%    2014-04-28 Update interp1 function to use pchip instead of csap as the</span>
+0049 <span class="comment">%    latter will be removed in a future version of MATLAB and the</span>
+0050 <span class="comment">%    innumerable warnings were doing my nut in. I checked the output using</span>
+0051 <span class="comment">%    the new interp1 call and it's identical to the old version. Also</span>
+0052 <span class="comment">%    update the parallel toolbox stuff for the same reason (future</span>
+0053 <span class="comment">%    removal).</span>
+0054 <span class="comment">%    2015-05-21 Remove the old parallel processing bits and replace with</span>
+0055 <span class="comment">%    the current versions.</span>
+0056 <span class="comment">%    2016-03-15 Add fallback interpolation to inverse distance weighted if</span>
+0057 <span class="comment">%    the triangular interpolation fails (which can happen if the points</span>
+0058 <span class="comment">%    supplied are all in a line, for example).</span>
+0059 <span class="comment">%    2017-01-27 Subset the coarse data (HYCOM, CMEMS etc.). This yields a</span>
+0060 <span class="comment">%    significant performance improvement (both in memory usage and time).</span>
+0061 <span class="comment">%    2017-02-16 Further performance improvement by only using the coarse</span>
+0062 <span class="comment">%    data in the vicinity of the open boundary nodes.</span>
+0063 <span class="comment">%    2017-10-12 Fix bug in indexing the open boundary positions which may</span>
+0064 <span class="comment">%    have caused the interpolation to fail as the identified positions</span>
+0065 <span class="comment">%    would be too far from the open boundary nodes.</span>
+0066 <span class="comment">%</span>
+0067 <span class="comment">%==========================================================================</span>
+0068 
+0069 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0070 
+0071 <span class="keyword">global</span> ftbverbose
+0072 <span class="keyword">if</span> ftbverbose
+0073     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0074 <span class="keyword">end</span>
+0075 
+0076 <span class="keyword">if</span> nargin == 2
+0077     fields = fieldnames(coarse);
+0078 <span class="keyword">else</span>
+0079     <span class="comment">% We always want Depth because we need it to interpolate the vertical</span>
+0080     <span class="comment">% component.</span>
+0081     fields = unique([<span class="string">'Depth'</span>, varlist], <span class="string">'stable'</span>);
+0082 <span class="keyword">end</span>
+0083 
+0084 assert(isfield(coarse, <span class="string">'Depth'</span>), <span class="string">'Require a depth vector to interpolate vertically.'</span>)
+0085 
+0086 <span class="comment">% Find the first 4D array and use it to get the number of vertical levels</span>
+0087 <span class="comment">% and time steps.</span>
+0088 <span class="keyword">for</span> ff = 1:length(fields)
+0089     <span class="keyword">if</span> isfield(coarse.(fields{ff}), <span class="string">'data'</span>) &amp;&amp; ndims(coarse.(fields{ff}).data) &gt; 3
+0090         [nx, ny, nz, nt] = size(coarse.(fields{ff}).data);
+0091         <span class="keyword">break</span>
+0092     <span class="keyword">end</span>
+0093 <span class="keyword">end</span>
+0094 
+0095 <span class="comment">% Use the existing rectangular arrays for the nearest point lookup.</span>
+0096 [lon, lat] = deal(coarse.lon, coarse.lat);
+0097 
+0098 <span class="comment">% Find the indices of all the coarse data which cover the open boundary</span>
+0099 <span class="comment">% nodes given by some distance. This should massively increase performance</span>
+0100 <span class="comment">% by chopping out the vast majority of the data. Find the 6 closest ones</span>
+0101 <span class="comment">% for each node/element.</span>
+0102 
+0103 obc_coarse_idx = [];
+0104 <span class="keyword">if</span> isfield(Mobj, <span class="string">'read_obc_elems'</span>)
+0105     oElems = [Mobj.read_obc_elems{:}];
+0106 <span class="keyword">else</span>
+0107     oElems = [];
+0108 <span class="keyword">end</span>
+0109 oNodes = [Mobj.read_obc_nodes{:}];
+0110 <span class="keyword">for</span> obc_i = 1:length(oNodes)
+0111     <span class="comment">% Find the 20 closest ones.</span>
+0112     [~, h_idx] = sort(sqrt((lon(:) - Mobj.lon(oNodes(obc_i))).^2 + <span class="keyword">...</span>
+0113         (lat(:) - Mobj.lat(oNodes(obc_i))).^2));
+0114     obc_coarse_idx = [obc_coarse_idx; h_idx(1:20)];
+0115 <span class="keyword">end</span>
+0116 <span class="keyword">for</span> obc_i = 1:length(oElems)
+0117     <span class="comment">% Find the 20 closest ones.</span>
+0118     [~, h_idx] = sort(sqrt((lon(:) - Mobj.lonc(oElems(obc_i))).^2 + <span class="keyword">...</span>
+0119         (lat(:) - Mobj.latc(oElems(obc_i))).^2));
+0120     obc_coarse_idx = [obc_coarse_idx; h_idx(1:20)];
+0121 <span class="keyword">end</span>
+0122 obc_coarse_idx = unique(obc_coarse_idx, <span class="string">'stable'</span>);
+0123 [xidx, yidx] = ind2sub(size(lon), obc_coarse_idx);
+0124 
+0125 <span class="comment">% Calculate resolution of parent coarse model</span>
+0126 hdx = max([max(diff(lon(:,1))),max(diff(lat(1,:)))]);
+0127 
+0128 <span class="comment">% Number of sigma layers.</span>
+0129 fz = size(Mobj.siglayz, 2);
+0130 
+0131 <span class="comment">% Make a 3D array of the coarse depths and mask where we don't have data.</span>
+0132 <span class="comment">% This can then be used in the interpolation instead of trying to deal with</span>
+0133 <span class="comment">% this on the fly.</span>
+0134 hdepth = permute(repmat(coarse.Depth.data, [1, nx, ny]), [2, 3, 1]);
+0135 mask = coarse.(fields{ff}).data(:, :, :, 1) &gt; 1.26e29;
+0136 <span class="comment">% Used to use the landmask to check whether to extrapolate data onto land.</span>
+0137 <span class="comment">% Realised this is no longer necessary, so comment this out for future</span>
+0138 <span class="comment">% removal.</span>
+0139 <span class="comment">% hdepth(mask) = nan;</span>
+0140 <span class="comment">% landmask = coarse.(fields{ff}).data(:, :, 1, 1) &gt; 1.26e29;</span>
+0141 
+0142 <span class="comment">% Ignore depth layers in the coarse data which are below the maximum depth</span>
+0143 <span class="comment">% of the open boundary nodes so we don't waste time trying to interpolate</span>
+0144 <span class="comment">% those data. Add a buffer of one layer in case I'm an idiot.</span>
+0145 <span class="keyword">if</span> ~isfield(Mobj, <span class="string">'hc'</span>)
+0146     Mobj.hc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.h, Mobj);
+0147 <span class="keyword">end</span>
+0148 max_obc_depth = max([max(Mobj.h([Mobj.read_obc_nodes{:}])), max(Mobj.hc([Mobj.read_obc_elems{:}]))]);
+0149 [~, zidx] = min(abs(coarse.Depth.data - max_obc_depth));
+0150 zidx = min([zidx + 1, length(coarse.Depth.data)]);
+0151 
+0152 <span class="keyword">if</span> ftbverbose
+0153     tic
+0154 <span class="keyword">end</span>
+0155 <span class="comment">% Only do warnings about removing values outside some ranges once per</span>
+0156 <span class="comment">% variable.</span>
+0157 warned = true(4, 1);
+0158 <span class="keyword">for</span> v = 1:length(fields)
+0159 
+0160     <span class="keyword">if</span> ~(isfield(coarse.(fields{v}), <span class="string">'data'</span>) &amp;&amp; ndims(coarse.(fields{v}).data) &gt; 3)
+0161         <span class="keyword">continue</span>
+0162     <span class="keyword">end</span>
+0163 
+0164     <span class="comment">% Supply FVCOM grid positions depending on whether we're working on the</span>
+0165     <span class="comment">% velocity data (on elements) or anything else (on nodes).</span>
+0166     <span class="keyword">if</span> any(strcmpi(fields{v}, {<span class="string">'u'</span>, <span class="string">'v'</span>}))
+0167         fvlon = Mobj.lonc(oElems);
+0168         fvlat = Mobj.latc(oElems);
+0169         sigma = Mobj.siglayzc;
+0170         grid_ids = oElems;
+0171         <span class="comment">% Number of boundary elements to process</span>
+0172         nf = length(oElems);
+0173 
+0174         <span class="keyword">if</span> ftbverbose
+0175             fprintf(<span class="string">'Variable %s on elements (%d positions)\n'</span>, fields{v}, length(fvlon))
+0176         <span class="keyword">end</span>
+0177     <span class="keyword">else</span>
+0178         <span class="comment">% Make sure the nodes are listed in the same way as in</span>
+0179         <span class="comment">% casename_obc.dat.</span>
+0180         fvlon = Mobj.lon(oNodes);
+0181         fvlat = Mobj.lat(oNodes);
+0182         sigma = Mobj.siglayz;
+0183         grid_ids = oNodes;
+0184         <span class="comment">% Number of boundary nodes</span>
+0185         nf = length(oNodes);
+0186 
+0187         <span class="keyword">if</span> ftbverbose
+0188             fprintf(<span class="string">'Variable %s on nodes (%d positions)\n'</span>, fields{v}, length(fvlon))
+0189         <span class="keyword">end</span>
+0190     <span class="keyword">end</span>
+0191 
+0192     fvtemp = nan(nf, fz, nt); <span class="comment">% FVCOM interpolated data</span>
+0193 
+0194     <span class="keyword">for</span> t = 1:nt
+0195 
+0196         <span class="keyword">if</span> ftbverbose
+0197             fprintf(<span class="string">'%s : %i of %i %s timesteps... \n'</span>, subname, t, nt, fields{v})
+0198         <span class="keyword">end</span>
+0199         <span class="comment">% Get the current 3D array of coarse results. Only load the data we</span>
+0200         <span class="comment">% need in both the vertical and horizontal (i.e. clip to the</span>
+0201         <span class="comment">% locations which cover the open boundary positions only).</span>
+0202         pctemp3 = nan(length(xidx), zidx, 1);
+0203         <span class="keyword">for</span> oidx = 1:length(xidx)
+0204             pctemp3(oidx, :) = coarse.(fields{v}).data(xidx(oidx), yidx(oidx), 1:zidx, t);
+0205         <span class="keyword">end</span>
+0206         <span class="comment">% pcolor(lon(xidx(1):xidx(2), yidx(1):yidx(2)), lat(xidx(1):xidx(2), yidx(1):yidx(2)), pctemp3(:, :, 1)); shading flat; axis('equal', 'tight'); colorbar</span>
+0207         <span class="comment">% hold on</span>
+0208         <span class="comment">% plot(fvlon, fvlat, 'ro')</span>
+0209         <span class="comment">% Remove NaNs since we've assumed later on that everything above</span>
+0210         <span class="comment">% some value is NaN instead (currently 1.26e29). Make the value</span>
+0211         <span class="comment">% that we replace the NaNs with larger since we check for larger</span>
+0212         <span class="comment">% values when deleting invalid values.</span>
+0213         pctemp3(isnan(pctemp3)) = 1.27e29;
+0214 
+0215         <span class="comment">% Preallocate the intermediate results array.</span>
+0216         itempz = nan(nf, nz);
+0217 
+0218         <span class="keyword">for</span> j = 1:nz
+0219             <span class="keyword">if</span> j == zidx + 1
+0220                 <span class="keyword">if</span> ftbverbose
+0221                     fprintf(<span class="string">'   skipping remaining coarse data layers (%d) as their depths are below the FVCOM open boundary depths\n'</span>, nz - zidx)
+0222                 <span class="keyword">end</span>
+0223                 <span class="keyword">continue</span>
+0224             <span class="keyword">elseif</span> j &gt; zidx
+0225                 <span class="keyword">continue</span>
+0226             <span class="keyword">else</span>
+0227                 <span class="keyword">if</span> ftbverbose
+0228                     fprintf(<span class="string">'   coarse data layer %d of %d\n'</span>, j, nz)
+0229                 <span class="keyword">end</span>
+0230             <span class="keyword">end</span>
+0231 
+0232             <span class="comment">% Now extract the relevant layer from the 3D subsets.</span>
+0233             tpctemp2 = pctemp3(:, j);
+0234 
+0235             <span class="comment">% Create and apply a mask to remove values outside the domain.</span>
+0236             <span class="comment">% This inevitably flattens the arrays, but it shouldn't be a</span>
+0237             <span class="comment">% problem since we'll be searching for the closest values in</span>
+0238             <span class="comment">% such a manner as is appropriate for an unstructured grid</span>
+0239             <span class="comment">% (i.e. we're assuming the coarse data is irregularly sampled</span>
+0240             <span class="comment">% and interpolating with a triangulation).</span>
+0241             mask = tpctemp2 &gt; 1.26e29;
+0242 
+0243             <span class="comment">% We need to do some more checks for the data which has been</span>
+0244             <span class="comment">% saved via Python. This is a sort of bounds check to eliminate</span>
+0245             <span class="comment">% unrealistic data. Warn if we actually delete anything.</span>
+0246             <span class="keyword">switch</span> fields{v}
+0247                 <span class="keyword">case</span> <span class="string">'salinity'</span>
+0248                     mask_alt = tpctemp2 &lt; 0;
+0249                     <span class="keyword">if</span> min(mask_alt(:)) == 1 &amp;&amp; warned(1)
+0250                         warned(1) = false;
+0251                         warning(<span class="string">'Removing negative salinities from the coarse data.'</span>)
+0252                     <span class="keyword">end</span>
+0253                 <span class="keyword">case</span> <span class="string">'temperature'</span>
+0254                     mask_alt = tpctemp2 &lt; -20;
+0255                     <span class="keyword">if</span> min(mask_alt(:)) == 1 &amp;&amp; warned(2)
+0256                         warned(2) = false;
+0257                         warning(<span class="string">'Removing temperature values below -20 celsius from the coarse data.'</span>)
+0258                     <span class="keyword">end</span>
+0259                 <span class="keyword">case</span> <span class="string">'ssh'</span>
+0260                     mask_alt = tpctemp2 &lt; -20;
+0261                     <span class="keyword">if</span> min(mask_alt(:)) == 1 &amp;&amp; warned(3)
+0262                         warned(3) = false;
+0263                         warning(<span class="string">'Removing sea surface height values below -20m from the coarse data.'</span>)
+0264                     <span class="keyword">end</span>
+0265                 <span class="keyword">case</span> {<span class="string">'u'</span>, <span class="string">'v'</span>}
+0266                     mask_alt = tpctemp2 &gt; 100 | tpctemp2 &lt; -100 ;
+0267                     <span class="keyword">if</span> min(mask_alt(:)) == 1 &amp;&amp; warned(4)
+0268                         warned(3) = false;
+0269                         warning(<span class="string">'Removing non-tidal velocities above/below +/-100m/s from the coarse data.'</span>)
+0270                     <span class="keyword">end</span>
+0271                 <span class="keyword">otherwise</span>
+0272                     <span class="comment">% Some other variable we won't mask.</span>
+0273                     mask_alt = true(size(tpctemp2));
+0274             <span class="keyword">end</span>
+0275             mask = logical(~(~mask .* ~mask_alt));
+0276             clear mask_alt
+0277             tpctemp2(mask) = [];
+0278 
+0279             <span class="comment">% Also apply the masks to the position arrays so we can't even</span>
+0280             <span class="comment">% find positions outside the domain, effectively meaning if a</span>
+0281             <span class="comment">% value is outside the domain, the nearest value to the current</span>
+0282             <span class="comment">% boundary position will be used.</span>
+0283             <span class="comment">% Extract the longitude and latitude data for the open boundary</span>
+0284             <span class="comment">% region.</span>
+0285             tlon = lon(obc_coarse_idx);
+0286             tlat = lat(obc_coarse_idx);
+0287             tlon(mask) = [];
+0288             tlat(mask) = [];
+0289 
+0290             <span class="comment">% If the coarse depths are now below the maximum depth in the</span>
+0291             <span class="comment">% model domain, we'll have no valid data, so skip the</span>
+0292             <span class="comment">% interpolation and just leave the NaNs in the itempz array.</span>
+0293             <span class="keyword">if</span> isempty(tlon) &amp;&amp; isempty(tlat)
+0294                 <span class="keyword">continue</span>
+0295             <span class="keyword">end</span>
+0296 
+0297             <span class="comment">% Preallocate the intermediate results array.</span>
+0298             itempobc = nan(nf, 1);
+0299 
+0300             <span class="comment">% Speed up the tightest loop with a parallelized loop.</span>
+0301             parfor i = 1:nf
+0302                 fx = fvlon(i);
+0303                 fy = fvlat(i);
+0304 
+0305                 [dist, ii] = sort(sqrt((tlon - fx).^2 + (tlat - fy).^2));
+0306                 <span class="comment">% Get the n nearest positions from coarse data (more?</span>
+0307                 <span class="comment">% fewer?).</span>
+0308                 np = 16;
+0309                 <span class="keyword">if</span> length(ii) &lt; np
+0310                     <span class="comment">% Reset np to the number of points we actually have.</span>
+0311                     np = length(ii);
+0312                 <span class="keyword">end</span>
+0313                 ixy = ii(1:np);
+0314 
+0315                 <span class="comment">% If the minimum distance away is greater than five times</span>
+0316                 <span class="comment">% the coarse grid resolution, skip this point at this</span>
+0317                 <span class="comment">% vertical level. If this is not done, we can be grabbing</span>
+0318                 <span class="comment">% data from a significant distance away</span>
+0319                 <span class="keyword">if</span> min(dist) &gt; 5 * hdx
+0320                     <span class="keyword">continue</span>
+0321                 <span class="keyword">end</span>
+0322 
+0323                 <span class="comment">% Get the variables into static variables for the</span>
+0324                 <span class="comment">% parallelisation.</span>
+0325                 plon = double(tlon(ixy));
+0326                 plat = double(tlat(ixy));
+0327                 ptemp = tpctemp2(ixy);
+0328 
+0329                 <span class="comment">% Use a triangulation to do the horizontal interpolation if</span>
+0330                 <span class="comment">% we have enough points, otherwise take the mean of the two</span>
+0331                 <span class="comment">% values. If the triangulation fails (when the points are</span>
+0332                 <span class="comment">% in a line), do an inverse distance weighed interpolation</span>
+0333                 <span class="comment">% instead</span>
+0334                 <span class="keyword">if</span> length(plon) &lt; 3
+0335                     itempobc(i) = mean(ptemp);
+0336                 <span class="keyword">else</span>
+0337                     <span class="keyword">try</span>
+0338                         tritemp = scatteredInterpolant(plon, plat, ptemp, <span class="string">'natural'</span>, <span class="string">'none'</span>);
+0339                         itempobc(i) = tritemp(fx, fy);
+0340                     <span class="keyword">catch</span> err
+0341                         <span class="keyword">if</span> strcmp(err.identifier, <span class="string">'MATLAB:subsassignnumelmismatch'</span>)
+0342                             warning([<span class="string">'Scatter points failed the'</span>, <span class="keyword">...</span>
+0343                                 <span class="string">' triangular interpolation. Falling'</span>, <span class="keyword">...</span>
+0344                                 <span class="string">' back to inverse distance weighted'</span>, <span class="keyword">...</span>
+0345                                 <span class="string">' interpolation.'</span>])
+0346                             <span class="comment">% Use the inverse distance weighted mean of the</span>
+0347                             <span class="comment">% values for the interpolated value (the values</span>
+0348                             <span class="comment">% are in a straight line and can't be</span>
+0349                             <span class="comment">% interpolated with a triangular</span>
+0350                             <span class="comment">% interpolation).</span>
+0351                             w = 1 ./ sqrt((plon - fx).^2 + (plat - fy).^2);
+0352                             w = w / max(w);
+0353                             itempobc(i) = sum(ptemp .* w) ./ sum(w);
+0354                         <span class="keyword">else</span>
+0355                             error(err.message)
+0356                         <span class="keyword">end</span>
+0357                     <span class="keyword">end</span>
+0358                 <span class="keyword">end</span>
+0359 
+0360                 <span class="comment">% Check we're interpolating at the surface correctly.</span>
+0361                 <span class="comment">% figure(100)</span>
+0362                 <span class="comment">% if i == 1</span>
+0363                 <span class="comment">%     clf</span>
+0364                 <span class="comment">%     pcolor(coarse.lon - (hdx/2), coarse.lat - (hdx/2), coarse.(fields{v}).data(:, :, j, t)); colorbar; hold on</span>
+0365                 <span class="comment">%     shading flat</span>
+0366                 <span class="comment">%     hold on</span>
+0367                 <span class="comment">% end</span>
+0368                 <span class="comment">% plot(tlon(ixy), tlat(ixy), 'ko')</span>
+0369                 <span class="comment">% plot(fx, fy, 'rx')</span>
+0370                 <span class="comment">% plot(tlon(ixy(1)), tlat(ixy(1)), 'gs')</span>
+0371                 <span class="comment">% scatter(tlon(ixy(1)), tlat(ixy(1)), 20, ptemp(1), 'filled', 'markeredgecolor', 'r')</span>
+0372                 <span class="comment">% scatter(fx, fy, 20, ptemp(1), 'filled', 'markeredgecolor', 'g')</span>
+0373                 <span class="comment">% disp(ptemp(1))</span>
+0374                 <span class="comment">% caxis([-0.1, 0.1])</span>
+0375                 <span class="comment">% axis('equal', 'tight')</span>
+0376                 <span class="comment">% axis([fx - 0.5, fx + 0.5, fy - 0.5, fy + 0.5])</span>
+0377                 <span class="comment">% legend('Data', 'Candidate valid', 'FVCOM node', 'Nearest valid', 'Interpolated', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')</span>
+0378                 <span class="comment">% legend('BoxOff')</span>
+0379                 <span class="comment">% pause(0.1)</span>
+0380 
+0381                 <span class="keyword">if</span> isnan(itempobc(i))
+0382                     <span class="comment">% Use the surface layer as the canonical land mask and</span>
+0383                     <span class="comment">% check that the issue here is not just that the</span>
+0384                     <span class="comment">% current open boundary position is shallower than this</span>
+0385                     <span class="comment">% layer's depth. In the case where we're at the</span>
+0386                     <span class="comment">% surface, we always want a value, so use the closest</span>
+0387                     <span class="comment">% value, otherwise we can skip this data and leave it</span>
+0388                     <span class="comment">% as NaN. The vertical interpolation will strip out the</span>
+0389                     <span class="comment">% NaN depths so we shouldn't have any problems from</span>
+0390                     <span class="comment">% that perspective.</span>
+0391 
+0392                     <span class="comment">% I used to check we were on land, but really,</span>
+0393                     <span class="comment">% itempobc(i) will only equal NaN if we're on land for</span>
+0394                     <span class="comment">% this layer. This is only a problem when we're at the</span>
+0395                     <span class="comment">% surface as we always need at least one value to do</span>
+0396                     <span class="comment">% the vertical interpolation. So, check if we're at the</span>
+0397                     <span class="comment">% surface and if so, grab the nearest point. Otherwise,</span>
+0398                     <span class="comment">% leave the NaN in place.</span>
+0399                     <span class="comment">%[~, jj] = min(sqrt((lon(:) - fx).^2 + (lat(:) - fy).^2));</span>
+0400                     <span class="comment">%[ir, ic] = ind2sub(size(lon), jj);</span>
+0401                     <span class="comment">%if landmask(ir, ic) == 1 &amp;&amp; j == 1</span>
+0402                     <span class="keyword">if</span> j == 1
+0403                         <span class="comment">%fprintf('Sea surface or on land (j = %i, lon: %.5f, lat: %.5f)\n', j, lon(ir, ic), lat(ir, ic))</span>
+0404                         itempobc(i) = tpctemp2(ii(1));
+0405 
+0406                         <span class="comment">%clf</span>
+0407                         <span class="comment">%pcolor(coarse.lon, coarse.lat, landmask * 1); colorbar; hold on</span>
+0408                         <span class="comment">%plot(lon(ir, ic), lat(ir, ic), 'ko')</span>
+0409                         <span class="comment">%plot(fx, fy, 'rx')</span>
+0410                         <span class="comment">%plot(tlon(ii(1)), tlat(ii(1)), 'gs')</span>
+0411                         <span class="comment">%axis('square')</span>
+0412                         <span class="comment">%axis([fx - 1.5, fx + 1.5, fy - 1.5, fy + 1.5])</span>
+0413                         <span class="comment">%legend('Land mask', 'Mask test', 'FVCOM node', 'Nearest valid', 'Location', 'NorthOutside', 'Orientation', 'Horizontal')</span>
+0414                         <span class="comment">%legend('BoxOff')</span>
+0415                     <span class="keyword">end</span>
+0416                 <span class="keyword">end</span>
+0417             <span class="keyword">end</span>
+0418 
+0419             <span class="comment">% Put the results in the intermediate array.</span>
+0420             itempz(:, j) = itempobc;
+0421 
+0422         <span class="keyword">end</span>
+0423 
+0424         <span class="comment">% If you want to check the interpolation has worked properly:</span>
+0425         <span class="comment">% xx = repmat(fvlon, [1, nz]);</span>
+0426         <span class="comment">% yy = repmat(fvlat, [1, nz]);</span>
+0427         <span class="comment">% zz = repmat(-coarse.Depth.data, [1, nf])';</span>
+0428         <span class="comment">% dd = nanmax(hdepth, [], 3);</span>
+0429         <span class="comment">% cc = itempz;</span>
+0430         <span class="comment">% mm = ~isnan(cc);</span>
+0431         <span class="comment">% ffx = repmat(fvlon, [1, fz]);</span>
+0432         <span class="comment">% ffy = repmat(fvlat, [1, fz]);</span>
+0433         <span class="comment">% ff = Mobj.siglayz(oNodes, :);</span>
+0434         <span class="comment">% figure(10)</span>
+0435         <span class="comment">% clf</span>
+0436         <span class="comment">% scatter3(xx(mm), yy(mm), zz(mm), 40, cc(mm), 'filled')</span>
+0437         <span class="comment">% hold on</span>
+0438         <span class="comment">% scatter3(coarse.lon(:), coarse.lat(:), -dd(:), 40, 'c.')</span>
+0439         <span class="comment">% scatter3(ffx(:), ffy(:), ff(:), 'k.')</span>
+0440         <span class="comment">% colorbar</span>
+0441         <span class="comment">% zlim([-300, 0])</span>
+0442 
+0443         <span class="comment">% Now we've interpolated in space, we can interpolate the z-values</span>
+0444         <span class="comment">% to the sigma depths.</span>
+0445 
+0446         fvtempz = nan(nf, fz);
+0447         <span class="keyword">for</span> pp = 1:nf
+0448             <span class="comment">% Get the FVCOM depths at this position</span>
+0449             tfz = sigma(grid_ids(pp), :);  <span class="comment">% grid_ids is oNodes or oElems</span>
+0450 
+0451             <span class="comment">% The coarse data is unusual in that the depths are fixed and</span>
+0452             <span class="comment">% data are only saved at the depths shallower than the</span>
+0453             <span class="comment">% bathymetry. As such, we get NaN values below the water depth</span>
+0454             <span class="comment">% and we need to filter those out here.</span>
+0455 
+0456             <span class="comment">% Find the coarse depths which cover the modelled depth range.</span>
+0457             tpz = -coarse.Depth.data;
+0458             <span class="comment">% Mask the coarse depths with the data array at this position.</span>
+0459             mm = isnan(itempz(pp, :));
+0460             tpz(mm) = [];
+0461 
+0462             <span class="comment">% If coarse has a single value, just repeat it across all depth</span>
+0463             <span class="comment">% values.</span>
+0464             <span class="keyword">if</span> length(tpz) == 1
+0465                 fvtempz(pp, :) = repmat(itempz(pp, ~mm), [1, length(tfz)]);
+0466             <span class="keyword">else</span>
+0467                 <span class="comment">% To ensure we get the full vertical expression of the</span>
+0468                 <span class="comment">% vertical profiles, we need to normalise the coarse and</span>
+0469                 <span class="comment">% FVCOM depths to the same range. This is because in</span>
+0470                 <span class="comment">% instances where FVCOM depths are shallower (e.g. in</span>
+0471                 <span class="comment">% coastal regions), if we don't normalise the depths, we</span>
+0472                 <span class="comment">% end up truncating the vertical profile. This approach</span>
+0473                 <span class="comment">% ensures we always use the full vertical profile, but</span>
+0474                 <span class="comment">% we're potentially squeezing it into a smaller depth.</span>
+0475                 A = max(tpz);
+0476                 B = min(tpz);
+0477                 C = max(tfz);
+0478                 D = min(tfz);
+0479                 norm_tpz = (((D - C) * (tpz - A)) / (B - A)) + C;
+0480 
+0481                 <span class="comment">% Get the temperature and salinity values for this position</span>
+0482                 <span class="comment">% and interpolate down the water column (from coarse to</span>
+0483                 <span class="comment">% FVCOM).</span>
+0484                 <span class="keyword">if</span> any(~isnan(norm_tpz))
+0485                     fvtempz(pp, :) = interp1(norm_tpz, itempz(pp, ~mm), tfz, <span class="string">'pchip'</span>, <span class="string">'extrap'</span>);
+0486 
+0487                     <span class="comment">%figure(800);</span>
+0488                     <span class="comment">%clf</span>
+0489                     <span class="comment">%plot(itempz(pp, ~mm), tpz, 'r-o')</span>
+0490                     <span class="comment">%hold on</span>
+0491                     <span class="comment">%plot(fvtempz(pp, :), tfz, 'k-x')</span>
+0492                     <span class="comment">%legend('coarse', 'FVCOM')</span>
+0493                 <span class="keyword">else</span>
+0494                     warning(<span class="string">'Should never see this... '</span>) <span class="comment">% because we test for NaNs when fetching the values.</span>
+0495                     warning(<span class="string">'FVCOM boundary position at %f, %f is outside the coarse domain. Skipping.'</span>, fvlon(pp), fvlat(pp))
+0496                     <span class="keyword">continue</span>
+0497                 <span class="keyword">end</span>
+0498             <span class="keyword">end</span>
+0499         <span class="keyword">end</span>
+0500 
+0501         <span class="comment">% Find and remove NaNs.</span>
+0502         parfor pp = 1:fz
+0503             test = fvtempz(:, pp);
+0504             <span class="keyword">if</span> any(isnan(test))
+0505                 igood = ~isnan(test);
+0506                 ftri = scatteredInterpolant(fvlon(igood), fvlat(igood), test(igood), <span class="string">'nearest'</span>, <span class="string">'nearest'</span>);
+0507                 fvtempz(:, pp) = ftri(fvlon,fvlat);
+0508             <span class="keyword">end</span>
+0509         <span class="keyword">end</span>
+0510 
+0511         <span class="comment">% The horizontally- and vertically-interpolated values in the final</span>
+0512         <span class="comment">% FVCOM results array.</span>
+0513         fvtemp(:, :, t) = fvtempz;
+0514 
+0515         <span class="keyword">if</span> ftbverbose
+0516             fprintf(<span class="string">'done.\n'</span>)
+0517         <span class="keyword">end</span>
+0518     <span class="keyword">end</span>
+0519     <span class="comment">% Dump the data into a temporary structure.</span>
+0520     fvcom.(fields{v}) = fvtemp;
+0521 <span class="keyword">end</span> <span class="comment">% loop through variables</span>
+0522 <span class="keyword">if</span> ftbverbose
+0523     toc
+0524 <span class="keyword">end</span>
+0525 
+0526 fvfields = fieldnames(fvcom);
+0527 <span class="keyword">for</span> s = 1:length(fvfields)
+0528     <span class="keyword">switch</span> fvfields{s}
+0529         <span class="keyword">case</span> <span class="string">'temperature'</span>
+0530             Mobj.temperature = fvcom.temperature;
+0531         <span class="keyword">case</span> <span class="string">'salinity'</span>
+0532             Mobj.salt = fvcom.salinity;
+0533         <span class="keyword">case</span> <span class="string">'u'</span>
+0534             Mobj.u = fvcom.u;
+0535         <span class="keyword">case</span> <span class="string">'v'</span>
+0536             Mobj.v = fvcom.v;
+0537         <span class="keyword">case</span> <span class="string">'density'</span>
+0538             Mobj.rho1 = fvcom.density;
+0539         <span class="keyword">otherwise</span>
+0540             Mobj.(fvfields{s}) = fvcom.(fvfields{s});
+0541             warning(<span class="string">'Unrecognised variable %s. Leaving name as originally given'</span>, fvfields{s})
+0542     <span class="keyword">end</span>
+0543 <span class="keyword">end</span>
+0544 
+0545 <span class="keyword">if</span> isfield(coarse, <span class="string">'time'</span>)
+0546     Mobj.ts_times = coarse.time;
+0547 <span class="keyword">end</span>
+0548 
+0549 <span class="keyword">if</span> ftbverbose
+0550     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0551 <span class="keyword">end</span>
+0552 
+0553 
+0554 <span class="comment">%%</span>
+0555 <span class="comment">% Plot a vertical profile for a boundary node (for my Irish Sea case, this</span>
+0556 <span class="comment">% is one of the ones along the Celtic Sea boundary). Also plot the</span>
+0557 <span class="comment">% distribution of interpolated values over the coarse data. Add the location</span>
+0558 <span class="comment">% of the vertical profile (both FVCOM and coarse) to the plot.</span>
+0559 
+0560 <span class="comment">% nn = 128;  % open boundary index</span>
+0561 <span class="comment">% tt = 1;    % time index</span>
+0562 <span class="comment">% fvz = 1;   % fvcom depth index (currently 1-20)</span>
+0563 <span class="comment">% hyz = 1;   % coarse depth index (1-33)</span>
+0564 <span class="comment">%</span>
+0565 <span class="comment">% % Find the coarse seabed indices</span>
+0566 <span class="comment">% % [~, hyz] = nanmax(hdepth, [], 3);</span>
+0567 <span class="comment">%</span>
+0568 <span class="comment">% % Get the corresponding indices for the coarse data</span>
+0569 <span class="comment">% [~, idx] = min(sqrt((lon(:) - fvlon(nn)).^2 + (lat(:) - fvlat(nn)).^2));</span>
+0570 <span class="comment">% [xidx, yidx] = ind2sub(size(lon), idx);</span>
+0571 <span class="comment">%</span>
+0572 <span class="comment">% zidx = isfinite(hdepth(xidx, yidx, :));</span>
+0573 <span class="comment">% hz = 1:nz;</span>
+0574 <span class="comment">%</span>
+0575 <span class="comment">% % close all</span>
+0576 <span class="comment">%</span>
+0577 <span class="comment">% figure(100)</span>
+0578 <span class="comment">% clf</span>
+0579 <span class="comment">% subplot(2,2,1)</span>
+0580 <span class="comment">% plot(Mobj.temperature(nn, :, tt), Mobj.siglayz(oNodes(nn), :), 'x-')</span>
+0581 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
+0582 <span class="comment">% ylabel('Depth (m)')</span>
+0583 <span class="comment">% title('FVCOM')</span>
+0584 <span class="comment">%</span>
+0585 <span class="comment">% subplot(2,2,2)</span>
+0586 <span class="comment">% plot(squeeze(coarse.temperature.data(xidx, yidx, zidx, tt)), squeeze(-hdepth(xidx, yidx, zidx)), 'rx-')</span>
+0587 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
+0588 <span class="comment">% ylabel('Depth (m)')</span>
+0589 <span class="comment">% title('coarse')</span>
+0590 <span class="comment">%</span>
+0591 <span class="comment">% subplot(2,2,3)</span>
+0592 <span class="comment">% plot(Mobj.temperature(nn, :, tt), 1:fz, 'x-')</span>
+0593 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
+0594 <span class="comment">% ylabel('Array index')</span>
+0595 <span class="comment">% title('FVCOM')</span>
+0596 <span class="comment">%</span>
+0597 <span class="comment">% subplot(2,2,4)</span>
+0598 <span class="comment">% plot(squeeze(coarse.temperature.data(xidx, yidx, zidx, tt)), hz(zidx), 'rx-')</span>
+0599 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
+0600 <span class="comment">% ylabel('Array index')</span>
+0601 <span class="comment">% title('coarse')</span>
+0602 <span class="comment">%</span>
+0603 <span class="comment">% % Figure to check everything's as we'd expect. Plot first time step with</span>
+0604 <span class="comment">% % the coarse surface temperature as a background with the interpolated</span>
+0605 <span class="comment">% % boundary node surface values on top.</span>
+0606 <span class="comment">%</span>
+0607 <span class="comment">% figure(200)</span>
+0608 <span class="comment">% clf</span>
+0609 <span class="comment">% % Plot coarse surface data (last sigma layer)</span>
+0610 <span class="comment">% dx = mean(diff(coarse.lon(:)));</span>
+0611 <span class="comment">% dy = mean(diff(coarse.lat(:)));</span>
+0612 <span class="comment">% temp = coarse.temperature.data(:, :, :, tt);</span>
+0613 <span class="comment">% pcolor(coarse.lon - (dx / 2), coarse.lat - (dy / 2), ...</span>
+0614 <span class="comment">%     squeeze(temp(:, :, hyz)))</span>
+0615 <span class="comment">% shading flat</span>
+0616 <span class="comment">% axis('equal', 'tight')</span>
+0617 <span class="comment">% daspect([1.5, 1, 1])</span>
+0618 <span class="comment">% hold on</span>
+0619 <span class="comment">% % Add the interpolated surface data (first sigma layer)</span>
+0620 <span class="comment">% scatter(Mobj.lon(oNodes), Mobj.lat(oNodes), 40, Mobj.temperature(:, fvz, tt), 'filled', 'MarkerEdgeColor', 'k')</span>
+0621 <span class="comment">% axis([min(Mobj.lon(oNodes)), max(Mobj.lon(oNodes)), min(Mobj.lat(oNodes)), max(Mobj.lat(oNodes))])</span>
+0622 <span class="comment">% caxis([3, 13])</span>
+0623 <span class="comment">% plot(lon(xidx, yidx), lat(xidx, yidx), 'rs') % polcoms is all backwards</span>
+0624 <span class="comment">% plot(Mobj.lon(oNodes(nn)), Mobj.lat(oNodes(nn)), 'wo')</span>
+0625 <span class="comment">% colorbar</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

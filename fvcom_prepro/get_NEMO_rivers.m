@@ -352,72 +352,73 @@ for ff = 1:fv_nr
     % Find the other nodes which are joined to the node we've just found.
     % We don't need the column to get the other nodes in the element, only
     % the row is required.
-    [row, ~] = find(Mobj.tri == coast_nodes(idx));
+    if ~isempty(coast_nodes(idx))
+        [row, ~] = find(Mobj.tri == coast_nodes(idx));
 
-    if length(row) == 1
-        % This is a bad node because it is a part of only one element. The
-        % rivers need two adjacent elements to work reliably (?). So, we
-        % need to repeat the process above until we find a node that's
-        % connected to two elements. We'll try the other nodes in the
-        % current element before searching the rest of the coastline (which
-        % is computationally expensive).
+        if length(row) == 1
+            % This is a bad node because it is a part of only one element. The
+            % rivers need two adjacent elements to work reliably (?). So, we
+            % need to repeat the process above until we find a node that's
+            % connected to two elements. We'll try the other nodes in the
+            % current element before searching the rest of the coastline (which
+            % is computationally expensive).
 
-        % Remove the current node index from the list of candidates (i.e.
-        % leave only the two other nodes in the element).
-        mask = Mobj.tri(row, :) ~= coast_nodes(idx);
-        n_tri = Mobj.tri(row, mask);
+            % Remove the current node index from the list of candidates (i.e.
+            % leave only the two other nodes in the element).
+            mask = Mobj.tri(row, :) ~= coast_nodes(idx);
+            n_tri = Mobj.tri(row, mask);
 
-        % Remove values which aren't coastline values (we don't want to set
-        % the river node to an open water node).
-        n_tri = intersect(n_tri, coast_nodes);
+            % Remove values which aren't coastline values (we don't want to set
+            % the river node to an open water node).
+            n_tri = intersect(n_tri, coast_nodes);
 
-        % Of the remaining nodes in the element, find the closest one to
-        % the original river location (in fvcom_xy).
-        [~, n_idx] = sort(sqrt( ...
-            (nemo_xy(ff, 1) - Mobj.lon(n_tri)).^2 ...
-            + (nemo_xy(ff, 2) - Mobj.lat(n_tri)).^2));
+            % Of the remaining nodes in the element, find the closest one to
+            % the original river location (in fvcom_xy).
+            [~, n_idx] = sort(sqrt( ...
+                (nemo_xy(ff, 1) - Mobj.lon(n_tri)).^2 ...
+                + (nemo_xy(ff, 2) - Mobj.lat(n_tri)).^2));
 
-        [row_2, ~] = find(Mobj.tri == n_tri(n_idx(1)));
-        if length(n_idx) > 1
-            [row_3, ~] = find(Mobj.tri == n_tri(n_idx(2)));
-        end
-        % Closest first
-        if length(row_2) > 1
-            idx = find(coast_nodes == n_tri(n_idx(1)));
-        % The other one (only if we have more than one node to consider).
-        elseif length(n_idx) > 1 && length(row_3) > 1
-            idx = find(coast_nodes == n_tri(n_idx(2)));
-        % OK, we need to search across all the other coastline nodes.
-        else
-            % TODO: Implement a search of all the other coastline nodes.
-            % My testing indicates that we never get here (at least for the
-            % grids I've tested). I'd be interested to see the mesh which
-            % does get here...
-            continue
-        end
-        if ftbverbose
-            fprintf('alternate node ')
-        end
-    end
-
-    % Add it to the list of valid rivers
-    fv_obc(vc) = coast_nodes(idx);
-    fv_names{vc} = nemo.rivers.names{ff};
-    fv_location(vc, :) = nemo.rivers.positions(ff, :);
-
-    % Add the current river data to the relevant arrays.
-    for n = 1:length(names)
-        switch names{n}
-            case {'lon', 'lat', 'LON', 'LAT', 'time'}
+            [row_2, ~] = find(Mobj.tri == n_tri(n_idx(1)));
+            if length(n_idx) > 1
+                [row_3, ~] = find(Mobj.tri == n_tri(n_idx(2)));
+            end
+            % Closest first
+            if length(row_2) > 1
+                idx = find(coast_nodes == n_tri(n_idx(1)));
+            % The other one (only if we have more than one node to consider).
+            elseif length(n_idx) > 1 && length(row_3) > 1
+                idx = find(coast_nodes == n_tri(n_idx(2)));
+            % OK, we need to search across all the other coastline nodes.
+            else
+                % TODO: Implement a search of all the other coastline nodes.
+                % My testing indicates that we never get here (at least for the
+                % grids I've tested). I'd be interested to see the mesh which
+                % does get here...
                 continue
+            end
+            if ftbverbose
+                fprintf('alternate node ')
+            end
         end
-        fv.(names{n})(:, vc) = nemo.rivers.(names{n})(:, ff);
-    end
 
-    if ftbverbose
-        fprintf('added (%f, %f)\n', Mobj.lon(fv_obc(vc)), Mobj.lat(fv_obc(vc)))
-    end
+        % Add it to the list of valid rivers
+        fv_obc(vc) = coast_nodes(idx);
+        fv_names{vc} = nemo.rivers.names{ff};
+        fv_location(vc, :) = nemo.rivers.positions(ff, :);
 
+        % Add the current river data to the relevant arrays.
+        for n = 1:length(names)
+            switch names{n}
+                case {'lon', 'lat', 'LON', 'LAT', 'time'}
+                    continue
+            end
+            fv.(names{n})(:, vc) = nemo.rivers.(names{n})(:, ff);
+        end
+
+        if ftbverbose
+            fprintf('added (%f, %f)\n', Mobj.lon(fv_obc(vc)), Mobj.lat(fv_obc(vc)))
+        end
+    end
 end
 
 % Trim the data arrays for the rivers we've extracted since we preallocated

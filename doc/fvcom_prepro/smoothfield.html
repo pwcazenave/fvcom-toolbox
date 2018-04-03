@@ -100,7 +100,7 @@ This function is called by:
 0029 <span class="comment">%==========================================================================</span>
 0030 
 0031 <span class="keyword">global</span> ftbverbose;
-0032 subname = <span class="string">'smoothfield'</span>;
+0032 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
 0033 <span class="keyword">if</span> ftbverbose
 0034     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
 0035 <span class="keyword">end</span>
@@ -128,12 +128,12 @@ This function is called by:
 0057 <span class="comment">% Smoothing Loops</span>
 0058 <span class="comment">%--------------------------------------------------------------------------</span>
 0059 
-0060 <span class="keyword">for</span> ll = 1:nLoops;
+0060 <span class="keyword">for</span> ll = 1:nLoops
 0061     field = fieldin;
-0062     <span class="keyword">for</span> ii = 1:nPts;
+0062     <span class="keyword">for</span> ii = 1:nPts
 0063           i = SmoothPts(ii);
 0064         ss = 0;
-0065         <span class="keyword">for</span> k = 1:Mobj.ntsn(i);
+0065         <span class="keyword">for</span> k = 1:Mobj.ntsn(i)
 0066             node = Mobj.nbsn(i,k);
 0067             ss = ss + field(node)/real(Mobj.ntsn(i));
 0068         <span class="keyword">end</span>
@@ -145,6 +145,6 @@ This function is called by:
 0074 <span class="keyword">if</span> ftbverbose
 0075     fprintf(<span class="string">'end   : %s\n'</span>, subname)
 0076 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

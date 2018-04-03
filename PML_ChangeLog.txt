@@ -1,5 +1,157 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20180201
+--------
+
+Major update. Added better support for the sediment transport routines in FVCOM. Improved the nesting support.
+
+Thanks to Ricardo Torres, Rory O'Hara Murray and Simon Waldman for their contributions.
+
+README.md
+    Updated with the current release details.
+
+doc:
+    Updated for the latest release.
+
+examples:
+    Add better examples.
+
+fvcom_prepro:
+    add_obc_nodes_list
+        * Code cleanup.
+    add_sponge_nodes_list
+        * Code cleanup.
+    add_stations_list
+        * Code cleanup.
+    add_weights_FVCOM_nested_forcing
+        * Modifies in place the nested file to add weights for the number of levels suitable for types 3.
+    create_nesting_nodes
+        * Create a list of the nesting boundary nodes
+    estimate_ts
+        * Code cleanup.
+    find_nesting_region
+        * Creates a nesting structure array for direct/indirect or weighted nesting.
+    fix_river_nodes
+        * Tweak depth optimisation.
+    get_HYCOM_forcing
+        * Apply scale and offset values correctly.
+    get_HYCOM_tsobc
+        * Use the new interpo_coarse_to_obc generic function. This is now just a wrapper for that.
+    get_NEMO_rivers
+        * Add support for passing a set of river positions separately. Can also drop the NEMO Baltic inputs.
+    hybrid_coordinates
+        * Fix the transition depth optimisation and report the maximum difference between the two sigma level regions.
+    interp_POLCOMS2FVCOMv1
+        * ?
+    interp_coarse_to_obc
+        * New function to take coarse regularly gridded model data and interpolate it onto model open boundaries.
+    make_default_nml
+        * New function to generate a default model namelist struct.
+    make_model_nml_generic
+        * Create a new model run namelist.
+    modify_FVCOM_nested_forcing
+        * Modifies nested file to change weights or number of levels and writes a new nested file.
+    read_admesh_mesh
+        * Read an ADMESH file.
+    read_fabm_variables
+        * For a given configuration, read the ersem variables required to run the model.
+    read_fvcom_bath
+        * Code cleanup.
+    read_sigma
+        * Add support for the hyperbolic tangent function.
+    read_sms_mesh
+        * Add support for spaces in the header.
+    smoothfield
+        * Code cleanup.
+    smoothfield2
+        * Code cleanup.
+    write_FVCOM_bath
+        * Code cleanup.
+    write_FVCOM_bedflag
+        * Code cleanup.
+    write_FVCOM_elevtide
+        * Add ability to pass an array of time strings as well as numeric values.
+    write_FVCOM_nested_forcing
+        * Add new variables needed by FVCOM4.
+    write_FVCOM_restart
+        * Enable compression in the netCDF4 file.
+    write_FVCOM_river_ERSEM
+        * Add missing ERSEM variables (oxygen and alkalinity).
+    write_FVCOM_sediment
+        * Write forcing files for sediment transport.
+    write_FVCOM_sponge
+        * Allow for variable sponge coefficient and radius.
+    write_FVCOM_tsobcERSEM
+        * Removed the reads of the ASCII configuration files (which was very
+        slow) and instead extracted the relevant information from the supplied
+        mesh object. As such, the requirements for the mesh object have
+        changed, so hopefully this won't bite too many people in the behind.
+        Also simplified the allocation of the arrays when uniform values are
+        given (i.e. when in_salt and in_temp are scalars).
+    write_FVCOM_z0
+        * Code cleanup.
+    write_admesh_mesh
+        * Write ADMESH formatted files.
+    write_nesting_bdy_file
+        * Write nested forcing netCDFs.
+    write_model_nml
+        * New function to write out a model namelist.
+
+fvcom_postproc:
+    do_surface_plotMatlabMap
+        * Use the MATLAB mapping toolbox.
+    do_vector_plot_MatlabMap
+        * Use the MATLAB mapping toolbox.
+    do_vector_plot_MatlabMapC
+        * Use the MATLAB mapping toolbox.
+
+utilities:
+    ST_Dstar
+        * Add support for matrices of data.
+    ST_erate
+        * Code cleanup.
+    ST_example
+        * Code cleanup.
+    ST_phi2d
+        * Code cleanup.
+    ST_taucr
+        * Add support for matrices of data.
+    ST_wentworth
+        * Code cleanup.
+    ST_wset
+        * Add support for matrices of data.
+    SW_Density
+        * Code cleanup.
+    Times2Matlab
+        * Function to convert from Times strings to MATLAB dates.
+    distance_along_BC
+        * Calculates the distance from coast along the open boundary nodes.
+    distance_to_coast
+        * Calculates the distance from the coast in all mesh nodes.
+    find_relaxation_boundary
+        * Find the elements which fall along the boundary for a nested configuration.
+    grid_vert_interp
+        * Code cleanup.
+    merge_bathymetry
+        * This script uses a blending function to combine two bathymetry sources over a common spatial extent.
+    mjul2matlab
+        * Convert a Modified Julian date to a Matlab Serial Date.
+    quiverwcolorbar
+        * Generate a quiver plot with arrows colored according to vector magnitude.
+    read_netCDF_FVCOM
+        * Use Times strings for Times instead of numbers as the latter miss some precision.
+    sigma_geo
+        * Support even numbers of levels.
+    sigma_tanh
+        * Fix initialisation of array error and fix an off by one error when generating a sigma distribution.
+    turbine_area_sigma
+        * Add new argument which is the number of sigma layers in the model.
+    write_SMS_2dm
+        * Add ability to write depths to the 2dm file.
+    zero_to_nan
+        * Code cleanup.
+
+
 20160811
 --------
 

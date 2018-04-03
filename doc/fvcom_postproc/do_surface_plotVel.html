@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of do_surface_plotVel</title>
+  <meta name="keywords" content="do_surface_plotVel">
+  <meta name="description" content="reads image and plots tracks or stations">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_postproc</a> &gt; do_surface_plotVel.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_postproc&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>do_surface_plotVel
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>reads image and plots tracks or stations</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Plots]=do_surface_plotVel(plotOPTS,FVCOM) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> reads image and plots tracks or stations</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Plots]=do_surface_plotVel(plotOPTS,FVCOM)</a>
+0002 <span class="comment">% reads image and plots tracks or stations</span>
+0003 m_mappath;
+0004 
+0005 figure(plotOPTS.figure)
+0006 <span class="comment">% set(gcf,'units','normalized','outerposition',[0 0 0.5 0.5])</span>
+0007 clf
+0008 m_proj(<span class="string">'UTM'</span>,<span class="string">'lon'</span>,[plotOPTS.range_lon],<span class="string">'lat'</span>,[plotOPTS.range_lat],<span class="string">'zon'</span>,plotOPTS.zone,<span class="string">'ell'</span>,<span class="string">'grs80'</span>)
+0009 m_grid(<span class="string">'box'</span>,<span class="string">'fancy'</span>)
+0010 set(gca,<span class="string">'FontSize'</span>,18)
+0011 
+0012 m_usercoast(plotOPTS.coastline_file,<span class="string">'Color'</span>,<span class="string">'k'</span>,<span class="string">'LineWidth'</span>,3);
+0013 [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0014 
+0015 
+0016 <span class="keyword">if</span> isfield(plotOPTS,<span class="string">'Time_record'</span>) &amp; isfield(FVCOM,<span class="string">'mattime'</span>)
+0017     <span class="keyword">if</span> length(plotOPTS.Time_record)==1
+0018         [dump,igoodT] = min(abs(plotOPTS.Time_record(1)-FVCOM.mattime));
+0019     <span class="keyword">else</span>
+0020         
+0021         igoodT = find( plotOPTS.Time_record(1) &lt;= FVCOM.mattime &amp;   FVCOM.mattime &lt;=  plotOPTS.Time_record(end) );
+0022     <span class="keyword">end</span>
+0023 <span class="keyword">else</span>
+0024     igoodT=(1:length(FVCOM.(plotOPTS.var_plot)));
+0025 <span class="keyword">end</span>
+0026 
+0027 
+0028 <span class="keyword">for</span> aa=igoodT
+0029     <span class="comment">% plot map with plotOPTS.var_plot</span>
+0030     hold on
+0031     <span class="keyword">try</span>
+0032         <span class="comment">% 3D data (i.e. DYE, pH etc.)</span>
+0033         Plots(1).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0034             <span class="string">'FaceVertexCdata'</span>,squeeze(FVCOM.(plotOPTS.var_plot)(:,plotOPTS.nz_plot,aa)),<span class="keyword">...</span>
+0035             <span class="string">'CDataMapping'</span>,<span class="string">'scaled'</span>,<span class="string">'edgecolor'</span>,<span class="string">'none'</span>,<span class="string">'FaceColor'</span>,<span class="string">'flat'</span>);
+0036 <span class="comment">%          Plots(1).handles=scatter(plotOPTS.mesh.xc,plotOPTS.mesh.yc,20,squeeze(FVCOM.(plotOPTS.var_plot)(:,plotOPTS.nz_plot,aa)),'filled')</span>
+0037     <span class="keyword">catch</span>
+0038         <span class="comment">% 2D data only (i.e. zeta etc.)</span>
+0039         Plots(1).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0040             <span class="string">'FaceVertexCdata'</span>,squeeze(FVCOM.(plotOPTS.var_plot)(:,aa)),<span class="keyword">...</span>
+0041             <span class="string">'CDataMapping'</span>,<span class="string">'scaled'</span>,<span class="string">'edgecolor'</span>,<span class="string">'none'</span>,<span class="string">'FaceColor'</span>,<span class="string">'flat'</span>);
+0042 <span class="comment">%          Plots(1).handles=scatter(plotOPTS.mesh.xc,plotOPTS.mesh.yc,20,squeeze(FVCOM.(plotOPTS.var_plot)(:,aa)),'filled')</span>
+0043     <span class="keyword">end</span>
+0044     fprintf(<span class="string">'Time step %i of %i\n'</span>,aa,length(plotOPTS.Time_record))
+0045     display([<span class="string">'Time '</span>,datestr(FVCOM.mattime(aa))])
+0046     caxis(plotOPTS.clims)
+0047     colorbar
+0048     set(get(colorbar,<span class="string">'YLabel'</span>),<span class="string">'String'</span>,plotOPTS.var_plot,<span class="string">'FontSize'</span>,14)
+0049     <span class="comment">% check if mesh elements are required</span>
+0050     <span class="keyword">if</span> plotOPTS.do_mesh
+0051         <span class="comment">% plot vertices</span>
+0052         [X,Y]=m_ll2xy(plotOPTS.mesh.lon,plotOPTS.mesh.lat,<span class="string">'clip'</span>,<span class="string">'on'</span>);
+0053         patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0054             <span class="string">'EdgeColor'</span>,[0.6 0.6 0.6],<span class="string">'FaceColor'</span>,<span class="string">'none'</span>); hold on
+0055     <span class="keyword">end</span>
+0056     <span class="comment">%----------------------------------------------------------------------</span>
+0057     <span class="comment">% Only in my case it needs adding 6 because proj automatically</span>
+0058     <span class="comment">% determines a reference long in strides of 6deg while m_map doesn't</span>
+0059     <span class="comment">%----------------------------------------------------------------------</span>
+0060    m_usercoast(plotOPTS.coastline_file,<span class="string">'patch'</span>,[0.6, 0.6, 0.6]);
+0061    pause(plotOPTS.pause)
+0062 <span class="comment">%     if aa~=length(plotOPTS.Time_record)</span>
+0063 <span class="comment">%         delete(Plots(1).handles)</span>
+0064 <span class="comment">%     end</span>
+0065 <span class="keyword">end</span>
+0066 
+0067 <span class="keyword">return</span>
+0068</pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

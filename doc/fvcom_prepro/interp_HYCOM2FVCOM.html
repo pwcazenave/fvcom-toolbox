@@ -201,7 +201,7 @@ This function is called by:
 0094     start_date(5), start_date(6));
 0095 [~, tidx] = min(abs(hycom.time - stime));
 0096 
-0097 <span class="keyword">for</span> vv = 1:length(varlist);
+0097 <span class="keyword">for</span> vv = 1:length(varlist)
 0098 
 0099     currvar = varlist{vv};
 0100 
@@ -240,191 +240,195 @@ This function is called by:
 0133             <span class="keyword">end</span>
 0134 
 0135             [hx, hy, ~, ~] = size(hycom.(currvar).data);
-0136             hdepth = permute(repmat(-hycom.Depth.data, [1, hx, hy]), [2, 3, 1]);
-0137 
-0138             <span class="comment">% Make a land mask of the HYCOM domain (based on the surface</span>
-0139             <span class="comment">% layer from the first time step).</span>
-0140             landmask = hycom.(currvar).data(:, :, 1, 1) &gt; 1.26e29;
+0136             <span class="keyword">if</span> iscolumn(hycom.Depth.data)
+0137                 hdepth = permute(repmat(-hycom.Depth.data, [1, hx, hy]), [2, 3, 1]);
+0138             <span class="keyword">else</span>
+0139                 hdepth = -hycom.Depth.data;
+0140             <span class="keyword">end</span>
 0141 
-0142             <span class="comment">% Create a mask of all the layers which are deeper than the</span>
-0143             <span class="comment">% water depth.</span>
-0144             zmask = hycom.(currvar).data(:, :, :, 1) &gt; 1.26e29;
+0142             <span class="comment">% Make a land mask of the HYCOM domain (based on the surface</span>
+0143             <span class="comment">% layer from the first time step).</span>
+0144             landmask = hycom.(currvar).data(:, :, 1, 1) &gt; 1.26e29;
 0145 
-0146             <span class="comment">% Set invalid depths to NaN.</span>
-0147             hdepth(zmask) = nan;
-0148 
-0149             ftbverbose = false;
-0150             hyinterp.(currvar) = grid_vert_interp(Mobj, <span class="keyword">...</span>
-0151                 hycom.lon, hycom.lat, <span class="keyword">...</span>
-0152                 squeeze(hycom.(currvar).data(:, :, :, tidx)), <span class="keyword">...</span>
-0153                 hdepth, landmask, <span class="string">'extrapolate'</span>, [flon, flat]);
-0154             ftbverbose = true;
-0155 
-0156             <span class="comment">%--------------------------------------------------------------</span>
-0157             <span class="comment">% Now we have vertically interpolated data, we can interpolate</span>
-0158             <span class="comment">% each sigma layer onto the FVCOM unstructured grid ready to</span>
-0159             <span class="comment">% write out to NetCDF. We'll use the triangular interpolation</span>
-0160             <span class="comment">% in MATLAB with the natural method (gives pretty good results,</span>
-0161             <span class="comment">% at least qualitatively).</span>
-0162             <span class="comment">%--------------------------------------------------------------</span>
-0163 
-0164             <span class="keyword">if</span> ftbverbose
-0165                 fprintf(<span class="string">'horizontally... '</span>)
-0166             <span class="keyword">end</span>
+0146             <span class="comment">% Create a mask of all the layers which are deeper than the</span>
+0147             <span class="comment">% water depth.</span>
+0148             zmask = hycom.(currvar).data(:, :, :, 1) &gt; 1.26e29;
+0149 
+0150             <span class="comment">% Set invalid depths to NaN.</span>
+0151             hdepth(zmask) = nan;
+0152 
+0153             ftbverbose = false;
+0154             hyinterp.(currvar) = grid_vert_interp(Mobj, <span class="keyword">...</span>
+0155                 hycom.lon, hycom.lat, <span class="keyword">...</span>
+0156                 squeeze(hycom.(currvar).data(:, :, :, tidx)), <span class="keyword">...</span>
+0157                 hdepth, landmask, <span class="string">'extrapolate'</span>, [flon, flat]);
+0158             ftbverbose = true;
+0159 
+0160             <span class="comment">%--------------------------------------------------------------</span>
+0161             <span class="comment">% Now we have vertically interpolated data, we can interpolate</span>
+0162             <span class="comment">% each sigma layer onto the FVCOM unstructured grid ready to</span>
+0163             <span class="comment">% write out to NetCDF. We'll use the triangular interpolation</span>
+0164             <span class="comment">% in MATLAB with the natural method (gives pretty good results,</span>
+0165             <span class="comment">% at least qualitatively).</span>
+0166             <span class="comment">%--------------------------------------------------------------</span>
 0167 
-0168             hytempz = hyinterp.(currvar);
-0169 
-0170             tic
-0171             parfor zi = 1:fz
-0172                 <span class="comment">% Get the current depth layer's data and mask out the NaN</span>
-0173                 <span class="comment">% values.</span>
-0174                 hytempzcurrent = hytempz(:, :, zi);
-0175 
-0176                 <span class="comment">% Strip out NaNs so we can extrapolate with TriScatteredInterp.</span>
-0177                 nanmask = ~isnan(hytempzcurrent);
-0178                 plonclean = plon(nanmask);
-0179                 platclean = plat(nanmask);
-0180                 hytempzclean = hytempzcurrent(nanmask);
-0181                 <span class="comment">% Set up the interpolation object and interpolate the</span>
-0182                 <span class="comment">% current variable to the FVCOM unstructured grid.</span>
-0183                 ft = scatteredInterpolant(plonclean, platclean, <span class="keyword">...</span>
-0184                     hytempzclean, <span class="string">'natural'</span>, <span class="string">'nearest'</span>);
-0185                 fvtemp(:, zi) = ft(flon, flat);
-0186             <span class="keyword">end</span>
-0187 
-0188             <span class="comment">% Unfortunately, TriScatteredInterp won't extrapolate,</span>
-0189             <span class="comment">% returning instead NaNs outside the original data's extents.</span>
-0190             <span class="comment">% So, for each NaN position, find the nearest non-NaN value and</span>
-0191             <span class="comment">% use that instead. The order in which the NaN-nodes are found</span>
-0192             <span class="comment">% will determine the spatial pattern of the extrapolation.</span>
-0193 
-0194             <span class="comment">% We can assume that all layers will have NaNs in the same</span>
-0195             <span class="comment">% place (horizontally), so just use the surface layer (1) for</span>
-0196             <span class="comment">% the identification of NaNs. Also store the finite values so</span>
-0197             <span class="comment">% we can find the nearest real value to the current NaN node</span>
-0198             <span class="comment">% and use its temperature and salinity values.</span>
-0199             fvidx = 1:fn;
-0200             fvnanidx = fvidx(isnan(fvtemp(:, 1)));
-0201             fvfinidx = fvidx(~isnan(fvtemp(:, 1)));
-0202 
-0203             <span class="keyword">for</span> ni = 1:length(fvnanidx)
-0204                 <span class="comment">% Find the nearest non-nan data (temp, salinity, u or v)</span>
-0205                 <span class="comment">% value.</span>
-0206                 xx = flon(fvnanidx(ni));
-0207                 yy = flat(fvnanidx(ni));
-0208                 [~, di] = min(sqrt((flon(fvfinidx) - xx).^2 + (flat(fvfinidx) - yy).^2));
-0209                 fvtemp(fvnanidx(ni), :) = fvtemp(fvfinidx(di), :);
-0210             <span class="keyword">end</span>
-0211 
-0212             clear plon plat flon flat ptempz
-0213 
-0214             Mobj.restart.(currvar) = fvtemp;
+0168             <span class="keyword">if</span> ftbverbose
+0169                 fprintf(<span class="string">'horizontally... '</span>)
+0170             <span class="keyword">end</span>
+0171 
+0172             hytempz = hyinterp.(currvar);
+0173 
+0174             tic
+0175             parfor zi = 1:fz
+0176                 <span class="comment">% Get the current depth layer's data and mask out the NaN</span>
+0177                 <span class="comment">% values.</span>
+0178                 hytempzcurrent = hytempz(:, :, zi);
+0179 
+0180                 <span class="comment">% Strip out NaNs so we can extrapolate with TriScatteredInterp.</span>
+0181                 nanmask = ~isnan(hytempzcurrent);
+0182                 plonclean = plon(nanmask);
+0183                 platclean = plat(nanmask);
+0184                 hytempzclean = hytempzcurrent(nanmask);
+0185                 <span class="comment">% Set up the interpolation object and interpolate the</span>
+0186                 <span class="comment">% current variable to the FVCOM unstructured grid.</span>
+0187                 ft = scatteredInterpolant(plonclean, platclean, <span class="keyword">...</span>
+0188                     hytempzclean, <span class="string">'natural'</span>, <span class="string">'nearest'</span>);
+0189                 fvtemp(:, zi) = ft(flon, flat);
+0190             <span class="keyword">end</span>
+0191 
+0192             <span class="comment">% Unfortunately, TriScatteredInterp won't extrapolate,</span>
+0193             <span class="comment">% returning instead NaNs outside the original data's extents.</span>
+0194             <span class="comment">% So, for each NaN position, find the nearest non-NaN value and</span>
+0195             <span class="comment">% use that instead. The order in which the NaN-nodes are found</span>
+0196             <span class="comment">% will determine the spatial pattern of the extrapolation.</span>
+0197 
+0198             <span class="comment">% We can assume that all layers will have NaNs in the same</span>
+0199             <span class="comment">% place (horizontally), so just use the surface layer (1) for</span>
+0200             <span class="comment">% the identification of NaNs. Also store the finite values so</span>
+0201             <span class="comment">% we can find the nearest real value to the current NaN node</span>
+0202             <span class="comment">% and use its temperature and salinity values.</span>
+0203             fvidx = 1:fn;
+0204             fvnanidx = fvidx(isnan(fvtemp(:, 1)));
+0205             fvfinidx = fvidx(~isnan(fvtemp(:, 1)));
+0206 
+0207             <span class="keyword">for</span> ni = 1:length(fvnanidx)
+0208                 <span class="comment">% Find the nearest non-nan data (temp, salinity, u or v)</span>
+0209                 <span class="comment">% value.</span>
+0210                 xx = flon(fvnanidx(ni));
+0211                 yy = flat(fvnanidx(ni));
+0212                 [~, di] = min(sqrt((flon(fvfinidx) - xx).^2 + (flat(fvfinidx) - yy).^2));
+0213                 fvtemp(fvnanidx(ni), :) = fvtemp(fvfinidx(di), :);
+0214             <span class="keyword">end</span>
 0215 
-0216             te = toc;
+0216             clear plon plat flon flat ptempz
 0217 
-0218             <span class="keyword">if</span> ftbverbose
-0219                 fprintf(<span class="string">'done. (elapsed time = %.2f seconds)\n'</span>, te)
-0220             <span class="keyword">end</span>
+0218             Mobj.restart.(currvar) = fvtemp;
+0219 
+0220             te = toc;
 0221 
-0222     <span class="keyword">end</span>
-0223 <span class="keyword">end</span>
-0224 
-0225 <span class="comment">% Close the MATLAB pool if we opened it.</span>
-0226 <span class="keyword">if</span> wasOpened
-0227     pool.delete
-0228 <span class="keyword">end</span>
-0229 
-0230 <span class="keyword">if</span> ftbverbose
-0231     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0222             <span class="keyword">if</span> ftbverbose
+0223                 fprintf(<span class="string">'done. (elapsed time = %.2f seconds)\n'</span>, te)
+0224             <span class="keyword">end</span>
+0225 
+0226     <span class="keyword">end</span>
+0227 <span class="keyword">end</span>
+0228 
+0229 <span class="comment">% Close the MATLAB pool if we opened it.</span>
+0230 <span class="keyword">if</span> wasOpened
+0231     pool.delete
 0232 <span class="keyword">end</span>
 0233 
-0234 <span class="comment">%% Debugging figure</span>
-0235 
-0236 <span class="comment">% close all</span>
-0237 <span class="comment">%</span>
-0238 <span class="comment">% ri = 85; % column index</span>
-0239 <span class="comment">% ci = 95; % row index</span>
-0240 <span class="comment">%</span>
-0241 <span class="comment">% [~, idx] = min(sqrt((Mobj.lon - lon(ri, ci)).^2 + (Mobj.lat - lat(ri, ci)).^2));</span>
-0242 <span class="comment">%</span>
-0243 <span class="comment">% % Vertical profiles</span>
-0244 <span class="comment">% figure</span>
-0245 <span class="comment">% clf</span>
+0234 <span class="keyword">if</span> ftbverbose
+0235     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0236 <span class="keyword">end</span>
+0237 
+0238 <span class="comment">%% Debugging figure</span>
+0239 
+0240 <span class="comment">% close all</span>
+0241 <span class="comment">%</span>
+0242 <span class="comment">% ri = 85; % column index</span>
+0243 <span class="comment">% ci = 95; % row index</span>
+0244 <span class="comment">%</span>
+0245 <span class="comment">% [~, idx] = min(sqrt((Mobj.lon - lon(ri, ci)).^2 + (Mobj.lat - lat(ri, ci)).^2));</span>
 0246 <span class="comment">%</span>
-0247 <span class="comment">% % The top row shows the temperature/salinity values as plotted against</span>
-0248 <span class="comment">% % index (i.e. position in the array). I had thought POLCOMS stored its data</span>
-0249 <span class="comment">% % from seabed to sea surface, but looking at the NetCDF files in ncview,</span>
-0250 <span class="comment">% % it's clear that the data are in fact stored surface to seabed (like</span>
-0251 <span class="comment">% % FVCOM). As such, the two plots in the top row should be upside down (i.e.</span>
-0252 <span class="comment">% % surface values at the bottom of the plot). The two lower rows should have</span>
-0253 <span class="comment">% % three lines which all match: the raw POLCOMS data, the POLCOMS data for</span>
-0254 <span class="comment">% % the current time step (i.e. that in 'temperature' and 'salinity') and the</span>
-0255 <span class="comment">% % interpolated FVCOM data against depth.</span>
-0256 <span class="comment">% %</span>
-0257 <span class="comment">% % Also worth noting, the pc.*.data have the rows and columns flipped, so</span>
-0258 <span class="comment">% % (ci, ri) in pc.*.data and (ri, ci) in 'temperature', 'salinity' and</span>
-0259 <span class="comment">% % 'depth'. Needless to say, the two lines in the lower plots should</span>
-0260 <span class="comment">% % overlap.</span>
-0261 <span class="comment">%</span>
-0262 <span class="comment">% subplot(2,2,1)</span>
-0263 <span class="comment">% plot(squeeze(pc.ETWD.data(ci, ri, :, tidx)), 1:size(depth, 3), 'rx:')</span>
-0264 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
-0265 <span class="comment">% ylabel('Array index')</span>
-0266 <span class="comment">% title('Array Temperature')</span>
-0267 <span class="comment">%</span>
-0268 <span class="comment">% subplot(2,2,2)</span>
-0269 <span class="comment">% plot(squeeze(pc.x1XD.data(ci, ri, :, tidx)), 1:size(depth, 3), 'rx:')</span>
-0270 <span class="comment">% xlabel('Salinity')</span>
-0271 <span class="comment">% ylabel('Array index')</span>
-0272 <span class="comment">% title('Array Salinity')</span>
-0273 <span class="comment">%</span>
-0274 <span class="comment">% subplot(2,2,3)</span>
-0275 <span class="comment">% % Although POLCOMS stores its temperature values from seabed to surface,</span>
-0276 <span class="comment">% % the depths are stored surface to seabed. Nice. Flip the</span>
-0277 <span class="comment">% % temperature/salinity data accordingly. The lines here should match one</span>
-0278 <span class="comment">% % another.</span>
-0279 <span class="comment">% plot(squeeze(pc.ETWD.data(ci, ri, :, tidx)), squeeze(pc.depth.data(ci, ri, :, tidx)), 'rx-')</span>
-0280 <span class="comment">% hold on</span>
-0281 <span class="comment">% plot(squeeze(temperature(ri, ci, :)), squeeze(depth(ri, ci, :)), '.:')</span>
-0282 <span class="comment">% % Add the equivalent interpolated FVCOM data point</span>
-0283 <span class="comment">% plot(fvtemp(idx, :), Mobj.siglayz(idx, :), 'g.-')</span>
-0284 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
-0285 <span class="comment">% ylabel('Depth (m)')</span>
-0286 <span class="comment">% title('Depth Temperature')</span>
-0287 <span class="comment">% legend('pc', 'temp', 'fvcom', 'location', 'north')</span>
-0288 <span class="comment">% legend('boxoff')</span>
-0289 <span class="comment">%</span>
-0290 <span class="comment">% subplot(2,2,4)</span>
-0291 <span class="comment">% % Although POLCOMS stores its temperature values from seabed to surface,</span>
-0292 <span class="comment">% % the depths are stored surface to seabed. Nice. Flip the</span>
-0293 <span class="comment">% % temperature/salinity data accordingly. The lines here should match one</span>
-0294 <span class="comment">% % another.</span>
-0295 <span class="comment">% plot(squeeze(pc.x1XD.data(ci, ri, :, tidx)), squeeze(pc.depth.data(ci, ri, :, tidx)), 'rx-')</span>
-0296 <span class="comment">% hold on</span>
-0297 <span class="comment">% plot(squeeze(salinity(ri, ci, :)), squeeze(depth(ri, ci, :)), '.:')</span>
-0298 <span class="comment">% % Add the equivalent interpolated FVCOM data point</span>
-0299 <span class="comment">% plot(fvsalt(idx, :), Mobj.siglayz(idx, :), 'g.-')</span>
-0300 <span class="comment">% xlabel('Salinity')</span>
-0301 <span class="comment">% ylabel('Depth (m)')</span>
-0302 <span class="comment">% title('Depth Salinity')</span>
-0303 <span class="comment">% legend('pc', 'salt', 'fvcom', 'location', 'north')</span>
-0304 <span class="comment">% legend('boxoff')</span>
-0305 <span class="comment">%</span>
-0306 <span class="comment">% %% Plot the sample location</span>
-0307 <span class="comment">% figure</span>
-0308 <span class="comment">% dx = mean(diff(pc.lon.data));</span>
-0309 <span class="comment">% dy = mean(diff(pc.lat.data));</span>
-0310 <span class="comment">% z = depth(:, :, end); % water depth (bottom layer depth)</span>
-0311 <span class="comment">% z(mask) = 0; % clear out nonsense values</span>
-0312 <span class="comment">% pcolor(lon - (dx / 2), lat - (dy / 2), z)</span>
-0313 <span class="comment">% shading flat</span>
-0314 <span class="comment">% axis('equal', 'tight')</span>
-0315 <span class="comment">% daspect([1.5, 1, 1])</span>
-0316 <span class="comment">% colorbar</span>
-0317 <span class="comment">% caxis([-150, 0])</span>
-0318 <span class="comment">% hold on</span>
-0319 <span class="comment">% plot(lon(ri, ci), lat(ri, ci), 'ko', 'MarkerFaceColor', 'w')</span>
-0320</pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0247 <span class="comment">% % Vertical profiles</span>
+0248 <span class="comment">% figure</span>
+0249 <span class="comment">% clf</span>
+0250 <span class="comment">%</span>
+0251 <span class="comment">% % The top row shows the temperature/salinity values as plotted against</span>
+0252 <span class="comment">% % index (i.e. position in the array). I had thought POLCOMS stored its data</span>
+0253 <span class="comment">% % from seabed to sea surface, but looking at the NetCDF files in ncview,</span>
+0254 <span class="comment">% % it's clear that the data are in fact stored surface to seabed (like</span>
+0255 <span class="comment">% % FVCOM). As such, the two plots in the top row should be upside down (i.e.</span>
+0256 <span class="comment">% % surface values at the bottom of the plot). The two lower rows should have</span>
+0257 <span class="comment">% % three lines which all match: the raw POLCOMS data, the POLCOMS data for</span>
+0258 <span class="comment">% % the current time step (i.e. that in 'temperature' and 'salinity') and the</span>
+0259 <span class="comment">% % interpolated FVCOM data against depth.</span>
+0260 <span class="comment">% %</span>
+0261 <span class="comment">% % Also worth noting, the pc.*.data have the rows and columns flipped, so</span>
+0262 <span class="comment">% % (ci, ri) in pc.*.data and (ri, ci) in 'temperature', 'salinity' and</span>
+0263 <span class="comment">% % 'depth'. Needless to say, the two lines in the lower plots should</span>
+0264 <span class="comment">% % overlap.</span>
+0265 <span class="comment">%</span>
+0266 <span class="comment">% subplot(2,2,1)</span>
+0267 <span class="comment">% plot(squeeze(pc.ETWD.data(ci, ri, :, tidx)), 1:size(depth, 3), 'rx:')</span>
+0268 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
+0269 <span class="comment">% ylabel('Array index')</span>
+0270 <span class="comment">% title('Array Temperature')</span>
+0271 <span class="comment">%</span>
+0272 <span class="comment">% subplot(2,2,2)</span>
+0273 <span class="comment">% plot(squeeze(pc.x1XD.data(ci, ri, :, tidx)), 1:size(depth, 3), 'rx:')</span>
+0274 <span class="comment">% xlabel('Salinity')</span>
+0275 <span class="comment">% ylabel('Array index')</span>
+0276 <span class="comment">% title('Array Salinity')</span>
+0277 <span class="comment">%</span>
+0278 <span class="comment">% subplot(2,2,3)</span>
+0279 <span class="comment">% % Although POLCOMS stores its temperature values from seabed to surface,</span>
+0280 <span class="comment">% % the depths are stored surface to seabed. Nice. Flip the</span>
+0281 <span class="comment">% % temperature/salinity data accordingly. The lines here should match one</span>
+0282 <span class="comment">% % another.</span>
+0283 <span class="comment">% plot(squeeze(pc.ETWD.data(ci, ri, :, tidx)), squeeze(pc.depth.data(ci, ri, :, tidx)), 'rx-')</span>
+0284 <span class="comment">% hold on</span>
+0285 <span class="comment">% plot(squeeze(temperature(ri, ci, :)), squeeze(depth(ri, ci, :)), '.:')</span>
+0286 <span class="comment">% % Add the equivalent interpolated FVCOM data point</span>
+0287 <span class="comment">% plot(fvtemp(idx, :), Mobj.siglayz(idx, :), 'g.-')</span>
+0288 <span class="comment">% xlabel('Temperature (^{\circ}C)')</span>
+0289 <span class="comment">% ylabel('Depth (m)')</span>
+0290 <span class="comment">% title('Depth Temperature')</span>
+0291 <span class="comment">% legend('pc', 'temp', 'fvcom', 'location', 'north')</span>
+0292 <span class="comment">% legend('boxoff')</span>
+0293 <span class="comment">%</span>
+0294 <span class="comment">% subplot(2,2,4)</span>
+0295 <span class="comment">% % Although POLCOMS stores its temperature values from seabed to surface,</span>
+0296 <span class="comment">% % the depths are stored surface to seabed. Nice. Flip the</span>
+0297 <span class="comment">% % temperature/salinity data accordingly. The lines here should match one</span>
+0298 <span class="comment">% % another.</span>
+0299 <span class="comment">% plot(squeeze(pc.x1XD.data(ci, ri, :, tidx)), squeeze(pc.depth.data(ci, ri, :, tidx)), 'rx-')</span>
+0300 <span class="comment">% hold on</span>
+0301 <span class="comment">% plot(squeeze(salinity(ri, ci, :)), squeeze(depth(ri, ci, :)), '.:')</span>
+0302 <span class="comment">% % Add the equivalent interpolated FVCOM data point</span>
+0303 <span class="comment">% plot(fvsalt(idx, :), Mobj.siglayz(idx, :), 'g.-')</span>
+0304 <span class="comment">% xlabel('Salinity')</span>
+0305 <span class="comment">% ylabel('Depth (m)')</span>
+0306 <span class="comment">% title('Depth Salinity')</span>
+0307 <span class="comment">% legend('pc', 'salt', 'fvcom', 'location', 'north')</span>
+0308 <span class="comment">% legend('boxoff')</span>
+0309 <span class="comment">%</span>
+0310 <span class="comment">% %% Plot the sample location</span>
+0311 <span class="comment">% figure</span>
+0312 <span class="comment">% dx = mean(diff(pc.lon.data));</span>
+0313 <span class="comment">% dy = mean(diff(pc.lat.data));</span>
+0314 <span class="comment">% z = depth(:, :, end); % water depth (bottom layer depth)</span>
+0315 <span class="comment">% z(mask) = 0; % clear out nonsense values</span>
+0316 <span class="comment">% pcolor(lon - (dx / 2), lat - (dy / 2), z)</span>
+0317 <span class="comment">% shading flat</span>
+0318 <span class="comment">% axis('equal', 'tight')</span>
+0319 <span class="comment">% daspect([1.5, 1, 1])</span>
+0320 <span class="comment">% colorbar</span>
+0321 <span class="comment">% caxis([-150, 0])</span>
+0322 <span class="comment">% hold on</span>
+0323 <span class="comment">% plot(lon(ri, ci), lat(ri, ci), 'ko', 'MarkerFaceColor', 'w')</span>
+0324</pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

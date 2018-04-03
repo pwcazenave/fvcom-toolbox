@@ -1,0 +1,664 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of make_default_nml</title>
+  <meta name="keywords" content="make_default_nml">
+  <meta name="description" content="Generate a model namelist with the default values from FVCOM.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; make_default_nml.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>make_default_nml
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Generate a model namelist with the default values from FVCOM.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [fmt, nml] = make_default_nml(conf) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Generate a model namelist with the default values from FVCOM.
+
+ [fmt, nml] = make_default_nml(conf)
+
+ INPUTS
+    conf - struct with the following fields
+        version: FVCOM version (e.g. 'ver4.0')
+        casename: model casename
+
+ OUTPUT
+    fmt - struct with the number format for each field when writing 
+          the namelist.
+    nml - struct with fields for each namelist section.
+
+ Revision history
+    2017-01-12 First version.
+
+ Author(s)
+    Ricardo Torres (Plymouth Marine Laboratory)
+    Pierre Cazenave (Plymouth Marine Laboratory)</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="make_model_nml_generic.html" class="code" title="function make_model_nml_generic(inputConf,yy,mm)">make_model_nml_generic</a>	script to create the model run namelist</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [fmt, nml] = make_default_nml(conf)</a>
+0002 <span class="comment">% Generate a model namelist with the default values from FVCOM.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% [fmt, nml] = make_default_nml(conf)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% INPUTS</span>
+0007 <span class="comment">%    conf - struct with the following fields</span>
+0008 <span class="comment">%        version: FVCOM version (e.g. 'ver4.0')</span>
+0009 <span class="comment">%        casename: model casename</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% OUTPUT</span>
+0012 <span class="comment">%    fmt - struct with the number format for each field when writing</span>
+0013 <span class="comment">%          the namelist.</span>
+0014 <span class="comment">%    nml - struct with fields for each namelist section.</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% Revision history</span>
+0017 <span class="comment">%    2017-01-12 First version.</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% Author(s)</span>
+0020 <span class="comment">%    Ricardo Torres (Plymouth Marine Laboratory)</span>
+0021 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0022         
+0023 nml.NML_CASE = [];
+0024 nml.NML_CASE.CASE_TITLE=[<span class="string">'FVCOM '</span>, conf.version, <span class="string">' code'</span>] ;
+0025 nml.NML_CASE.TIMEZONE=<span class="string">'UTC'</span>;
+0026 nml.NML_CASE.DATE_FORMAT=<span class="string">'YMD'</span>;
+0027 nml.NML_CASE.DATE_REFERENCE=<span class="string">'default'</span>;
+0028 nml.NML_CASE.START_DATE=<span class="string">'2006-02-01 00:00:00'</span>;
+0029 nml.NML_CASE.END_DATE=<span class="string">'2006-03-01 00:00:00'</span>;
+0030 
+0031 <span class="comment">%%</span>
+0032 nml.NML_STARTUP = [];
+0033 nml.NML_STARTUP.STARTUP_TYPE      = <span class="string">'coldstart'</span>;
+0034 nml.NML_STARTUP.STARTUP_FILE      = [conf.casename, <span class="string">'_restart.nc'</span>];
+0035 nml.NML_STARTUP.STARTUP_UV_TYPE   = <span class="string">'default'</span>;
+0036 nml.NML_STARTUP.STARTUP_TURB_TYPE = <span class="string">'default'</span>;
+0037 nml.NML_STARTUP.STARTUP_TS_TYPE   = <span class="string">'constant'</span>;
+0038 nml.NML_STARTUP.STARTUP_T_VALS    = 18.5;
+0039 fmt.NML_STARTUP.STARTUP_T_VALS.format    = <span class="string">'%5.2f'</span>;
+0040 nml.NML_STARTUP.STARTUP_S_VALS    = 35.6;
+0041 fmt.NML_STARTUP.STARTUP_S_VALS.format    = <span class="string">'%5.2f'</span>;
+0042 nml.NML_STARTUP.STARTUP_U_VALS    = 0.0E+0;
+0043 fmt.NML_STARTUP.STARTUP_U_VALS.format    = <span class="string">'%5.2f'</span>;
+0044 nml.NML_STARTUP.STARTUP_V_VALS    = 0.0E+0;
+0045 fmt.NML_STARTUP.STARTUP_V_VALS.format    = <span class="string">'%5.2f'</span>;
+0046 nml.NML_STARTUP.STARTUP_DMAX      =  -5.0;
+0047 fmt.NML_STARTUP.STARTUP_DMAX.format      =  <span class="string">'%5.2f'</span>;
+0048 <span class="comment">%/</span>
+0049 <span class="comment">%%</span>
+0050 nml.NML_IO = [];
+0051 nml.NML_IO.INPUT_DIR       =  <span class="string">'./input'</span>;
+0052 nml.NML_IO.OUTPUT_DIR      =  <span class="string">'./output'</span>;
+0053 nml.NML_IO.IREPORT         =  10000;
+0054 fmt.NML_IO.IREPORT.format         =  <span class="string">'%u'</span>;
+0055 nml.NML_IO.VISIT_ALL_VARS  = <span class="string">'F'</span>;
+0056 nml.NML_IO.WAIT_FOR_VISIT  = <span class="string">'F'</span>;
+0057 nml.NML_IO.USE_MPI_IO_MODE = <span class="string">'F'</span>;
+0058 <span class="comment">%/</span>
+0059 <span class="comment">%%</span>
+0060 nml.NML_INTEGRATION = [];
+0061 nml.NML_INTEGRATION.EXTSTEP_SECONDS =  0.2 ;
+0062 fmt.NML_INTEGRATION.EXTSTEP_SECONDS.format =  <span class="string">'%6.3f'</span> ;
+0063 nml.NML_INTEGRATION.ISPLIT          =  10 ;
+0064 fmt.NML_INTEGRATION.ISPLIT.format          =  <span class="string">'%u'</span> ;
+0065 nml.NML_INTEGRATION.IRAMP           =  864000; <span class="comment">%! 24 hours with dt=0.2</span>
+0066 fmt.NML_INTEGRATION.IRAMP.format           =  <span class="string">'%u'</span> ; <span class="comment">%! 24 hours with dt=0.2</span>
+0067 nml.NML_INTEGRATION.MIN_DEPTH       =  0.2;
+0068 fmt.NML_INTEGRATION.MIN_DEPTH.format       =  <span class="string">'%5.2f'</span>;
+0069 nml.NML_INTEGRATION.STATIC_SSH_ADJ  =  0.0;
+0070 fmt.NML_INTEGRATION.STATIC_SSH_ADJ.format  =  <span class="string">'%5.2f'</span>;
+0071 <span class="comment">%/</span>
+0072 <span class="comment">%%</span>
+0073 nml.NML_RESTART = [];
+0074 nml.NML_RESTART.RST_ON  = <span class="string">'T'</span>;
+0075 nml.NML_RESTART.RST_FIRST_OUT      = <span class="string">'2046-03-01 00:00:00'</span>;<span class="comment">%</span>
+0076 nml.NML_RESTART.RST_OUT_INTERVAL   = <span class="string">'seconds = 86400.'</span>;<span class="comment">%</span>
+0077 nml.NML_RESTART.RST_OUTPUT_STACK   =           0;
+0078 fmt.NML_RESTART.RST_OUTPUT_STACK.format   =           <span class="string">'%u'</span>;
+0079 <span class="comment">%/</span>
+0080 <span class="comment">%%</span>
+0081 nml.NML_NETCDF = [];
+0082 nml.NML_NETCDF.NC_ON   = <span class="string">'T'</span>;
+0083 nml.NML_NETCDF.NC_FIRST_OUT    = <span class="string">'2046-02-01 00:00:00'</span>;<span class="comment">%</span>
+0084 nml.NML_NETCDF.NC_OUT_INTERVAL =  <span class="string">'seconds= 3600.'</span>;<span class="comment">%</span>
+0085 nml.NML_NETCDF.NC_OUTPUT_STACK =  0;<span class="comment">%</span>
+0086 fmt.NML_NETCDF.NC_OUTPUT_STACK.format =  <span class="string">'%u'</span>;<span class="comment">%</span>
+0087 nml.NML_NETCDF.NC_SUBDOMAIN_FILES      = <span class="string">'FVCOM'</span> ;<span class="comment">%</span>
+0088 nml.NML_NETCDF.NC_GRID_METRICS = <span class="string">'T'</span>;
+0089 nml.NML_NETCDF.NC_FILE_DATE    = <span class="string">'T'</span>;
+0090 nml.NML_NETCDF.NC_VELOCITY     = <span class="string">'F'</span>;
+0091 <span class="keyword">switch</span> conf.version
+0092     <span class="keyword">case</span> <span class="string">'fvcom-offline'</span>
+0093         nml.NML_NETCDF.NC_OFFLINE      = <span class="string">'T'</span>;
+0094     <span class="keyword">case</span> <span class="string">'ver3.2.1'</span>
+0095     <span class="keyword">case</span> <span class="string">'ver3.1.6'</span>
+0096     <span class="keyword">case</span> <span class="string">'ver4.0'</span>
+0097         nml.NML_NETCDF.NC_OFFLINE      = <span class="string">'T'</span>;
+0098 <span class="keyword">end</span>
+0099 nml.NML_NETCDF.NC_SALT_TEMP    = <span class="string">'F'</span>;
+0100 nml.NML_NETCDF.NC_TURBULENCE   = <span class="string">'F'</span>;
+0101 nml.NML_NETCDF.NC_AVERAGE_VEL  = <span class="string">'T'</span>;
+0102 nml.NML_NETCDF.NC_VERTICAL_VEL = <span class="string">'T'</span>;
+0103 nml.NML_NETCDF.NC_WIND_VEL     = <span class="string">'F'</span>;
+0104 nml.NML_NETCDF.NC_WIND_STRESS  = <span class="string">'F'</span>;
+0105 nml.NML_NETCDF.NC_EVAP_PRECIP  = <span class="string">'F'</span>;
+0106 nml.NML_NETCDF.NC_SURFACE_HEAT = <span class="string">'F'</span>;
+0107 nml.NML_NETCDF.NC_GROUNDWATER  = <span class="string">'F'</span>;
+0108 nml.NML_NETCDF.NC_BIO          = <span class="string">'F'</span>;
+0109 nml.NML_NETCDF.NC_WQM          = <span class="string">'F'</span>;
+0110 nml.NML_NETCDF.NC_VORTICITY    = <span class="string">'F'</span>;
+0111 <span class="keyword">switch</span> conf.version
+0112     <span class="keyword">case</span> <span class="string">'ver4.0'</span>
+0113     <span class="keyword">case</span> <span class="string">'ver4.0-ersem'</span>
+0114         nml.NML_NETCDF.NC_FABM      = <span class="string">'T'</span>;
+0115 <span class="keyword">end</span><span class="comment">%/</span>
+0116 <span class="comment">%%</span>
+0117 nml.NML_NETCDF_AV = [];
+0118 nml.NML_NETCDF_AV.NCAV_ON = <span class="string">'F'</span>;
+0119 nml.NML_NETCDF_AV.NCAV_FIRST_OUT  = <span class="string">'2046-02-01 00:00:00'</span>;<span class="comment">%</span>
+0120 nml.NML_NETCDF_AV.NCAV_OUT_INTERVAL       =  <span class="string">'seconds= 3600.'</span>;<span class="comment">%</span>
+0121 nml.NML_NETCDF_AV.NCAV_OUTPUT_STACK       =           0;<span class="comment">%</span>
+0122 fmt.NML_NETCDF_AV.NCAV_OUTPUT_STACK.format       =           <span class="string">'%u'</span>;<span class="comment">%</span>
+0123 nml.NML_NETCDF_AV.NCAV_GRID_METRICS       = <span class="string">'F'</span>;
+0124 nml.NML_NETCDF_AV.NCAV_FILE_DATE  = <span class="string">'T'</span>;
+0125 nml.NML_NETCDF_AV.NCAV_VELOCITY   = <span class="string">'F'</span>;
+0126 <span class="keyword">switch</span> conf.version
+0127     <span class="keyword">case</span> <span class="string">'fvcom-ersem'</span>
+0128         nml.NML_NETCDF_AV.NCAV_OFFLINE      = <span class="string">'F'</span>;
+0129     <span class="keyword">case</span> <span class="string">'ver3.2.1'</span>
+0130     <span class="keyword">case</span> <span class="string">'ver3.1.6'</span>
+0131 <span class="keyword">end</span>
+0132 nml.NML_NETCDF_AV.NCAV_SALT_TEMP  = <span class="string">'T'</span>;
+0133 nml.NML_NETCDF_AV.NCAV_TURBULENCE = <span class="string">'F'</span>;
+0134 nml.NML_NETCDF_AV.NCAV_AVERAGE_VEL        = <span class="string">'F'</span>;
+0135 nml.NML_NETCDF_AV.NCAV_VERTICAL_VEL       = <span class="string">'F'</span>;
+0136 nml.NML_NETCDF_AV.NCAV_WIND_VEL   = <span class="string">'F'</span>;
+0137 nml.NML_NETCDF_AV.NCAV_WIND_STRESS        = <span class="string">'F'</span>;
+0138 nml.NML_NETCDF_AV.NCAV_EVAP_PRECIP        = <span class="string">'F'</span>;
+0139 nml.NML_NETCDF_AV.NCAV_SURFACE_HEAT       = <span class="string">'F'</span>;
+0140 nml.NML_NETCDF_AV.NCAV_GROUNDWATER        = <span class="string">'F'</span>;
+0141 nml.NML_NETCDF_AV.NCAV_BIO        = <span class="string">'F'</span>;
+0142 nml.NML_NETCDF_AV.NCAV_WQM        = <span class="string">'F'</span>;
+0143 nml.NML_NETCDF_AV.NCAV_VORTICITY  = <span class="string">'F'</span>;
+0144 <span class="keyword">switch</span> conf.version
+0145     <span class="keyword">case</span> <span class="string">'ver4.0'</span>
+0146     <span class="keyword">case</span> <span class="string">'ver4.0-ersem'</span>
+0147         nml.NML_NETCDF_AV.NCAV_FABM      = <span class="string">'T'</span>;
+0148 <span class="keyword">end</span><span class="comment">%/</span>
+0149 <span class="comment">%/</span>
+0150 <span class="comment">%%</span>
+0151 nml.NML_SURFACE_FORCING = [];
+0152 nml.NML_SURFACE_FORCING.WIND_ON             = <span class="string">'T'</span>;
+0153 nml.NML_SURFACE_FORCING.WIND_TYPE               = <span class="string">'speed'</span>;<span class="comment">%</span>
+0154 nml.NML_SURFACE_FORCING.WIND_FILE              = [conf.casename <span class="string">'_wnd.nc'</span>];<span class="comment">%</span>
+0155 nml.NML_SURFACE_FORCING.WIND_KIND              = <span class="string">'variable'</span>;<span class="comment">%</span>
+0156 nml.NML_SURFACE_FORCING.WIND_X             =  5.0000000E+00;<span class="comment">%</span>
+0157 fmt.NML_SURFACE_FORCING.WIND_X.format             =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0158 nml.NML_SURFACE_FORCING.WIND_Y             =  5.0000000E+00;<span class="comment">%</span>
+0159 fmt.NML_SURFACE_FORCING.WIND_Y.format             =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0160 nml.NML_SURFACE_FORCING.HEATING_ON             = <span class="string">'T'</span>;
+0161 nml.NML_SURFACE_FORCING.HEATING_TYPE           = <span class="string">'flux'</span>;<span class="comment">%</span>
+0162 nml.NML_SURFACE_FORCING.HEATING_KIND           = <span class="string">'variable'</span> ;<span class="comment">%</span>
+0163 nml.NML_SURFACE_FORCING.HEATING_FILE            = [conf.casename <span class="string">'_wnd.nc'</span>];<span class="comment">%</span>
+0164 nml.NML_SURFACE_FORCING.HEATING_LONGWAVE_LENGTHSCALE   =  1.4;<span class="comment">%</span>
+0165 fmt.NML_SURFACE_FORCING.HEATING_LONGWAVE_LENGTHSCALE.format   =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0166 nml.NML_SURFACE_FORCING.HEATING_LONGWAVE_PERCTAGE      =  0.78;<span class="comment">%</span>
+0167 fmt.NML_SURFACE_FORCING.HEATING_LONGWAVE_PERCTAGE.format      =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0168 nml.NML_SURFACE_FORCING.HEATING_SHORTWAVE_LENGTHSCALE  =  6.3;<span class="comment">%</span>
+0169 fmt.NML_SURFACE_FORCING.HEATING_SHORTWAVE_LENGTHSCALE.format  =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0170 nml.NML_SURFACE_FORCING.HEATING_RADIATION             =  0.0000000E+00;<span class="comment">%</span>
+0171 fmt.NML_SURFACE_FORCING.HEATING_RADIATION.format             =  <span class="string">'%6.2f'</span>;<span class="comment">%</span>
+0172 nml.NML_SURFACE_FORCING.HEATING_NETFLUX        =  0.0000000E+00;<span class="comment">%</span>
+0173 fmt.NML_SURFACE_FORCING.HEATING_NETFLUX.format        =  <span class="string">'%6.2f'</span>;<span class="comment">%</span>
+0174 nml.NML_SURFACE_FORCING.PRECIPITATION_ON            = <span class="string">'T'</span>;
+0175 nml.NML_SURFACE_FORCING.PRECIPITATION_KIND          = <span class="string">'variable'</span>;<span class="comment">%</span>
+0176 nml.NML_SURFACE_FORCING.PRECIPITATION_FILE           = [conf.casename <span class="string">'_wnd.nc'</span>];<span class="comment">%</span>
+0177 nml.NML_SURFACE_FORCING.PRECIPITATION_PRC            =  0.0000000E+00;<span class="comment">%</span>
+0178 fmt.NML_SURFACE_FORCING.PRECIPITATION_PRC.format            =  <span class="string">'%6.2f'</span>;<span class="comment">%</span>
+0179 nml.NML_SURFACE_FORCING.PRECIPITATION_EVP            =  0.0000000E+00;<span class="comment">%</span>
+0180 fmt.NML_SURFACE_FORCING.PRECIPITATION_EVP.format            =  <span class="string">'%6.2f'</span>;<span class="comment">%</span>
+0181 nml.NML_SURFACE_FORCING.AIRPRESSURE_ON         = <span class="string">'T'</span>;
+0182 nml.NML_SURFACE_FORCING.AIRPRESSURE_KIND            = <span class="string">'variable'</span>;<span class="comment">%</span>
+0183 nml.NML_SURFACE_FORCING.AIRPRESSURE_FILE            = [conf.casename <span class="string">'_wnd.nc'</span>];<span class="comment">%</span>
+0184 nml.NML_SURFACE_FORCING.AIRPRESSURE_VALUE           =  0.0000000E+00;<span class="comment">%</span>
+0185 fmt.NML_SURFACE_FORCING.AIRPRESSURE_VALUE.format           =  <span class="string">'%10.2f'</span>;<span class="comment">%</span>
+0186 nml.NML_SURFACE_FORCING.WAVE_ON             = <span class="string">'F'</span>;
+0187 nml.NML_SURFACE_FORCING.WAVE_FILE               = [conf.casename <span class="string">'_wav.nc'</span>];<span class="comment">%</span>
+0188 nml.NML_SURFACE_FORCING.WAVE_KIND               = <span class="string">'constant'</span>;<span class="comment">%</span>
+0189 nml.NML_SURFACE_FORCING.WAVE_HEIGHT             =  0.0000000E+00;<span class="comment">%</span>
+0190 fmt.NML_SURFACE_FORCING.WAVE_HEIGHT.format             =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0191 nml.NML_SURFACE_FORCING.WAVE_LENGTH             =  0.0000000E+00;<span class="comment">%</span>
+0192 fmt.NML_SURFACE_FORCING.WAVE_LENGTH.format             =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0193 nml.NML_SURFACE_FORCING.WAVE_DIRECTION          =  0.0000000E+00;<span class="comment">%</span>
+0194 fmt.NML_SURFACE_FORCING.WAVE_DIRECTION.format          =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0195 nml.NML_SURFACE_FORCING.WAVE_PERIOD             =  0.0000000E+00;<span class="comment">%</span>
+0196 fmt.NML_SURFACE_FORCING.WAVE_PERIOD.format             =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0197 nml.NML_SURFACE_FORCING.WAVE_PER_BOT            =  0.0000000E+00;<span class="comment">%</span>
+0198 fmt.NML_SURFACE_FORCING.WAVE_PER_BOT.format            =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0199 nml.NML_SURFACE_FORCING.WAVE_UB_BOT             =  0.0000000E+00;
+0200 fmt.NML_SURFACE_FORCING.WAVE_UB_BOT.format             =  <span class="string">'%5.2f'</span>;
+0201 <span class="comment">%/</span>
+0202 <span class="comment">%%</span>
+0203 nml.NML_HEATING_CALCULATED = [];
+0204 nml.NML_HEATING_CALCULATED.HEATING_CALCULATE_ON    = <span class="string">'F'</span>;
+0205 nml.NML_HEATING_CALCULATED.HEATING_CALCULATE_TYPE  = <span class="string">'flux'</span>     ;<span class="comment">%</span>
+0206 nml.NML_HEATING_CALCULATED.HEATING_CALCULATE_FILE  = [conf.casename <span class="string">'_wnd.nc'</span>];   <span class="comment">%</span>
+0207 nml.NML_HEATING_CALCULATED.HEATING_CALCULATE_KIND  = <span class="string">'variable'</span>                     ;<span class="comment">%</span>
+0208 nml.NML_HEATING_CALCULATED.ZUU              =   10.00000000000000     ;<span class="comment">%</span>
+0209 fmt.NML_HEATING_CALCULATED.ZUU.format              =   <span class="string">'%5.2f'</span>     ;<span class="comment">%</span>
+0210 nml.NML_HEATING_CALCULATED.ZTT             =   10.00000000000000     ;<span class="comment">%</span>
+0211 fmt.NML_HEATING_CALCULATED.ZTT.format             =   <span class="string">'%5.2f'</span>     ;<span class="comment">%</span>
+0212 nml.NML_HEATING_CALCULATED.ZQQ              =   10.00000000000000     ;<span class="comment">%</span>
+0213 fmt.NML_HEATING_CALCULATED.ZQQ.format              =   <span class="string">'%5.2f'</span>     ;<span class="comment">%</span>
+0214 nml.NML_HEATING_CALCULATED.AIR_TEMPERATURE      =  0.000000000000000E+000;<span class="comment">%</span>
+0215 fmt.NML_HEATING_CALCULATED.AIR_TEMPERATURE.format      =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0216 nml.NML_HEATING_CALCULATED.RELATIVE_HUMIDITY       =  0.000000000000000E+000;<span class="comment">%</span>
+0217 fmt.NML_HEATING_CALCULATED.RELATIVE_HUMIDITY.format       =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0218 nml.NML_HEATING_CALCULATED.SURFACE_PRESSURE        =  0.000000000000000E+000;<span class="comment">%</span>
+0219 fmt.NML_HEATING_CALCULATED.SURFACE_PRESSURE.format        =  <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0220 nml.NML_HEATING_CALCULATED.LONGWAVE_RADIATION      =  0.000000000000000E+000;<span class="comment">%</span>
+0221 fmt.NML_HEATING_CALCULATED.LONGWAVE_RADIATION.format      =  <span class="string">'%6.2f'</span>;<span class="comment">%</span>
+0222 nml.NML_HEATING_CALCULATED.SHORTWAVE_RADIATION     =  0.000000000000000E+000;
+0223 fmt.NML_HEATING_CALCULATED.SHORTWAVE_RADIATION.format     =  <span class="string">'%6.2f'</span>;
+0224 nml.NML_HEATING_CALCULATED.HEATING_LONGWAVE_PERCTAGE_IN_HEATFLUX     = 0.78;<span class="comment">%</span>
+0225 fmt.NML_HEATING_CALCULATED.HEATING_LONGWAVE_PERCTAGE_IN_HEATFLUX.format     = <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0226 nml.NML_HEATING_CALCULATED.HEATING_LONGWAVE_LENGTHSCALE_IN_HEATFLUX  = 1.4;<span class="comment">%</span>
+0227 fmt.NML_HEATING_CALCULATED.HEATING_LONGWAVE_LENGTHSCALE_IN_HEATFLUX.format  = <span class="string">'%5.2f'</span>;<span class="comment">%</span>
+0228 nml.NML_HEATING_CALCULATED.HEATING_SHORTWAVE_LENGTHSCALE_IN_HEATFLUX = 6.3;
+0229 fmt.NML_HEATING_CALCULATED.HEATING_SHORTWAVE_LENGTHSCALE_IN_HEATFLUX.format = <span class="string">'%5.2f'</span>;
+0230 <span class="comment">%/</span>
+0231 <span class="comment">%%</span>
+0232 nml.NML_PHYSICS = [];
+0233 nml.NML_PHYSICS.HORIZONTAL_MIXING_TYPE          = <span class="string">'closure'</span>;
+0234 nml.NML_PHYSICS.HORIZONTAL_MIXING_KIND          = <span class="string">'constant'</span>;
+0235 nml.NML_PHYSICS.HORIZONTAL_MIXING_COEFFICIENT   = 2.0e-1;
+0236 fmt.NML_PHYSICS.HORIZONTAL_MIXING_COEFFICIENT.format   = <span class="string">'%e'</span>;
+0237 nml.NML_PHYSICS.HORIZONTAL_PRANDTL_NUMBER       = 1.0;
+0238 fmt.NML_PHYSICS.HORIZONTAL_PRANDTL_NUMBER.format       = <span class="string">'%5.2f'</span>;
+0239 nml.NML_PHYSICS.VERTICAL_MIXING_TYPE            = <span class="string">'closure'</span>;
+0240 nml.NML_PHYSICS.VERTICAL_MIXING_COEFFICIENT     = 1.0E-5;<span class="comment">%</span>
+0241 fmt.NML_PHYSICS.VERTICAL_MIXING_COEFFICIENT.format     = <span class="string">'%e'</span>;<span class="comment">%</span>
+0242 nml.NML_PHYSICS.VERTICAL_PRANDTL_NUMBER         = 1.0;
+0243 fmt.NML_PHYSICS.VERTICAL_PRANDTL_NUMBER.format         = <span class="string">'%5.2f'</span>;
+0244 nml.NML_PHYSICS.BOTTOM_ROUGHNESS_MINIMUM        =  0.0025;
+0245 fmt.NML_PHYSICS.BOTTOM_ROUGHNESS_MINIMUM.format        =  <span class="string">'%e'</span>;
+0246 nml.NML_PHYSICS.BOTTOM_ROUGHNESS_LENGTHSCALE    =  -1.0;
+0247 fmt.NML_PHYSICS.BOTTOM_ROUGHNESS_LENGTHSCALE.format    =  <span class="string">'%5.2f'</span>;
+0248 nml.NML_PHYSICS.BOTTOM_ROUGHNESS_KIND           = <span class="string">'static'</span>;
+0249 nml.NML_PHYSICS.BOTTOM_ROUGHNESS_TYPE           = <span class="string">'orig'</span>;
+0250 nml.NML_PHYSICS.BOTTOM_ROUGHNESS_FILE           = [conf.casename <span class="string">'_z0=0.005.nc'</span>];
+0251 nml.NML_PHYSICS.CONVECTIVE_OVERTURNING          = <span class="string">'F'</span>;
+0252 nml.NML_PHYSICS.SCALAR_POSITIVITY_CONTROL       = <span class="string">'T'</span>;
+0253 nml.NML_PHYSICS.BAROTROPIC                      = <span class="string">'F'</span>;
+0254 nml.NML_PHYSICS.BAROCLINIC_PRESSURE_GRADIENT    = <span class="string">'sigma levels'</span>;
+0255 nml.NML_PHYSICS.SEA_WATER_DENSITY_FUNCTION      = <span class="string">'dens2'</span>;
+0256 nml.NML_PHYSICS.RECALCULATE_RHO_MEAN            = <span class="string">'F'</span>;
+0257 nml.NML_PHYSICS.INTERVAL_RHO_MEAN               = <span class="string">'days=1.0'</span>;<span class="comment">% ! 'seconds=1800.';%</span>
+0258 nml.NML_PHYSICS.TEMPERATURE_ACTIVE              = <span class="string">'T'</span>;
+0259 nml.NML_PHYSICS.SALINITY_ACTIVE                 = <span class="string">'T'</span>;
+0260 nml.NML_PHYSICS.SURFACE_WAVE_MIXING             = <span class="string">'F'</span>;
+0261 nml.NML_PHYSICS.WETTING_DRYING_ON               = <span class="string">'T'</span>;
+0262 nml.NML_PHYSICS.NOFLUX_BOT_CONDITION          = <span class="string">'T'</span>;
+0263 nml.NML_PHYSICS.ADCOR_ON        = <span class="string">'T'</span>;
+0264 nml.NML_PHYSICS.EQUATOR_BETA_PLANE      = <span class="string">'F'</span>;
+0265 nml.NML_PHYSICS.BACKWARD_ADVECTION      = <span class="string">'T'</span>;
+0266 nml.NML_PHYSICS.BACKWARD_STEP   =          1;<span class="comment">%! it can only be 1 or 2</span>
+0267 fmt.NML_PHYSICS.BACKWARD_STEP.format    =  <span class="string">'%u'</span>;
+0268 <span class="comment">%%/</span>
+0269 <span class="comment">%%</span>
+0270 nml.NML_RIVER_TYPE = [];
+0271 nml.NML_RIVER_TYPE.RIVER_NUMBER    =           0;<span class="comment">%</span>
+0272 fmt.NML_RIVER_TYPE.RIVER_NUMBER.format    =           <span class="string">'%u'</span>;<span class="comment">%</span>
+0273 nml.NML_RIVER_TYPE.RIVER_KIND      =         <span class="string">'variable'</span>;
+0274 nml.NML_RIVER_TYPE.RIVER_TS_SETTING        = <span class="string">'calculated'</span>;
+0275 nml.NML_RIVER_TYPE.RIVER_INFLOW_LOCATION   = <span class="string">'node'</span>;
+0276 nml.NML_RIVER_TYPE.RIVER_INFO_FILE       = [conf.casename <span class="string">'_riv_ersem.nml'</span>];
+0277 <span class="comment">%/</span>
+0278 <span class="comment">%%</span>
+0279 nml.NML_OPEN_BOUNDARY_CONTROL = [];
+0280 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_ON                      = <span class="string">'T'</span>;
+0281 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_NODE_LIST_FILE          = [conf.casename <span class="string">'_obc.dat'</span>];
+0282 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_ELEVATION_FORCING_ON    = <span class="string">'T'</span>;
+0283 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_ELEVATION_FILE          = [conf.casename <span class="string">'_elevtide.nc'</span>];
+0284 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_TS_TYPE                 = 3;
+0285 fmt.NML_OPEN_BOUNDARY_CONTROL.OBC_TS_TYPE.format                 = <span class="string">'%u'</span>;
+0286 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_TEMP_NUDGING            = <span class="string">'T'</span>;
+0287 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_TEMP_FILE               = [conf.casename <span class="string">'_tsobc.nc'</span>];
+0288 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_TEMP_NUDGING_TIMESCALE  =  0.00005;<span class="comment">% !0.0014;%</span>
+0289 fmt.NML_OPEN_BOUNDARY_CONTROL.OBC_TEMP_NUDGING_TIMESCALE.format  =  <span class="string">'%15.10f'</span>;<span class="comment">% !0.0014;%</span>
+0290 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_SALT_NUDGING            = <span class="string">'T'</span>;
+0291 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_SALT_FILE               = [conf.casename <span class="string">'_tsobc.nc'</span>];
+0292 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_SALT_NUDGING_TIMESCALE  =  0.00005;<span class="comment">% !0.0014;%</span>
+0293 fmt.NML_OPEN_BOUNDARY_CONTROL.OBC_SALT_NUDGING_TIMESCALE.format  =  <span class="string">'%15.10f'</span>;<span class="comment">% !0.0014;%   switch conf.version</span>
+0294 <span class="keyword">switch</span> conf.version
+0295     <span class="keyword">case</span> <span class="string">'ver4.0'</span>
+0296     <span class="keyword">case</span> <span class="string">'ver4.0-ersem'</span>
+0297         nml.NML_OPEN_BOUNDARY_CONTROL.OBC_FABM_NUDGING            = <span class="string">'F'</span>;
+0298         nml.NML_OPEN_BOUNDARY_CONTROL.OBC_FABM_FILE               = [conf.casename <span class="string">'_ERSEMobc.nc'</span>];
+0299         nml.NML_OPEN_BOUNDARY_CONTROL.OBC_FABM_NUDGING_TIMESCALE  =  0.00005;<span class="comment">% !0.0014;%</span>
+0300         fmt.NML_OPEN_BOUNDARY_CONTROL.OBC_FABM_NUDGING_TIMESCALE.format  =  <span class="string">'%15.10f'</span>;<span class="comment">% !0.0014;%   switch conf.version</span>
+0301 <span class="keyword">end</span><span class="comment">%/</span>
+0302 
+0303 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_MEANFLOW                = <span class="string">'F'</span>;
+0304 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_MEANFLOW_FILE           = [conf.casename <span class="string">'_meanflow.nc'</span>];
+0305 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_TIDEOUT_INITIAL         = 1;<span class="comment">%</span>
+0306 fmt.NML_OPEN_BOUNDARY_CONTROL.OBC_TIDEOUT_INITIAL.format         = <span class="string">'%u'</span>;<span class="comment">%</span>
+0307 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_TIDEOUT_INTERVAL        = 900;<span class="comment">%   ! ELO_TM%TIMES(I)=(TTIME+DELTT*DTI) ! was 720! (5s*720)=3600s</span>
+0308 fmt.NML_OPEN_BOUNDARY_CONTROL.OBC_TIDEOUT_INTERVAL.format        = <span class="string">'%u'</span>;<span class="comment">%   ! ELO_TM%TIMES(I)=(TTIME+DELTT*DTI) ! was 720! (5s*720)=3600s</span>
+0309 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_LONGSHORE_FLOW_ON       = <span class="string">'F'</span>;
+0310 nml.NML_OPEN_BOUNDARY_CONTROL.OBC_LONGSHORE_FLOW_FILE     = [conf.casename <span class="string">'_lsf.dat'</span>];
+0311 <span class="comment">%/</span>
+0312 <span class="comment">%%</span>
+0313 
+0314 nml.NML_GRID_COORDINATES = [];
+0315 nml.NML_GRID_COORDINATES.GRID_FILE       = [conf.casename <span class="string">'_grd.dat'</span>];
+0316 nml.NML_GRID_COORDINATES.GRID_FILE_UNITS = <span class="string">'meters'</span>;
+0317 nml.NML_GRID_COORDINATES.PROJECTION_REFERENCE  = <span class="string">'proj=utm +ellps=WGS84 +zone=29'</span>;
+0318 nml.NML_GRID_COORDINATES.SIGMA_LEVELS_FILE     = <span class="string">'sigma.dat'</span>;
+0319 nml.NML_GRID_COORDINATES.DEPTH_FILE      = [conf.casename <span class="string">'_dep.dat'</span>];
+0320 nml.NML_GRID_COORDINATES.CORIOLIS_FILE   = [conf.casename <span class="string">'_cor.dat'</span>];
+0321 nml.NML_GRID_COORDINATES.SPONGE_FILE     = [conf.casename <span class="string">'_spg.dat'</span>];
+0322 <span class="comment">%/</span>
+0323 <span class="comment">%%</span>
+0324 nml.NML_GROUNDWATER = [];
+0325 nml.NML_GROUNDWATER.GROUNDWATER_ON      = <span class="string">'F'</span>;
+0326 nml.NML_GROUNDWATER.GROUNDWATER_TEMP_ON = <span class="string">'F'</span>;
+0327 nml.NML_GROUNDWATER.GROUNDWATER_SALT_ON = <span class="string">'F'</span>;
+0328 nml.NML_GROUNDWATER.GROUNDWATER_KIND    = <span class="string">'none'</span>;<span class="comment">%</span>
+0329 nml.NML_GROUNDWATER.GROUNDWATER_FILE    = <span class="string">'none'</span>;<span class="comment">%</span>
+0330 nml.NML_GROUNDWATER.GROUNDWATER_FLOW    = 0.0;<span class="comment">%</span>
+0331 fmt.NML_GROUNDWATER.GROUNDWATER_FLOW.format    = <span class="string">'%10.6f'</span>;<span class="comment">%</span>
+0332 nml.NML_GROUNDWATER.GROUNDWATER_TEMP    = 0.0000000E+00;<span class="comment">%</span>
+0333 fmt.NML_GROUNDWATER.GROUNDWATER_TEMP.format    = <span class="string">'%10.6f'</span>;<span class="comment">%</span>
+0334 nml.NML_GROUNDWATER.GROUNDWATER_SALT    = 0.0000000E+00;
+0335 fmt.NML_GROUNDWATER.GROUNDWATER_SALT.format    = <span class="string">'%10.6f'</span>;
+0336 <span class="comment">%/</span>
+0337 <span class="comment">%%</span>
+0338 nml.NML_LAG = [];
+0339 nml.NML_LAG.LAG_PARTICLES_ON        = <span class="string">'F'</span>;
+0340 nml.NML_LAG.LAG_START_FILE   = <span class="string">'lag_init.nc'</span>;
+0341 nml.NML_LAG.LAG_OUT_FILE     = <span class="string">'lag_out.nc'</span>;
+0342 nml.NML_LAG.LAG_FIRST_OUT    = <span class="string">'cycle=0'</span>;
+0343 nml.NML_LAG.LAG_RESTART_FILE = <span class="string">'junk.nc'</span>;
+0344 nml.NML_LAG.LAG_OUT_INTERVAL = <span class="string">'cycle=30'</span>;
+0345 nml.NML_LAG.LAG_SCAL_CHOICE  = <span class="string">'none'</span>;
+0346 <span class="comment">%/</span>
+0347 <span class="comment">%%</span>
+0348 nml.NML_ADDITIONAL_MODELS = [];
+0349 nml.NML_ADDITIONAL_MODELS.DATA_ASSIMILATION       = <span class="string">'F'</span>;
+0350 nml.NML_ADDITIONAL_MODELS.DATA_ASSIMILATION_FILE  =    <span class="string">'none'</span>;<span class="comment">%</span>
+0351 nml.NML_ADDITIONAL_MODELS.BIOLOGICAL_MODEL        = <span class="string">'F'</span>;
+0352 nml.NML_ADDITIONAL_MODELS.STARTUP_BIO_TYPE        = <span class="string">'observed'</span>;<span class="comment">%</span>
+0353 <span class="keyword">switch</span> conf.version
+0354     <span class="keyword">case</span> <span class="string">'ver4.0'</span>
+0355     <span class="keyword">case</span> <span class="string">'ver4.0-ersem'</span>
+0356         nml.NML_ADDITIONAL_MODELS.FABM_MODEL            = <span class="string">'F'</span>;
+0357 <span class="keyword">end</span><span class="comment">%/</span>
+0358 nml.NML_ADDITIONAL_MODELS.SEDIMENT_MODEL          = <span class="string">'F'</span>;
+0359 nml.NML_ADDITIONAL_MODELS.SEDIMENT_MODEL_FILE     = <span class="string">'none'</span>;<span class="comment">%</span>
+0360 nml.NML_ADDITIONAL_MODELS.SEDIMENT_PARAMETER_TYPE = <span class="string">'none'</span>;<span class="comment">%</span>
+0361 nml.NML_ADDITIONAL_MODELS.SEDIMENT_PARAMETER_FILE = <span class="string">'none'</span>;<span class="comment">%</span>
+0362 nml.NML_ADDITIONAL_MODELS.BEDFLAG_TYPE            = <span class="string">'none'</span>;<span class="comment">%</span>
+0363 nml.NML_ADDITIONAL_MODELS.BEDFLAG_FILE            = <span class="string">'none'</span>;<span class="comment">%</span>
+0364 nml.NML_ADDITIONAL_MODELS.ICING_MODEL             = <span class="string">'F'</span>;
+0365 nml.NML_ADDITIONAL_MODELS.ICING_FORCING_FILE      = <span class="string">'none'</span>;<span class="comment">%</span>
+0366 nml.NML_ADDITIONAL_MODELS.ICING_FORCING_KIND      = <span class="string">'none'</span>;<span class="comment">%</span>
+0367 nml.NML_ADDITIONAL_MODELS.ICING_AIR_TEMP          = 0.0000000E+00;<span class="comment">%</span>
+0368 fmt.NML_ADDITIONAL_MODELS.ICING_AIR_TEMP.format          = <span class="string">'%10.6f'</span>;<span class="comment">%</span>
+0369 nml.NML_ADDITIONAL_MODELS.ICING_WSPD              = 0.0000000E+00;<span class="comment">%</span>
+0370 fmt.NML_ADDITIONAL_MODELS.ICING_WSPD.format              = <span class="string">'%10.6f'</span>;<span class="comment">%</span>
+0371 nml.NML_ADDITIONAL_MODELS.ICE_MODEL               = <span class="string">'F'</span>;
+0372 nml.NML_ADDITIONAL_MODELS.ICE_FORCING_FILE        = <span class="string">'none'</span>;<span class="comment">%</span>
+0373 nml.NML_ADDITIONAL_MODELS.ICE_FORCING_KIND        = <span class="string">'none'</span>;<span class="comment">%</span>
+0374 nml.NML_ADDITIONAL_MODELS.ICE_SEA_LEVEL_PRESSURE  = 0.0000000E+00;<span class="comment">%</span>
+0375 fmt.NML_ADDITIONAL_MODELS.ICE_SEA_LEVEL_PRESSURE.format  = <span class="string">'%10.6f'</span>;<span class="comment">%</span>
+0376 nml.NML_ADDITIONAL_MODELS.ICE_AIR_TEMP            = 0.0000000E+00;<span class="comment">%</span>
+0377 fmt.NML_ADDITIONAL_MODELS.ICE_AIR_TEMP.format            = <span class="string">'%10.6f'</span>;<span class="comment">%</span>
+0378 nml.NML_ADDITIONAL_MODELS.ICE_SPEC_HUMIDITY       = 0.0000000E+00;<span class="comment">%</span>
+0379 fmt.NML_ADDITIONAL_MODELS.ICE_SPEC_HUMIDITY.format       = <span class="string">'%10.6f'</span>;<span class="comment">%</span>
+0380 nml.NML_ADDITIONAL_MODELS.ICE_SHORTWAVE           = 0.0000000E+00;<span class="comment">%</span>
+0381 fmt.NML_ADDITIONAL_MODELS.ICE_SHORTWAVE.format           = <span class="string">'%10.6f'</span>;<span class="comment">%</span>
+0382 nml.NML_ADDITIONAL_MODELS.ICE_CLOUD_COVER         = 0.0000000E+00;
+0383 fmt.NML_ADDITIONAL_MODELS.ICE_CLOUD_COVER.format         = <span class="string">'%10.6f'</span>;
+0384 <span class="comment">%/</span>
+0385 <span class="comment">%%</span>
+0386 
+0387 nml.NML_PROBES = [];
+0388 nml.NML_PROBES.PROBES_ON = <span class="string">'F'</span>;
+0389 nml.NML_PROBES.PROBES_NUMBER = 56;<span class="comment">%</span>
+0390 fmt.NML_PROBES.PROBES_NUMBER.format = <span class="string">'%u'</span>;<span class="comment">%</span>
+0391 nml.NML_PROBES.PROBES_FILE = [conf.casename <span class="string">'_probes.nml'</span>];
+0392 <span class="comment">%/</span>
+0393 <span class="comment">%%</span>
+0394 nml.NML_STATION_TIMESERIES = [];
+0395 nml.NML_STATION_TIMESERIES.OUT_STATION_TIMESERIES_ON = <span class="string">'F'</span>;
+0396 nml.NML_STATION_TIMESERIES.STATION_FILE              = [conf.casename <span class="string">'_station.dat'</span>];<span class="comment">%</span>
+0397 nml.NML_STATION_TIMESERIES.LOCATION_TYPE             = <span class="string">'node'</span>;<span class="comment">%</span>
+0398 nml.NML_STATION_TIMESERIES.OUT_ELEVATION             = <span class="string">'F'</span>;
+0399 nml.NML_STATION_TIMESERIES.OUT_VELOCITY_3D           = <span class="string">'F'</span>;
+0400 nml.NML_STATION_TIMESERIES.OUT_VELOCITY_2D           = <span class="string">'F'</span>;
+0401 nml.NML_STATION_TIMESERIES.OUT_WIND_VELOCITY         = <span class="string">'F'</span>;
+0402 nml.NML_STATION_TIMESERIES.OUT_SALT_TEMP             = <span class="string">'F'</span>;
+0403 nml.NML_STATION_TIMESERIES.OUT_INTERVAL              = <span class="string">'seconds= 360.0'</span>;
+0404 <span class="comment">%/</span>
+0405 <span class="comment">%%</span>
+0406 <span class="keyword">switch</span> conf.version
+0407     <span class="keyword">case</span> <span class="string">'ver4.0'</span>
+0408     <span class="keyword">case</span> <span class="string">'ver4.0-ersem'</span>
+0409         nml.NML_FABM = [];
+0410         nml.NML_FABM.STARTUP_FABM_TYPE = <span class="string">'set values'</span>;
+0411         nml.NML_FABM.OFFLINE_FABM_FILE=  [conf.casename <span class="string">'_offline.nc'</span>];<span class="comment">%</span>
+0412         nml.NML_FABM.USE_FABM_BOTTOM_THICKNESS= <span class="string">'F'</span>;
+0413         nml.NML_FABM.USE_FABM_SALINITY=<span class="string">'F'</span>;
+0414         nml.NML_FABM.FABM_DEBUG=<span class="string">'F'</span>;
+0415         nml.NML_FABM.FABM_DIAG_OUT=<span class="string">'T'</span>;
+0416 <span class="keyword">end</span>
+0417 <span class="comment">%/</span>
+0418 
+0419 
+0420 <span class="comment">%%</span>
+0421 nml.NML_NESTING = [];
+0422 nml.NML_NESTING.NESTING_ON = <span class="string">'F'</span>;
+0423 nml.NML_NESTING.FABM_NESTING_ON = <span class="string">'F'</span>;
+0424 nml.NML_NESTING.NESTING_BLOCKSIZE= 10;
+0425 fmt.NML_NESTING.NESTING_BLOCKSIZE.format= <span class="string">'%u'</span>;
+0426 nml.NML_NESTING.NESTING_TYPE= 3;
+0427 fmt.NML_NESTING.NESTING_TYPE.format= <span class="string">'%u'</span>;
+0428 nml.NML_NESTING.NESTING_FILE_NAME=[conf.casename <span class="string">'_nest.nc'</span>];
+0429 <span class="comment">%/</span>
+0430 <span class="comment">%%</span>
+0431 nml.NML_NCNEST = [];
+0432 nml.NML_NCNEST.NCNEST_ON = <span class="string">'F'</span>;
+0433 nml.NML_NCNEST.NCNEST_BLOCKSIZE= 20;
+0434 fmt.NML_NCNEST.NCNEST_BLOCKSIZE.format= <span class="string">'%u'</span>;
+0435 nml.NML_NCNEST.NCNEST_NODE_FILES=[conf.casename <span class="string">'_nodes.dat'</span>];
+0436 nml.NML_NCNEST.NCNEST_OUT_INTERVAL=<span class="string">'seconds= 900.0'</span>;
+0437 <span class="comment">%/</span>
+0438 <span class="comment">%%</span>
+0439 nml.NML_NCNEST_WAVE = [];
+0440 nml.NML_NCNEST_WAVE.NCNEST_ON_WAVE  = <span class="string">'F'</span>;
+0441 nml.NML_NCNEST_WAVE.NCNEST_TYPE_WAVE     = <span class="string">'spectral density'</span>; <span class="comment">%! or 'wave parameters'</span>
+0442 nml.NML_NCNEST_WAVE.NCNEST_BLOCKSIZE_WAVE   =          -1;<span class="comment">%</span>
+0443 fmt.NML_NCNEST_WAVE.NCNEST_BLOCKSIZE_WAVE.format   =          <span class="string">'%i'</span>;<span class="comment">%</span>
+0444 nml.NML_NCNEST_WAVE.NCNEST_NODE_FILES_WAVE  = <span class="string">'none'</span>;
+0445 <span class="comment">%/</span>
+0446 <span class="comment">%%</span>
+0447 nml.NML_BOUNDSCHK = [];
+0448 nml.NML_BOUNDSCHK.BOUNDSCHK_ON  = <span class="string">'F'</span>;
+0449 nml.NML_BOUNDSCHK.CHK_INTERVAL  = 1;
+0450 fmt.NML_BOUNDSCHK.CHK_INTERVAL.format  = <span class="string">'%u'</span>;
+0451 nml.NML_BOUNDSCHK.VELOC_MAG_MAX = 6.5   ;
+0452 fmt.NML_BOUNDSCHK.VELOC_MAG_MAX.format = <span class="string">'%5.2f'</span>   ;
+0453 nml.NML_BOUNDSCHK.ZETA_MAG_MAX  = 10.  ;
+0454 fmt.NML_BOUNDSCHK.ZETA_MAG_MAX.format  =  <span class="string">'%5.2f'</span>  ;
+0455 nml.NML_BOUNDSCHK.TEMP_MAX      = 30.;
+0456 fmt.NML_BOUNDSCHK.TEMP_MAX.format      =  <span class="string">'%5.2f'</span>;
+0457 nml.NML_BOUNDSCHK.TEMP_MIN      = -4.;
+0458 fmt.NML_BOUNDSCHK.TEMP_MIN.format      =  <span class="string">'%5.2f'</span>;
+0459 nml.NML_BOUNDSCHK.SALT_MAX      = 40.;
+0460 fmt.NML_BOUNDSCHK.SALT_MAX.format      =  <span class="string">'%5.2f'</span>;
+0461 nml.NML_BOUNDSCHK.SALT_MIN      = -.5 ;
+0462 fmt.NML_BOUNDSCHK.SALT_MIN.format      = <span class="string">'%5.2f'</span> ;
+0463 <span class="comment">%/</span>
+0464 <span class="comment">%%</span>
+0465 nml.NML_DYE_RELEASE = [];
+0466 nml.NML_DYE_RELEASE.DYE_ON    = <span class="string">'F'</span>;
+0467 nml.NML_DYE_RELEASE.DYE_RELEASE_START    = <span class="string">'2046-02-01 00:00:00'</span>;<span class="comment">%</span>
+0468 nml.NML_DYE_RELEASE.DYE_RELEASE_STOP    = <span class="string">'2046-03-01 00:00:00'</span> ;<span class="comment">%</span>
+0469 nml.NML_DYE_RELEASE.KSPE_DYE    = 1;<span class="comment">%</span>
+0470 fmt.NML_DYE_RELEASE.KSPE_DYE.format    = <span class="string">'%u'</span>;<span class="comment">%</span>
+0471 nml.NML_DYE_RELEASE.MSPE_DYE    = 1;<span class="comment">%</span>
+0472 fmt.NML_DYE_RELEASE.MSPE_DYE.format    = <span class="string">'%u'</span>;<span class="comment">%</span>
+0473 nml.NML_DYE_RELEASE.K_SPECIFY    = 1;<span class="comment">%</span>
+0474 fmt.NML_DYE_RELEASE.K_SPECIFY.format    = <span class="string">'%u'</span>;<span class="comment">%</span>
+0475 nml.NML_DYE_RELEASE.M_SPECIFY    = 8187;<span class="comment">%</span>
+0476 fmt.NML_DYE_RELEASE.M_SPECIFY.format    = <span class="string">'%u'</span>;<span class="comment">%</span>
+0477 nml.NML_DYE_RELEASE.DYE_SOURCE_TERM = 4500.0 ;
+0478 fmt.NML_DYE_RELEASE.DYE_SOURCE_TERM.format =  <span class="string">'%10.2f'</span> ;
+0479 <span class="comment">%%</span>
+0480 nml.NML_PWP = [];
+0481 nml.NML_PWP.UPPER_DEPTH_LIMIT=20.00000;
+0482 fmt.NML_PWP.UPPER_DEPTH_LIMIT.format=<span class="string">'%5.2f'</span> ;
+0483 nml.NML_PWP.LOWER_DEPTH_LIMIT=200.0000;
+0484 fmt.NML_PWP.LOWER_DEPTH_LIMIT.format=<span class="string">'%5.2f'</span> ;
+0485 nml.NML_PWP.VERTICAL_RESOLUTION=1.000000;
+0486 fmt.NML_PWP.VERTICAL_RESOLUTION.format=<span class="string">'%5.2f'</span> ;
+0487 nml.NML_PWP.BULK_RICHARDSON=0.6500000;
+0488 fmt.NML_PWP.BULK_RICHARDSON.format=<span class="string">'%5.2f'</span> ;
+0489 nml.NML_PWP.GRADIENT_RICHARDSON=0.2500000;
+0490 fmt.NML_PWP.GRADIENT_RICHARDSON.format=<span class="string">'%5.2f'</span> ;
+0491 
+0492 <span class="comment">%%</span>
+0493 nml.NML_SST_ASSIMILATION = [];
+0494 nml.NML_SST_ASSIMILATION.SST_ASSIM= <span class="string">'F'</span>;
+0495 nml.NML_SST_ASSIMILATION.SST_ASSIM_FILE = [conf.casename <span class="string">'_sst.nc'</span>];<span class="comment">%</span>
+0496 nml.NML_SST_ASSIMILATION.SST_RADIUS = 0.0000000E+00;
+0497 fmt.NML_SST_ASSIMILATION.SST_RADIUS.format = <span class="string">'%12.6f'</span> ;
+0498 nml.NML_SST_ASSIMILATION.SST_WEIGHT_MAX = 1.0000000E+00;
+0499 fmt.NML_SST_ASSIMILATION.SST_WEIGHT_MAX.format = <span class="string">'%5.5f'</span> ;
+0500 nml.NML_SST_ASSIMILATION.SST_TIMESCALE = 0.0000000E+00;
+0501 fmt.NML_SST_ASSIMILATION.SST_TIMESCALE.format = <span class="string">'%12.6f'</span> ;
+0502 nml.NML_SST_ASSIMILATION.SST_TIME_WINDOW = 0.0000000E+00;
+0503 fmt.NML_SST_ASSIMILATION.SST_TIME_WINDOW.format = <span class="string">'%12.6f'</span> ;
+0504 nml.NML_SST_ASSIMILATION.SST_N_PER_INTERVAL = 0;
+0505 fmt.NML_SST_ASSIMILATION.SST_N_PER_INTERVAL.format = <span class="string">'%u'</span>;<span class="comment">%</span>
+0506 <span class="comment">%%</span>
+0507 nml.NML_SSTGRD_ASSIMILATION = [];
+0508 nml.NML_SSTGRD_ASSIMILATION.SSTGRD_ASSIM = <span class="string">'F'</span>;
+0509 nml.NML_SSTGRD_ASSIMILATION.SSTGRD_ASSIM_FILE = [conf.casename <span class="string">'_sstgrd.nc'</span>];<span class="comment">%sst-2005_1km.nc;</span>
+0510 nml.NML_SSTGRD_ASSIMILATION.SSTGRD_WEIGHT_MAX = 0.5000000E+00;
+0511 nml.NML_SSTGRD_ASSIMILATION.SSTGRD_TIMESCALE = 0.00010000E+00;
+0512 nml.NML_SSTGRD_ASSIMILATION.SSTGRD_TIME_WINDOW = 1.0000000E+00; <span class="comment">% This is in hours and not in seconds as stated in the manual</span>
+0513 nml.NML_SSTGRD_ASSIMILATION.SSTGRD_N_PER_INTERVAL = 24 ;
+0514 fmt.NML_SSTGRD_ASSIMILATION.SSTGRD_WEIGHT_MAX.format = <span class="string">'%12.6f'</span> ;
+0515 fmt.NML_SSTGRD_ASSIMILATION.SSTGRD_TIMESCALE.format = <span class="string">'%12.6f'</span> ;
+0516 fmt.NML_SSTGRD_ASSIMILATION.SSTGRD_TIME_WINDOW.format = <span class="string">'%12.6f'</span> ;
+0517 fmt.NML_SSTGRD_ASSIMILATION.SSTGRD_N_PER_INTERVAL.format = <span class="string">'%u'</span> ;
+0518 
+0519 <span class="comment">%%</span>
+0520 nml.NML_SSHGRD_ASSIMILATION = [];
+0521 nml.NML_SSHGRD_ASSIMILATION.SSHGRD_ASSIM    = <span class="string">'F'</span>;
+0522 nml.NML_SSHGRD_ASSIMILATION.SSHGRD_ASSIM_FILE       = [conf.casename <span class="string">'_sshgrd.nc'</span>];<span class="comment">%aqua_v13_sshgrd.nc;</span>
+0523 nml.NML_SSHGRD_ASSIMILATION.SSHGRD_WEIGHT_MAX       =  0.000000000000000E+000;
+0524 nml.NML_SSHGRD_ASSIMILATION.SSHGRD_TIMESCALE        =  0.000000000000000E+000;
+0525 nml.NML_SSHGRD_ASSIMILATION.SSHGRD_TIME_WINDOW      =  0.000000000000000E+000;
+0526 nml.NML_SSHGRD_ASSIMILATION.SSHGRD_N_PER_INTERVAL   =           0;
+0527 fmt.NML_SSHGRD_ASSIMILATION.SSHGRD_WEIGHT_MAX.format       =  <span class="string">'%12.6f'</span> ;
+0528 fmt.NML_SSHGRD_ASSIMILATION.SSHGRD_TIMESCALE.format        =  <span class="string">'%12.6f'</span> ;
+0529 fmt.NML_SSHGRD_ASSIMILATION.SSHGRD_TIME_WINDOW.format      =  <span class="string">'%12.6f'</span> ;
+0530 fmt.NML_SSHGRD_ASSIMILATION.SSHGRD_N_PER_INTERVAL.format   =           <span class="string">'%u'</span>;<span class="comment">%</span>
+0531 <span class="comment">%%</span>
+0532 nml.NML_TSGRD_ASSIMILATION = [];
+0533 nml.NML_TSGRD_ASSIMILATION.TSGRD_ASSIM     = <span class="string">'F'</span>;
+0534 nml.NML_TSGRD_ASSIMILATION.TSGRD_ASSIM_FILE        = [conf.casename <span class="string">'_tsgrd.nc'</span>];<span class="comment">%aqua_v13_tsgrd.nc;</span>
+0535 nml.NML_TSGRD_ASSIMILATION.TSGRD_WEIGHT_MAX        =  0.000000000000000E+000;
+0536 nml.NML_TSGRD_ASSIMILATION.TSGRD_TIMESCALE =  0.000000000000000E+000;
+0537 nml.NML_TSGRD_ASSIMILATION.TSGRD_TIME_WINDOW       =  0.000000000000000E+000;
+0538 nml.NML_TSGRD_ASSIMILATION.TSGRD_N_PER_INTERVAL    =           0;
+0539 fmt.NML_TSGRD_ASSIMILATION.TSGRD_WEIGHT_MAX.format        =  <span class="string">'%12.6f'</span> ;
+0540 fmt.NML_TSGRD_ASSIMILATION.TSGRD_TIMESCALE.format =  <span class="string">'%12.6f'</span> ;
+0541 fmt.NML_TSGRD_ASSIMILATION.TSGRD_TIME_WINDOW.format       =  <span class="string">'%12.6f'</span> ;
+0542 fmt.NML_TSGRD_ASSIMILATION.TSGRD_N_PER_INTERVAL.format    =           <span class="string">'%u'</span>;<span class="comment">%</span>
+0543 <span class="comment">%%</span>
+0544 nml.NML_CUR_NGASSIMILATION = [];
+0545 nml.NML_CUR_NGASSIMILATION.CUR_NGASSIM     = <span class="string">'F'</span>;
+0546 nml.NML_CUR_NGASSIMILATION.CUR_NGASSIM_FILE        = [conf.casename <span class="string">'_cur.nc'</span>];<span class="comment">%aqua_v13_cur;</span>
+0547 nml.NML_CUR_NGASSIMILATION.CUR_NG_RADIUS   =  0.000000000000000E+000;
+0548 nml.NML_CUR_NGASSIMILATION.CUR_GAMA        =  0.000000000000000E+000;
+0549 nml.NML_CUR_NGASSIMILATION.CUR_GALPHA      =  0.000000000000000E+000;
+0550 nml.NML_CUR_NGASSIMILATION.CUR_NG_ASTIME_WINDOW    =  0.000000000000000E+000;
+0551 fmt.NML_CUR_NGASSIMILATION.CUR_NG_RADIUS.format   =  <span class="string">'%12.6f'</span> ;
+0552 fmt.NML_CUR_NGASSIMILATION.CUR_GAMA.format        =  <span class="string">'%12.6f'</span> ;
+0553 fmt.NML_CUR_NGASSIMILATION.CUR_GALPHA.format      =  <span class="string">'%12.6f'</span> ;
+0554 fmt.NML_CUR_NGASSIMILATION.CUR_NG_ASTIME_WINDOW.format    =  <span class="string">'%12.6f'</span> ;
+0555 <span class="comment">%%</span>
+0556 nml.NML_CUR_OIASSIMILATION = [];
+0557 nml.NML_CUR_OIASSIMILATION.CUR_OIASSIM     = <span class="string">'F'</span>;
+0558 nml.NML_CUR_OIASSIMILATION.CUR_OIASSIM_FILE        = [conf.casename <span class="string">'_curoi.nc'</span>];<span class="comment">%aqua_v13_cur;</span>
+0559 nml.NML_CUR_OIASSIMILATION.CUR_OI_RADIUS   =  0.000000000000000E+000;
+0560 nml.NML_CUR_OIASSIMILATION.CUR_OIGALPHA    =  0.000000000000000E+000;
+0561 nml.NML_CUR_OIASSIMILATION.CUR_OI_ASTIME_WINDOW    =  0.000000000000000E+000;
+0562 nml.NML_CUR_OIASSIMILATION.CUR_N_INFLU     =           0;
+0563 nml.NML_CUR_OIASSIMILATION.CUR_NSTEP_OI    =                     0;
+0564 fmt.NML_CUR_OIASSIMILATION.CUR_OI_RADIUS.format   =  <span class="string">'%12.6f'</span> ;
+0565 fmt.NML_CUR_OIASSIMILATION.CUR_OIGALPHA.format    = <span class="string">'%12.6f'</span> ;
+0566 fmt.NML_CUR_OIASSIMILATION.CUR_OI_ASTIME_WINDOW.format    =  <span class="string">'%12.6f'</span> ;
+0567 fmt.NML_CUR_OIASSIMILATION.CUR_N_INFLU.format     =           <span class="string">'%u'</span>;<span class="comment">%</span>
+0568 fmt.NML_CUR_OIASSIMILATION.CUR_NSTEP_OI.format    =                    <span class="string">'%u'</span>;<span class="comment">%</span>
+0569 <span class="comment">%%</span>
+0570 nml.NML_TS_NGASSIMILATION = [];
+0571 nml.NML_TS_NGASSIMILATION.TS_NGASSIM      = <span class="string">'F'</span>;
+0572 nml.NML_TS_NGASSIMILATION.TS_NGASSIM_FILE = [conf.casename <span class="string">'_ts.nc'</span>];<span class="comment">%aqua_v13_ts;</span>
+0573 nml.NML_TS_NGASSIMILATION.TS_NG_RADIUS    =  0.000000000000000E+000;
+0574 nml.NML_TS_NGASSIMILATION.TS_GAMA =  0.000000000000000E+000;
+0575 nml.NML_TS_NGASSIMILATION.TS_GALPHA       =  0.000000000000000E+000;
+0576 nml.NML_TS_NGASSIMILATION.TS_NG_ASTIME_WINDOW     =  0.000000000000000E+000;
+0577 fmt.NML_TS_NGASSIMILATION.TS_NG_RADIUS.format    =  <span class="string">'%12.6f'</span> ;
+0578 fmt.NML_TS_NGASSIMILATION.TS_GAMA.format = <span class="string">'%12.6f'</span> ;
+0579 fmt.NML_TS_NGASSIMILATION.TS_GALPHA.format       =  <span class="string">'%12.6f'</span> ;
+0580 fmt.NML_TS_NGASSIMILATION.TS_NG_ASTIME_WINDOW.format     =  <span class="string">'%12.6f'</span> ;
+0581 <span class="comment">%%</span>
+0582 nml.NML_TS_OIASSIMILATION = [];
+0583 nml.NML_TS_OIASSIMILATION.TS_OIASSIM      = <span class="string">'F'</span>;
+0584 nml.NML_TS_OIASSIMILATION.TS_OIASSIM_FILE = [conf.casename <span class="string">'_tsoi.nc'</span>];<span class="comment">%aqua_v13_ts;</span>
+0585 nml.NML_TS_OIASSIMILATION.TS_OI_RADIUS    =  0.000000000000000E+000;
+0586 nml.NML_TS_OIASSIMILATION.TS_OIGALPHA     =  0.000000000000000E+000;
+0587 nml.NML_TS_OIASSIMILATION.TS_OI_ASTIME_WINDOW     =  0.000000000000000E+000;
+0588 nml.NML_TS_OIASSIMILATION.TS_MAX_LAYER    =           0;
+0589 nml.NML_TS_OIASSIMILATION.TS_N_INFLU      =           0;
+0590 nml.NML_TS_OIASSIMILATION.TS_NSTEP_OI     =                     0;
+0591 fmt.NML_TS_OIASSIMILATION.TS_OI_RADIUS.format    =  <span class="string">'%12.6f'</span> ;
+0592 fmt.NML_TS_OIASSIMILATION.TS_OIGALPHA.format     =  <span class="string">'%12.6f'</span> ;
+0593 fmt.NML_TS_OIASSIMILATION.TS_OI_ASTIME_WINDOW.format     =  <span class="string">'%12.6f'</span> ;
+0594 fmt.NML_TS_OIASSIMILATION.TS_MAX_LAYER.format    =          <span class="string">'%u'</span>;<span class="comment">%</span>
+0595 fmt.NML_TS_OIASSIMILATION.TS_N_INFLU.format      =           <span class="string">'%u'</span>;<span class="comment">%</span>
+0596 fmt.NML_TS_OIASSIMILATION.TS_NSTEP_OI.format     =                     <span class="string">'%u'</span>;<span class="comment">%</span>
+0597 
+0598 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

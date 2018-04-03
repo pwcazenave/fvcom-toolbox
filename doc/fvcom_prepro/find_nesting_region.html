@@ -1,0 +1,396 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of find_nesting_region</title>
+  <meta name="keywords" content="find_nesting_region">
+  <meta name="description" content="Creates a nesting structure array for direct/indirect or weighted nesting">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; find_nesting_region.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>find_nesting_region
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Creates a nesting structure array for direct/indirect or weighted nesting</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Nested = find_nesting_region(conf, Mobj) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Creates a nesting structure array for direct/indirect or weighted nesting
+
+ function Nested = find_nesting_region(conf, Mobj)
+
+ DESCRIPTION:
+   Uses the Mesh object Mobj and the conf variable to search for the nodes
+   and elements originating from the open boundaries into de domain
+   interior for a specified number of levels.
+
+ Optionally specify nesting type:
+   1/2: DIRECT/INDIRECT nesting:
+       - Full variables/no surface elevation respectively.
+   3:   RELAXATION nesting:
+       - Nesting with a relaxation method.
+
+ INPUT:
+  conf     = struct whose field names are the model configuration options
+              as set by the user. These are generally assigned at the top of a
+              make_input.m type of script. Minimum fields are:
+              - Nested_type: Array of nesting types, one for each open boundary.
+              1 or 2 are direct nesting, 3 is weighted. If we're doing
+              type 3, we can specify the number of levels of nested
+              boundaries to use. The minimum valid value is 1. For
+              Indirect or direct nesting use 1
+              - levels: number of levels of nodes over which to relax the
+              boundary (if Nested_type is 3).
+              - power = determines drop of weights from 1. 0 is linear,
+              1-4 is 1/conf.levels.^conf.power.
+  Mobj     = Mesh object with the following fields:
+              - tri: Triangulation table as pupulated by read_sms_grid
+              - x: Node x coordinates (cartesian)
+              - y: Node y coordinates (cartesian)
+              - xc: element x coordinates (cartesian)
+              - yc: Element y coordinates (cartesian)
+              - nObcNodes: number of nodes as defined by SMS and read
+              through read_sms_grid
+              - read_obc_nodes = nodes indices at boundaries as read in
+              read_sms_grid.
+              - obc_type = Type of OBC as defined in mod_obcs.F [ values
+              of 1-10] and parsed to Mobj from conf by add_obc_nodes_list
+              - obc_nodes: matrix with node indices. Each row is a given
+              open boundary.
+              - nObs: number of open boundaries.
+
+ OUTPUT:
+  Nested   = Mesh object with all the same fields as Mobj, plus the
+             following added and modified fields:
+              - read_obc_nodes: new nested boundary node IDs
+              - read_obc_elems: new nested boundary element IDs
+              - nObs: number of open boundaries (number of levels * number
+              - nObcNodes: number of nodes in each nested level
+              of original open boundaries)
+              - obc_type: the type for each nested boundary
+              - obc_nodes: the array-based nested boundary node IDs (for
+              backwards compatibility)
+              - weight_node: weights for each nested node boundary level
+              - weight_cell: weights for each nested element boundary level
+
+ EXAMPLE USAGE:
+   conf.Nested_type = type of nesting [1, 2 == direct nesting, 3 == weighted]
+   conf.levels = number of boundary bands to use for weighted option
+   conf.power = determines drop of weights from 1 [0 is linear, anything
+   else is 1/conf.levels.^conf.power]
+   Mobj.tri = Triangulation table as pupulated by read_sms_grid
+   Mobj.x = Nodes x coordinate [we should make it possible to use lon instead]
+   Mobj.y = Nodes y coordinate [we should make it possible to use lat instead]
+   Mobj.nObcNodes = number of nodes as defined by SMS and read through read_sms_grid
+   Mobj.read_obc_nodes = nodes indices at boundaries as read in read_sms_grid
+   Mobj.obc_type = Type of OBC as defined in mod_obcs.F [ values of 1-10]
+       and parsed to Mobj from conf by add_obc_nodes_list
+   Mobj.xc = Nodes x coordinate [we should make it possible to use lonc instead]
+   Mobj.yc = Elements y coordinate [we should make it possible to use latc instead]
+   Mobj.obc_nodes = matrix with node indices. Each row is a boundary  level.
+   Mobj.nObs = total number of open boundary levels (I think this is set
+       in setup_metrics.m).
+
+   the global variable ftbverbose shows information at run time as well as
+   generating a figure with the location of the nesting nodes and elements
+
+   Nested = find_nesting_region(conf,Mobj)
+
+   Nested.nObcNodes = number of nodes in new nesting zone
+   Nested.read_obc_nodes = nodes indices in nesting zone
+   Nested.obc_type = Type of OBC as defined in mod_obcs.F [ values of 1-10]
+   Nested.obc_nodes = matrix with node indices. Each row is a boundary level.
+   Nested.nObs = total number of open boundary levels
+   Nested.weight_node = weights for nodes if using weighted type [0-1] see
+       FVCOM manual for further info (Chapter 6 section 4 in version 3.2)
+   Nested.weight_cell = weights for elements if using weighted type [0-1]</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Nested = find_nesting_region(conf, Mobj)</a>
+0002 <span class="comment">% Creates a nesting structure array for direct/indirect or weighted nesting</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function Nested = find_nesting_region(conf, Mobj)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Uses the Mesh object Mobj and the conf variable to search for the nodes</span>
+0008 <span class="comment">%   and elements originating from the open boundaries into de domain</span>
+0009 <span class="comment">%   interior for a specified number of levels.</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% Optionally specify nesting type:</span>
+0012 <span class="comment">%   1/2: DIRECT/INDIRECT nesting:</span>
+0013 <span class="comment">%       - Full variables/no surface elevation respectively.</span>
+0014 <span class="comment">%   3:   RELAXATION nesting:</span>
+0015 <span class="comment">%       - Nesting with a relaxation method.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% INPUT:</span>
+0018 <span class="comment">%  conf     = struct whose field names are the model configuration options</span>
+0019 <span class="comment">%              as set by the user. These are generally assigned at the top of a</span>
+0020 <span class="comment">%              make_input.m type of script. Minimum fields are:</span>
+0021 <span class="comment">%              - Nested_type: Array of nesting types, one for each open boundary.</span>
+0022 <span class="comment">%              1 or 2 are direct nesting, 3 is weighted. If we're doing</span>
+0023 <span class="comment">%              type 3, we can specify the number of levels of nested</span>
+0024 <span class="comment">%              boundaries to use. The minimum valid value is 1. For</span>
+0025 <span class="comment">%              Indirect or direct nesting use 1</span>
+0026 <span class="comment">%              - levels: number of levels of nodes over which to relax the</span>
+0027 <span class="comment">%              boundary (if Nested_type is 3).</span>
+0028 <span class="comment">%              - power = determines drop of weights from 1. 0 is linear,</span>
+0029 <span class="comment">%              1-4 is 1/conf.levels.^conf.power.</span>
+0030 <span class="comment">%  Mobj     = Mesh object with the following fields:</span>
+0031 <span class="comment">%              - tri: Triangulation table as pupulated by read_sms_grid</span>
+0032 <span class="comment">%              - x: Node x coordinates (cartesian)</span>
+0033 <span class="comment">%              - y: Node y coordinates (cartesian)</span>
+0034 <span class="comment">%              - xc: element x coordinates (cartesian)</span>
+0035 <span class="comment">%              - yc: Element y coordinates (cartesian)</span>
+0036 <span class="comment">%              - nObcNodes: number of nodes as defined by SMS and read</span>
+0037 <span class="comment">%              through read_sms_grid</span>
+0038 <span class="comment">%              - read_obc_nodes = nodes indices at boundaries as read in</span>
+0039 <span class="comment">%              read_sms_grid.</span>
+0040 <span class="comment">%              - obc_type = Type of OBC as defined in mod_obcs.F [ values</span>
+0041 <span class="comment">%              of 1-10] and parsed to Mobj from conf by add_obc_nodes_list</span>
+0042 <span class="comment">%              - obc_nodes: matrix with node indices. Each row is a given</span>
+0043 <span class="comment">%              open boundary.</span>
+0044 <span class="comment">%              - nObs: number of open boundaries.</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">% OUTPUT:</span>
+0047 <span class="comment">%  Nested   = Mesh object with all the same fields as Mobj, plus the</span>
+0048 <span class="comment">%             following added and modified fields:</span>
+0049 <span class="comment">%              - read_obc_nodes: new nested boundary node IDs</span>
+0050 <span class="comment">%              - read_obc_elems: new nested boundary element IDs</span>
+0051 <span class="comment">%              - nObs: number of open boundaries (number of levels * number</span>
+0052 <span class="comment">%              - nObcNodes: number of nodes in each nested level</span>
+0053 <span class="comment">%              of original open boundaries)</span>
+0054 <span class="comment">%              - obc_type: the type for each nested boundary</span>
+0055 <span class="comment">%              - obc_nodes: the array-based nested boundary node IDs (for</span>
+0056 <span class="comment">%              backwards compatibility)</span>
+0057 <span class="comment">%              - weight_node: weights for each nested node boundary level</span>
+0058 <span class="comment">%              - weight_cell: weights for each nested element boundary level</span>
+0059 <span class="comment">%</span>
+0060 <span class="comment">% EXAMPLE USAGE:</span>
+0061 <span class="comment">%   conf.Nested_type = type of nesting [1, 2 == direct nesting, 3 == weighted]</span>
+0062 <span class="comment">%   conf.levels = number of boundary bands to use for weighted option</span>
+0063 <span class="comment">%   conf.power = determines drop of weights from 1 [0 is linear, anything</span>
+0064 <span class="comment">%   else is 1/conf.levels.^conf.power]</span>
+0065 <span class="comment">%   Mobj.tri = Triangulation table as pupulated by read_sms_grid</span>
+0066 <span class="comment">%   Mobj.x = Nodes x coordinate [we should make it possible to use lon instead]</span>
+0067 <span class="comment">%   Mobj.y = Nodes y coordinate [we should make it possible to use lat instead]</span>
+0068 <span class="comment">%   Mobj.nObcNodes = number of nodes as defined by SMS and read through read_sms_grid</span>
+0069 <span class="comment">%   Mobj.read_obc_nodes = nodes indices at boundaries as read in read_sms_grid</span>
+0070 <span class="comment">%   Mobj.obc_type = Type of OBC as defined in mod_obcs.F [ values of 1-10]</span>
+0071 <span class="comment">%       and parsed to Mobj from conf by add_obc_nodes_list</span>
+0072 <span class="comment">%   Mobj.xc = Nodes x coordinate [we should make it possible to use lonc instead]</span>
+0073 <span class="comment">%   Mobj.yc = Elements y coordinate [we should make it possible to use latc instead]</span>
+0074 <span class="comment">%   Mobj.obc_nodes = matrix with node indices. Each row is a boundary  level.</span>
+0075 <span class="comment">%   Mobj.nObs = total number of open boundary levels (I think this is set</span>
+0076 <span class="comment">%       in setup_metrics.m).</span>
+0077 <span class="comment">%</span>
+0078 <span class="comment">%   the global variable ftbverbose shows information at run time as well as</span>
+0079 <span class="comment">%   generating a figure with the location of the nesting nodes and elements</span>
+0080 <span class="comment">%</span>
+0081 <span class="comment">%   Nested = find_nesting_region(conf,Mobj)</span>
+0082 <span class="comment">%</span>
+0083 <span class="comment">%   Nested.nObcNodes = number of nodes in new nesting zone</span>
+0084 <span class="comment">%   Nested.read_obc_nodes = nodes indices in nesting zone</span>
+0085 <span class="comment">%   Nested.obc_type = Type of OBC as defined in mod_obcs.F [ values of 1-10]</span>
+0086 <span class="comment">%   Nested.obc_nodes = matrix with node indices. Each row is a boundary level.</span>
+0087 <span class="comment">%   Nested.nObs = total number of open boundary levels</span>
+0088 <span class="comment">%   Nested.weight_node = weights for nodes if using weighted type [0-1] see</span>
+0089 <span class="comment">%       FVCOM manual for further info (Chapter 6 section 4 in version 3.2)</span>
+0090 <span class="comment">%   Nested.weight_cell = weights for elements if using weighted type [0-1]</span>
+0091 
+0092 <span class="comment">% Author(s):</span>
+0093 <span class="comment">%   Ricardo Torres (Plymouth Marine Laboratory)</span>
+0094 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0095 <span class="comment">%   Darren Price (CH2MHill)</span>
+0096 <span class="comment">%   Hakeem Johnson (CH2MHill)</span>
+0097 <span class="comment">%</span>
+0098 <span class="comment">% Revision history:</span>
+0099 <span class="comment">%   2015-11-01 First version based on Hakeem and Darren code as provided to</span>
+0100 <span class="comment">%   Torres by Pierre.</span>
+0101 <span class="comment">%   2016-01-19 Updated to a stand alone function and general tidy up.</span>
+0102 <span class="comment">%   2016-12-14 Updated the help. Also disabled the plot to ease automated</span>
+0103 <span class="comment">%   runs.</span>
+0104 <span class="comment">%   2016-12-22 Fairly major rewrite to make things clearer and less prone</span>
+0105 <span class="comment">%   to subtle bugs.</span>
+0106 <span class="comment">%   2017-02-16 Fix for direct nesting (no weights needed).</span>
+0107 <span class="comment">%   2017-02-20 Fix non-critical bug which added empty cells for the nest</span>
+0108 <span class="comment">%   elements. Also make the node and element weight values match one another.</span>
+0109 <span class="comment">%</span>
+0110 <span class="comment">%==========================================================================</span>
+0111 
+0112 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0113 
+0114 <span class="keyword">global</span> ftbverbose
+0115 <span class="keyword">if</span> ftbverbose
+0116     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0117 <span class="keyword">end</span>
+0118 
+0119 TR = triangulation(Mobj.tri, [Mobj.x, Mobj.y]);
+0120 
+0121 Nested = Mobj;
+0122 Nested.nObs = 0; <span class="comment">% number of nodal levels is incremented for each level.</span>
+0123 
+0124 <span class="comment">% Make cell arrays to store the element IDs for each nested level as well</span>
+0125 <span class="comment">% as for the weights on the nodes and elements.</span>
+0126 Nested.read_obc_nodes = cell(0);
+0127 Nested.read_obc_elems = cell(0);
+0128 <span class="keyword">if</span> any(conf.Nested_type == 3)
+0129     Nested.weight_cell = cell(0);
+0130     Nested.weight_node = cell(0);
+0131 <span class="keyword">end</span>
+0132 
+0133 <span class="comment">% if ftbverbose</span>
+0134 <span class="comment">%     figure(1)</span>
+0135 <span class="comment">%     clf</span>
+0136 <span class="comment">%     triplot(Nested.tri, Nested.x, Nested.y)</span>
+0137 <span class="comment">%     axis('equal', 'tight')</span>
+0138 <span class="comment">%     hold on</span>
+0139 <span class="comment">% end</span>
+0140 
+0141 <span class="comment">% Indices for the output cell arrays which are incremented for each nest</span>
+0142 <span class="comment">% level and each open boundary.</span>
+0143 cumulative_node_idx = 1;
+0144 cumulative_elem_idx = 1;
+0145 <span class="keyword">for</span> obc_idx = 1:Mobj.nObs
+0146     <span class="comment">% Generate the weights for the elements and nodes.</span>
+0147     <span class="keyword">if</span> conf.Nested_type(obc_idx) == 3
+0148         <span class="keyword">if</span> conf.power == 0
+0149             weights_nodes = fliplr((1:conf.levels(obc_idx) + 1)./(conf.levels(obc_idx) + 1));
+0150         <span class="keyword">else</span>
+0151             weights_nodes = 1:conf.levels(obc_idx) + 1;
+0152             weights_nodes = 1./weights_nodes.^conf.power;
+0153         <span class="keyword">end</span>
+0154         <span class="comment">% Use the same weights as the nodes, but drop the last level</span>
+0155         <span class="comment">% (elements is always 1 smaller).</span>
+0156         weights_elems = weights_nodes(1:end - 1);
+0157     <span class="keyword">end</span>
+0158 
+0159     <span class="comment">% Save the original open boundary nodes into the nested struct (Nested).</span>
+0160     Nested.read_obc_nodes{cumulative_node_idx} = Mobj.read_obc_nodes{obc_idx};
+0161 
+0162     <span class="comment">% Given the current open boundary, find the elements connected to it</span>
+0163     <span class="comment">% and give them some weights.</span>
+0164     ti = vertexAttachments(TR, double(Mobj.read_obc_nodes{obc_idx})');
+0165     Nested.read_obc_elems{cumulative_elem_idx} = unique([ti{:}]);
+0166 
+0167     <span class="comment">% Save the weights into the nested struct (Nested).</span>
+0168     <span class="keyword">if</span> conf.Nested_type(obc_idx) ~= 1
+0169         Nested.weight_node{cumulative_node_idx} = repmat(weights_nodes(1), 1, length(Nested.read_obc_nodes{cumulative_node_idx}));
+0170         Nested.weight_cell{cumulative_elem_idx} = repmat(weights_elems(1), 1, length(Nested.read_obc_elems{cumulative_elem_idx}));
+0171     <span class="keyword">end</span>
+0172 
+0173     <span class="comment">% Also save the type of open boundary we've got and update the open</span>
+0174     <span class="comment">% boundary counter and number of open boundary nodes.</span>
+0175     Nested.nObcNodes(cumulative_node_idx) = length(Nested.read_obc_nodes{cumulative_node_idx});
+0176     Nested.nObs = Nested.nObs + 1;
+0177     Nested.obc_type(cumulative_node_idx) = conf.Nested_type(obc_idx);
+0178 
+0179     <span class="keyword">if</span> ftbverbose &amp;&amp; conf.Nested_type(obc_idx) ~= 1
+0180 <span class="comment">%         figure(1)</span>
+0181 <span class="comment">%         scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')</span>
+0182 <span class="comment">%         scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')</span>
+0183         fprintf(<span class="string">'Original open boundary %d\n'</span>, obc_idx)
+0184     <span class="keyword">end</span>
+0185 
+0186     <span class="comment">% Now we have the original open boundary and the elements connected to</span>
+0187     <span class="comment">% it we can move through the levels specified in conf.levels(obc_idx)</span>
+0188     <span class="comment">% and repeat the process. Bump the cumulative counters accordingly.</span>
+0189     cumulative_node_idx = cumulative_node_idx + 1;
+0190     cumulative_elem_idx = cumulative_elem_idx + 1;
+0191 
+0192     <span class="keyword">for</span> lev = 1:conf.levels(obc_idx)
+0193         <span class="comment">% Find the nodes and elements for this level and assign their</span>
+0194         <span class="comment">% weights. Use the most recent data in Nested.read_obc_nodes as the</span>
+0195         <span class="comment">% anchor from which to work.</span>
+0196         Nested.read_obc_nodes{cumulative_node_idx} = int32(setdiff(unique(Nested.tri(Nested.read_obc_elems{cumulative_elem_idx - 1}, :)), <span class="keyword">...</span>
+0197             [Nested.read_obc_nodes{1:cumulative_node_idx - 1}]))';
+0198         ti = vertexAttachments(TR, double(Nested.read_obc_nodes{cumulative_node_idx})');
+0199         Nested.nObs = Nested.nObs + 1;
+0200         Nested.obc_type(cumulative_node_idx) = conf.Nested_type(obc_idx);
+0201         Nested.nObcNodes(cumulative_node_idx) = length(Nested.read_obc_nodes{cumulative_node_idx});
+0202 
+0203         <span class="keyword">if</span> conf.Nested_type(obc_idx) ~= 1
+0204             Nested.weight_node{cumulative_node_idx} = repmat(weights_nodes(lev + 1), 1, length(Nested.read_obc_nodes{cumulative_node_idx}));
+0205         <span class="keyword">end</span>
+0206         <span class="keyword">if</span> lev ~= conf.levels(obc_idx)
+0207             Nested.read_obc_elems{cumulative_elem_idx} = setdiff(unique([ti{:}]), [Nested.read_obc_elems{:}]);
+0208             <span class="keyword">if</span> conf.Nested_type(obc_idx) ~= 1
+0209                 Nested.weight_cell{cumulative_elem_idx} = repmat(weights_elems(lev + 1), 1, length(Nested.read_obc_elems{cumulative_elem_idx}));
+0210             <span class="keyword">end</span>
+0211         <span class="keyword">end</span>
+0212 
+0213         <span class="keyword">if</span> ftbverbose &amp;&amp; conf.Nested_type(obc_idx) ~= 1
+0214 <span class="comment">%             figure(1)</span>
+0215 <span class="comment">%             scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')</span>
+0216 <span class="comment">%             if lev ~= conf.levels(obc_idx)</span>
+0217 <span class="comment">%                 scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')</span>
+0218 <span class="comment">%             end</span>
+0219             fprintf(<span class="string">'Nested level %d\n'</span>, lev)
+0220         <span class="keyword">end</span>
+0221 
+0222         <span class="comment">% Bump the node and element cumulative counters so the next loop</span>
+0223         <span class="comment">% dumps everything into the right position in the cell arrays.</span>
+0224         cumulative_node_idx = cumulative_node_idx + 1;
+0225         <span class="keyword">if</span> lev ~= conf.levels(obc_idx)
+0226             cumulative_elem_idx = cumulative_elem_idx + 1;
+0227         <span class="keyword">end</span>
+0228     <span class="keyword">end</span>
+0229     <span class="comment">% Check if all possible elements have been correctly identified</span>
+0230     <span class="comment">% colapse all nodes into an array and extract all elements connected to</span>
+0231     <span class="comment">% those nodes</span>
+0232     <span class="comment">% find the elements that are attached to 3 nodes in the nesting region</span>
+0233     <span class="comment">%</span>
+0234     candidate= find(all(ismember(Mobj.tri,[Nested.read_obc_nodes{end}]),2));
+0235     <span class="comment">% test if it is different from existing elements</span>
+0236     [truecandidate]=setdiff(candidate,[Nested.read_obc_elems{:}]);
+0237     <span class="comment">% add to existing list. Catenate will ignore an empty result from</span>
+0238     <span class="comment">% setdiff</span>
+0239     <span class="keyword">if</span> ~isempty(truecandidate)
+0240         <span class="keyword">for</span> dd=1:length(truecandidate)
+0241     Nested.read_obc_elems{end} = cat(2,Nested.read_obc_elems{end},truecandidate(dd));
+0242     Nested.weight_cell{end} = cat(2,Nested.weight_cell{end},Nested.weight_cell{end}(end));
+0243     <span class="keyword">end</span>
+0244     <span class="keyword">end</span>
+0245     <span class="keyword">if</span> ftbverbose
+0246         fprintf(<span class="string">'\n'</span>)
+0247     <span class="keyword">end</span>
+0248 <span class="keyword">end</span>
+0249 
+0250 <span class="comment">% Update the clunky obc_nodes array with the new node IDs from</span>
+0251 <span class="comment">% Nested.read_obc_nodes.</span>
+0252 <span class="keyword">for</span> nidx = 1:length(Nested.read_obc_nodes)
+0253     Nested.obc_nodes(nidx, 1:length(Nested.read_obc_nodes{nidx})) = Nested.read_obc_nodes{nidx};
+0254 <span class="keyword">end</span>
+0255 
+0256 <span class="keyword">if</span> ftbverbose
+0257     <span class="comment">% figure(1)</span>
+0258     <span class="comment">% colorbar</span>
+0259     <span class="comment">% title('Nest weights')</span>
+0260     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0261 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

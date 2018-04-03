@@ -1,0 +1,234 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_admesh_mesh</title>
+  <meta name="keywords" content="write_admesh_mesh">
+  <meta name="description" content="writes admesh mesh files from a Mobj matlab structure variable">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_admesh_mesh.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_admesh_mesh
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>writes admesh mesh files from a Mobj matlab structure variable</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_admesh_mesh(Mobj,varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> writes admesh mesh files from a Mobj matlab structure variable
+
+ function write_admesh_mesh(Mobj)
+
+ DESCRIPTION:
+    writes admesh 14 file.
+
+ INPUT
+   Mobj                   = needs bathymetry, nodes and triangulation
+   table. read_sms_mesh provides everything it needs.
+   [optional] output_directory       = directory to write mesh.14 file
+   [optional] filename       = filename to use instead of default mesh(.14). Don't provide extension 
+   [optional] native_coord = cartesian or spherical. Assumes cartesian if
+   omitted.
+
+ OUTPUT:
+    ADMESH compatible .14 file.
+
+ EXAMPLE USAGE
+    write_admesh_mesh(Mobj)
+
+ Author(s):
+    Ricardo Torres (Plymouth Marine Laboratory) based on read_gmsh_mesh
+
+ Revision history
+
+   2016-06-22 First version.
+   2017-06-06 Removed returned Mobj as it is in no way changed during this
+   function. Also set default coordinate type to cartesian unless
+   overridden with 'native_coord'.
+
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_admesh_mesh(Mobj,varargin)</a>
+0002 <span class="comment">% writes admesh mesh files from a Mobj matlab structure variable</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function write_admesh_mesh(Mobj)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    writes admesh 14 file.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT</span>
+0010 <span class="comment">%   Mobj                   = needs bathymetry, nodes and triangulation</span>
+0011 <span class="comment">%   table. read_sms_mesh provides everything it needs.</span>
+0012 <span class="comment">%   [optional] output_directory       = directory to write mesh.14 file</span>
+0013 <span class="comment">%   [optional] filename       = filename to use instead of default mesh(.14). Don't provide extension</span>
+0014 <span class="comment">%   [optional] native_coord = cartesian or spherical. Assumes cartesian if</span>
+0015 <span class="comment">%   omitted.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% OUTPUT:</span>
+0018 <span class="comment">%    ADMESH compatible .14 file.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% EXAMPLE USAGE</span>
+0021 <span class="comment">%    write_admesh_mesh(Mobj)</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Author(s):</span>
+0024 <span class="comment">%    Ricardo Torres (Plymouth Marine Laboratory) based on read_gmsh_mesh</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Revision history</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">%   2016-06-22 First version.</span>
+0029 <span class="comment">%   2017-06-06 Removed returned Mobj as it is in no way changed during this</span>
+0030 <span class="comment">%   function. Also set default coordinate type to cartesian unless</span>
+0031 <span class="comment">%   overridden with 'native_coord'.</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">%==============================================================================</span>
+0034 
+0035 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0036 <span class="keyword">global</span> ftbverbose
+0037 <span class="keyword">if</span> ftbverbose
+0038     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0039 <span class="keyword">end</span>
+0040 
+0041 <span class="comment">%--------------------------------------------------------------------------</span>
+0042 <span class="comment">% Parse input arguments</span>
+0043 <span class="comment">%--------------------------------------------------------------------------</span>
+0044 
+0045 assert(mod(length(varargin), 2) == 0, <span class="string">'incorrect usage of write_admesh_mesh, use keyword pairs'</span>)
+0046 
+0047 <span class="comment">% Assume we have nothing sensible.</span>
+0048 out_dir = pwd; <span class="comment">% default is to write file to current directory</span>
+0049 native_coord = <span class="string">'cartesian'</span>;
+0050 have_xy = true;
+0051 have_lonlat = false;
+0052 filename = <span class="string">'mesh'</span>
+0053 <span class="keyword">for</span> i = 1:2:length(varargin) - 1
+0054     keyword = lower(varargin{i});
+0055     
+0056     assert(ischar(keyword), <span class="string">'incorrect usage of write_admesh_mesh'</span>)
+0057     
+0058     <span class="keyword">switch</span> keyword
+0059         <span class="keyword">case</span> <span class="string">'output_directory'</span>
+0060             out_dir = varargin{i + 1};
+0061         <span class="keyword">case</span> <span class="string">'filename'</span>
+0062             filename = varargin{i + 1};
+0063         <span class="keyword">case</span> <span class="string">'native_coord'</span>
+0064             coord = varargin{i + 1};
+0065             <span class="keyword">if</span> strcmpi(coord, <span class="string">'spherical'</span>)
+0066                 native_coord = <span class="string">'spherical'</span>;
+0067                 have_lonlat = true;
+0068                 have_xy = false;
+0069             <span class="keyword">elseif</span> strcmpi(coord, <span class="string">'cartesian'</span>)
+0070                 native_coord = <span class="string">'cartesian'</span>;
+0071                 have_xy = true;
+0072                 have_lonlat = false;
+0073             <span class="keyword">else</span>
+0074                 warning(<span class="string">'Unrecognised coordinate system (%s). Valid values are ''spherical'' and ''cartesian''.'</span>, native_coord)
+0075             <span class="keyword">end</span>
+0076         <span class="keyword">otherwise</span>
+0077             error(<span class="string">'Can''t understand property: %s'</span>, varargin{i + 1});
+0078             
+0079     <span class="keyword">end</span>
+0080 <span class="keyword">end</span>
+0081 
+0082 <span class="comment">%--------------------------------------------------------------------------</span>
+0083 <span class="comment">% Open the output file</span>
+0084 <span class="comment">%--------------------------------------------------------------------------</span>
+0085 gmsh_msh = fullfile(out_dir,[filename <span class="string">'.14'</span>]);
+0086 fid = fopen(gmsh_msh, <span class="string">'wt'</span>);
+0087 assert(fid &gt;= 0, sprintf(<span class="string">'file: %s could not be created\n'</span>,  gmsh_msh));
+0088 
+0089 <span class="comment">% Count number of elements and vertices</span>
+0090 <span class="keyword">if</span> ftbverbose
+0091     fprintf(<span class="string">'Writing to: %s\n'</span>, gmsh_msh)
+0092 <span class="keyword">end</span>
+0093 
+0094 <span class="comment">% Read mesh type, written from srcatch:</span>
+0095 <span class="comment">%</span>
+0096 <span class="comment">% http://www.geuz.org/pipermail/gmsh/attachments/20071002/642cb6c3/attachment.m</span>
+0097 <span class="comment">%</span>
+0098 title_str = <span class="string">'Test admesh mesh starting from an sms mesh'</span>;
+0099 
+0100 <span class="comment">% first line is title of mesh</span>
+0101 fprintf(fid,<span class="string">'%s\n'</span>,title_str);
+0102 <span class="comment">% next line is mesh dimensions</span>
+0103 fprintf(fid,<span class="string">'%u %u\n'</span>,Mobj.nElems,Mobj.nVerts);
+0104 
+0105 <span class="comment">% Write the node positions and depths.</span>
+0106 <span class="keyword">if</span> have_lonlat
+0107     fprintf(<span class="string">'Writing Spherical: %s\n'</span>, gmsh_msh)
+0108     
+0109     <span class="keyword">for</span> nn=1:Mobj.nVerts
+0110         fprintf(fid, <span class="string">'%d %f %f %f\n'</span>,nn,Mobj.lon(nn),Mobj.lat(nn),Mobj.h(nn));
+0111     <span class="keyword">end</span>
+0112 <span class="keyword">elseif</span> have_xy
+0113     fprintf(<span class="string">'Writing Cartesian: %s\n'</span>, gmsh_msh)
+0114     
+0115     <span class="keyword">for</span> nn=1:Mobj.nVerts
+0116         fprintf(fid, <span class="string">'%d %f %f %f\n'</span>,nn,Mobj.x(nn),Mobj.y(nn),Mobj.h(nn));
+0117     <span class="keyword">end</span>
+0118 <span class="keyword">else</span>
+0119     error(<span class="string">'Unsupported coordinate type. Give ''spherical'' or ''cartesian'''</span>)
+0120 <span class="keyword">end</span>
+0121 
+0122 <span class="comment">% Now we should be at the end of the nodes and about to write the elements.</span>
+0123 
+0124 <span class="comment">% write the element triangulation table. Format is:</span>
+0125 <span class="comment">%   ID, dim, n1, n2, n3</span>
+0126 <span class="keyword">for</span> nn=1:Mobj.nElems
+0127     fprintf(fid, <span class="string">'%5d %5d %7d %7d %7d\n'</span>,nn,3,Mobj.tri(nn,1),Mobj.tri(nn,2),Mobj.tri(nn,3));
+0128 <span class="keyword">end</span>
+0129 <span class="comment">%--------------------------------------------------------------------------</span>
+0130 <span class="comment">% Write the nodestrings assuming for now that there is at least one</span>
+0131 <span class="comment">%--------------------------------------------------------------------------</span>
+0132 fprintf(fid, <span class="string">'%d  = Number of open boundaries \n'</span>,length(Mobj.read_obc_nodes));
+0133 
+0134 <span class="comment">% Mobj.read_obc_nodes would be different if read from admesh or sms mesh</span>
+0135 <span class="comment">% files</span>
+0136 <span class="keyword">try</span>
+0137     TotOBCN = length(cat(1,Mobj.read_obc_nodes{:}));
+0138 <span class="keyword">catch</span>
+0139     TotOBCN = length([Mobj.read_obc_nodes{:}]);
+0140 <span class="keyword">end</span>
+0141 
+0142 fprintf(fid, <span class="string">'%d  = Total number of open boundary nodes \n'</span>,TotOBCN);
+0143 
+0144 <span class="comment">% read number of open boundary nodes for each boundary</span>
+0145 <span class="keyword">for</span> nn=1:length(Mobj.read_obc_nodes)
+0146     fprintf(fid, <span class="string">'%d  = Number of nodes for open boundary  %d \n'</span>,length(Mobj.read_obc_nodes{nn}),nn);
+0147     <span class="keyword">for</span> rr=1:length(Mobj.read_obc_nodes{nn})
+0148         
+0149         fprintf(fid, <span class="string">'%d \n'</span>,Mobj.read_obc_nodes{nn}(rr));
+0150     <span class="keyword">end</span>
+0151 <span class="keyword">end</span>
+0152 fclose(fid);
+0153 
+0154 <span class="keyword">if</span> ftbverbose
+0155     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0156 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

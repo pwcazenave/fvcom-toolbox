@@ -212,56 +212,62 @@ This function is called by:
 0126         fprintf(<span class="string">'zku\t%d\n'</span>, zku)
 0127         fprintf(<span class="string">'zkl\t%d\n'</span>, zkl)
 0128     <span class="keyword">end</span>
-0129 <span class="keyword">end</span>
-0130 
-0131 <span class="comment">% Calculate the sigma distributions at each grid node.</span>
-0132 nx = length(Mobj.h);
-0133 <span class="keyword">switch</span> lower(sigtype)
-0134     <span class="keyword">case</span> <span class="string">'generalized'</span>
-0135         z = nan([nx, nlev]);
-0136         h = Mobj.h; <span class="comment">% avoids broadcasting Mobj on every iteration</span>
-0137         <span class="comment">% Not sure if a parfor is wise here as the pool start up time might</span>
-0138         <span class="comment">% exceed the run time. For big grids, the parfor is probably a wise</span>
-0139         <span class="comment">% move.</span>
-0140         parfor i = 1:nx
-0141             z(i, :) = sigma_gen(nlev, dl, du, kl, ku, zkl, zku, <span class="keyword">...</span>
-0142                 h(i), min_constant_depth);
-0143         <span class="keyword">end</span>
-0144         clear h
-0145     <span class="keyword">case</span> <span class="string">'uniform'</span>
-0146         z = repmat(sigma_geo(nlev, 1), [nx, 1]);
-0147     <span class="keyword">case</span> <span class="string">'geometric'</span>
-0148         z = repmat(sigma_geo(nlev, sigpow), [nx, 1]);
-0149     <span class="keyword">otherwise</span>
-0150         error(<span class="string">'Don''t recognise sigtype %s (is it supported?)'</span>, sigtype)
-0151 <span class="keyword">end</span>
-0152 
-0153 <span class="comment">% Create a depth array for the element centres.</span>
-0154 hc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.h, Mobj);
-0155 ne = length(hc);
-0156 
-0157 <span class="comment">% Create a siglay variable (i.e. midpoint in the sigma levels).</span>
-0158 zlay = z(:, 1:end - 1) + (diff(z, [], 2) ./ 2);
-0159 zlayc = nan(ne, nlev - 1);
-0160 zc = nan(ne, nlev);
-0161 <span class="keyword">for</span> i = 1:nlev
-0162     zc(:, i) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(z(:, i), Mobj);
-0163     <span class="keyword">if</span> i ~= nlev
-0164         zlayc(:, i) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(zlay(:, i), Mobj);
-0165     <span class="keyword">end</span>
-0166 <span class="keyword">end</span>
-0167 Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* z;
-0168 Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* zlay;
-0169 Mobj.siglevzc = repmat(hc, 1, nlev) .* zc;
-0170 Mobj.siglayzc = repmat(hc, 1, nlev-1) .* zlayc;
-0171 
-0172 <span class="comment">% Add the sigma levels and layers to the Mobj.</span>
-0173 Mobj.siglev = z;
-0174 Mobj.siglay = zlay;
-0175 
-0176 <span class="keyword">if</span> ftbverbose
-0177     fprintf(<span class="string">'end   : %s\n'</span>, subname)
-0178 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0129         <span class="keyword">if</span> strcmpi(sigtype, <span class="string">'TANH'</span>)
+0130         fprintf(<span class="string">'du\t%d\n'</span>, du)
+0131         fprintf(<span class="string">'dl\t%d\n'</span>, dl)
+0132     <span class="keyword">end</span>
+0133 <span class="keyword">end</span>
+0134 
+0135 <span class="comment">% Calculate the sigma distributions at each grid node.</span>
+0136 nx = length(Mobj.h);
+0137 <span class="keyword">switch</span> lower(sigtype)
+0138     <span class="keyword">case</span> <span class="string">'generalized'</span>
+0139         z = nan([nx, nlev]);
+0140         h = Mobj.h; <span class="comment">% avoids broadcasting Mobj on every iteration</span>
+0141         <span class="comment">% Not sure if a parfor is wise here as the pool start up time might</span>
+0142         <span class="comment">% exceed the run time. For big grids, the parfor is probably a wise</span>
+0143         <span class="comment">% move.</span>
+0144         parfor i = 1:nx
+0145             z(i, :) = sigma_gen(nlev, dl, du, kl, ku, zkl, zku, <span class="keyword">...</span>
+0146                 h(i), min_constant_depth);
+0147         <span class="keyword">end</span>
+0148         clear h
+0149     <span class="keyword">case</span> <span class="string">'uniform'</span>
+0150         z = repmat(sigma_geo(nlev, 1), [nx, 1]);
+0151     <span class="keyword">case</span> <span class="string">'geometric'</span>
+0152         z = repmat(sigma_geo(nlev, sigpow), [nx, 1]);
+0153     <span class="keyword">case</span> <span class="string">'tanh'</span>
+0154         z = repmat(sigma_tanh(nlev, dl,du), [nx, 1]);
+0155     <span class="keyword">otherwise</span>
+0156         error(<span class="string">'Don''t recognise sigtype %s (is it supported?)'</span>, sigtype)
+0157 <span class="keyword">end</span>
+0158 
+0159 <span class="comment">% Create a depth array for the element centres.</span>
+0160 hc = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(Mobj.h, Mobj);
+0161 ne = length(hc);
+0162 
+0163 <span class="comment">% Create a siglay variable (i.e. midpoint in the sigma levels).</span>
+0164 zlay = z(:, 1:end - 1) + (diff(z, [], 2) ./ 2);
+0165 zlayc = nan(ne, nlev - 1);
+0166 zc = nan(ne, nlev);
+0167 <span class="keyword">for</span> i = 1:nlev
+0168     zc(:, i) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(z(:, i), Mobj);
+0169     <span class="keyword">if</span> i ~= nlev
+0170         zlayc(:, i) = <a href="nodes2elems.html" class="code" title="function fieldout = nodes2elems(fieldin,Mobj)">nodes2elems</a>(zlay(:, i), Mobj);
+0171     <span class="keyword">end</span>
+0172 <span class="keyword">end</span>
+0173 Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* z;
+0174 Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* zlay;
+0175 Mobj.siglevzc = repmat(hc, 1, nlev) .* zc;
+0176 Mobj.siglayzc = repmat(hc, 1, nlev-1) .* zlayc;
+0177 
+0178 <span class="comment">% Add the sigma levels and layers to the Mobj.</span>
+0179 Mobj.siglev = z;
+0180 Mobj.siglay = zlay;
+0181 
+0182 <span class="keyword">if</span> ftbverbose
+0183     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0184 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

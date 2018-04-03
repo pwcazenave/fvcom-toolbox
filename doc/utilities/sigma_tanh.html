@@ -95,9 +95,9 @@ This function is called by:
 0026 <span class="comment">% Revision history</span>
 0027 <span class="comment">%   2013-04-23 Added help on the function and reformatted the code.</span>
 0028 
-0029 dist = nan(1, nlev);
+0029 dist = zeros(1, nlev);
 0030 
-0031 <span class="keyword">for</span> k = 1:nlev
+0031 <span class="keyword">for</span> k = 1:nlev-1
 0032     x1 = dl+du;
 0033     x1 = x1*(nlev-1-k)/(nlev-1);
 0034     x1 = x1-dl;
@@ -106,6 +106,6 @@ This function is called by:
 0037     x3 = x2+tanh(du);
 0038     dist(k+1) = (x1+x2)/x3-1.0;
 0039 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

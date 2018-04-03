@@ -197,103 +197,120 @@ This function is called by:
 0092 <span class="comment">%--------------------------------------------------------------------------</span>
 0093 <span class="comment">% Sanity check on input and dimensions</span>
 0094 <span class="comment">%--------------------------------------------------------------------------</span>
-0095 nTimes = numel(MJD);
-0096 <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'Number of time steps %d\n'</span>,nTimes); <span class="keyword">end</span>
-0097 
-0098 nObcs = numel(ObcNodes);
-0099 <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'Number of Open Boundary Nodes %d\n'</span>,nObcs); <span class="keyword">end</span>
-0100 
-0101 [chk1, chk2] = size(Mobj.surfaceElevation);
-0102 <span class="keyword">if</span> nObcs ~= chk1 || nTimes ~= chk2
-0103     fprintf(<span class="string">'Surface elevation dimensions do not match time series and number of boundary nodes.\n'</span>)
-0104     fprintf(<span class="string">'Surface elevation nodes and time sizes: (%d, %d)\n'</span>, chk1, chk2)
-0105     fprintf(<span class="string">'Boundary nodes size: %d\n'</span>, nObcs)
-0106     fprintf(<span class="string">'Times size: %d\n'</span>, nTimes)
-0107     error(<span class="string">'Input data sizes do not match. Check and try again.'</span>);
-0108 <span class="keyword">end</span>
-0109 
-0110 <span class="comment">%%</span>
-0111 <span class="comment">%--------------------------------------------------------------------------</span>
-0112 <span class="comment">% Dump the file</span>
-0113 <span class="comment">%--------------------------------------------------------------------------</span>
-0114 
-0115 nc=netcdf.create(ElevationFile,<span class="string">'clobber'</span>);
-0116 
-0117 <span class="comment">% define global attributes</span>
-0118 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM TIME SERIES ELEVATION FORCING FILE'</span>)
-0119 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,MyTitle)
-0120 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
-0121 
-0122 <span class="comment">% define dimensions</span>
-0123 nobc_dimid=netcdf.defDim(nc,<span class="string">'nobc'</span>,nObcs);
-0124 time_dimid=netcdf.defDim(nc,<span class="string">'time'</span>,netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
-0125 date_str_len_dimid=netcdf.defDim(nc,<span class="string">'DateStrLen'</span>,26);
-0126 
-0127 <span class="comment">% define variables and attributes</span>
-0128 nobc_varid=netcdf.defVar(nc,<span class="string">'obc_nodes'</span>,<span class="string">'NC_INT'</span>,nobc_dimid);
-0129 netcdf.putAtt(nc,nobc_varid,<span class="string">'long_name'</span>,<span class="string">'Open Boundary Node Number'</span>);
-0130 netcdf.putAtt(nc,nobc_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
-0131 
-0132 iint_varid=netcdf.defVar(nc,<span class="string">'iint'</span>,<span class="string">'NC_INT'</span>,time_dimid);
-0133 netcdf.putAtt(nc,iint_varid,<span class="string">'long_name'</span>,<span class="string">'internal mode iteration number'</span>);
-0134 
-0135 <span class="keyword">if</span> floattime
-0136     time_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,time_dimid);
-0137     netcdf.putAtt(nc,time_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
-0138     netcdf.putAtt(nc,time_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
-0139     netcdf.putAtt(nc,time_varid,<span class="string">'format'</span>,<span class="string">'modified julian day (MJD)'</span>);
-0140     netcdf.putAtt(nc,time_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
-0141 <span class="keyword">end</span>
-0142 
-0143 <span class="keyword">if</span> inttime
-0144     itime_varid=netcdf.defVar(nc,<span class="string">'Itime'</span>,<span class="string">'NC_INT'</span>,time_dimid);
-0145     netcdf.putAtt(nc,itime_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
-0146     netcdf.putAtt(nc,itime_varid,<span class="string">'format'</span>,<span class="string">'modified julian day (MJD)'</span>);
-0147     netcdf.putAtt(nc,itime_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
-0148 
-0149     itime2_varid=netcdf.defVar(nc,<span class="string">'Itime2'</span>,<span class="string">'NC_INT'</span>,time_dimid);
-0150     netcdf.putAtt(nc,itime2_varid,<span class="string">'units'</span>,<span class="string">'msec since 00:00:00'</span>);
-0151     netcdf.putAtt(nc,itime2_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
-0152 <span class="keyword">end</span>
-0153 
-0154 <span class="keyword">if</span> strtime
-0155     Times_varid=netcdf.defVar(nc,<span class="string">'Times'</span>,<span class="string">'NC_CHAR'</span>,[date_str_len_dimid, time_dimid]);
-0156     netcdf.putAtt(nc,Times_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
-0157 <span class="keyword">end</span>
-0158 
-0159 elevation_varid=netcdf.defVar(nc,<span class="string">'elevation'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid, time_dimid]);
-0160 netcdf.putAtt(nc,elevation_varid,<span class="string">'long_name'</span>,<span class="string">'Open Boundary Elevation'</span>);
-0161 netcdf.putAtt(nc,elevation_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0095 <span class="keyword">if</span> ischar(MJD(1))
+0096     nTimes = size(MJD, 1);
+0097 <span class="keyword">else</span>
+0098     nTimes = numel(MJD);
+0099 <span class="keyword">end</span>
+0100 <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'Number of time steps %d\n'</span>,nTimes); <span class="keyword">end</span>
+0101 
+0102 nObcs = numel(ObcNodes);
+0103 <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'Number of Open Boundary Nodes %d\n'</span>,nObcs); <span class="keyword">end</span>
+0104 
+0105 [chk1, chk2] = size(Mobj.surfaceElevation);
+0106 <span class="keyword">if</span> nObcs ~= chk1 || nTimes ~= chk2
+0107     fprintf(<span class="string">'Surface elevation dimensions do not match time series and number of boundary nodes.\n'</span>)
+0108     fprintf(<span class="string">'Surface elevation nodes and time sizes: (%d, %d)\n'</span>, chk1, chk2)
+0109     fprintf(<span class="string">'Boundary nodes size: %d\n'</span>, nObcs)
+0110     fprintf(<span class="string">'Times size: %d\n'</span>, nTimes)
+0111     error(<span class="string">'Input data sizes do not match. Check and try again.'</span>);
+0112 <span class="keyword">end</span>
+0113 
+0114 <span class="comment">%%</span>
+0115 <span class="comment">%--------------------------------------------------------------------------</span>
+0116 <span class="comment">% Dump the file</span>
+0117 <span class="comment">%--------------------------------------------------------------------------</span>
+0118 
+0119 nc=netcdf.create(ElevationFile,<span class="string">'clobber'</span>);
+0120 
+0121 <span class="comment">% define global attributes</span>
+0122 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM TIME SERIES ELEVATION FORCING FILE'</span>)
+0123 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,MyTitle)
+0124 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
+0125 
+0126 <span class="comment">% define dimensions</span>
+0127 nobc_dimid=netcdf.defDim(nc,<span class="string">'nobc'</span>,nObcs);
+0128 time_dimid=netcdf.defDim(nc,<span class="string">'time'</span>,netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0129 date_str_len_dimid=netcdf.defDim(nc,<span class="string">'DateStrLen'</span>,26);
+0130 
+0131 <span class="comment">% define variables and attributes</span>
+0132 nobc_varid=netcdf.defVar(nc,<span class="string">'obc_nodes'</span>,<span class="string">'NC_INT'</span>,nobc_dimid);
+0133 netcdf.putAtt(nc,nobc_varid,<span class="string">'long_name'</span>,<span class="string">'Open Boundary Node Number'</span>);
+0134 netcdf.putAtt(nc,nobc_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
+0135 
+0136 iint_varid=netcdf.defVar(nc,<span class="string">'iint'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0137 netcdf.putAtt(nc,iint_varid,<span class="string">'long_name'</span>,<span class="string">'internal mode iteration number'</span>);
+0138 
+0139 <span class="keyword">if</span> floattime
+0140     time_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,time_dimid);
+0141     netcdf.putAtt(nc,time_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
+0142     netcdf.putAtt(nc,time_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
+0143     netcdf.putAtt(nc,time_varid,<span class="string">'format'</span>,<span class="string">'modified julian day (MJD)'</span>);
+0144     netcdf.putAtt(nc,time_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0145 <span class="keyword">end</span>
+0146 
+0147 <span class="keyword">if</span> inttime
+0148     itime_varid=netcdf.defVar(nc,<span class="string">'Itime'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0149     netcdf.putAtt(nc,itime_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
+0150     netcdf.putAtt(nc,itime_varid,<span class="string">'format'</span>,<span class="string">'modified julian day (MJD)'</span>);
+0151     netcdf.putAtt(nc,itime_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0152 
+0153     itime2_varid=netcdf.defVar(nc,<span class="string">'Itime2'</span>,<span class="string">'NC_INT'</span>,time_dimid);
+0154     netcdf.putAtt(nc,itime2_varid,<span class="string">'units'</span>,<span class="string">'msec since 00:00:00'</span>);
+0155     netcdf.putAtt(nc,itime2_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0156 <span class="keyword">end</span>
+0157 
+0158 <span class="keyword">if</span> strtime
+0159     Times_varid=netcdf.defVar(nc,<span class="string">'Times'</span>,<span class="string">'NC_CHAR'</span>,[date_str_len_dimid, time_dimid]);
+0160     netcdf.putAtt(nc,Times_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0161 <span class="keyword">end</span>
 0162 
-0163 <span class="comment">% end definitions</span>
-0164 netcdf.endDef(nc);
-0165 
-0166 <span class="comment">% write data</span>
-0167 netcdf.putVar(nc,nobc_varid,ObcNodes);
-0168 netcdf.putVar(nc,iint_varid,0,nTimes,1:nTimes);
-0169 <span class="keyword">if</span> floattime
-0170     netcdf.putVar(nc,time_varid,0,nTimes,MJD);
-0171 <span class="keyword">end</span>
-0172 <span class="keyword">if</span> inttime
-0173     netcdf.putVar(nc,itime_varid,floor(MJD));
-0174     netcdf.putVar(nc,itime2_varid,0,nTimes,round(mod(MJD,1) * 24 * 60 * 60 * 1000));
-0175 <span class="keyword">end</span>
-0176 <span class="keyword">if</span> strtime
-0177     nStringOut = char();
-0178     [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(MJD);
-0179     <span class="keyword">for</span> i=1:nTimes
-0180         nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
-0181         nStringOut = [nStringOut, sprintf(<span class="string">'%04i/%02i/%02i %02i:%02i:%09.6f'</span>, nDate)];
-0182     <span class="keyword">end</span>
-0183     netcdf.putVar(nc,Times_varid,nStringOut);
-0184 <span class="keyword">end</span>
-0185 netcdf.putVar(nc,elevation_varid,Mobj.surfaceElevation);
-0186 
-0187 <span class="comment">% close file</span>
-0188 netcdf.close(nc);
-0189 
-0190 <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'end   : %s \n'</span>, subname); <span class="keyword">end</span>
-0191</pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0163 elevation_varid=netcdf.defVar(nc,<span class="string">'elevation'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid, time_dimid]);
+0164 netcdf.putAtt(nc,elevation_varid,<span class="string">'long_name'</span>,<span class="string">'Open Boundary Elevation'</span>);
+0165 netcdf.putAtt(nc,elevation_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0166 
+0167 <span class="comment">% end definitions</span>
+0168 netcdf.endDef(nc);
+0169 
+0170 <span class="comment">% write data</span>
+0171 netcdf.putVar(nc,nobc_varid,ObcNodes);
+0172 netcdf.putVar(nc,iint_varid,0,nTimes,1:nTimes);
+0173 <span class="keyword">if</span> strtime
+0174     <span class="comment">% If out MJD data is characters, assume we've already got a suitable</span>
+0175     <span class="comment">% array of Time strings. Use those to create an MJD array to write to</span>
+0176     <span class="comment">% netCDF. This is sometimes preferable to having MJD as an array of</span>
+0177     <span class="comment">% floats in the case where we've read in a 'time' variable from a</span>
+0178     <span class="comment">% netCDF file and its precision is insufficient to actually store the</span>
+0179     <span class="comment">% times properly. netCDF, otherwise, create one assuming we've actually</span>
+0180     <span class="comment">% got Modified Julian Days. If we've been given an array of floats,</span>
+0181     <span class="comment">% then just dump those to netCDF as before.</span>
+0182     <span class="keyword">if</span> ischar(MJD(1))
+0183         nStringOut = MJD';
+0184         MJD = datenum(nStringOut', <span class="string">'YYYY-mm-dd HH:MM:SS.FFF'</span>) - 678942;
+0185     <span class="keyword">else</span>
+0186         nStringOut = char();
+0187         [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(MJD);
+0188         <span class="keyword">for</span> i=1:nTimes
+0189             nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
+0190             nStringOut = [nStringOut, sprintf(<span class="string">'%04i/%02i/%02i %02i:%02i:%09.6f'</span>, nDate)];
+0191         <span class="keyword">end</span>
+0192     <span class="keyword">end</span>
+0193     netcdf.putVar(nc,Times_varid,nStringOut);
+0194 <span class="keyword">end</span>
+0195 <span class="keyword">if</span> floattime
+0196     netcdf.putVar(nc,time_varid,0,nTimes,MJD);
+0197 <span class="keyword">end</span>
+0198 <span class="keyword">if</span> inttime
+0199     netcdf.putVar(nc,itime_varid,floor(MJD));
+0200     netcdf.putVar(nc,itime2_varid,0,nTimes,round(mod(MJD,1) * 24 * 60 * 60 * 1000));
+0201 <span class="keyword">end</span>
+0202 netcdf.putVar(nc,elevation_varid,Mobj.surfaceElevation);
+0203 
+0204 <span class="comment">% close file</span>
+0205 netcdf.close(nc);
+0206 
+0207 <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'end   : %s \n'</span>, subname); <span class="keyword">end</span>
+0208</pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

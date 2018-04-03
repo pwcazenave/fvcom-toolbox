@@ -24,7 +24,7 @@
 <div class="box"><strong>Convert sediment grain size from phi to d (m)</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [d] = ST_phi2d(phi) </strong></div>
+<div class="box"><strong>function d = ST_phi2d(phi) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Convert sediment grain size from phi to d (m)
@@ -63,7 +63,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [d] = ST_phi2d(phi)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function d = ST_phi2d(phi)</a>
 0002 <span class="comment">% Convert sediment grain size from phi to d (m)</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% function [d] = ST_phi2d(phi)</span>
@@ -87,18 +87,22 @@ This function is called by:
 0022 <span class="comment">%</span>
 0023 <span class="comment">%==============================================================================</span>
 0024 
-0025 <span class="comment">%subname = 'ST_phid2';</span>
-0026 <span class="comment">%fprintf('\n')</span>
-0027 <span class="comment">%fprintf(['begin : ' subname '\n'])</span>
-0028 
-0029 <span class="comment">%------------------------------------------------------------------------------</span>
-0030 <span class="comment">% calculate d and convert to m</span>
+0025 <span class="keyword">global</span> ftbverbose
+0026 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0027 <span class="keyword">if</span> ftbverbose
+0028     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0029 <span class="keyword">end</span>
+0030 
 0031 <span class="comment">%------------------------------------------------------------------------------</span>
-0032 
-0033 d = 2^(-phi);
-0034 d = d*.001;
-0035 
-0036 <span class="comment">%fprintf(['end   : ' subname '\n'])</span></pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0032 <span class="comment">% calculate d and convert to m</span>
+0033 <span class="comment">%------------------------------------------------------------------------------</span>
+0034 
+0035 d = 2^(-phi);
+0036 d = d*.001;
+0037 
+0038 <span class="keyword">if</span> ftbverbose
+0039     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0040 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

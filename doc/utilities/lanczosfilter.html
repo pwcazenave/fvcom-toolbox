@@ -1,0 +1,262 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of lanczosfilter</title>
+  <meta name="keywords" content="lanczosfilter">
+  <meta name="description" content="LANCZOSFILTER   Filters a time series via Lanczos method (cosine filter).">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; lanczosfilter.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>lanczosfilter
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>LANCZOSFILTER   Filters a time series via Lanczos method (cosine filter).</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [y,coef,window,Cx,Ff] = lanczosfilter(x,varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment">LANCZOSFILTER   Filters a time series via Lanczos method (cosine filter).  
+   [Y,coef,window,Cx,Ff] = LANCZOSFILTER(X,dT,Cf,M,pass) Filters the time
+   series via the Lanczos filter in the frequency space (FFT), where
+
+   INPUTS:
+      X    - Time series
+      dT   - Sampling interval       (default: 1)
+      Cf   - Cut-off frequency       (default: half Nyquist)
+      M    - Number of coefficients  (default: 10)
+      pass - Low or high-pass filter (default: 'low')
+
+   OUTPUTS:
+      Y      - Filtered time series
+      coef   - Coefficients of the time window (cosine)
+      window - Frequency window (aprox. ones for Ff lower(greater) than Fc 
+               if low(high)-pass filter and ceros otherwise)
+      Cx     - Complex Fourier Transform of X for Ff frequencies
+      Ff     - Fourier frequencies, from 0 to the Nyquist frequency.
+  
+   The program removes from the time series the frequencies greater than   
+   the cut off frequency if &quot;pass&quot; is 'low', i.e., low-pass filter .
+   Otherwise, if pass is 'high', frequencies from zero to Cf are removed,
+   i.e., a high-pass filter. Units of the cut-off frequency, [Cf], must be
+   [dT]^{-1}. 
+  
+   In consequence, when used as a low-pass the time series is smoothed   
+   like a cosine filter in time space with M coefficients where greater is
+   better (see the reference).    
+  
+   If any option is empty, defaults are used.  
+
+   Note: NaN's elements are replaced by the mean of the time series and
+         ignored. If you have a better idea, just let me know.
+  
+   Reference:  
+   Emery, W. J. and R. E. Thomson. &quot;Data Analysis Methods in Physical  
+     Oceanography&quot;. Elsevier, 2d ed., 2004. On pages 533-539.  
+  
+   Example:
+      dT = 30; % min 
+      N = 7*24*60/dT;
+      t = (0:N-1)*dT; % data for 7 days
+      pnoise = 0.30;
+      T1 = 12.4*60; 
+      T2 = 24*60; 
+      T3 = 15*24*60; 
+      Tc = 10*60; % min
+      xn = 5 + 3*cos(2*pi*t/T1) + 2*cos(2*pi*t/T2) + 1*cos(2*pi*t/T3);
+      xn = xn + pnoise*max(xn-mean(xn))*(0.5 - rand(size(xn)));   
+      [xs,c,h,Cx,f] = lanczosfilter(xn,dT,1/Tc,[],'low');  
+      subplot(211), plot(t,xn,t,xs), legend('noisy','smooth'), axis tight
+      subplot(212), plot(f,h,f,abs(Cx)/max(abs(Cx)),...
+         [1 1]/Tc,[min(h) max(h)],'-.',...
+         [1/T1 1/T2 1/T3],([1/T1 1/T2 1/T3]&lt;=1/Tc),'o'), axis tight  
+  
+   See also FILTER, FFT, IFFT</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function coef = lanczos_filter_coef(Cf,M)</a></li><li><a href="#_sub2" class="code">function coef = lowpass_cosine_filter_coef(Cf,M)</a></li><li><a href="#_sub3" class="code">function [window,Ff] = spectral_window(coef,N)</a></li><li><a href="#_sub4" class="code">function [y,Cx] = spectral_filtering(x,window)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [y,coef,window,Cx,Ff] = lanczosfilter(x,varargin)</a>
+0002 <span class="comment">%LANCZOSFILTER   Filters a time series via Lanczos method (cosine filter).</span>
+0003 <span class="comment">%   [Y,coef,window,Cx,Ff] = LANCZOSFILTER(X,dT,Cf,M,pass) Filters the time</span>
+0004 <span class="comment">%   series via the Lanczos filter in the frequency space (FFT), where</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">%   INPUTS:</span>
+0007 <span class="comment">%      X    - Time series</span>
+0008 <span class="comment">%      dT   - Sampling interval       (default: 1)</span>
+0009 <span class="comment">%      Cf   - Cut-off frequency       (default: half Nyquist)</span>
+0010 <span class="comment">%      M    - Number of coefficients  (default: 10)</span>
+0011 <span class="comment">%      pass - Low or high-pass filter (default: 'low')</span>
+0012 <span class="comment">%</span>
+0013 <span class="comment">%   OUTPUTS:</span>
+0014 <span class="comment">%      Y      - Filtered time series</span>
+0015 <span class="comment">%      coef   - Coefficients of the time window (cosine)</span>
+0016 <span class="comment">%      window - Frequency window (aprox. ones for Ff lower(greater) than Fc</span>
+0017 <span class="comment">%               if low(high)-pass filter and ceros otherwise)</span>
+0018 <span class="comment">%      Cx     - Complex Fourier Transform of X for Ff frequencies</span>
+0019 <span class="comment">%      Ff     - Fourier frequencies, from 0 to the Nyquist frequency.</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">%   The program removes from the time series the frequencies greater than</span>
+0022 <span class="comment">%   the cut off frequency if &quot;pass&quot; is 'low', i.e., low-pass filter .</span>
+0023 <span class="comment">%   Otherwise, if pass is 'high', frequencies from zero to Cf are removed,</span>
+0024 <span class="comment">%   i.e., a high-pass filter. Units of the cut-off frequency, [Cf], must be</span>
+0025 <span class="comment">%   [dT]^{-1}.</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">%   In consequence, when used as a low-pass the time series is smoothed</span>
+0028 <span class="comment">%   like a cosine filter in time space with M coefficients where greater is</span>
+0029 <span class="comment">%   better (see the reference).</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">%   If any option is empty, defaults are used.</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">%   Note: NaN's elements are replaced by the mean of the time series and</span>
+0034 <span class="comment">%         ignored. If you have a better idea, just let me know.</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">%   Reference:</span>
+0037 <span class="comment">%   Emery, W. J. and R. E. Thomson. &quot;Data Analysis Methods in Physical</span>
+0038 <span class="comment">%     Oceanography&quot;. Elsevier, 2d ed., 2004. On pages 533-539.</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">%   Example:</span>
+0041 <span class="comment">%      dT = 30; % min</span>
+0042 <span class="comment">%      N = 7*24*60/dT;</span>
+0043 <span class="comment">%      t = (0:N-1)*dT; % data for 7 days</span>
+0044 <span class="comment">%      pnoise = 0.30;</span>
+0045 <span class="comment">%      T1 = 12.4*60;</span>
+0046 <span class="comment">%      T2 = 24*60;</span>
+0047 <span class="comment">%      T3 = 15*24*60;</span>
+0048 <span class="comment">%      Tc = 10*60; % min</span>
+0049 <span class="comment">%      xn = 5 + 3*cos(2*pi*t/T1) + 2*cos(2*pi*t/T2) + 1*cos(2*pi*t/T3);</span>
+0050 <span class="comment">%      xn = xn + pnoise*max(xn-mean(xn))*(0.5 - rand(size(xn)));</span>
+0051 <span class="comment">%      [xs,c,h,Cx,f] = lanczosfilter(xn,dT,1/Tc,[],'low');</span>
+0052 <span class="comment">%      subplot(211), plot(t,xn,t,xs), legend('noisy','smooth'), axis tight</span>
+0053 <span class="comment">%      subplot(212), plot(f,h,f,abs(Cx)/max(abs(Cx)),...</span>
+0054 <span class="comment">%         [1 1]/Tc,[min(h) max(h)],'-.',...</span>
+0055 <span class="comment">%         [1/T1 1/T2 1/T3],([1/T1 1/T2 1/T3]&lt;=1/Tc),'o'), axis tight</span>
+0056 <span class="comment">%</span>
+0057 <span class="comment">%   See also FILTER, FFT, IFFT</span>
+0058 
+0059 <span class="comment">%   Written by</span>
+0060 <span class="comment">%   Lic. on Physics Carlos Adrián Vargas Aguilera</span>
+0061 <span class="comment">%   Physical Oceanography MS candidate</span>
+0062 <span class="comment">%   UNIVERSIDAD DE GUADALAJARA</span>
+0063 <span class="comment">%   Mexico, 2004</span>
+0064 <span class="comment">%</span>
+0065 <span class="comment">%   nubeobscura@hotmail.com</span>
+0066 
+0067 <span class="comment">% Check arguments:</span>
+0068 <span class="keyword">if</span> nargin&lt;1 || nargin&gt;5
+0069  error(<span class="string">'Lanczosfilter:ArgumentNumber'</span>,<span class="string">'Incorrect number of arguments.'</span>)
+0070 <span class="keyword">elseif</span> ~isvector(x) || ~isreal(x)
+0071  error(<span class="string">'Lanczosfilter:ArgumentType'</span>,<span class="string">'Incorrect time series.'</span>)
+0072 <span class="keyword">end</span>
+0073 <span class="keyword">if</span> nargin&lt;2 || isempty(varargin{1})
+0074   dT = 1;
+0075 <span class="keyword">elseif</span> ~(numel(varargin{1})==1) || ~isreal(varargin{1})
+0076  error(<span class="string">'Lanczosfilter:ArgumentType'</span>,<span class="string">'Incorrect time interval.'</span>)
+0077 <span class="keyword">else</span>
+0078  dT = varargin{1};
+0079 <span class="keyword">end</span>
+0080 Nf = 1/(2*dT); <span class="comment">% Nyquist frequency</span>
+0081 <span class="keyword">if</span> nargin&lt;3 || isempty(varargin{2})
+0082  Cf = Nf/2;
+0083 <span class="keyword">elseif</span> ~(numel(varargin{2})==1) || ~isreal(varargin{2}) || varargin{2}&lt;=0 || varargin{2}&gt;Nf 
+0084  error(<span class="string">'Lanczosfilter:ArgumentType'</span>,<span class="string">'Incorrect cut-off frequency.'</span>)
+0085 <span class="keyword">else</span>
+0086  Cf = varargin{2};
+0087 <span class="keyword">end</span>
+0088 <span class="keyword">if</span> nargin&lt;4 || isempty(varargin{3})
+0089  M = 100;
+0090 <span class="keyword">elseif</span> ~(numel(varargin{3})==1) || ~isreal(varargin{3}) || ~(varargin{3}==round(varargin{3}))
+0091  error(<span class="string">'Lanczosfilter:ArgumentType'</span>,<span class="string">'Incorrect Number of coeffients.'</span>)
+0092 <span class="keyword">else</span>
+0093  M = varargin{3};
+0094 <span class="keyword">end</span>
+0095 <span class="keyword">if</span> nargin&lt;5 || isempty(varargin{4})
+0096  LoH = <span class="string">'l'</span>;
+0097 <span class="keyword">elseif</span> ~ischar(varargin{4}) || isempty(strfind(<span class="string">'lh'</span>,lower(varargin{4}(1))))
+0098  error(<span class="string">'Lanczosfilter:ArgumentType'</span>,<span class="string">'Incorrect filter pass type.'</span>)
+0099 <span class="keyword">else</span>
+0100  LoH = varargin{4};
+0101 <span class="keyword">end</span>
+0102 <span class="keyword">if</span> strcmpi(LoH(1),<span class="string">'h'</span>)
+0103  LoH = 2;
+0104 <span class="keyword">else</span>
+0105  LoH = 1;
+0106 <span class="keyword">end</span>
+0107 
+0108 <span class="comment">% Normalize the cut off frequency with the Nyquist frequency:</span>
+0109 Cf = Cf/Nf;
+0110 
+0111 <span class="comment">% Lanczos cosine coeficients:</span>
+0112 coef = <a href="#_sub1" class="code" title="subfunction coef = lanczos_filter_coef(Cf,M)">lanczos_filter_coef</a>(Cf,M);
+0113 coef = coef(:,LoH);
+0114 
+0115 <span class="comment">% Filter in frequency space:</span>
+0116 [window,Ff] = <a href="#_sub3" class="code" title="subfunction [window,Ff] = spectral_window(coef,N)">spectral_window</a>(coef,length(x)); 
+0117 Ff = Ff*Nf;
+0118 
+0119 <span class="comment">% Replace NaN's with the mean (ideas?):</span>
+0120 inan = isnan(x); 
+0121 xmean = mean(x(~inan)); 
+0122 x(inan) = xmean;
+0123 
+0124 <span class="comment">% Filtering:</span>
+0125 [y,Cx] = <a href="#_sub4" class="code" title="subfunction [y,Cx] = spectral_filtering(x,window)">spectral_filtering</a>(x,window);
+0126 
+0127 <a name="_sub1" href="#_subfunctions" class="code">function coef = lanczos_filter_coef(Cf,M)</a>
+0128 <span class="comment">% Positive coeficients of Lanczos [low high]-pass.</span>
+0129 hkcs = <a href="#_sub2" class="code" title="subfunction coef = lowpass_cosine_filter_coef(Cf,M)">lowpass_cosine_filter_coef</a>(Cf,M);
+0130 sigma = [1 sin(pi * (1:M) / M) ./ (pi * (1:M) / M)];
+0131 hkB = hkcs.*sigma;
+0132 hkA = -hkB; hkA(1) = hkA(1)+1;
+0133 coef = [hkB(:) hkA(:)];
+0134 
+0135 <a name="_sub2" href="#_subfunctions" class="code">function coef = lowpass_cosine_filter_coef(Cf,M)</a>
+0136 <span class="comment">% Positive coeficients of cosine filter low-pass.</span>
+0137 coef = Cf*[1 sin(pi*(1:M)*Cf)./(pi*(1:M)*Cf)];
+0138 
+0139 <a name="_sub3" href="#_subfunctions" class="code">function [window,Ff] = spectral_window(coef,N)</a>
+0140 <span class="comment">% Window of cosine filter in frequency space.</span>
+0141 Ff = 0:2/N:1; 
+0142 window = zeros(length(Ff),1);
+0143 <span class="keyword">for</span> i = 1:length(Ff)
+0144  window(i) = coef(1) + 2*sum(coef(2:end).*cos((1:length(coef)-1)'*pi*Ff(i)));
+0145 <span class="keyword">end</span>
+0146 
+0147 <a name="_sub4" href="#_subfunctions" class="code">function [y,Cx] = spectral_filtering(x,window)</a>
+0148 <span class="comment">% Filtering in frequency space is multiplication, (convolution in time</span>
+0149 <span class="comment">% space).</span>
+0150 Nx  = length(x);
+0151 Cx  = fft(x(:));
+0152 Cx = Cx(1:floor(Nx/2)+1);
+0153 CxH = Cx.*window(:);
+0154 CxH(length(CxH)+1:Nx) = conj(flipud(CxH(2:end-1)));
+0155 y = real(ifft(CxH));
+0156 
+0157 
+0158 <span class="comment">% Carlos Adrián Vargas Aguilera. nubeobscura@hotmail.com</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

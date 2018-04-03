@@ -1,0 +1,368 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of read_admesh_mesh</title>
+  <meta name="keywords" content="read_admesh_mesh">
+  <meta name="description" content="Read admesh mesh files (version 2.2) into MATLAB mesh object.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; read_admesh_mesh.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>read_admesh_mesh
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Read admesh mesh files (version 2.2) into MATLAB mesh object.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Mobj] = read_admesh_mesh(varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Read admesh mesh files (version 2.2) into MATLAB mesh object.
+
+ Mobj = function read_fvcom_mesh(varargin)
+
+ DESCRIPTION:
+    Read admesh 14 file and bathymetry file. Store in a matlab mesh object.
+
+ INPUT [keyword pairs]:
+   'msh'                   = gmsh msh file [e.g. casename.msh]
+   [optional] 'bath'       = gmsh bathymetry file [e.g. tst_dep.dat]
+   [optional] 'coordinate' = coordinate system [spherical; cartesian (default)]
+   [optional] 'addCoriolis' = calculate Coriolis param (f), requires [lon, lat]
+
+ OUTPUT:
+    Mobj = MATLAB structure containing mesh data
+
+ EXAMPLE USAGE
+    Mobj = read_admesh_mesh('msh', 'casename.14', 'coordinate', 'spherical')
+
+ Author(s):
+    Ricardo Torres (Plymouth Marine Laboratory) based on read_gmsh_mesh
+
+ Revision history
+
+   2016-06-22 First version.
+
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="make_blank_mesh.html" class="code" title="function [Mobj] = make_blank_mesh">make_blank_mesh</a>	Make a blank mesh object with default params</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj] = read_admesh_mesh(varargin)</a>
+0002 <span class="comment">% Read admesh mesh files (version 2.2) into MATLAB mesh object.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Mobj = function read_fvcom_mesh(varargin)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Read admesh 14 file and bathymetry file. Store in a matlab mesh object.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% INPUT [keyword pairs]:</span>
+0010 <span class="comment">%   'msh'                   = gmsh msh file [e.g. casename.msh]</span>
+0011 <span class="comment">%   [optional] 'bath'       = gmsh bathymetry file [e.g. tst_dep.dat]</span>
+0012 <span class="comment">%   [optional] 'coordinate' = coordinate system [spherical; cartesian (default)]</span>
+0013 <span class="comment">%   [optional] 'addCoriolis' = calculate Coriolis param (f), requires [lon, lat]</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% OUTPUT:</span>
+0016 <span class="comment">%    Mobj = MATLAB structure containing mesh data</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% EXAMPLE USAGE</span>
+0019 <span class="comment">%    Mobj = read_admesh_mesh('msh', 'casename.14', 'coordinate', 'spherical')</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% Author(s):</span>
+0022 <span class="comment">%    Ricardo Torres (Plymouth Marine Laboratory) based on read_gmsh_mesh</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% Revision history</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">%   2016-06-22 First version.</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">%==============================================================================</span>
+0029 
+0030 subname = <span class="string">'read_admesh_mesh'</span>;
+0031 <span class="keyword">global</span> ftbverbose
+0032 <span class="keyword">if</span> ftbverbose
+0033     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0034 <span class="keyword">end</span>
+0035 
+0036 have_bath = false;
+0037 have_strings = false;
+0038 
+0039 <span class="comment">%--------------------------------------------------------------------------</span>
+0040 <span class="comment">% Create a blank mesh object</span>
+0041 <span class="comment">%--------------------------------------------------------------------------</span>
+0042 Mobj = <a href="make_blank_mesh.html" class="code" title="function [Mobj] = make_blank_mesh">make_blank_mesh</a>;
+0043 coordinate = <span class="string">'cartesian'</span>;
+0044 
+0045 <span class="comment">%--------------------------------------------------------------------------</span>
+0046 <span class="comment">% Parse input arguments</span>
+0047 <span class="comment">%--------------------------------------------------------------------------</span>
+0048 
+0049 assert(mod(length(varargin), 2) == 0, <span class="string">'incorrect usage of read_admesh_mesh, use keyword pairs'</span>)
+0050 
+0051 <span class="comment">% Assume we have nothing sensible.</span>
+0052 have_msh = false;
+0053 have_bath = false;
+0054 have_lonlat = false;
+0055 have_xy = false;
+0056 
+0057 <span class="keyword">for</span> i = 1:2:length(varargin) - 1
+0058     keyword = lower(varargin{i});
+0059 
+0060     assert(ischar(keyword), <span class="string">'incorrect usage of read_gmsh_mesh'</span>)
+0061 
+0062     <span class="keyword">switch</span> keyword
+0063         <span class="keyword">case</span> <span class="string">'msh'</span>
+0064             gmsh_msh = varargin{i + 1};
+0065             have_msh = true;
+0066         <span class="keyword">case</span> <span class="string">'bath'</span>
+0067             gmsh_bath = varargin{i + 1};
+0068             have_bath = true;
+0069         <span class="keyword">case</span> <span class="string">'coordinate'</span>
+0070             coord = varargin{i + 1};
+0071             <span class="keyword">if</span> strcmpi(coord, <span class="string">'spherical'</span>)
+0072                 coordinate = <span class="string">'spherical'</span>;
+0073                 have_lonlat = true;
+0074             <span class="keyword">elseif</span> strcmpi(coord, <span class="string">'cartesian'</span>)
+0075                 coordinate = <span class="string">'cartesian'</span>;
+0076                 have_xy = true;
+0077             <span class="keyword">else</span>
+0078                 warning(<span class="string">'Unrecognised coordinate system (%s). Valid values are ''spherical'' and ''cartesian''.'</span>, coordinate)
+0079             <span class="keyword">end</span>
+0080         <span class="keyword">case</span> <span class="string">'addcoriolis'</span>
+0081             val = varargin{i + 1};
+0082             <span class="keyword">if</span> val
+0083                 addCoriolis = true;
+0084             <span class="keyword">else</span>
+0085                 addCoriolis = false;
+0086             <span class="keyword">end</span>
+0087         <span class="keyword">otherwise</span>
+0088             disp(varargin{i + 1})
+0089             error(<span class="string">'Can''t understand property: %s'</span>, varargin{i + 1});
+0090 
+0091     <span class="keyword">end</span>
+0092 <span class="keyword">end</span>
+0093 
+0094 <span class="comment">%--------------------------------------------------------------------------</span>
+0095 <span class="comment">% Read the mesh from the msh file</span>
+0096 <span class="comment">%--------------------------------------------------------------------------</span>
+0097 
+0098 fid = fopen(gmsh_msh, <span class="string">'rt'</span>);
+0099 assert(fid &gt;= 0, sprintf(<span class="string">'file: %s does not exist\n'</span>,  gmsh_msh));
+0100 
+0101 <span class="comment">% Count number of elements and vertices</span>
+0102 <span class="keyword">if</span> ftbverbose
+0103     fprintf(<span class="string">'Reading from: %s\n'</span>, gmsh_msh)
+0104 <span class="keyword">end</span>
+0105 
+0106 <span class="comment">% Read mesh type, written from srcatch:</span>
+0107 <span class="comment">%</span>
+0108 <span class="comment">% http://www.geuz.org/pipermail/gmsh/attachments/20071002/642cb6c3/attachment.m</span>
+0109 <span class="comment">%</span>
+0110 
+0111 lin = fgetl(fid);
+0112 <span class="comment">% first line is title of mesh</span>
+0113 title_str = lin;
+0114 lin = fgetl(fid);
+0115 <span class="comment">% next line is mesh dimensions</span>
+0116 form = sscanf(lin, <span class="string">'%u %u'</span>);
+0117 nElems = form(1);
+0118 nVerts = form(2);
+0119 
+0120 <span class="comment">%</span>
+0121 <span class="comment">% if strcmp(lin, '$NOD')</span>
+0122 <span class="comment">%     fileformat = 1;</span>
+0123 <span class="comment">% elseif strcmp(lin, '$MeshFormat')</span>
+0124 <span class="comment">%     fileformat = 2;</span>
+0125 <span class="comment">%     lin = fgetl(fid);</span>
+0126 <span class="comment">%     if feof(fid)</span>
+0127 <span class="comment">%         fprintf(sprintf('Syntax error (no version) in: %s\n', filename));</span>
+0128 <span class="comment">%         fileformat = 0;</span>
+0129 <span class="comment">%     end</span>
+0130 <span class="comment">%     form = sscanf(lin, '%f %d %d');</span>
+0131 <span class="comment">%     if form(1) &lt; 2</span>
+0132 <span class="comment">%         fprintf(sprintf('Unknown mesh format: %s\n', lin));</span>
+0133 <span class="comment">%         fileformat = 0;</span>
+0134 <span class="comment">%     end</span>
+0135 <span class="comment">%     if form(2) ~= 0</span>
+0136 <span class="comment">%         fprintf('Sorry, this program can only read ASCII format\n');</span>
+0137 <span class="comment">%         fileformat = 0;</span>
+0138 <span class="comment">%     end</span>
+0139 <span class="comment">%     fgetl(fid); % this should be $EndMeshFormat</span>
+0140 <span class="comment">%     if feof(fid)</span>
+0141 <span class="comment">%         fprintf('Syntax error (no $EndMeshFormat) in: %s\n', filename);</span>
+0142 <span class="comment">%         fileformat = 0;</span>
+0143 <span class="comment">%     end</span>
+0144 <span class="comment">%     lin = fgetl(fid); % this should be $Nodes</span>
+0145 <span class="comment">%     if feof(fid)</span>
+0146 <span class="comment">%         fprintf('Syntax error (no $Nodes) in: %s\n', filename);</span>
+0147 <span class="comment">%         fileformat = 0;</span>
+0148 <span class="comment">%     end</span>
+0149 <span class="comment">% end</span>
+0150 <span class="comment">%</span>
+0151 <span class="comment">% assert(logical(fileformat), 'Unrecognised mesh.')</span>
+0152 <span class="comment">% Read in the number of nodes</span>
+0153 <span class="comment">% nVerts = str2double(fgetl(fid));</span>
+0154 
+0155 <span class="comment">% Read the node positions and depths.</span>
+0156 C = textscan(fid, <span class="string">'%d %f %f %f'</span>, nVerts);
+0157 nid = C{1};
+0158 x = C{2};
+0159 y = C{3};
+0160 h = C{4};
+0161 
+0162 <span class="keyword">if</span> have_lonlat
+0163     lon = x;
+0164     lat = y;
+0165 <span class="keyword">else</span>
+0166     lon = zeros(size(x));
+0167     lat = zeros(size(y));
+0168 <span class="keyword">end</span>
+0169 
+0170 <span class="comment">% Now we should be at the end of the nodes and about to read the elements.</span>
+0171 
+0172 <span class="comment">% Read the element triangulation table. Format is:</span>
+0173 <span class="comment">%   ID, dim, n1, n2, n3</span>
+0174 <span class="comment">% Read the Element positions.</span>
+0175 C = textscan(fid, <span class="string">'%d %d %d %d %d'</span>, nElems);
+0176 
+0177 tri1 = [C{3},C{4},C{5}];
+0178 
+0179 have_lonlat = false;
+0180 have_xy     = false;
+0181 <span class="keyword">if</span> strcmpi(coordinate, <span class="string">'spherical'</span>)
+0182     lon = x;
+0183     lat = y;
+0184     <span class="comment">% Why reset everything to zero here? Because we don't have cartesian</span>
+0185     <span class="comment">% ... what we read before were lat and lon</span>
+0186     x = x * 0.0;
+0187     y = y * 0.0;
+0188     have_lonlat = true;
+0189     <span class="comment">% Just do a double check on the coordinates to make sure we don't</span>
+0190     <span class="comment">% actually have cartesian</span>
+0191     <span class="keyword">if</span> max(lon) &gt; 360
+0192         warning(<span class="string">'You''ve specified spherical coordinates, but your upper longitude value exceeds 360 degrees. Are you sure you have spherical data?'</span>)
+0193     <span class="keyword">end</span>
+0194 <span class="keyword">elseif</span> strcmpi(coordinate, <span class="string">'cartesian'</span>)
+0195     have_xy = true;
+0196 <span class="keyword">else</span>
+0197     warning(<span class="string">'Unrecognised coordinate system (%s). Valid values are ''spherical'' and ''cartesian''.'</span>, coordinate)
+0198 <span class="keyword">end</span>
+0199 
+0200 
+0201 <span class="comment">%--------------------------------------------------------------------------</span>
+0202 <span class="comment">% check the topography from the mesh file... No separate file for</span>
+0203 <span class="comment">% bathymetry here</span>
+0204 <span class="comment">%--------------------------------------------------------------------------</span>
+0205 
+0206     bath_range = max(h) - min(h);
+0207     <span class="keyword">if</span> have_bath || bath_range == 0
+0208     <span class="keyword">elseif</span> bath_range ~= 0
+0209         have_bath = true;
+0210     <span class="keyword">end</span>
+0211     <span class="comment">% Make sure we have positive depths</span>
+0212     <span class="keyword">if</span> sum(h &gt; 0) &lt; sum(h &lt; 0)
+0213         h = -h;
+0214     <span class="keyword">end</span>
+0215 <span class="comment">%--------------------------------------------------------------------------</span>
+0216 <span class="comment">% Read the nodestrings</span>
+0217 <span class="comment">%--------------------------------------------------------------------------</span>
+0218 lin = fgetl(fid); <span class="comment">% need to skip one line for some reason...</span>
+0219 lin = fgetl(fid);
+0220 <span class="keyword">if</span> feof(fid)
+0221     fprintf(sprintf(<span class="string">'No Open Boundary strings found in: %s\n'</span>, filename));
+0222     have_strings=0;
+0223 <span class="keyword">else</span>
+0224     ind0=strfind(lin, <span class="string">'='</span>);
+0225     str_case = strtrim(lin(ind0+1:end));
+0226     <span class="keyword">if</span> strcmp(str_case, <span class="string">'Number of open boundaries'</span>);
+0227         nBoundary = sscanf(lin(1:ind0-1), <span class="string">'%d'</span>);
+0228         have_strings=1;
+0229     <span class="keyword">else</span>
+0230         fprintf(sprintf(<span class="string">'Unknown mesh file format: %s\n'</span>, lin));
+0231     <span class="keyword">end</span>
+0232 <span class="keyword">end</span>
+0233 
+0234 <span class="keyword">if</span> have_strings
+0235     <span class="comment">% read total number of open boundary nodes</span>
+0236      lin = fgetl(fid);
+0237     ind0=strfind(lin, <span class="string">'='</span>);
+0238     str_case = strtrim(lin(ind0+1:end));
+0239     <span class="keyword">if</span> strcmp(str_case, <span class="string">'Total number of open boundary nodes'</span>);
+0240         nObc = sscanf(lin(1:ind0-1), <span class="string">'%d'</span>);
+0241     <span class="keyword">else</span>
+0242         fprintf(sprintf(<span class="string">'Unknown mesh file format: %s\n'</span>, lin));
+0243     <span class="keyword">end</span>
+0244     <span class="comment">% read number of open boundary nodes for each boundary</span>
+0245     <span class="keyword">for</span> nn=1:nBoundary
+0246     lin = fgetl(fid);
+0247     ind0=strfind(lin, <span class="string">'='</span>);
+0248     str_case = strtrim(lin(ind0+1:end));
+0249     display([<span class="string">' Reading  '</span>,str_case ]);
+0250         tmpnObc = sscanf(lin(1:ind0-1), <span class="string">'%u'</span>);
+0251         boundary_names{nn} = num2str(nn);
+0252         read_obc_nodes(nn)= textscan(fid,<span class="string">'%d'</span>,tmpnObc);
+0253         fprintf(sprintf(<span class="string">'Read Nodes in boundary: %s\n'</span>, boundary_names{nn}));
+0254         lin = fgetl(fid); <span class="comment">% no idea why we need this additional one...</span>
+0255 
+0256     <span class="keyword">end</span>
+0257 <span class="keyword">end</span>
+0258 fclose(fid);
+0259 
+0260 
+0261 <span class="comment">%--------------------------------------------------------------------------</span>
+0262 <span class="comment">% Transfer to Mesh structure</span>
+0263 <span class="comment">%--------------------------------------------------------------------------</span>
+0264 
+0265 Mobj.nVerts  = nVerts;
+0266 Mobj.nElems  = nElems;
+0267 Mobj.nativeCoords = coordinate;
+0268 
+0269 <span class="keyword">if</span> have_lonlat
+0270     Mobj.have_lonlat    = have_lonlat;
+0271 Mobj.lon          = lon;
+0272 Mobj.lat          = lat;
+0273 <span class="keyword">end</span>
+0274 <span class="keyword">if</span> have_xy
+0275     Mobj.have_xy        = have_xy;
+0276 Mobj.x            = x;
+0277 Mobj.y            = y;
+0278 <span class="keyword">end</span>
+0279 <span class="keyword">if</span> have_bath
+0280     Mobj.have_bath      = have_bath;
+0281     Mobj.h              = h;
+0282 <span class="keyword">end</span>
+0283 <span class="keyword">if</span> have_strings
+0284     Mobj.have_strings   = have_strings;
+0285     Mobj.read_obc_nodes = read_obc_nodes;
+0286 <span class="keyword">end</span>
+0287 <span class="keyword">if</span> exist(<span class="string">'addCoriolis'</span>, <span class="string">'var'</span>) &amp;&amp; addCoriolis
+0288     Mobj.have_cor       = true;
+0289 <span class="keyword">end</span>
+0290 
+0291 Mobj.tri          = tri1;
+0292 
+0293 <span class="keyword">if</span> ftbverbose
+0294   fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0295 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of distance_along_BC</title>
+  <meta name="keywords" content="distance_along_BC">
+  <meta name="description" content="Calculates the distance from coast along the open boundary nodes">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; distance_along_BC.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>distance_along_BC
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Calculates the distance from coast along the open boundary nodes</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Mobj=distance_along_BC(Mobj,BCnodes,conf) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Calculates the distance from coast along the open boundary nodes
+
+ Mobj=distance_along_BC(Mobj,BCnodes,conf)
+
+ DESCRIPTION:
+    Calculates distance from coast along open boundary nodes and
+    store them in a matlab mesh object
+
+ INPUT 
+   Mobj                   = Mesh object structure variable
+   BCnodes                = indices of nodes located at the boundary
+   conf                   = configuration structure variable with the
+   directory where the HJB_Solver_Package is installed
+
+ OUTPUT:
+    Mobj = matlab structure containing distance data
+
+ EXAMPLE USAGE
+     Mobj=distance_along_BC(Mobj,BCnodes,conf)
+ This function needs the HJB_solver package by Shawn Walker and can be downloaded from Matlab central 
+ http://www.mathworks.com/matlabcentral/fileexchange/24827-hamilton-jacobi-solver-on-unstructured-triangular-grids</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="connectivity.html" class="code" title="function [e,te,e2t,bnd] = connectivity(p,t)">connectivity</a>	CONNECTIVITY: Assemble connectivity data for a triangular mesh.</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj=distance_along_BC(Mobj,BCnodes,conf)</a>
+0002 <span class="comment">% Calculates the distance from coast along the open boundary nodes</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Mobj=distance_along_BC(Mobj,BCnodes,conf)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Calculates distance from coast along open boundary nodes and</span>
+0008 <span class="comment">%    store them in a matlab mesh object</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT</span>
+0011 <span class="comment">%   Mobj                   = Mesh object structure variable</span>
+0012 <span class="comment">%   BCnodes                = indices of nodes located at the boundary</span>
+0013 <span class="comment">%   conf                   = configuration structure variable with the</span>
+0014 <span class="comment">%   directory where the HJB_Solver_Package is installed</span>
+0015 <span class="comment">%</span>
+0016 <span class="comment">% OUTPUT:</span>
+0017 <span class="comment">%    Mobj = matlab structure containing distance data</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% EXAMPLE USAGE</span>
+0020 <span class="comment">%     Mobj=distance_along_BC(Mobj,BCnodes,conf)</span>
+0021 <span class="comment">% This function needs the HJB_solver package by Shawn Walker and can be downloaded from Matlab central</span>
+0022 <span class="comment">% http://www.mathworks.com/matlabcentral/fileexchange/24827-hamilton-jacobi-solver-on-unstructured-triangular-grids</span>
+0023 
+0024 <span class="comment">% Author(s):</span>
+0025 <span class="comment">%    Ricardo Torres  (Plymouth Marine Laboratory)</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Revision history</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">%   2015-11-20 First version</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">%==============================================================================</span>
+0032 
+0033 dump = dbstack;
+0034 subname = dump.name;
+0035 clear dump
+0036 <span class="keyword">global</span> ftbverbose;
+0037 <span class="keyword">if</span> ftbverbose
+0038     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0039 <span class="keyword">end</span>
+0040 CD=pwd;
+0041 <span class="comment">% setup HPJ solver to calculate the distance function for the SMS mesh</span>
+0042  [~,~,~,bnd] = <a href="connectivity.html" class="code" title="function [e,te,e2t,bnd] = connectivity(p,t)">connectivity</a>([Mobj.x,Mobj.y],Mobj.tri);
+0043 <span class="comment">% remove nodestring from coast.</span>
+0044 <span class="comment">% BCnodes=[Mobj.read_obc_nodes{:}];</span>
+0045 coast_ind=(BCnodes);
+0046 
+0047 
+0048  <span class="comment">% % calculate distance function</span>
+0049 myParam.Max_Tri_per_Star = 20;
+0050 myParam.NumGaussSeidel = 40;
+0051 myParam.INF_VAL = 1000000;
+0052 myParam.TOL = 1e-12;
+0053 <span class="comment">% in this case, we will assume the standard Euclidean metric</span>
+0054 myMetric = [];
+0055 myTM.Vtx=[Mobj.x(:),Mobj.y(:)];
+0056 myTM.DoFmap=[Mobj.tri];
+0057 myTM.NegMask=false(size(bnd));
+0058 myBdy.Nodes=coast_ind(:);
+0059 myBdy.Data=zeros(size(myBdy.Nodes));
+0060 <span class="comment">%</span>
+0061 cd (conf.HJB_Solver_Package)
+0062 <span class="comment">%</span>
+0063 <span class="comment">%</span>
+0064 SEmex  = SolveEikonalmex(myTM,myBdy,myParam,myMetric);
+0065 tic
+0066 Mobj.distOB  = SEmex.Compute_Soln;
+0067 cd(CD)
+0068 <span class="keyword">if</span> ftbverbose
+0069     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0070 <span class="keyword">end</span>
+0071 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

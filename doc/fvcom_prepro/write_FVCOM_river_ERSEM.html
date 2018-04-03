@@ -24,7 +24,7 @@
 <div class="box"><strong>Write FVCOM 3.x netCDF river file</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n,n4n,n5s,dic,alkalinity,RiverInfo1,RiverInfo2) </strong></div>
+<div class="box"><strong>function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n,n4n,n5s,dic,o2,bioalk,alkalinity,RiverInfo1,RiverInfo2) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Write FVCOM 3.x netCDF river file
@@ -47,7 +47,9 @@
     n4n        : Ammonia (mmol N/m^3) (dimensions [time, nRivernodes])
     n5s        : Silicate (mmol Si/m^3) (dimensions [time, nRivernodes])
     dic        : Dissolved inorganic carbon (mmol C/m^3) (dimensions [time, nRivernodes])
-    alkalinity : Alkalinity (umol C/m^3) (dimensions [time, nRivernodes])
+    o2         : Dissolved Oxygen (mmol O_2/m^3) (dimensions [time, nRivernodes])
+    bioalk     : Bio_alkalinity compartment carbon (mmol C/m^3) (dimensions [time, nRivernodes])
+    Total_alk  : Total Alkalinity (umol C/m^3) (dimensions [time, nRivernodes])
     RiverInfo1 : Global attribute title of file
     RiverInfo2 : Global attribute info of file
 
@@ -68,6 +70,11 @@
  Revision history
    2016-03-14 New version to export nutrients alongside the physical
    parameters for FVCOM-ERSEM. Based on write_FVCOM_river.
+   2017-01-12 Add missing ERSEM variables (oxygen and alkalinity).
+   2017-11-03 Add conflict variables that causes FABM debug efforts. At
+   the moment these are all the zooplankton variables. Set to a very low
+   number by default. The one used in ERSEM to maintain low population
+   backgrounds. (Riqui)
 
 ==========================================================================</pre></div>
 
@@ -84,7 +91,7 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n,n4n,n5s,dic,alkalinity,RiverInfo1,RiverInfo2)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n,n4n,n5s,dic,o2,bioalk,alkalinity,RiverInfo1,RiverInfo2)</a>
 0002 <span class="comment">% Write FVCOM 3.x netCDF river file</span>
 0003 <span class="comment">%</span>
 0004 <span class="comment">% function write_FVCOM_river_ERSEM(RiverFile,RiverName,time,flux,temp,salt,n1p,n3n,n4n,n5s,dic,alkalinity,RiverInfo1,RiverInfo2)</span>
@@ -105,166 +112,247 @@ This function is called by:
 0019 <span class="comment">%    n4n        : Ammonia (mmol N/m^3) (dimensions [time, nRivernodes])</span>
 0020 <span class="comment">%    n5s        : Silicate (mmol Si/m^3) (dimensions [time, nRivernodes])</span>
 0021 <span class="comment">%    dic        : Dissolved inorganic carbon (mmol C/m^3) (dimensions [time, nRivernodes])</span>
-0022 <span class="comment">%    alkalinity : Alkalinity (umol C/m^3) (dimensions [time, nRivernodes])</span>
-0023 <span class="comment">%    RiverInfo1 : Global attribute title of file</span>
-0024 <span class="comment">%    RiverInfo2 : Global attribute info of file</span>
-0025 <span class="comment">%</span>
-0026 <span class="comment">% OUTPUT:</span>
-0027 <span class="comment">%    FVCOM netCDF river file with flux, temperature, salinity and ERSEM</span>
-0028 <span class="comment">%    nutrients.</span>
-0029 <span class="comment">%</span>
-0030 <span class="comment">% EXAMPLE USAGE</span>
-0031 <span class="comment">%    write_FVCOM_river('tst_riv.nc', {'Penobscot'}, time, flux, ...</span>
-0032 <span class="comment">%         temp, salt, n1p, n3n, n4n, n5s, dic, alkalinity, ...</span>
-0033 <span class="comment">%         'Penobscot Flux', 'source: USGS')</span>
-0034 <span class="comment">%</span>
-0035 <span class="comment">% Author(s):</span>
-0036 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0037 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
-0038 <span class="comment">%    Ricardo Torres (Plymouth Marine Laboratory)</span>
-0039 <span class="comment">%</span>
-0040 <span class="comment">% Revision history</span>
-0041 <span class="comment">%   2016-03-14 New version to export nutrients alongside the physical</span>
-0042 <span class="comment">%   parameters for FVCOM-ERSEM. Based on write_FVCOM_river.</span>
-0043 <span class="comment">%</span>
-0044 <span class="comment">%==========================================================================</span>
-0045 
-0046 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
-0047 
-0048 <span class="keyword">global</span> ftbverbose
-0049 <span class="keyword">if</span> ftbverbose
-0050     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
-0051 <span class="keyword">end</span>
+0022 <span class="comment">%    o2         : Dissolved Oxygen (mmol O_2/m^3) (dimensions [time, nRivernodes])</span>
+0023 <span class="comment">%    bioalk     : Bio_alkalinity compartment carbon (mmol C/m^3) (dimensions [time, nRivernodes])</span>
+0024 <span class="comment">%    Total_alk  : Total Alkalinity (umol C/m^3) (dimensions [time, nRivernodes])</span>
+0025 <span class="comment">%    RiverInfo1 : Global attribute title of file</span>
+0026 <span class="comment">%    RiverInfo2 : Global attribute info of file</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% OUTPUT:</span>
+0029 <span class="comment">%    FVCOM netCDF river file with flux, temperature, salinity and ERSEM</span>
+0030 <span class="comment">%    nutrients.</span>
+0031 <span class="comment">%</span>
+0032 <span class="comment">% EXAMPLE USAGE</span>
+0033 <span class="comment">%    write_FVCOM_river('tst_riv.nc', {'Penobscot'}, time, flux, ...</span>
+0034 <span class="comment">%         temp, salt, n1p, n3n, n4n, n5s, dic, alkalinity, ...</span>
+0035 <span class="comment">%         'Penobscot Flux', 'source: USGS')</span>
+0036 <span class="comment">%</span>
+0037 <span class="comment">% Author(s):</span>
+0038 <span class="comment">%    Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0039 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0040 <span class="comment">%    Ricardo Torres (Plymouth Marine Laboratory)</span>
+0041 <span class="comment">%</span>
+0042 <span class="comment">% Revision history</span>
+0043 <span class="comment">%   2016-03-14 New version to export nutrients alongside the physical</span>
+0044 <span class="comment">%   parameters for FVCOM-ERSEM. Based on write_FVCOM_river.</span>
+0045 <span class="comment">%   2017-01-12 Add missing ERSEM variables (oxygen and alkalinity).</span>
+0046 <span class="comment">%   2017-11-03 Add conflict variables that causes FABM debug efforts. At</span>
+0047 <span class="comment">%   the moment these are all the zooplankton variables. Set to a very low</span>
+0048 <span class="comment">%   number by default. The one used in ERSEM to maintain low population</span>
+0049 <span class="comment">%   backgrounds. (Riqui)</span>
+0050 <span class="comment">%</span>
+0051 <span class="comment">%==========================================================================</span>
 0052 
-0053 [nTimes, nRivnodes] = size(flux);
-0054 <span class="keyword">if</span> ftbverbose
-0055     fprintf(<span class="string">'# of river nodes: %d\n'</span>, nRivnodes);
-0056     fprintf(<span class="string">'# of time frames: %d\n'</span>, nTimes);
-0057 <span class="keyword">end</span>
-0058 
-0059 [year1, month1, day1, ~, ~, ~] = mjulian2greg(time(1));
-0060 [year2, month2, day2, ~, ~, ~] = mjulian2greg(time(end));
+0053 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0054 
+0055 <span class="keyword">global</span> ftbverbose
+0056 <span class="keyword">if</span> ftbverbose
+0057     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0058 <span class="keyword">end</span>
+0059 
+0060 [nTimes, nRivnodes] = size(flux);
 0061 <span class="keyword">if</span> ftbverbose
-0062     fprintf(<span class="string">'time series begins at:\t%04d %02d %02d\n'</span>, year1, month1, day1);
-0063     fprintf(<span class="string">'time series ends at:\t%04d %02d %02d\n'</span>, year2, month2, day2);
+0062     fprintf(<span class="string">'# of river nodes: %d\n'</span>, nRivnodes);
+0063     fprintf(<span class="string">'# of time frames: %d\n'</span>, nTimes);
 0064 <span class="keyword">end</span>
-0065 clear year? month? day?
-0066 
-0067 <span class="comment">%--------------------------------------------------------------------------</span>
-0068 <span class="comment">% dump to netcdf file</span>
-0069 <span class="comment">%--------------------------------------------------------------------------</span>
-0070 
-0071 <span class="comment">% river node forcing</span>
-0072 nc = netcdf.create(RiverFile, <span class="string">'clobber'</span>);
+0065 
+0066 [year1, month1, day1, ~, ~, ~] = mjulian2greg(time(1));
+0067 [year2, month2, day2, ~, ~, ~] = mjulian2greg(time(end));
+0068 <span class="keyword">if</span> ftbverbose
+0069     fprintf(<span class="string">'time series begins at:\t%04d %02d %02d\n'</span>, year1, month1, day1);
+0070     fprintf(<span class="string">'time series ends at:\t%04d %02d %02d\n'</span>, year2, month2, day2);
+0071 <span class="keyword">end</span>
+0072 clear year? month? day?
 0073 
-0074 <span class="comment">% global variables</span>
-0075 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'type'</span>, <span class="string">'FVCOM RIVER FORCING FILE'</span>)
-0076 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'title'</span>, RiverInfo1)
-0077 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'info'</span>, RiverInfo2)
-0078 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, sprintf(<span class="string">'File created using %s from the MATLAB fvcom-toolbox'</span>, subname))
-0079 
-0080 <span class="comment">% dimensions</span>
-0081 namelen_dimid = netcdf.defDim(nc, <span class="string">'namelen'</span>, 80);
-0082 rivers_dimid = netcdf.defDim(nc, <span class="string">'rivers'</span>, nRivnodes);
-0083 time_dimid = netcdf.defDim(nc, <span class="string">'time'</span>, netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
-0084 date_str_len_dimid = netcdf.defDim(nc, <span class="string">'DateStrLen'</span>, 26);
-0085 
-0086 <span class="comment">% variables</span>
-0087 river_names_varid = netcdf.defVar(nc, <span class="string">'river_names'</span>, <span class="string">'NC_CHAR'</span>, [namelen_dimid, rivers_dimid]);
-0088 
-0089 time_varid = netcdf.defVar(nc, <span class="string">'time'</span>, <span class="string">'NC_FLOAT'</span>, time_dimid);
-0090 netcdf.putAtt(nc, time_varid, <span class="string">'long_name'</span>, <span class="string">'time'</span>);
-0091 netcdf.putAtt(nc, time_varid, <span class="string">'units'</span>, <span class="string">'days since 1858-11-17 00:00:00'</span>);
-0092 netcdf.putAtt(nc, time_varid, <span class="string">'format'</span>, <span class="string">'modified julian day (MJD)'</span>);
-0093 netcdf.putAtt(nc, time_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
-0094 
-0095 itime_varid = netcdf.defVar(nc, <span class="string">'Itime'</span>, <span class="string">'NC_INT'</span>, time_dimid);
-0096 netcdf.putAtt(nc, itime_varid, <span class="string">'units'</span>, <span class="string">'days since 1858-11-17 00:00:00'</span>);
-0097 netcdf.putAtt(nc, itime_varid, <span class="string">'format'</span>, <span class="string">'modified julian day (MJD)'</span>);
-0098 netcdf.putAtt(nc, itime_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
-0099 
-0100 itime2_varid = netcdf.defVar(nc, <span class="string">'Itime2'</span>, <span class="string">'NC_INT'</span>, time_dimid);
-0101 netcdf.putAtt(nc, itime2_varid, <span class="string">'units'</span>, <span class="string">'msec since 00:00:00'</span>);
-0102 netcdf.putAtt(nc, itime2_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
-0103 
-0104 times_varid = netcdf.defVar(nc,<span class="string">'Times'</span>,<span class="string">'NC_CHAR'</span>,[date_str_len_dimid, time_dimid]);
-0105 netcdf.putAtt(nc, times_varid, <span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0074 <span class="comment">%--------------------------------------------------------------------------</span>
+0075 <span class="comment">% dump to netcdf file</span>
+0076 <span class="comment">%--------------------------------------------------------------------------</span>
+0077 
+0078 <span class="comment">% river node forcing</span>
+0079 nc = netcdf.create(RiverFile, <span class="string">'clobber'</span>);
+0080 
+0081 <span class="comment">% global variables</span>
+0082 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'type'</span>, <span class="string">'FVCOM RIVER FORCING FILE'</span>)
+0083 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'title'</span>, RiverInfo1)
+0084 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'info'</span>, RiverInfo2)
+0085 netcdf.putAtt(nc, netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, sprintf(<span class="string">'File created using %s from the MATLAB fvcom-toolbox'</span>, subname))
+0086 
+0087 <span class="comment">% dimensions</span>
+0088 namelen_dimid = netcdf.defDim(nc, <span class="string">'namelen'</span>, 80);
+0089 rivers_dimid = netcdf.defDim(nc, <span class="string">'rivers'</span>, nRivnodes);
+0090 time_dimid = netcdf.defDim(nc, <span class="string">'time'</span>, netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0091 date_str_len_dimid = netcdf.defDim(nc, <span class="string">'DateStrLen'</span>, 26);
+0092 
+0093 <span class="comment">% variables</span>
+0094 river_names_varid = netcdf.defVar(nc, <span class="string">'river_names'</span>, <span class="string">'NC_CHAR'</span>, [namelen_dimid, rivers_dimid]);
+0095 
+0096 time_varid = netcdf.defVar(nc, <span class="string">'time'</span>, <span class="string">'NC_FLOAT'</span>, time_dimid);
+0097 netcdf.putAtt(nc, time_varid, <span class="string">'long_name'</span>, <span class="string">'time'</span>);
+0098 netcdf.putAtt(nc, time_varid, <span class="string">'units'</span>, <span class="string">'days since 1858-11-17 00:00:00'</span>);
+0099 netcdf.putAtt(nc, time_varid, <span class="string">'format'</span>, <span class="string">'modified julian day (MJD)'</span>);
+0100 netcdf.putAtt(nc, time_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
+0101 
+0102 itime_varid = netcdf.defVar(nc, <span class="string">'Itime'</span>, <span class="string">'NC_INT'</span>, time_dimid);
+0103 netcdf.putAtt(nc, itime_varid, <span class="string">'units'</span>, <span class="string">'days since 1858-11-17 00:00:00'</span>);
+0104 netcdf.putAtt(nc, itime_varid, <span class="string">'format'</span>, <span class="string">'modified julian day (MJD)'</span>);
+0105 netcdf.putAtt(nc, itime_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
 0106 
-0107 river_flux_varid = netcdf.defVar(nc, <span class="string">'river_flux'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
-0108 netcdf.putAtt(nc, river_flux_varid, <span class="string">'long_name'</span>, <span class="string">'river runoff volume flux'</span>);
-0109 netcdf.putAtt(nc, river_flux_varid, <span class="string">'units'</span>, <span class="string">'m^3s^-1'</span>);
+0107 itime2_varid = netcdf.defVar(nc, <span class="string">'Itime2'</span>, <span class="string">'NC_INT'</span>, time_dimid);
+0108 netcdf.putAtt(nc, itime2_varid, <span class="string">'units'</span>, <span class="string">'msec since 00:00:00'</span>);
+0109 netcdf.putAtt(nc, itime2_varid, <span class="string">'time_zone'</span>, <span class="string">'UTC'</span>);
 0110 
-0111 river_temp_varid = netcdf.defVar(nc, <span class="string">'river_temp'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
-0112 netcdf.putAtt(nc, river_temp_varid, <span class="string">'long_name'</span>, <span class="string">'river runoff temperature'</span>);
-0113 netcdf.putAtt(nc, river_temp_varid, <span class="string">'units'</span>, <span class="string">'Celsius'</span>);
-0114 
-0115 river_salt_varid = netcdf.defVar(nc, <span class="string">'river_salt'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
-0116 netcdf.putAtt(nc, river_salt_varid, <span class="string">'long_name'</span>, <span class="string">'river runoff salinity'</span>);
-0117 netcdf.putAtt(nc, river_salt_varid, <span class="string">'units'</span>, <span class="string">'PSU'</span>);
-0118 
-0119 river_n1p_varid = netcdf.defVar(nc, <span class="string">'N1_p'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
-0120 netcdf.putAtt(nc, river_n1p_varid, <span class="string">'long_name'</span>, <span class="string">'phosphate phosphorus'</span>);
-0121 netcdf.putAtt(nc, river_n1p_varid, <span class="string">'units'</span>, <span class="string">'mmol P/m^3'</span>);
-0122 
-0123 river_n3n_varid = netcdf.defVar(nc, <span class="string">'N3_n'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
-0124 netcdf.putAtt(nc, river_n3n_varid, <span class="string">'long_name'</span>, <span class="string">'nitrate nitrogen'</span>);
-0125 netcdf.putAtt(nc, river_n3n_varid, <span class="string">'units'</span>, <span class="string">'mmol N/m^3'</span>);
-0126 
-0127 river_n4n_varid = netcdf.defVar(nc, <span class="string">'N4_n'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
-0128 netcdf.putAtt(nc, river_n4n_varid, <span class="string">'long_name'</span>, <span class="string">'ammonium nitrogen'</span>);
-0129 netcdf.putAtt(nc, river_n4n_varid, <span class="string">'units'</span>, <span class="string">'mmol N/m^3'</span>);
-0130 
-0131 river_n5s_varid = netcdf.defVar(nc, <span class="string">'N5_s'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
-0132 netcdf.putAtt(nc, river_n5s_varid, <span class="string">'long_name'</span>, <span class="string">'silicate silicate'</span>);
-0133 netcdf.putAtt(nc, river_n5s_varid, <span class="string">'units'</span>, <span class="string">'mmol Si/m^3'</span>);
-0134 
-0135 river_dic_varid = netcdf.defVar(nc, <span class="string">'O3_c'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
-0136 netcdf.putAtt(nc, river_dic_varid, <span class="string">'long_name'</span>, <span class="string">'carbonate total dissolved inorganic carbon'</span>);
-0137 netcdf.putAtt(nc, river_dic_varid, <span class="string">'units'</span>, <span class="string">'mmol C/m^3'</span>);
-0138 
-0139 river_alk_varid = netcdf.defVar(nc, <span class="string">'O3_bioalk'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
-0140 netcdf.putAtt(nc, river_alk_varid, <span class="string">'long_name'</span>, <span class="string">'carbonate bioalkalinity'</span>);
-0141 netcdf.putAtt(nc, river_alk_varid, <span class="string">'units'</span>, <span class="string">'umol/kg'</span>);
-0142 
-0143 <span class="comment">% end definitions</span>
-0144 netcdf.endDef(nc);
+0111 times_varid = netcdf.defVar(nc,<span class="string">'Times'</span>,<span class="string">'NC_CHAR'</span>,[date_str_len_dimid, time_dimid]);
+0112 netcdf.putAtt(nc, times_varid, <span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0113 
+0114 river_flux_varid = netcdf.defVar(nc, <span class="string">'river_flux'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0115 netcdf.putAtt(nc, river_flux_varid, <span class="string">'long_name'</span>, <span class="string">'river runoff volume flux'</span>);
+0116 netcdf.putAtt(nc, river_flux_varid, <span class="string">'units'</span>, <span class="string">'m^3s^-1'</span>);
+0117 
+0118 river_temp_varid = netcdf.defVar(nc, <span class="string">'river_temp'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0119 netcdf.putAtt(nc, river_temp_varid, <span class="string">'long_name'</span>, <span class="string">'river runoff temperature'</span>);
+0120 netcdf.putAtt(nc, river_temp_varid, <span class="string">'units'</span>, <span class="string">'Celsius'</span>);
+0121 
+0122 river_salt_varid = netcdf.defVar(nc, <span class="string">'river_salt'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0123 netcdf.putAtt(nc, river_salt_varid, <span class="string">'long_name'</span>, <span class="string">'river runoff salinity'</span>);
+0124 netcdf.putAtt(nc, river_salt_varid, <span class="string">'units'</span>, <span class="string">'PSU'</span>);
+0125 
+0126 river_n1p_varid = netcdf.defVar(nc, <span class="string">'N1_p'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0127 netcdf.putAtt(nc, river_n1p_varid, <span class="string">'long_name'</span>, <span class="string">'phosphate phosphorus'</span>);
+0128 netcdf.putAtt(nc, river_n1p_varid, <span class="string">'units'</span>, <span class="string">'mmol P/m^3'</span>);
+0129 
+0130 river_n3n_varid = netcdf.defVar(nc, <span class="string">'N3_n'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0131 netcdf.putAtt(nc, river_n3n_varid, <span class="string">'long_name'</span>, <span class="string">'nitrate nitrogen'</span>);
+0132 netcdf.putAtt(nc, river_n3n_varid, <span class="string">'units'</span>, <span class="string">'mmol N/m^3'</span>);
+0133 
+0134 river_n4n_varid = netcdf.defVar(nc, <span class="string">'N4_n'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0135 netcdf.putAtt(nc, river_n4n_varid, <span class="string">'long_name'</span>, <span class="string">'ammonium nitrogen'</span>);
+0136 netcdf.putAtt(nc, river_n4n_varid, <span class="string">'units'</span>, <span class="string">'mmol N/m^3'</span>);
+0137 
+0138 river_n5s_varid = netcdf.defVar(nc, <span class="string">'N5_s'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0139 netcdf.putAtt(nc, river_n5s_varid, <span class="string">'long_name'</span>, <span class="string">'silicate silicate'</span>);
+0140 netcdf.putAtt(nc, river_n5s_varid, <span class="string">'units'</span>, <span class="string">'mmol Si/m^3'</span>);
+0141 
+0142 river_O2_varid = netcdf.defVar(nc, <span class="string">'O2_o'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0143 netcdf.putAtt(nc, river_O2_varid, <span class="string">'long_name'</span>, <span class="string">'dissolved Oxygen'</span>);
+0144 netcdf.putAtt(nc, river_O2_varid, <span class="string">'units'</span>, <span class="string">'mmol O_2/m^3'</span>);
 0145 
-0146 <span class="comment">% river names (must be 80 character strings)</span>
-0147 rString = char();
-0148 <span class="keyword">for</span> i = 1:nRivnodes
-0149     <span class="comment">% Left-aligned 80 character string.</span>
-0150     rString = [rString, sprintf(<span class="string">'%-80s'</span>, RiverName{i})];
-0151 <span class="keyword">end</span>
-0152 netcdf.putVar(nc, river_names_varid, rString);
-0153 
-0154 <span class="comment">% dump dynamic data</span>
-0155 netcdf.putVar(nc, time_varid, 0, nTimes, time);
-0156 netcdf.putVar(nc, itime_varid, 0, nTimes, floor(time));
-0157 netcdf.putVar(nc, itime2_varid, 0, nTimes, mod(time, 1)*24*3600*1000);
-0158 netcdf.putVar(nc, river_flux_varid, flux');
-0159 netcdf.putVar(nc, river_temp_varid, temp');
-0160 netcdf.putVar(nc, river_salt_varid, salt');
-0161 netcdf.putVar(nc, river_n1p_varid, n1p');
-0162 netcdf.putVar(nc, river_n3n_varid, n3n');
-0163 netcdf.putVar(nc, river_n4n_varid, n4n');
-0164 netcdf.putVar(nc, river_n5s_varid, n5s');
-0165 netcdf.putVar(nc, river_dic_varid, dic');
-0166 netcdf.putVar(nc, river_alk_varid, alkalinity');
-0167 <span class="comment">% build the time string and output to netCDF.</span>
-0168 nStringOut = char();
-0169 [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(time);
-0170 <span class="keyword">for</span> tt = 1:nTimes
-0171     nDate = [nYr(tt), nMon(tt), nDay(tt), nHour(tt), nMin(tt), nSec(tt)];
-0172     nStringOut = [nStringOut, sprintf(<span class="string">'%04i/%02i/%02i %02i:%02i:%02i       '</span>, nDate)];
-0173 <span class="keyword">end</span>
-0174 netcdf.putVar(nc, times_varid, nStringOut);
-0175 
-0176 netcdf.close(nc);
+0146 river_TA_varid = netcdf.defVar(nc, <span class="string">'O3_TA'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0147 netcdf.putAtt(nc, river_TA_varid, <span class="string">'long_name'</span>, <span class="string">'carbonate total alkalinity'</span>);
+0148 netcdf.putAtt(nc, river_TA_varid, <span class="string">'units'</span>, <span class="string">'mmol C/m^3'</span>);
+0149 
+0150 
+0151 river_dic_varid = netcdf.defVar(nc, <span class="string">'O3_c'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0152 netcdf.putAtt(nc, river_dic_varid, <span class="string">'long_name'</span>, <span class="string">'carbonate total dissolved inorganic carbon'</span>);
+0153 netcdf.putAtt(nc, river_dic_varid, <span class="string">'units'</span>, <span class="string">'mmol C/m^3'</span>);
+0154 
+0155 river_bioalk_varid = netcdf.defVar(nc, <span class="string">'O3_bioalk'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0156 netcdf.putAtt(nc, river_bioalk_varid, <span class="string">'long_name'</span>, <span class="string">'carbonate bioalkalinity'</span>);
+0157 netcdf.putAtt(nc, river_bioalk_varid, <span class="string">'units'</span>, <span class="string">'umol/kg'</span>);
+0158 
+0159 <span class="comment">% Additional zooplankton variables</span>
+0160 zoo_vars = {<span class="string">'Z5'</span>,<span class="string">'Z6'</span>};
+0161 zuu_nuts = {<span class="string">'n'</span>,<span class="string">'p'</span>,<span class="string">'c'</span>};
+0162 zoo_long = {<span class="string">'microzooplankton'</span>,<span class="string">'nanoflagellates'</span>};
+0163 nuts_long = {<span class="string">'nitrogen'</span>,<span class="string">'phosphorus'</span>,<span class="string">'nitrogen'</span>};
+0164 nuts_units = {<span class="string">'mmol N/m^3'</span>,<span class="string">'mmol P/m^3'</span>,<span class="string">'mg C/m^3'</span>};
+0165 
+0166 river_Z4c_varid = netcdf.defVar(nc, <span class="string">'Z4_c'</span>, <span class="string">'NC_FLOAT'</span>, [rivers_dimid, time_dimid]);
+0167 netcdf.putAtt(nc, river_Z4c_varid, <span class="string">'long_name'</span>, <span class="string">'mesozooplankton carbon'</span>);
+0168 netcdf.putAtt(nc, river_Z4c_varid, <span class="string">'units'</span>, <span class="string">'mg C/m^3'</span>);
+0169 
+0170 <span class="keyword">for</span> zz=1:length(zoo_vars)
+0171     <span class="keyword">for</span> nn=1:length(zuu_nuts)
+0172         eval([<span class="string">'river_'</span>,zoo_vars{zz},zuu_nuts{nn},<span class="string">'_varid = netcdf.defVar(nc, '''</span>,zoo_vars{zz},<span class="string">'_'</span>,zuu_nuts{nn},<span class="string">''', ''NC_FLOAT'', [rivers_dimid, time_dimid]);'</span>])
+0173         eval([<span class="string">'netcdf.putAtt(nc, river_'</span>,zoo_vars{zz},zuu_nuts{nn},<span class="string">'_varid, ''long_name'', '''</span>,zoo_long{zz},<span class="string">' '</span>,nuts_long{nn},<span class="string">''');'</span>])
+0174         eval([<span class="string">'netcdf.putAtt(nc, river_'</span>,zoo_vars{zz},zuu_nuts{nn},<span class="string">'_varid, ''units'', '''</span>,nuts_units{nn},<span class="string">''');'</span>])
+0175     <span class="keyword">end</span>
+0176 <span class="keyword">end</span>
 0177 
-0178 <span class="keyword">if</span> ftbverbose
-0179     fprintf(<span class="string">'end   : %s\n'</span>, subname)
-0180 <span class="keyword">end</span>
-0181</pre></div>
-<hr><address>Generated on Wed 10-Aug-2016 16:44:39 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0178 <span class="comment">% end definitions</span>
+0179 netcdf.endDef(nc);
+0180 
+0181 <span class="comment">% river names (must be 80 character strings)</span>
+0182 rString = char();
+0183 <span class="keyword">for</span> i = 1:nRivnodes
+0184     <span class="comment">% Left-aligned 80 character string.</span>
+0185     rString = [rString, sprintf(<span class="string">'%-80s'</span>, RiverName{i})];
+0186 <span class="keyword">end</span>
+0187 netcdf.putVar(nc, river_names_varid, rString);
+0188 
+0189 <span class="comment">% dump dynamic data</span>
+0190 netcdf.putVar(nc, time_varid, 0, nTimes, time);
+0191 netcdf.putVar(nc, itime_varid, 0, nTimes, floor(time));
+0192 netcdf.putVar(nc, itime2_varid, 0, nTimes, mod(time, 1)*24*3600*1000);
+0193 <span class="keyword">if</span> any(isnan(flux(:)))
+0194     error(<span class="string">'NaNs in river flux varaible'</span>)
+0195 <span class="keyword">end</span>
+0196 netcdf.putVar(nc, river_flux_varid, flux');
+0197 <span class="keyword">if</span> any(isnan(temp(:)))
+0198     error(<span class="string">'NaNs in river temp varaible'</span>)
+0199 <span class="keyword">end</span>
+0200 netcdf.putVar(nc, river_temp_varid, temp');
+0201 <span class="keyword">if</span> any(isnan(salt(:)))
+0202     error(<span class="string">'NaNs in river salt varaible'</span>)
+0203 <span class="keyword">end</span>
+0204 netcdf.putVar(nc, river_salt_varid, salt');
+0205 <span class="keyword">if</span> any(isnan(n1p(:)))
+0206     error(<span class="string">'NaNs in river n1p varaible'</span>)
+0207 <span class="keyword">end</span>
+0208 netcdf.putVar(nc, river_n1p_varid, n1p');
+0209 <span class="keyword">if</span> any(isnan(n3n(:)))
+0210     error(<span class="string">'NaNs in river n3n varaible'</span>)
+0211 <span class="keyword">end</span>
+0212 netcdf.putVar(nc, river_n3n_varid, n3n');
+0213 <span class="keyword">if</span> any(isnan(n4n(:)))
+0214     error(<span class="string">'NaNs in river n4n varaible'</span>)
+0215 <span class="keyword">end</span>
+0216 netcdf.putVar(nc, river_n4n_varid, n4n');
+0217 <span class="keyword">if</span> any(isnan(n5s(:)))
+0218     error(<span class="string">'NaNs in river n5s varaible'</span>)
+0219 <span class="keyword">end</span>
+0220 netcdf.putVar(nc, river_n5s_varid, n5s');
+0221 <span class="keyword">if</span> any(isnan(dic(:)))
+0222     error(<span class="string">'NaNs in river dic varaible'</span>)
+0223 <span class="keyword">end</span>
+0224 netcdf.putVar(nc, river_dic_varid, dic');
+0225 <span class="keyword">if</span> any(isnan(o2(:)))
+0226     error(<span class="string">'NaNs in river o2 varaible'</span>)
+0227 <span class="keyword">end</span>
+0228 netcdf.putVar(nc, river_O2_varid, o2');
+0229 <span class="keyword">if</span> any(isnan(alkalinity(:)))
+0230     error(<span class="string">'NaNs in river alkalinity varaible'</span>)
+0231 <span class="keyword">end</span>
+0232 netcdf.putVar(nc, river_TA_varid, alkalinity');
+0233 <span class="keyword">if</span> any(isnan(bioalk(:)))
+0234     error(<span class="string">'NaNs in river bioalk varaible'</span>)
+0235 <span class="keyword">end</span>
+0236 netcdf.putVar(nc, river_bioalk_varid,bioalk');
+0237 <span class="comment">% add small zooplankton values</span>
+0238 <span class="comment">% taken to be 10^-6 of L4 initial conditions.</span>
+0239 fac = 10^-6;
+0240 netcdf.putVar(nc, river_Z4c_varid,ones(size(bioalk')).*1.2*fac);
+0241 netcdf.putVar(nc, river_Z5c_varid,ones(size(bioalk')).*7.2*fac);
+0242 netcdf.putVar(nc, river_Z5n_varid,ones(size(bioalk')).*0.12*fac);
+0243 netcdf.putVar(nc, river_Z5p_varid,ones(size(bioalk')).*0.0113*fac);
+0244 netcdf.putVar(nc, river_Z6c_varid,ones(size(bioalk')).*2.4*fac);
+0245 netcdf.putVar(nc, river_Z6n_varid,ones(size(bioalk')).*0.0505*fac);
+0246 netcdf.putVar(nc, river_Z6p_varid,ones(size(bioalk')).*0.0047*fac); <span class="comment">% not quite the initiall values in fabm.yaml... but they are not in carbon balance...</span>
+0247 
+0248 <span class="comment">% build the time string and output to netCDF.</span>
+0249 nStringOut = char();
+0250 [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(time);
+0251 <span class="keyword">for</span> tt = 1:nTimes
+0252     nDate = [nYr(tt), nMon(tt), nDay(tt), nHour(tt), nMin(tt), nSec(tt)];
+0253     nStringOut = [nStringOut, sprintf(<span class="string">'%04i/%02i/%02i %02i:%02i:%02i       '</span>, nDate)];
+0254 <span class="keyword">end</span>
+0255 netcdf.putVar(nc, times_varid, nStringOut);
+0256 
+0257 netcdf.close(nc);
+0258 
+0259 <span class="keyword">if</span> ftbverbose
+0260     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0261 <span class="keyword">end</span>
+0262</pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

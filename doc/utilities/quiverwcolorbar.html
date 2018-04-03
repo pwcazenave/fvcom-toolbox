@@ -1,0 +1,478 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of quiverwcolorbar</title>
+  <meta name="keywords" content="quiverwcolorbar">
+  <meta name="description" content="Melissa Day 5/24/2013">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; quiverwcolorbar.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>quiverwcolorbar
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Melissa Day 5/24/2013</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function hh = quiverwcolorbar(varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Melissa Day 5/24/2013
+ Upgrade of Andrew Diamond's quiverc2wcmap to generate a quiver plot
+ with arrows colored according to vector magnitude. 
+ Functional differences from quiverc2wcmap:
+   1) Allows user to specify colormap boundaries using 'bound': changes 
+      colorbar axes AND corresponding vector coloring
+      (much more useful for intercomparison of datasets)
+   2) Improved fidelity to magnitude colors in large datasets 
+      (at a cost of increased computation time...)
+      Uses some improvements from DS's vfield_color
+   3) Small clarifications added
+ Example:
+             x = rand(1,50).*100;
+             y = rand(1,50).*100;
+             u = rand(1,50) .* 10;
+             v = rand(1,50) .* 10;
+             scale = 0;
+             figure; quiverwcolorbar(x',y',u',v',scale); %compare to:
+             figure; quiverwcolorbar(x',y',u',v',scale,'bounds',[0 10]);
+----------------
+ function hh = quiverc2wcmap(varargin)
+ Andrew Diamond 3/17/2005
+ This is based off of Tobias H�fken which was based off of Bertrand Dano
+ keeping with their main intent to show a color w/r to magnitude quiver plot
+ while maintaining a large amount of quiver API backwards compatability.
+ Functional differences from quiverc2:
+   1) This works under 6.5.1
+   2) It handles NaNs
+   3) It draws a colormap that is w/r to the quiver magnitudes (hard coded to
+   20 segments of the colormap as per quiverc2 - seems fine for a quiver).
+   4) Various bug fixes (I think)
+ In order to do this I needed some small hacks on 6.5.1's quiver to take a
+ color triplet.  I have included as part of this file in a subfunction below.
+----------------
+ Comments from quiverc2
+ changed Tobias H�fken 3-14-05
+ totally downstripped version of the former
+ split input field into n segments and do a quiver qhich each of them</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function hh = quiver(varargin)</a></li><li><a href="#_sub2" class="code">function retval = isscalar(m)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001  <a name="_sub0" href="#_subfunctions" class="code">function hh = quiverwcolorbar(varargin)</a>
+0002 <span class="comment">% Melissa Day 5/24/2013</span>
+0003 <span class="comment">% Upgrade of Andrew Diamond's quiverc2wcmap to generate a quiver plot</span>
+0004 <span class="comment">% with arrows colored according to vector magnitude.</span>
+0005 <span class="comment">% Functional differences from quiverc2wcmap:</span>
+0006 <span class="comment">%   1) Allows user to specify colormap boundaries using 'bound': changes</span>
+0007 <span class="comment">%      colorbar axes AND corresponding vector coloring</span>
+0008 <span class="comment">%      (much more useful for intercomparison of datasets)</span>
+0009 <span class="comment">%   2) Improved fidelity to magnitude colors in large datasets</span>
+0010 <span class="comment">%      (at a cost of increased computation time...)</span>
+0011 <span class="comment">%      Uses some improvements from DS's vfield_color</span>
+0012 <span class="comment">%   3) Small clarifications added</span>
+0013 <span class="comment">% Example:</span>
+0014 <span class="comment">%             x = rand(1,50).*100;</span>
+0015 <span class="comment">%             y = rand(1,50).*100;</span>
+0016 <span class="comment">%             u = rand(1,50) .* 10;</span>
+0017 <span class="comment">%             v = rand(1,50) .* 10;</span>
+0018 <span class="comment">%             scale = 0;</span>
+0019 <span class="comment">%             figure; quiverwcolorbar(x',y',u',v',scale); %compare to:</span>
+0020 <span class="comment">%             figure; quiverwcolorbar(x',y',u',v',scale,'bounds',[0 10]);</span>
+0021 <span class="comment">%----------------</span>
+0022 <span class="comment">% function hh = quiverc2wcmap(varargin)</span>
+0023 <span class="comment">% Andrew Diamond 3/17/2005</span>
+0024 <span class="comment">% This is based off of Tobias H�fken which was based off of Bertrand Dano</span>
+0025 <span class="comment">% keeping with their main intent to show a color w/r to magnitude quiver plot</span>
+0026 <span class="comment">% while maintaining a large amount of quiver API backwards compatability.</span>
+0027 <span class="comment">% Functional differences from quiverc2:</span>
+0028 <span class="comment">%   1) This works under 6.5.1</span>
+0029 <span class="comment">%   2) It handles NaNs</span>
+0030 <span class="comment">%   3) It draws a colormap that is w/r to the quiver magnitudes (hard coded to</span>
+0031 <span class="comment">%   20 segments of the colormap as per quiverc2 - seems fine for a quiver).</span>
+0032 <span class="comment">%   4) Various bug fixes (I think)</span>
+0033 <span class="comment">% In order to do this I needed some small hacks on 6.5.1's quiver to take a</span>
+0034 <span class="comment">% color triplet.  I have included as part of this file in a subfunction below.</span>
+0035 <span class="comment">%----------------</span>
+0036 <span class="comment">% Comments from quiverc2</span>
+0037 <span class="comment">% changed Tobias H�fken 3-14-05</span>
+0038 <span class="comment">% totally downstripped version of the former</span>
+0039 <span class="comment">% split input field into n segments and do a quiver qhich each of them</span>
+0040  
+0041 <span class="comment">% Modified version of Quiver to plots velocity vectors as arrows</span>
+0042 <span class="comment">% with components (u,v) at the points (x,y) using the current colormap</span>
+0043 
+0044 <span class="comment">% Bertrand Dano 3-3-03</span>
+0045 <span class="comment">% Copyright 1984-2002 The MathWorks, Inc.</span>
+0046 
+0047 <span class="comment">% changed T. H�fken 14.03.05, for high data resolution</span>
+0048 <span class="comment">% using fixed color &quot;spacing&quot; of 20</span>
+0049 
+0050 <span class="comment">%QUIVERC Quiver color plot.</span>
+0051 <span class="comment">%   QUIVERC(X,Y,U,V) plots velocity vectors as arrows with components (u,v)</span>
+0052 <span class="comment">%   at the points (x,y).  The matrices X,Y,U,V must all be the same size</span>
+0053 <span class="comment">%   and contain corresponding position and velocity components (X and Y</span>
+0054 <span class="comment">%   can also be vectors to specify a uniform grid).  QUIVER automatically</span>
+0055 <span class="comment">%   scales the arrows to fit within the grid.</span>
+0056 <span class="comment">%</span>
+0057 <span class="comment">%   QUIVERC(U,V) plots velocity vectors at equally spaced points in</span>
+0058 <span class="comment">%   the x-y plane.</span>
+0059 <span class="comment">%</span>
+0060 <span class="comment">%   QUIVERC(U,V,S) or QUIVER(X,Y,U,V,S) automatically scales the</span>
+0061 <span class="comment">%   arrows to fit within the grid and then stretches them by S.  Use</span>
+0062 <span class="comment">%   S=0 to plot the arrows without the automatic scaling.</span>
+0063 <span class="comment">%</span>
+0064 <span class="comment">%   QUIVERC(...,LINESPEC) uses the plot linestyle specified for</span>
+0065 <span class="comment">%   the velocity vectors.  Any marker in LINESPEC is drawn at the base</span>
+0066 <span class="comment">%   instead of an arrow on the tip.  Use a marker of '.' to specify</span>
+0067 <span class="comment">%   no marker at all.  See PLOT for other possibilities.</span>
+0068 <span class="comment">%</span>
+0069 <span class="comment">%   QUIVERC(...,'filled') fills any markers specified.</span>
+0070 <span class="comment">%</span>
+0071 <span class="comment">%   H = QUIVERC(...) returns a vector of line handles.</span>
+0072 <span class="comment">%</span>
+0073 <span class="comment">%   Example:</span>
+0074 <span class="comment">%      [x,y] = meshgrid(-2:.2:2,-1:.15:1);</span>
+0075 <span class="comment">%      z = x .* exp(-x.^2 - y.^2); [px,py] = gradient(z,.2,.15);</span>
+0076 <span class="comment">%      contour(x,y,z), hold on</span>
+0077 <span class="comment">%      quiverc(x,y,px,py), hold off, axis image</span>
+0078 <span class="comment">%</span>
+0079 <span class="comment">%   See also FEATHER, QUIVER3, PLOT.</span>
+0080 <span class="comment">%   Clay M. Thompson 3-3-94</span>
+0081 <span class="comment">%   Copyright 1984-2002 The MathWorks, Inc.</span>
+0082 <span class="comment">%   $Revision: 5.21 $  $Date: 2002/06/05 20:05:16 $</span>
+0083 <span class="comment">%-------------------------------------------------------------</span>
+0084 nin = nargin;            <span class="comment">%number of inputs</span>
+0085 
+0086 <span class="comment">% error(nargchk(2,5,nin));</span>
+0087 error(nargchk(2,7,nin)); <span class="comment">%added +2 to maxargs to account for 'bounds' add</span>
+0088 
+0089 <span class="comment">% Check numeric input arguments</span>
+0090 <span class="keyword">if</span> nin&lt;4,                <span class="comment">% quiver(u,v) or quiver(u,v,s)</span>
+0091   [msg,x,y,u,v] = xyzchk(varargin{1:2});
+0092 <span class="keyword">else</span>                     <span class="comment">% quiver(x,y,u,v) and beyond</span>
+0093   [msg,x,y,u,v] = xyzchk(varargin{1:4});
+0094 <span class="keyword">end</span>
+0095 <span class="keyword">if</span> ~isempty(msg), error(msg); <span class="keyword">end</span>
+0096 
+0097 scale=1;                 <span class="comment">% This is the default I think.</span>
+0098 <span class="keyword">if</span>(nin == 3)  <span class="comment">% quiver(u,v,s)</span>
+0099     <span class="keyword">if</span>(<a href="#_sub2" class="code" title="subfunction retval = isscalar(m)">isscalar</a>(varargin{nin}))
+0100         scale = varargin{nin};
+0101     <span class="keyword">end</span>
+0102 <span class="keyword">elseif</span>(nin &gt;= 5)  <span class="comment">% quiver(x,y,u,v,s) or quiver(x,y,u,v,s,'bounds',[start end])</span>
+0103     <span class="keyword">if</span>(<a href="#_sub2" class="code" title="subfunction retval = isscalar(m)">isscalar</a>(varargin{5}))
+0104         scale = varargin{5};
+0105     <span class="keyword">end</span>
+0106 <span class="keyword">end</span>
+0107 
+0108 <span class="comment">%-------------Define matrix of vector magnitudes-------------</span>
+0109 <span class="comment">% Define matrix of vector magnitudes</span>
+0110 vr = sqrt(u.^2+v.^2); 
+0111 
+0112 <span class="comment">% From quiverc2wcmap:</span>
+0113 <span class="comment">% if data has Nan, don't let it contaminate the computations that segment the</span>
+0114 <span class="comment">% data;  I could just do this with vr and then get clever with the indices but</span>
+0115 <span class="comment">% this make for easy debugging and as this is a graphics routine the computation</span>
+0116 <span class="comment">% time is completely irrelevant.</span>
+0117 nonNaNind = find(~isnan(vr(:)));
+0118 xyuvvrNN = [x(nonNaNind),y(nonNaNind),u(nonNaNind),v(nonNaNind),vr(nonNaNind)];
+0119 [xyuvvrNNs, xyuvvrNNsi] = sortrows(xyuvvrNN,5);
+0120 
+0121 <span class="comment">% From quiverc2wcmap, no longer necessary</span>
+0122 <span class="comment">% n = 20; %number of colors</span>
+0123 <span class="comment">% CC = colormap;</span>
+0124 <span class="comment">% iCCs=round(linspace(1,size(CC,1),n));</span>
+0125 <span class="comment">% iData = round(linspace(0,size(xyuvvrNNs,1),n+1));</span>
+0126 <span class="comment">% figure;</span>
+0127 
+0128 <span class="comment">%-------------Generate colorbar-------------</span>
+0129 <span class="comment">% Includes a clever way to generate (and subsequently hide) an image that</span>
+0130 <span class="comment">% is required for colorbar without running out of memory for large datasets.</span>
+0131 <span class="comment">%</span>
+0132 <span class="comment">% Condensed comments from quiverc2wcmap:</span>
+0133 <span class="comment">% In 6.5.1 if you ever want a colorbar tick marks to reflect real data ranges</span>
+0134 <span class="comment">% (versus just the indices of a colormap) then there apparently has to be an</span>
+0135 <span class="comment">% image somewhere in the figure.  Of course, I don't want an image but I figured</span>
+0136 <span class="comment">% I just make it invisible and then draw the quiver plot over it.</span>
+0137 <span class="comment">% Unfortunately, it seems that colorbar uses caxis to retrive the data range in</span>
+0138 <span class="comment">% the image and for invisible images it always seems to be 0 UNLESS you</span>
+0139 <span class="comment">% explictly reset the caxis.</span>
+0140 <span class="comment">% This will work but then the axis will be oversized to accomodate the image</span>
+0141 <span class="comment">% because images have their first and last vitual &quot;pixels&quot; CENTERED around the</span>
+0142 <span class="comment">% implicit or explict xmin,xmax,ymin,ymax (as per imagesc documentation) but the</span>
+0143 <span class="comment">% start and end of each of these &quot;pixels&quot; is +/- half a unit where the unit</span>
+0144 <span class="comment">% corresponds to subdividing the limits by the number of pixels (-1).  Given</span>
+0145 <span class="comment">% that formula and given my invisible 2x2 image for which it is desired to</span>
+0146 <span class="comment">% diplay in an axis that ISN'T oversized (i.e. min(x), max(x), min(y),max(y)) it</span>
+0147 <span class="comment">% is possible to solve for the limits (i.e. an artifically reduced limit)</span>
+0148 <span class="comment">% that need to be specified for imagesc to make its final oversized axis to be the</span>
+0149 <span class="comment">% non oversized axis that we really want.</span>
+0150 <span class="comment">% xa,xb,ya,yb compenstates for the axis extention given by imagesc to make</span>
+0151 <span class="comment">% pixels centered at the limit extents (etc.).  Note, this &quot;easy&quot;</span>
+0152 <span class="comment">% formula would only work for 2x2 pixel images.</span>
+0153 
+0154 xs = min(x);    <span class="comment">%x(1);</span>
+0155 xf = max(x);    <span class="comment">%x(end)</span>
+0156 xa = (3 * xs + xf)/4;
+0157 xb = (3 * xf + xs)/4;
+0158 ys = min(y);    <span class="comment">%y(1);</span>
+0159 yf = max(y);    <span class="comment">%y(end)</span>
+0160 ya = (3 * ys + yf)/4;
+0161 yb = (3 * yf + ys)/4;
+0162 
+0163 <span class="comment">% Determine magnitude min/max (which is reflected in colorbar)</span>
+0164 colormin = min(xyuvvrNNs(:,5));  <span class="comment">%column 5 is NaN-cleared vr</span>
+0165 colormax = max(xyuvvrNNs(:,5));
+0166 
+0167 <span class="comment">% Allow user to edit bounds using &quot;'bounds',[colormin colormax]&quot; input</span>
+0168 <span class="keyword">for</span> k=1:nin
+0169  <span class="keyword">if</span> (k~=nin) &amp;&amp; (length(varargin{k})==6) &amp;&amp; strcmp(varargin{k},<span class="string">'bounds'</span>)
+0170      bounds = varargin{k+1}; 
+0171      <span class="keyword">if</span> isempty(bounds), error(<span class="string">'Specify colormap boundaries'</span>); <span class="keyword">end</span>
+0172          colormin = bounds(1);
+0173          colormax = bounds(2);
+0174  <span class="keyword">end</span>
+0175 <span class="keyword">end</span>
+0176 <span class="comment">% mapbounds = reshape(xyuvvrNNs([1,end;1,end],5),2,2); %from quiverc2wcmap</span>
+0177 mapbounds = [colormin colormax; colormin colormax];
+0178 h=imagesc([xa,xb],[ya,yb],mapbounds);
+0179 set(h,<span class="string">'visible'</span>,<span class="string">'off'</span>);
+0180 
+0181 <span class="comment">%   Prep colorbar</span>
+0182 rang = (colormax-colormin)/colormax;
+0183 ticknum = 6;        <span class="comment">%if you want to toggle number of ticks on colorbar</span>
+0184 incr = rang./(ticknum-1);
+0185 B = [colormin/colormax:incr:1];
+0186 B = B.*colormax;
+0187 C = sprintf([<span class="string">'%4.2e'</span>,repmat([<span class="string">' \n%4.2e'</span>], 1, ticknum)],B);
+0188 C = str2num(C);
+0189 caxis([colormin colormax])
+0190 colorbar(<span class="string">'EastOutside'</span>,<span class="string">'ytick'</span>,B,<span class="string">'yticklabel'</span>,C,<span class="keyword">...</span>
+0191     <span class="string">'ticklength'</span>,[0.04 0.1],<span class="string">'YLim'</span>,[B(1) B(ticknum)],<span class="string">'FontSize'</span>,20)
+0192 
+0193 <span class="comment">% In quiverc2wcmap this loop plotted for each color level (n=20) and was very</span>
+0194 <span class="comment">% fast, but I found it did not plot some large data sets with enough color</span>
+0195 <span class="comment">% accuracy.  Switched the loop to examine each data point individually.</span>
+0196 <span class="comment">% Takes longer but I'm more confident that the colors are correct. Note:</span>
+0197 <span class="comment">% much of this overhaul was inspired by DS's vfield_color.</span>
+0198 hold on;
+0199 cmap = jet(64);     <span class="comment">%toggle type of colormap</span>
+0200 CC = colormap(cmap);
+0201 cm_stepsize = (colormax-colormin)/length(CC);
+0202 <span class="keyword">for</span> it=1:size(xyuvvrNNs,1)  <span class="comment">%takes ~13 seconds for a 8730-point dataset</span>
+0203 <span class="comment">% Some quiverc2wcmap fragments for reference:</span>
+0204 <span class="comment">% for it=1:n %10x faster, but may not be accurate</span>
+0205 <span class="comment">%     c = CC(iCCs(it),:); %colormap([1:64](it),:) %ie &quot;This RGB color row =&quot;</span>
+0206 <span class="comment">%     si = iData(it)+1;   %[1:size(data)](it)+1;  %ie &quot;This start row&quot;</span>
+0207 <span class="comment">%     ei = iData(it+1);   %[1:size(data)](it+1);  %ie &quot;This end row&quot;</span>
+0208 <span class="comment">%     hh=quiver(xyuvvrNNs(si:ei,1),xyuvvrNNs(si:ei,2),...</span>
+0209 <span class="comment">%               xyuvvrNNs(si:ei,3),xyuvvrNNs(si:ei,4),scale*it/n,'Color',c)</span>
+0210     cm_index = floor( (xyuvvrNNs(it,5) - colormin) / ( cm_stepsize ) ) + 1;
+0211     <span class="keyword">if</span> cm_index == 1             <span class="comment">%in case colormin is zero</span>
+0212         c = CC(cm_index,:);
+0213     <span class="keyword">elseif</span> cm_index &gt; length(CC) <span class="comment">%in case max(xyuvvrNNs) &gt; colormax</span>
+0214         cm_index = length(CC);
+0215         c = CC(cm_index,:);
+0216     <span class="keyword">elseif</span> cm_index &lt;= 0         <span class="comment">%in case min(xyuvvrNNs) &lt; colormin</span>
+0217         cm_index = 1;
+0218         c = CC(cm_index,:);
+0219     <span class="keyword">else</span>
+0220         cm_index = cm_index-1;
+0221         c = CC(cm_index,:);
+0222     <span class="keyword">end</span>
+0223     hh=<a href="#_sub1" class="code" title="subfunction hh = quiver(varargin)">quiver</a>(xyuvvrNNs(it,1),xyuvvrNNs(it,2),<span class="keyword">...</span>
+0224               xyuvvrNNs(it,3),xyuvvrNNs(it,4),scale,<span class="string">'Color'</span>,c);
+0225 <span class="keyword">end</span>
+0226 
+0227 
+0228 <span class="comment">%----------Rest of document is from quiverc2wcmap---------------</span>
+0229 <span class="comment">% This is Matlab's 6.5.1 quiver.  I figure that ensures a fair amouint of backward</span>
+0230 <span class="comment">% compatibility but I needed to hack it to allow a 'Color' property.  Obviously</span>
+0231 <span class="comment">% a person could do more.</span>
+0232     
+0233 <a name="_sub1" href="#_subfunctions" class="code">function hh = quiver(varargin)</a>
+0234 <span class="comment">%QUIVER Quiver plot.</span>
+0235 <span class="comment">%   QUIVER(X,Y,U,V) plots velocity vectors as arrows with components (u,v)</span>
+0236 <span class="comment">%   at the points (x,y).  The matrices X,Y,U,V must all be the same size</span>
+0237 <span class="comment">%   and contain corresponding position and velocity components (X and Y</span>
+0238 <span class="comment">%   can also be vectors to specify a uniform grid).  QUIVER automatically</span>
+0239 <span class="comment">%   scales the arrows to fit within the grid.</span>
+0240 <span class="comment">%</span>
+0241 <span class="comment">%   QUIVER(U,V) plots velocity vectors at equally spaced points in</span>
+0242 <span class="comment">%   the x-y plane.</span>
+0243 <span class="comment">%</span>
+0244 <span class="comment">%   QUIVER(U,V,S) or QUIVER(X,Y,U,V,S) automatically scales the</span>
+0245 <span class="comment">%   arrows to fit within the grid and then stretches them by S.  Use</span>
+0246 <span class="comment">%   S=0 to plot the arrows without the automatic scaling.</span>
+0247 <span class="comment">%</span>
+0248 <span class="comment">%   QUIVER(...,LINESPEC) uses the plot linestyle specified for</span>
+0249 <span class="comment">%   the velocity vectors.  Any marker in LINESPEC is drawn at the base</span>
+0250 <span class="comment">%   instead of an arrow on the tip.  Use a marker of '.' to specify</span>
+0251 <span class="comment">%   no marker at all.  See PLOT for other possibilities.</span>
+0252 <span class="comment">%</span>
+0253 <span class="comment">%   QUIVER(...,'filled') fills any markers specified.</span>
+0254 <span class="comment">%</span>
+0255 <span class="comment">%   H = QUIVER(...) returns a vector of line handles.</span>
+0256 <span class="comment">%</span>
+0257 <span class="comment">%   Example:</span>
+0258 <span class="comment">%      [x,y] = meshgrid(-2:.2:2,-1:.15:1);</span>
+0259 <span class="comment">%      z = x .* exp(-x.^2 - y.^2); [px,py] = gradient(z,.2,.15);</span>
+0260 <span class="comment">%      contour(x,y,z), hold on</span>
+0261 <span class="comment">%      quiver(x,y,px,py), hold off, axis image</span>
+0262 <span class="comment">%</span>
+0263 <span class="comment">%   See also FEATHER, QUIVER3, PLOT.</span>
+0264 
+0265 <span class="comment">%   Clay M. Thompson 3-3-94</span>
+0266 <span class="comment">%   Copyright 1984-2002 The MathWorks, Inc.</span>
+0267 <span class="comment">%   $Revision: 5.21 $  $Date: 2002/06/05 20:05:16 $</span>
+0268 
+0269 <span class="comment">% Arrow head parameters</span>
+0270 alpha = 0.33; <span class="comment">% Size of arrow head relative to the length of the vector</span>
+0271 beta = 0.33;  <span class="comment">% Width of the base of the arrow head relative to the length</span>
+0272 autoscale = 1; <span class="comment">% Autoscale if ~= 0 then scale by this.</span>
+0273 plotarrows = 1; <span class="comment">% Plot arrows</span>
+0274 sym = <span class="string">''</span>;
+0275 
+0276 filled = 0;
+0277 ls = <span class="string">'-'</span>;
+0278 ms = <span class="string">''</span>;
+0279 col = <span class="string">'b'</span>;
+0280 
+0281 nin = nargin;
+0282 ColorSpecInd = find(strcmpi(varargin, <span class="string">'color'</span>));
+0283 <span class="keyword">if</span>(length(ColorSpecInd)==1 &amp; nin &gt; ColorSpecInd)
+0284     col = varargin{ColorSpecInd+1};
+0285     varargin = varargin([1:ColorSpecInd-1,ColorSpecInd+2:nin]);
+0286     nin = nin-2;
+0287 <span class="keyword">end</span>
+0288 <span class="comment">% Parse the string inputs</span>
+0289 <span class="keyword">while</span> isstr(varargin{nin}),
+0290   vv = varargin{nin};
+0291   <span class="keyword">if</span> ~isempty(vv) &amp; strcmp(lower(vv(1)),<span class="string">'f'</span>)
+0292     filled = 1;
+0293     nin = nin-1;
+0294   <span class="keyword">else</span>
+0295     [l,c,m,msg] = colstyle(vv);
+0296     <span class="keyword">if</span> ~isempty(msg), 
+0297       error(sprintf(<span class="string">'Unknown option &quot;%s&quot;.'</span>,vv));
+0298     <span class="keyword">end</span>
+0299     <span class="keyword">if</span> ~isempty(l), ls = l; <span class="keyword">end</span>
+0300     <span class="keyword">if</span> ~isempty(c), col = c; <span class="keyword">end</span>
+0301     <span class="keyword">if</span> ~isempty(m), ms = m; plotarrows = 0; <span class="keyword">end</span>
+0302     <span class="keyword">if</span> isequal(m,<span class="string">'.'</span>), ms = <span class="string">''</span>; <span class="keyword">end</span> <span class="comment">% Don't plot '.'</span>
+0303     nin = nin-1;
+0304   <span class="keyword">end</span>
+0305 <span class="keyword">end</span>
+0306 
+0307 error(nargchk(2,5,nin));
+0308 
+0309 <span class="comment">% Check numeric input arguments</span>
+0310 <span class="keyword">if</span> nin&lt;4, <span class="comment">% quiver(u,v) or quiver(u,v,s)</span>
+0311   [msg,x,y,u,v] = xyzchk(varargin{1:2});
+0312 <span class="keyword">else</span>
+0313   [msg,x,y,u,v] = xyzchk(varargin{1:4});
+0314 <span class="keyword">end</span>
+0315 <span class="keyword">if</span> ~isempty(msg), error(msg); <span class="keyword">end</span>
+0316 
+0317 <span class="keyword">if</span> nin==3 | nin==5, <span class="comment">% quiver(u,v,s) or quiver(x,y,u,v,s)</span>
+0318   autoscale = varargin{nin};
+0319 <span class="keyword">end</span>
+0320 
+0321 <span class="comment">% Scalar expand u,v</span>
+0322 <span class="keyword">if</span> prod(size(u))==1, u = u(ones(size(x))); <span class="keyword">end</span>
+0323 <span class="keyword">if</span> prod(size(v))==1, v = v(ones(size(u))); <span class="keyword">end</span>
+0324 
+0325 <span class="keyword">if</span> autoscale,
+0326   <span class="comment">% Base autoscale value on average spacing in the x and y</span>
+0327   <span class="comment">% directions.  Estimate number of points in each direction as</span>
+0328   <span class="comment">% either the size of the input arrays or the effective square</span>
+0329   <span class="comment">% spacing if x and y are vectors.</span>
+0330   <span class="keyword">if</span> min(size(x))==1, n=sqrt(prod(size(x))); m=n; <span class="keyword">else</span> [m,n]=size(x); <span class="keyword">end</span>
+0331   delx = diff([min(x(:)) max(x(:))])/n;
+0332   dely = diff([min(y(:)) max(y(:))])/m;
+0333   del = delx.^2 + dely.^2;
+0334   <span class="keyword">if</span> del&gt;0
+0335     len = sqrt((u.^2 + v.^2)/del);
+0336     maxlen = max(len(:));
+0337   <span class="keyword">else</span>
+0338     maxlen = 0;
+0339   <span class="keyword">end</span>
+0340   
+0341   <span class="keyword">if</span> maxlen&gt;0
+0342     autoscale = autoscale*0.9 / maxlen;
+0343   <span class="keyword">else</span>
+0344     autoscale = autoscale*0.9;
+0345   <span class="keyword">end</span>
+0346   u = u*autoscale; v = v*autoscale;
+0347 <span class="keyword">end</span>
+0348 
+0349 ax = newplot;
+0350 next = lower(get(ax,<span class="string">'NextPlot'</span>));
+0351 hold_state = ishold;
+0352 
+0353 <span class="comment">% Make velocity vectors</span>
+0354 x = x(:).'; y = y(:).';
+0355 u = u(:).'; v = v(:).';
+0356 uu = [x;x+u;repmat(NaN,size(u))];
+0357 vv = [y;y+v;repmat(NaN,size(v))];
+0358 
+0359 <span class="comment">% h1 = plot(uu(:),vv(:),[col ls]);</span>
+0360 h1 = plot(uu(:),vv(:),ls,<span class="string">'Color'</span>,col);
+0361 
+0362 <span class="keyword">if</span> plotarrows,
+0363   <span class="comment">% Make arrow heads and plot them</span>
+0364   hu = [x+u-alpha*(u+beta*(v+eps));x+u; <span class="keyword">...</span>
+0365         x+u-alpha*(u-beta*(v+eps));repmat(NaN,size(u))];
+0366   hv = [y+v-alpha*(v-beta*(u+eps));y+v; <span class="keyword">...</span>
+0367         y+v-alpha*(v+beta*(u+eps));repmat(NaN,size(v))];
+0368   hold on
+0369  <span class="comment">%  h2 = plot(hu(:),hv(:),[col ls]);</span>
+0370   h2 = plot(hu(:),hv(:),ls,<span class="string">'Color'</span>,col);
+0371 <span class="keyword">else</span>
+0372   h2 = [];
+0373 <span class="keyword">end</span>
+0374 
+0375 <span class="keyword">if</span> ~isempty(ms), <span class="comment">% Plot marker on base</span>
+0376   hu = x; hv = y;
+0377   hold on
+0378 <span class="comment">%  h3 = plot(hu(:),hv(:),[col ms]);</span>
+0379   h3 = plot(hu(:),hv(:),ls,<span class="string">'Color'</span>,col);
+0380   <span class="keyword">if</span> filled, set(h3,<span class="string">'markerfacecolor'</span>,get(h1,<span class="string">'color'</span>)); <span class="keyword">end</span>
+0381 <span class="keyword">else</span>
+0382   h3 = [];
+0383 <span class="keyword">end</span>
+0384 
+0385 <span class="keyword">if</span> ~hold_state, hold off, view(2); set(ax,<span class="string">'NextPlot'</span>,next); <span class="keyword">end</span>
+0386 
+0387 <span class="keyword">if</span> nargout&gt;0, hh = [h1;h2;h3]; <span class="keyword">end</span>
+0388 
+0389     
+0390 
+0391 <a name="_sub2" href="#_subfunctions" class="code">function retval = isscalar(m)</a>
+0392 retval = prod(size(m)) == 1;</pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

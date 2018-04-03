@@ -228,6 +228,12 @@ for nString = 1:sum(allNodes(:) < 0)
             abs(allNodes(nodeStrings(nString - 1) + 1: ...
             nodeStrings(nString)));
     end
+    % Check for closed nodestrings (which we don't really want).
+    if read_obc_nodes{nString}(1) == read_obc_nodes{nString}(end)
+        % Drop the end one.
+        warning('Closed node string found. Opening it.')
+        read_obc_nodes{nString} = read_obc_nodes{nString}(1:end - 1);
+    end
 end
 
 if nStrings > 0

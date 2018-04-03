@@ -1,0 +1,195 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of write_FVCOM_sediment</title>
+  <meta name="keywords" content="write_FVCOM_sediment">
+  <meta name="description" content="Write spatially-varying sediment threshold data.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; write_FVCOM_sediment.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>write_FVCOM_sediment
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Write spatially-varying sediment threshold data.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function write_FVCOM_sediment(sediment, filename) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Write spatially-varying sediment threshold data.
+
+ function write_FVCOM_sediment(sediment, filename)
+
+ DESCRIPTION:
+    Generate a netCDF file containing spatially variable sediment propoerties
+    for FVCOM
+
+ INPUT
+   sediment  = struct with nodal data in the following mandatory fields:
+               - tau_ce
+               - tau_cd (this appears to be unused but required at launch)
+               - erate
+               and the following optional field(s):
+               - &lt;sediment_class&gt;_bedfrac
+                If the optional field(s) is included, the namelist option
+                SEDIMENT_PARAMETER_TYPE = &quot;non-uniform&quot; can be used.
+   filename  = filename to which to write the outputs.
+
+ OUTPUT:
+    netCDF file: filename of the output netCDF file to generate.
+
+ EXAMPLE USAGE
+    write_FVCOM_sediment(sediment, 'tst_sediment.nc')
+
+ Author(s):
+    Pierre Cazenave (Plymouth Marine Laboratory)
+
+ Revision history
+    2017-03-27 New function to create a netCDF for the SEDIMENT_PARAMETER_FILE
+    section in the model namelist.
+
+==========================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_sediment(sediment, filename)</a>
+0002 <span class="comment">% Write spatially-varying sediment threshold data.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% function write_FVCOM_sediment(sediment, filename)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%    Generate a netCDF file containing spatially variable sediment propoerties</span>
+0008 <span class="comment">%    for FVCOM</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT</span>
+0011 <span class="comment">%   sediment  = struct with nodal data in the following mandatory fields:</span>
+0012 <span class="comment">%               - tau_ce</span>
+0013 <span class="comment">%               - tau_cd (this appears to be unused but required at launch)</span>
+0014 <span class="comment">%               - erate</span>
+0015 <span class="comment">%               and the following optional field(s):</span>
+0016 <span class="comment">%               - &lt;sediment_class&gt;_bedfrac</span>
+0017 <span class="comment">%                If the optional field(s) is included, the namelist option</span>
+0018 <span class="comment">%                SEDIMENT_PARAMETER_TYPE = &quot;non-uniform&quot; can be used.</span>
+0019 <span class="comment">%   filename  = filename to which to write the outputs.</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% OUTPUT:</span>
+0022 <span class="comment">%    netCDF file: filename of the output netCDF file to generate.</span>
+0023 <span class="comment">%</span>
+0024 <span class="comment">% EXAMPLE USAGE</span>
+0025 <span class="comment">%    write_FVCOM_sediment(sediment, 'tst_sediment.nc')</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Author(s):</span>
+0028 <span class="comment">%    Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0029 <span class="comment">%</span>
+0030 <span class="comment">% Revision history</span>
+0031 <span class="comment">%    2017-03-27 New function to create a netCDF for the SEDIMENT_PARAMETER_FILE</span>
+0032 <span class="comment">%    section in the model namelist.</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">%==========================================================================</span>
+0035 
+0036 <span class="keyword">global</span> ftbverbose
+0037 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0038 <span class="keyword">if</span> ftbverbose
+0039     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0040 <span class="keyword">end</span>
+0041 
+0042 <span class="comment">%--------------------------------------------------------------------------</span>
+0043 <span class="comment">% Check inputs.</span>
+0044 <span class="comment">%--------------------------------------------------------------------------</span>
+0045 assert(exist(<span class="string">'sediment'</span>, <span class="string">'var'</span>) == 1, <span class="string">'incorrect usage of %s, must provide sediment struct'</span>, subname)
+0046 assert(exist(<span class="string">'filename'</span>, <span class="string">'var'</span>) == 1, <span class="string">'incorrect usage of %s, must provide ''filename'''</span>, subname)
+0047 
+0048 <span class="comment">% Check dimensions</span>
+0049 nVerts = numel(sediment.tau_cd);
+0050 assert(nVerts ~= 0, <span class="string">'dimension of sediment data is 0, something is wrong'</span>)
+0051 
+0052 <span class="comment">%--------------------------------------------------------------------------</span>
+0053 <span class="comment">% Dump to netCDF file</span>
+0054 <span class="comment">%--------------------------------------------------------------------------</span>
+0055 <span class="keyword">if</span> ftbverbose
+0056     fprintf(<span class="string">'Writing sediment data to netCDF file: %s\n'</span>, filename);
+0057     fprintf(<span class="string">'nodes dimension: %d\n'</span>, nVerts);
+0058 <span class="keyword">end</span>
+0059 
+0060 nc = netcdf.create(filename, <span class="string">'clobber'</span>);
+0061 
+0062 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>), <span class="string">'history'</span>, <span class="keyword">...</span>
+0063     sprintf(<span class="string">'File created using %s from the MATLAB fvcom-toolbox'</span>, subname))
+0064 
+0065 
+0066 <span class="comment">% define dimensions</span>
+0067 node_dimid = netcdf.defDim(nc, <span class="string">'node'</span>, nVerts);
+0068 
+0069 <span class="comment">% define variables and attributes</span>
+0070 erate_varid = netcdf.defVar(nc, <span class="string">'erate'</span>, <span class="string">'NC_DOUBLE'</span>, node_dimid);
+0071 netcdf.putAtt(nc, erate_varid, <span class="string">'long_name'</span>, <span class="string">'bed erodibility constant'</span>);
+0072 netcdf.putAtt(nc, erate_varid, <span class="string">'units'</span>, <span class="string">'-'</span>);
+0073 
+0074 tau_ce_varid = netcdf.defVar(nc, <span class="string">'tau_ce'</span>, <span class="string">'NC_DOUBLE'</span>, node_dimid);
+0075 netcdf.putAtt(nc, tau_ce_varid, <span class="string">'long_name'</span>, <span class="string">'critical shear stress for erosion'</span>);
+0076 netcdf.putAtt(nc, tau_ce_varid, <span class="string">'units'</span>, <span class="string">'N/m^2'</span>);
+0077 
+0078 tau_cd_varid = netcdf.defVar(nc, <span class="string">'tau_cd'</span>, <span class="string">'NC_DOUBLE'</span>, node_dimid);
+0079 netcdf.putAtt(nc, tau_cd_varid, <span class="string">'long_name'</span>, <span class="string">'critical shear stress for deposition'</span>);
+0080 netcdf.putAtt(nc, tau_cd_varid, <span class="string">'units'</span>, <span class="string">'N/m^2'</span>);
+0081 
+0082 extra_fields = setdiff(fieldnames(sediment), {<span class="string">'tau_ce'</span>, <span class="string">'tau_cd'</span>, <span class="string">'erate'</span>});
+0083 <span class="keyword">for</span> f = 1:length(extra_fields)
+0084     sediment_name = extra_fields{f};
+0085     <span class="keyword">if</span> ftbverbose
+0086         fprintf(<span class="string">'Defining extra variable: %s\n'</span>, sediment_name)
+0087     <span class="keyword">end</span>
+0088     eval(sprintf(<span class="string">'%s_varid = netcdf.defVar(nc, ''%s'', ''NC_DOUBLE'', node_dimid);\n'</span>, sediment_name, sediment_name))
+0089     eval(sprintf(<span class="string">'netcdf.putAtt(nc, %s_varid, ''long_name'', ''Fraction of %s in surface layer'');\n'</span>, sediment_name, sediment_name))
+0090     eval(sprintf(<span class="string">'netcdf.putAtt(nc, %s_varid, ''units'', ''-'')\n'</span>, sediment_name))
+0091     eval(sprintf(<span class="string">'netcdf.putAtt(nc, %s_varid, ''grid'', ''fvcom_grid'')\n'</span>, sediment_name))
+0092 <span class="keyword">end</span>
+0093 
+0094 <span class="comment">% end definitions</span>
+0095 netcdf.endDef(nc);
+0096 
+0097 <span class="comment">% dump data</span>
+0098 netcdf.putVar(nc, erate_varid, sediment.erate);
+0099 netcdf.putVar(nc, tau_ce_varid, sediment.tau_ce);
+0100 netcdf.putVar(nc, tau_cd_varid, sediment.tau_cd);
+0101 
+0102 <span class="comment">% Add the extra data.</span>
+0103 <span class="keyword">for</span> f = 1:length(extra_fields)
+0104     sediment_name = extra_fields{f};
+0105     <span class="keyword">if</span> ftbverbose
+0106         fprintf(<span class="string">'Adding extra variable: %s\n'</span>, sediment_name)
+0107     <span class="keyword">end</span>
+0108     eval(sprintf(<span class="string">'netcdf.putVar(nc, %s_varid, sediment.(sediment_name));'</span>, sediment_name))
+0109 <span class="keyword">end</span>
+0110 
+0111 <span class="comment">% close netCDF</span>
+0112 netcdf.close(nc)
+0113 
+0114 <span class="keyword">if</span> ftbverbose
+0115     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0116 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

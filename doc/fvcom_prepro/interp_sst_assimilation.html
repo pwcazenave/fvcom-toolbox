@@ -1,0 +1,310 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of interp_sst_assimilation</title>
+  <meta name="keywords" content="interp_sst_assimilation">
+  <meta name="description" content="Interpolate SST values to a given FVCOM mesh object.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">fvcom_prepro</a> &gt; interp_sst_assimilation.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for fvcom_prepro&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>interp_sst_assimilation
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Interpolate SST values to a given FVCOM mesh object.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function Mobj = interp_sst_assimilation(Mobj, conf, output_file) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Interpolate SST values to a given FVCOM mesh object.
+
+ Mobj = interp_sst_assimilation(Mobj, year, sst_dir, file_pattern)
+
+ DESCRIPTION:
+   Interpolate SST data from remote sensing data onto the supplied model
+   grid.
+
+ INPUT:
+   Mobj - MATLAB mesh object containing fields:
+       lon, lat - node coordinates (spherical)
+       lonc, latc - element coordinates (spherical)
+       tri - element triangulation table
+   conf - struct with fields:
+       sst_dir - directory containing the SST data
+       sst_pattern - file name pattern for the SST data
+       year - year for which to generate SST data
+   output_file - path to which to output the netCDF
+
+ OUTPUT:
+   FVCOM data assimilation SST netCDF file.
+   Mobj - input MATLAB mesh object with added 'assim.sst' field, with
+   fields:
+       data - the SST data
+       time - the SST time series
+
+ EXAMPLE USAGE:
+   Mobj = read_fvcom_mesh('casename.grd');
+   conf.sst_dir = '/home/user/GHRSST/';
+   conf.sst_pattern = '-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc';
+   interp_sst_assimilation(Mobj, conf, 'casename_sstgrd.nc');
+
+ Author(s)
+   Ricardo Torres (Plymouth Marine Laboratory)
+   Pierre Cazenave (Plymouth Marine Laboratory)
+
+ History:
+   2017-08-02 Turned the script into a function.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = interp_sst_assimilation(Mobj, conf, output_file)</a>
+0002 <span class="comment">% Interpolate SST values to a given FVCOM mesh object.</span>
+0003 <span class="comment">%</span>
+0004 <span class="comment">% Mobj = interp_sst_assimilation(Mobj, year, sst_dir, file_pattern)</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% DESCRIPTION:</span>
+0007 <span class="comment">%   Interpolate SST data from remote sensing data onto the supplied model</span>
+0008 <span class="comment">%   grid.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT:</span>
+0011 <span class="comment">%   Mobj - MATLAB mesh object containing fields:</span>
+0012 <span class="comment">%       lon, lat - node coordinates (spherical)</span>
+0013 <span class="comment">%       lonc, latc - element coordinates (spherical)</span>
+0014 <span class="comment">%       tri - element triangulation table</span>
+0015 <span class="comment">%   conf - struct with fields:</span>
+0016 <span class="comment">%       sst_dir - directory containing the SST data</span>
+0017 <span class="comment">%       sst_pattern - file name pattern for the SST data</span>
+0018 <span class="comment">%       year - year for which to generate SST data</span>
+0019 <span class="comment">%   output_file - path to which to output the netCDF</span>
+0020 <span class="comment">%</span>
+0021 <span class="comment">% OUTPUT:</span>
+0022 <span class="comment">%   FVCOM data assimilation SST netCDF file.</span>
+0023 <span class="comment">%   Mobj - input MATLAB mesh object with added 'assim.sst' field, with</span>
+0024 <span class="comment">%   fields:</span>
+0025 <span class="comment">%       data - the SST data</span>
+0026 <span class="comment">%       time - the SST time series</span>
+0027 <span class="comment">%</span>
+0028 <span class="comment">% EXAMPLE USAGE:</span>
+0029 <span class="comment">%   Mobj = read_fvcom_mesh('casename.grd');</span>
+0030 <span class="comment">%   conf.sst_dir = '/home/user/GHRSST/';</span>
+0031 <span class="comment">%   conf.sst_pattern = '-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc';</span>
+0032 <span class="comment">%   interp_sst_assimilation(Mobj, conf, 'casename_sstgrd.nc');</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">% Author(s)</span>
+0035 <span class="comment">%   Ricardo Torres (Plymouth Marine Laboratory)</span>
+0036 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0037 <span class="comment">%</span>
+0038 <span class="comment">% History:</span>
+0039 <span class="comment">%   2017-08-02 Turned the script into a function.</span>
+0040 
+0041 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0042 <span class="keyword">global</span> ftbverbose
+0043 <span class="keyword">if</span> ftbverbose
+0044     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0045 <span class="keyword">end</span>
+0046 
+0047 year = conf.year;
+0048 <span class="comment">% SST files.</span>
+0049 sst_dir = conf.sst_dir;
+0050 sst_pattern = conf.sst_pattern;
+0051 
+0052 time_span = datenum(year-1,12,31):datenum(year+1,01,01);
+0053 file_list = cell(length(time_span), 1);
+0054 <span class="comment">% Add last day from the previous year and the first day of the following</span>
+0055 <span class="comment">% year.</span>
+0056 <span class="keyword">for</span> aa = 1:length(time_span)
+0057     file_list{aa} = fullfile(sst_dir, <span class="keyword">...</span>
+0058         datestr(time_span(aa),<span class="string">'yyyy'</span>), <span class="keyword">...</span>
+0059         sprintf(sst_pattern, <span class="keyword">...</span>
+0060         str2num(datestr(time_span(aa), <span class="string">'yyyy'</span>)), <span class="keyword">...</span>
+0061         str2num(datestr(time_span(aa), <span class="string">'mm'</span>)), <span class="keyword">...</span>
+0062         str2num(datestr(time_span(aa), <span class="string">'dd'</span>))));
+0063     <span class="keyword">if</span> ~exist(file_list{aa}, <span class="string">'file'</span>)
+0064         error(<span class="string">'We are missing a file (%s) from this year (%04d)'</span>, <span class="keyword">...</span>
+0065             file_list{aa}, datestr(time_span(aa),<span class="string">'yyyy'</span>))
+0066     <span class="keyword">end</span>
+0067 <span class="keyword">end</span>
+0068 
+0069 <span class="comment">% Read SST data files and interpolate each to the FVCOM mesh</span>
+0070 lon = ncread(file_list{1},<span class="string">'lon'</span>);
+0071 lat = ncread(file_list{1},<span class="string">'lat'</span>);
+0072 mask = ncread(file_list{1},<span class="string">'mask'</span>);
+0073 [lonm,latm]=meshgrid(lon,lat);
+0074 lonm=lonm';
+0075 latm=latm';
+0076 lonm = lonm(mask==1);
+0077 latm = latm(mask==1);
+0078 time = zeros(length(file_list),1);
+0079 sst = zeros(Mobj.nVerts,length(file_list),1,<span class="string">'single'</span>);
+0080 fvcomlon = Mobj.lon;
+0081 fvcomlat = Mobj.lat;
+0082 
+0083 <span class="keyword">if</span> license(<span class="string">'test'</span>, <span class="string">'Distrib_Computing_Toolbox'</span>)
+0084     <span class="keyword">if</span> isempty(gcp(<span class="string">'nocreate'</span>))
+0085         <span class="comment">% Force pool to be local in case we have remote pools available.</span>
+0086         parpool(<span class="string">'local'</span>);
+0087     <span class="keyword">end</span>
+0088 <span class="keyword">end</span>
+0089 
+0090 <span class="keyword">if</span> ftbverbose
+0091     fprintf(<span class="string">'Progress:\n'</span>);
+0092     fprintf([repmat(<span class="string">'.'</span>, 1, length(file_list)), <span class="string">'\n'</span>]);
+0093 <span class="keyword">end</span>
+0094 parfor ff = 1:length(file_list)
+0095     <span class="keyword">if</span> ftbverbose
+0096         fprintf(<span class="string">'|'</span>);
+0097     <span class="keyword">end</span>
+0098     sst_eo = ncread(file_list{ff}, <span class="string">'analysed_sst'</span>) - 273.15;
+0099     mask = ncread(file_list{ff}, <span class="string">'mask'</span>);
+0100     lon = ncread(file_list{ff}, <span class="string">'lon'</span>);
+0101     lat = ncread(file_list{ff}, <span class="string">'lat'</span>);
+0102     [lonm, latm] = meshgrid(lon, lat);
+0103     lonm = lonm';
+0104     latm = latm';
+0105     lonm = lonm(mask == 1);
+0106     latm = latm(mask == 1);
+0107 
+0108     time_eo = ncread(file_list{ff}, <span class="string">'time'</span>);
+0109     time_eo_units = ncreadatt(file_list{ff}, <span class="string">'time'</span>, <span class="string">'units'</span>);
+0110     t0str = textscan(time_eo_units, <span class="string">'seconds since %s%s'</span>);
+0111 
+0112     t0 = datenum([strtrim(t0str{1}{1}), strtrim(t0str{2}{1})], <span class="string">'yyyy-mm-ddHH:MM:SS'</span>);
+0113     time_out = (t0 + double(time_eo/(60*60*24)));
+0114     sst_eo = sst_eo(mask == 1);
+0115 
+0116     <span class="comment">% Build interpolant</span>
+0117     ft = scatteredInterpolant(double(lonm), double(latm), sst_eo, <span class="string">'nearest'</span>, <span class="string">'linear'</span>);
+0118 
+0119     sst(:,ff) = ft(fvcomlon, fvcomlat);
+0120     time(ff) = time_out + 0.5; <span class="comment">% fvcom expects these to be at mid-day</span>
+0121 <span class="keyword">end</span>
+0122 
+0123 ntimes = length(time);
+0124 
+0125 <span class="comment">% Do the times.</span>
+0126 [sYr, sMon, sDay, sHr, sMin, sSec] = datevec(time);
+0127 MJDtime = greg2mjulian(sYr, sMon, sDay, sHr, sMin, sSec);
+0128 
+0129 <span class="comment">% Create netCDF file</span>
+0130 nc = netcdf.create(output_file, <span class="string">'clobber'</span>);
+0131 
+0132 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'year'</span>, num2str(year))
+0133 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,<span class="string">'FVCOM SST 1km merged product File'</span>)
+0134 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'institution'</span>,<span class="string">'Plymouth Marine Laboratory'</span>)
+0135 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'source'</span>,<span class="string">'FVCOM grid (unstructured) surface forcing'</span>)
+0136 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
+0137 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'references'</span>,<span class="string">'http://fvcom.smast.umassd.edu, http://codfish.smast.umassd.edu'</span>)
+0138 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'Conventions'</span>,<span class="string">'CF-1.0'</span>)
+0139 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'CoordinateSystem'</span>,Mobj.nativeCoords)
+0140 netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'CoordinateProjection'</span>,<span class="string">'init=WGS84'</span>) <span class="comment">% WGS84?</span>
+0141 
+0142 <span class="comment">% Dimensions</span>
+0143 nele_dimid=netcdf.defDim(nc,<span class="string">'nele'</span>,Mobj.nElems);
+0144 node_dimid=netcdf.defDim(nc,<span class="string">'node'</span>,Mobj.nVerts);
+0145 three_dimid=netcdf.defDim(nc,<span class="string">'three'</span>,3);
+0146 time_dimid=netcdf.defDim(nc,<span class="string">'time'</span>,netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
+0147 datestrlen_dimid=netcdf.defDim(nc,<span class="string">'DateStrLen'</span>,26);
+0148 
+0149 <span class="comment">% Space variables</span>
+0150 lon_varid=netcdf.defVar(nc,<span class="string">'lon'</span>,<span class="string">'NC_FLOAT'</span>,node_dimid);
+0151 netcdf.putAtt(nc,lon_varid,<span class="string">'long_name'</span>,<span class="string">'nodal longitude'</span>);
+0152 netcdf.putAtt(nc,lon_varid,<span class="string">'units'</span>,<span class="string">'degrees_easdt'</span>);
+0153 
+0154 lat_varid=netcdf.defVar(nc,<span class="string">'lat'</span>,<span class="string">'NC_FLOAT'</span>,node_dimid);
+0155 netcdf.putAtt(nc,lat_varid,<span class="string">'long_name'</span>,<span class="string">'nodal latitude'</span>);
+0156 netcdf.putAtt(nc,lat_varid,<span class="string">'units'</span>,<span class="string">'degrees_north'</span>);
+0157 
+0158 lonc_varid=netcdf.defVar(nc,<span class="string">'lonc'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
+0159 netcdf.putAtt(nc,lonc_varid,<span class="string">'long_name'</span>,<span class="string">'zonal longitude'</span>);
+0160 netcdf.putAtt(nc,lonc_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0161 
+0162 latc_varid=netcdf.defVar(nc,<span class="string">'latc'</span>,<span class="string">'NC_FLOAT'</span>,nele_dimid);
+0163 netcdf.putAtt(nc,latc_varid,<span class="string">'long_name'</span>,<span class="string">'zonal latitude'</span>);
+0164 netcdf.putAtt(nc,latc_varid,<span class="string">'units'</span>,<span class="string">'meters'</span>);
+0165 
+0166 nv_varid=netcdf.defVar(nc,<span class="string">'nv'</span>,<span class="string">'NC_INT'</span>,[nele_dimid, three_dimid]);
+0167 netcdf.putAtt(nc,nv_varid,<span class="string">'long_name'</span>,<span class="string">'nodes surrounding element'</span>);
+0168 
+0169 <span class="comment">% Time variables</span>
+0170 time_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,time_dimid);
+0171 netcdf.putAtt(nc,time_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
+0172 netcdf.putAtt(nc,time_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
+0173 netcdf.putAtt(nc,time_varid,<span class="string">'delta_t'</span>,<span class="string">'0000-00-00 01:00:00'</span>)
+0174 
+0175 netcdf.putAtt(nc,time_varid,<span class="string">'format'</span>,<span class="string">'modified julian day (MJD)'</span>);
+0176 netcdf.putAtt(nc,time_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0177 
+0178 times_varid=netcdf.defVar(nc,<span class="string">'Times'</span>,<span class="string">'NC_CHAR'</span>,[datestrlen_dimid,time_dimid]);
+0179 netcdf.putAtt(nc,times_varid,<span class="string">'long_name'</span>,<span class="string">'Calendar Date'</span>);
+0180 netcdf.putAtt(nc,times_varid,<span class="string">'format'</span>,<span class="string">'String: Calendar Time'</span>);
+0181 netcdf.putAtt(nc,times_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
+0182 
+0183 sst_varid = netcdf.defVar(nc, <span class="string">'sst'</span>, <span class="string">'NC_FLOAT'</span>, [node_dimid, time_dimid]);
+0184 netcdf.putAtt(nc, sst_varid, <span class="string">'long_name'</span>, <span class="string">'sea surface Temperature'</span>);
+0185 netcdf.putAtt(nc, sst_varid, <span class="string">'units'</span>, <span class="string">'Celsius Degree'</span>);
+0186 netcdf.putAtt(nc, sst_varid, <span class="string">'grid'</span>, <span class="string">'fvcom_grid'</span>);
+0187 netcdf.putAtt(nc, sst_varid, <span class="string">'coordinates'</span>, Mobj.nativeCoords);
+0188 netcdf.putAtt(nc, sst_varid, <span class="string">'type'</span>, <span class="string">'data'</span>);
+0189 
+0190 <span class="comment">% End definitions</span>
+0191 netcdf.endDef(nc);
+0192 
+0193 <span class="comment">% Put the easy ones in first.</span>
+0194 netcdf.putVar(nc, nv_varid, Mobj.tri);
+0195 netcdf.putVar(nc,lon_varid,Mobj.lon);
+0196 netcdf.putVar(nc,lat_varid,Mobj.lat);
+0197 netcdf.putVar(nc,lonc_varid,Mobj.lonc);
+0198 netcdf.putVar(nc,latc_varid,Mobj.latc);
+0199 netcdf.putVar(nc,time_varid,0,ntimes,MJDtime);
+0200 
+0201 nStringOut = char();
+0202 [nYr, nMon, nDay, nHour, nMin, nSec] = mjulian2greg(MJDtime);
+0203 <span class="keyword">for</span> i=1:ntimes
+0204     nDate = [nYr(i), nMon(i), nDay(i), nHour(i), nMin(i), nSec(i)];
+0205     nStringOut = [nStringOut, sprintf(<span class="string">'%04i/%02i/%02i %02i:%02i:%09.6f'</span>, nDate)];
+0206 <span class="keyword">end</span>
+0207 netcdf.putVar(nc,times_varid,[0, 0], [26, ntimes], nStringOut);
+0208 
+0209 netcdf.putVar(nc, sst_varid, [0, 0], [Mobj.nVerts, ntimes], sst)
+0210 fprintf(<span class="string">'done.\n'</span>)
+0211 
+0212 <span class="comment">% Close the netCDF file(s)</span>
+0213 netcdf.close(nc);
+0214 
+0215 Mobj.assim.sst.data = sst;
+0216 Mobj.assim.sst.time = time;
+0217 
+0218 <span class="comment">% Plot sst if needed.</span>
+0219 <span class="comment">% for aa = 1:size(sst,2)</span>
+0220 <span class="comment">%     plot_field(Mobj,sst(:,aa))</span>
+0221 <span class="comment">%     pause</span>
+0222 <span class="comment">% end</span>
+0223 
+0224 <span class="keyword">if</span> ftbverbose
+0225     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0226 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
