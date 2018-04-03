@@ -58,11 +58,11 @@ while ~feof(fid)
     if isempty(line) || strncmp(line, '!', 1) || ~ischar(line)
         continue
     end
-
+    
     % Clean up the input string to make matching a bit easier (trim
     % whitespace and remove duplicate spaces in the keywords).
     C = strtrim(regexpi(regexprep(line, '\s+', ' '), '=', 'split'));
-
+    
     switch lower(C{1})
         case 'number of sigma levels'
             nlev = str2double(C{2});
@@ -110,12 +110,14 @@ if ftbverbose
     % Should be present in all sigma files.
     fprintf('nlev\t%d\n', nlev)
     fprintf('sigtype\t%s\n', sigtype)
-
+    Mobj.nlev = nlev;
+    Mobj.sigtype = sigtype;
     % Only present in geometric sigma files.
     if strcmpi(sigtype, 'GEOMETRIC')
         fprintf('sigpow\t%d\n', sigpow)
+        Mobj.sigpow = sigpow;
     end
-
+    
     % Only in the generalised or uniform sigma files.
     if strcmpi(sigtype, 'GENERALIZED')
         fprintf('du\t%d\n', du)
@@ -125,10 +127,19 @@ if ftbverbose
         fprintf('kl\t%d\n', kl)
         fprintf('zku\t%d\n', zku)
         fprintf('zkl\t%d\n', zkl)
+        Mobj.du = du;
+        Mobj.dl = dl;
+        Mobj.min_constant_depth = min_constant_depth;
+        Mobj.ku = ku;
+        Mobj.kl = kl;
+        Mobj.zku = zku;
+        Mobj.zkl = zkl;
     end
     if strcmpi(sigtype, 'TANH')
         fprintf('du\t%d\n', du)
         fprintf('dl\t%d\n', dl)
+        Mobj.du = du;
+        Mobj.dl = dl;
     end
 end
 
@@ -174,7 +185,8 @@ Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* z;
 Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* zlay;
 Mobj.siglevzc = repmat(hc, 1, nlev) .* zc;
 Mobj.siglayzc = repmat(hc, 1, nlev-1) .* zlayc;
-
+Mobj.siglayc = zlayc;
+Mobj.siglevc = zc;
 % Add the sigma levels and layers to the Mobj.
 Mobj.siglev = z;
 Mobj.siglay = zlay;
