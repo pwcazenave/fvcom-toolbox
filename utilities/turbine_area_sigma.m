@@ -21,14 +21,6 @@ if nargin<5
     plot_fig = false;
 end
 
-% make sure the water depth can accomodte the turbine at the desired hub
-% height
-if H < r + Ht
-    warning(['Warning, a warter depth of ' num2str(H) ' m is insufficent, assuming water depth is ' num2str(r+Ht+0.01) ' m']);
-    H = r + Ht + 0.01;
-end
-
-
 % Turbine and sigma layer parameters
 elev  = 0; % water elevation above/below MSL - change this to see how the sigma layer occupation fraction changes with the tide
 depth = H + elev;
