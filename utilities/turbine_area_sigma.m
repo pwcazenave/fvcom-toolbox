@@ -31,16 +31,12 @@ else
     splot = true;
 end
 
-% Turbine and sigma layer parameters
-elev  = 0; % water elevation above/below MSL - change this to see how the sigma layer occupation fraction changes with the tide
-depth = H + elev;
-
-dT = depth - Ht; % turbine hub depth
+dT = H - Ht; % turbine hub depth
 
 assert(dT>r, 'Turbine will stick out of water');
 
-dLay = depth./sigLay;
-zLev = [0:-dLay:-depth]';
+dLay = H./sigLay;
+zLev = [0:-dLay:-H]';
 
 % what sigma layer is the hub in?
 drsl = zLev+dT; % depth of hub relative to each sigma level
@@ -56,7 +52,7 @@ if plot_fig
     plot([-r r], zLev*[1 1])
     xlabel('Distance (m)')
     ylabel('Depth (m)')
-    title([num2str(depth, '%2.0f') ' m water depth'])
+    title([num2str(H, '%2.0f') ' m water depth'])
     
     % draw rotor area
     a=0;
