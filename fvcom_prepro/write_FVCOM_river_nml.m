@@ -42,7 +42,8 @@ function write_FVCOM_river_nml(Mobj, nml_file, nc_file, vString)
 %   2013-08-16 - Add optional fourth argument of a string to supply as the
 %   RIVER_VERTICAL_DISTRIBUTION (e.g. 'uniform').
 %   2013-10-16 - Fix the handling of the optional vString argument.
-%   2018-03-28 - (RJT) Added the option of outputing float vertical distribution for river flows not just uniform for all rivers. 
+%   2018-03-28 - (RJT) Added the option of outputing float vertical
+%   distribution for river flows not just uniform for all rivers.
 %==========================================================================
 
 subname = 'write_FVCOM_river_nml';
@@ -64,10 +65,10 @@ for r = 1:nr
     fprintf(f, '  RIVER_FILE          = ''%s'',\n', nc_file);
     fprintf(f, '  RIVER_GRID_LOCATION = %d,\n', Mobj.river_nodes(r));
     
-    % Build the vertical distribution string. Round to 15 decimal places so the
-    % unique check works (hopefully no one needs that many vertical layers...).
+%     % Build the vertical distribution string. Round to 15 decimal places so the
+%     % unique check works (hopefully no one needs that many vertical layers...).
     vDist = roundn(abs(diff(Mobj.siglev)), -15);
-    if length(unique(vDist)) == 1
+    if length(unique(vDist)) == 1 || strcmpi(vString, '''uniform''')
         vString = '''uniform''';
     elseif nargin <= 3
         vString = char();
