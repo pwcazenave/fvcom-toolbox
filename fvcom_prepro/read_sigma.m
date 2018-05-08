@@ -58,11 +58,11 @@ while ~feof(fid)
     if isempty(line) || strncmp(line, '!', 1) || ~ischar(line)
         continue
     end
-    
+
     % Clean up the input string to make matching a bit easier (trim
     % whitespace and remove duplicate spaces in the keywords).
     C = strtrim(regexpi(regexprep(line, '\s+', ' '), '=', 'split'));
-    
+
     switch lower(C{1})
         case 'number of sigma levels'
             nlev = str2double(C{2});
