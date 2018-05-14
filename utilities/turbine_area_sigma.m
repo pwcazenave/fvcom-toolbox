@@ -2,17 +2,22 @@
 %
 % Example Usage:
 %
-% sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig)
+% sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig, subplot_info)
 %
 % Input Parameters:     H  - mean sea level (m)
 %                       Ht - height of turbine hub above seabed (m)
 %                       r  - turbine rotor radius (m)
 %                       sigLay - number of sigma layers (not levels) in the model
-%                       plot_fig - flag to plot a figure (optional)
+%                       plot_fig - optional; flag to plot a figure
+%                       subplot_info - optional; if present should be an
+%                       array containing the three parameters to subplot
+%                       that should be used to put the figure into a
+%                       subplot.
 %
 % Rory O'Hara Murray, 19-Nov-2014
+% Simon Waldman, 2016.
 %
-function sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig)
+function sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig, subplot_info)
 
 assert(nargin >= 4, 'Not enough arguments.');
 assert(isnumeric(sigLay) && sigLay - fix(sigLay) < eps, 'sigLay (4th parameter) must be an integer number of sigma layers.');
@@ -20,17 +25,18 @@ assert(isnumeric(sigLay) && sigLay - fix(sigLay) < eps, 'sigLay (4th parameter) 
 if nargin<5
     plot_fig = false;
 end
+if nargin<6
+    splot = false;
+else
+    splot = true;
+end
 
-% Turbine and sigma layer parameters
-elev  = 0; % water elevation above/below MSL - change this to see how the sigma layer occupation fraction changes with the tide
-depth = H + elev;
-
-dT = depth - Ht; % turbine hub depth
+dT = H - Ht; % turbine hub depth
 
 assert(dT>r, 'Turbine will stick out of water');
 
-dLay = depth./sigLay;
-zLev = [0:-dLay:-depth]';
+dLay = H./sigLay;
+zLev = [0:-dLay:-H]';
 
 % what sigma layer is the hub in?
 drsl = zLev+dT; % depth of hub relative to each sigma level
@@ -38,11 +44,15 @@ hub_sigma = sum(drsl>=0);
 
 %% draw sigma levels / layers
 if plot_fig
-    figure
+    if splot
+        subplot( subplot_info(1), subplot_info(2), subplot_info(3) )
+    else
+        figure
+    end
     plot([-r r], zLev*[1 1])
     xlabel('Distance (m)')
     ylabel('Depth (m)')
-    title([num2str(depth, '%2.0f') ' m water depth'])
+    title([num2str(H, '%2.0f') ' m water depth'])
     
     % draw rotor area
     a=0;

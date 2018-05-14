@@ -18,9 +18,38 @@
 %   [optional] axi          = the axis - specify axis range
 %   [optional] pll          = the axis
 %   [optional] grd          = add gridlines - specify colour
+%   [optional] tit          = add title - specify text
+%   [optional] leg          = add legend - specify text as a cell array
+%   [optional] qui          = add quiver vectors - specify a structure with the quiver information in (see examples)
+%
 %
 % EXAMPLE USAGE
-%    plot_fvcom_field(Mobj, Mobj.zeta, 'fid', 1, 'cli', [0 100], 'gif', 'animation.gif', 'axi', [60000 70000 40000 50000])
+%   plot_fvcom_field(Mobj, Mobj.zeta, 'fid', 1, 'cli', [0 100], 'gif', 'animation.gif', 'axi', [60000 70000 40000 50000])
+%   
+%   Quiver vecotor example 1 (plot every other depth average velocity vector on unstructured grid):
+%   Q.X = PFOW.lonc(1:15:end);
+%   Q.Y = PFOW.latc(1:15:end);
+%   Q.U = PFOW.ua(1:15:end,:);
+%   Q.V = PFOW.va(1:15:end,:);
+%   plot_fvcom_field(PFOW, PFOW.ua(:,1:13), 'pll', 'qui', Q)
+%
+%   Quiver vecotor example 2 (include vecotrs on an interpolated regular grid):
+% Q.x = -4:0.01:-2;
+% Q.y = 58:0.01:59;
+% 
+% [Q.X1, Q.Y1] = meshgrid(Q.x, Q.y);
+% Q.X = Q.X1(:); Q.Y = Q.Y1(:);
+% 
+% Only use data from within the region of interpolation
+% I = PFOW.lonc>Q.x(1) & PFOW.lonc<Q.x(end) & PFOW.latc>Q.y(1) & PFOW.latc<Q.y(end);
+%  
+% for tt=1:13
+%     Fx = scatteredInterpolant(double(PFOW.lonc(I)), double(PFOW.latc(I)), double(PFOW.ua(I,tt)));
+%     Fy = scatteredInterpolant(double(PFOW.lonc(I)), double(PFOW.latc(I)), double(PFOW.va(I,tt)));
+%     Q.U(:,tt)  = Fx(Q.X, Q.Y);
+%     Q.V(:,tt)  = Fy(Q.X, Q.Y);
+% end
+% plot_fvcom_field(PFOW, PFOW.ua(:,1:13), 'pll', 'qui', Q)
 %
 % Author(s)
 %   Rory O'Hara Murray (Marine Scotland Science)
@@ -60,6 +89,7 @@ axis_flag = false;
 title_flag = false;
 legend_text_flag = false;
 quiver_flag = false;
+quiver2_flag = false;
 
 for ii=1:1:length(varargin)
     keyword  = lower(varargin{ii});
@@ -92,6 +122,9 @@ for ii=1:1:length(varargin)
         case 'qui'
             quiver_flag = true;
             quiverData = varargin{ii+1};
+%         case 'qu2'
+%             quiver2_flag = true;
+%             quiverData = varargin{ii+1};
     end
 end
 
@@ -125,9 +158,17 @@ elseif size(plot_field,1)==size(x,1) % plot on nodes
     end
 end
 
-if not(fig_flag)
+if fig_flag
+    if fig.Type(1)=='f'
+        the_axes = axes;
+    elseif fig.Type(1)=='a'
+        the_axes = fig;
+    end
+else
     fig = figure;
+    the_axes = axes;
 end
+axes(the_axes);
 
 for ii=1:size(plot_field,2)
     if ishandle(fig)==0 break; end
@@ -142,8 +183,12 @@ for ii=1:size(plot_field,2)
         title(['time = ' datestr(double(M.time(ii))+MJD_datenum, 'HH:MM dd/mm/yyyy')])
     end
     if quiver_flag
+%         hold on
+%         quiver(quiverData.X, quiverData.Y, quiverData.U(:,:,ii), quiverData.V(:,:,ii), 'w');
+%         hold off
+%     elseif quiver2_flag
         hold on
-        quiver(quiverData.X, quiverData.Y, quiverData.U(:,:,ii), quiverData.V(:,:,ii), 'k');
+        quiver(quiverData.X, quiverData.Y, quiverData.U(:,ii), quiverData.V(:,ii), 0.4, 'color', 0.99*[1 1 1])
         hold off
     end
 
