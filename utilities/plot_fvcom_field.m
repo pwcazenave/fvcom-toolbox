@@ -122,6 +122,8 @@ for ii=1:1:length(varargin)
         case 'qui'
             quiver_flag = true;
             quiverData = varargin{ii+1};
+            if isfield(quiverData,'scale')==0 quiverData.scale = 1; end
+            if isfield(quiverData,'colour')==0 quiverData.colour =0.99*[1 1 1]; end
 %         case 'qu2'
 %             quiver2_flag = true;
 %             quiverData = varargin{ii+1};
@@ -188,7 +190,7 @@ for ii=1:size(plot_field,2)
 %         hold off
 %     elseif quiver2_flag
         hold on
-        quiver(quiverData.X, quiverData.Y, quiverData.U(:,ii), quiverData.V(:,ii), 0.4, 'color', 0.99*[1 1 1])
+        quiver(quiverData.X, quiverData.Y, quiverData.U(:,ii), quiverData.V(:,ii), quiverData.scale, 'color', quiverData.colour)
         hold off
     end
 
