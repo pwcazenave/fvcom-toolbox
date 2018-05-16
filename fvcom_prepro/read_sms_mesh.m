@@ -61,6 +61,9 @@ function [Mobj] = read_sms_mesh(varargin)
 %   2018-05-16 Rewrote nodestring parsing. It's far less elegant, but now
 %   it still works if the number of nodes in a string is a multiple of 10.
 %   (SW)
+%   2018-05-16 If we have bathymetry in the .2dm file *and* a separate
+%   bathymetry file provided, use the bathymetry in the file (with a
+%   warning) rather than ignoring it.
 %
 %==============================================================================
 
@@ -300,38 +303,41 @@ fclose(fid);
 
 bath_range = max(h) - min(h);
 if have_bath
-    if bath_range == 0
-        fid = fopen(sms_bath, 'rt');
-        if fid < 0
-            error('file: %s does not exist', sms_bath);
-        else
-            if ftbverbose; fprintf('reading sms bathymetry from: %s\n', sms_bath); end
-        end
-        lin = fgetl(fid);
-        lin = fgetl(fid);
-        lin = fgetl(fid);
-        C = textscan(fid, '%s %d', 1);
-        nVerts_tmp = C{2};
-        C = textscan(fid, '%s %d', 1);
-        nElems_tmp = C{2};
-        if (nVerts - nVerts_tmp) * (nElems - nElems_tmp) ~= 0
-            fprintf('dimensions of bathymetry file do not match 2dm file\n')
-            fprintf('bathymetry nVerts: %d\n',nVerts_tmp)
-            fprintf('bathymetry nElems: %d\n',nElems_tmp)
-            error('stopping...')
-        end
-        lin = fgetl(fid);
-        lin = fgetl(fid);
-        lin = fgetl(fid);
-        lin = fgetl(fid); % extra one for the new format from SMS 10.1, I think
-        C2 = textscan(fid, '%f', nVerts);
-        h = C2{1};
-        have_bath = true;
-
-        clear C2
-
-        fclose(fid);
+    if bath_range ~= 0
+        warning(['Bathymetry is present in the .2dm file, but a bathymetry .dat file was also provided. '...
+            'The .dat file will be used, and the depth info in the .2dm will be ignored.']);
     end
+    fid = fopen(sms_bath, 'rt');
+    if fid < 0
+        error('file: %s does not exist', sms_bath);
+    else
+        if ftbverbose; fprintf('reading sms bathymetry from: %s\n', sms_bath); end
+    end
+    lin = fgetl(fid);
+    lin = fgetl(fid);
+    lin = fgetl(fid);
+    C = textscan(fid, '%s %d', 1);
+    nVerts_tmp = C{2};
+    C = textscan(fid, '%s %d', 1);
+    nElems_tmp = C{2};
+    if (nVerts - nVerts_tmp) * (nElems - nElems_tmp) ~= 0
+        fprintf('dimensions of bathymetry file do not match 2dm file\n')
+        fprintf('bathymetry nVerts: %d\n',nVerts_tmp)
+        fprintf('bathymetry nElems: %d\n',nElems_tmp)
+        error('stopping...')
+    end
+    lin = fgetl(fid);
+    lin = fgetl(fid);
+    lin = fgetl(fid);
+    lin = fgetl(fid); % extra one for the new format from SMS 10.1, I think
+    C2 = textscan(fid, '%f', nVerts);
+    h = C2{1};
+    have_bath = true;
+    
+    clear C2
+    
+    fclose(fid);
+    
 elseif bath_range ~= 0
     have_bath = true;
 end
