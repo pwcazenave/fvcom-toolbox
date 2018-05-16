@@ -26,6 +26,7 @@ function [Mobj] = read_sms_mesh(varargin)
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %    Rory O'Hara Murray (Marine Scotland Science)
+%    Simon Waldman (Marine Scotland Science / Heriot-Watt University)
 %
 % Revision history
 %
@@ -57,6 +58,9 @@ function [Mobj] = read_sms_mesh(varargin)
 %   2014-05-29 Changed the way the nodestrings are read, taking into
 %   account the possibility that SMS adds exatra 'name' number to each
 %   nodestring after the -ve indicator (ROM).
+%   2018-05-16 Rewrote nodestring parsing. It's far less elegant, but now
+%   it still works if the number of nodes in a string is a multiple of 10.
+%   (SW)
 %
 %==============================================================================
 
@@ -219,21 +223,53 @@ if max(isnan(tri(:))) == 1
     error('%d NaNs in the h data', sum(isnan(tri(:))))
 end
 
-% Build array of all the nodes in the nodestrings.
-C = textscan(fid, '%s %d %d %d %d %d %d %d %d %d %d', nStrings);
-allNodes = cell2mat(C(2:end))';
-nodeStrings = find(allNodes < 0);
-startp1 = 10*ceil(nodeStrings./10)+1;
-ns_range = [[1; startp1(1:end-1)], nodeStrings];
+%Read in nodestrings.
+tmp = textscan(fid, ['%s' repmat('%d', 1, 12) '%*[^\n]'], nStrings, 'delimiter', ' ', 'MultipleDelimsAsOne', 1, 'CollectOutput', 1);
+% this allows for up to 12 items on a NS line. It's normally 10, but can
+% sometimes be 11. If we hit 12, something's changed in SMS's output.
+% The second cell of the cell array returned by this should be a matrix of all the numeric
+% values. Columns that don't have values in the file will contain 0.
+mNSlines = tmp{2};
+clear tmp;
+
+% We'll work through the rows of this matrix and assemble the
+% nodestring(s).
+currentNSno = 1;
+currentNS = [];
+NSlengths = [];
+for r = 1:size(mNSlines,1)  %rows
+    for c = 1:size(mNSlines, 2) %columns
+        if mNSlines(r,c)==0 %we've run out of values on this line. Skip to next line.
+            break;
+        elseif mNSlines(r,c) < 0
+            %end of nodestring, marked by a negative node number.
+            %Append positive value to the NS, do end-of-NS stuff, then ignore 
+            %rest of line.
+            currentNS = [currentNS abs(mNSlines(r,c))];
+            read_obc_nodes{currentNSno} = currentNS;
+            NSlengths = [NSlengths length(currentNS)];
+            currentNSno = currentNSno + 1;
+            currentNS = [];
+            break;
+        else
+            % append value to nodestring. If this is in a column higher
+            % than 10, raise a warning, as SMS doesn't usually do this.
+            currentNS = [currentNS mNSlines(r,c)];
+            if c > 10
+                warning('Longer lines than expected when parsing nodestrings; SMS output may not be as expected. Run with ftbverbose=true and check that the number and length of nodestrings found is as expected.');
+            end
+        end
+    end
+end
+
+if ftbverbose
+    a = sprintf('%d ', NSlengths);
+    fprintf('%i complete nodestrings found, of lengths %s. \n', currentNSno - 1, a);
+    clear a
+end
 
 if nStrings > 0
     have_strings = true;
-    
-    % Add a new field to Mobj with all the nodestrings as a cell array.
-    read_obc_nodes = cell(1, length(nodeStrings));
-    for nString = 1:size(ns_range,1)
-        read_obc_nodes{nString} = abs(allNodes(ns_range(nString,1):ns_range(nString,2)));
-    end
 end
 
 have_lonlat = false;
