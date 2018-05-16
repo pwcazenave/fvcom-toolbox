@@ -338,8 +338,10 @@ if have_lonlat
     Mobj.have_lonlat    = have_lonlat;
     Mobj.lon            = lon;
     Mobj.lat            = lat;
-    Mobj.x              = zeros(size(lon));
-    Mobj.y              = zeros(size(lat));
+    if ~have_xy
+        Mobj.x              = zeros(size(lon));
+        Mobj.y              = zeros(size(lat));
+    end
     % Add element spherical coordinates too.
     Mobj.lonc = nodes2elems(lon, Mobj);
     Mobj.latc = nodes2elems(lat, Mobj);
@@ -348,8 +350,10 @@ if have_xy
     Mobj.have_xy        = have_xy;
     Mobj.x              = x;
     Mobj.y              = y;
-    Mobj.lon            = zeros(size(x));
-    Mobj.lat            = zeros(size(y));
+    if ~have_lonlat
+        Mobj.lon            = zeros(size(x));
+        Mobj.lat            = zeros(size(y));
+    end
     % Add element cartesian coordinates too.
     Mobj.xc = nodes2elems(x, Mobj);
     Mobj.yc = nodes2elems(y, Mobj);
