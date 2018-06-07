@@ -111,7 +111,12 @@ function Nested = find_nesting_region(conf, Mobj)
 
 [~, subname] = fileparts(mfilename('fullpath'));
 
+assert(isscalar(conf.power), 'conf.power should be scalar, applying to all open boundaries');
+
 global ftbverbose
+if isempty(ftbverbose)
+    ftbverbose=false;
+end
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
