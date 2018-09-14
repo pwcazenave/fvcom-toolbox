@@ -26,6 +26,7 @@ function [Mobj] = read_sms_mesh(varargin)
 %    Geoff Cowles (University of Massachusetts Dartmouth)
 %    Pierre Cazenave (Plymouth Marine Laboratory)
 %    Rory O'Hara Murray (Marine Scotland Science)
+%    Simon Waldman (Marine Scotland Science / Heriot-Watt University)
 %
 % Revision history
 %
@@ -51,6 +52,18 @@ function [Mobj] = read_sms_mesh(varargin)
 %   does this anyway.
 %   2016-07-28 Fix behaviour if grid has no open boundaries so we can rely
 %   on have_strings existing in either case.
+%	[the next few revisions are listed out of order because of rebasing
+%		a branch that had been separate for a long time]	
+%   2014-05-29 Changed the way the header is read and skipped (ROM).
+%   2014-05-29 Changed the way the nodestrings are read, taking into
+%   account the possibility that SMS adds exatra 'name' number to each
+%   nodestring after the -ve indicator (ROM).
+%   2018-05-16 Rewrote nodestring parsing. It's far less elegant, but now
+%   it still works if the number of nodes in a string is a multiple of 10.
+%   (SW)
+%   2018-05-16 If we have bathymetry in the .2dm file *and* a separate
+%   bathymetry file provided, use the bathymetry in the file (with a
+%   warning) rather than ignoring it.
 %
 %==============================================================================
 
@@ -183,11 +196,12 @@ lat = zeros(nVerts,1);
 ts  = zeros(nVerts,1);
 
 % Skip the header
-% C = textscan(fid, '%s', nHeader + 1,'Headerlines',nHeader); % why does it skip 3 lines when only two are in the header? Didn't use to throw errors though...
-% if Meshname is more than one word the above would fail... Using
-% headerlines as below is more safe proof.
+for ii=1:nHeader
+    lin = fgetl(fid);
+end
+
 % Read the triangulation table
-C = textscan(fid, '%s %d %d %d %d %d', nElems,'Headerlines',nHeader);
+C = textscan(fid, '%s %d %d %d %d %d', nElems);
 tri(:, 1) = C{3};
 tri(:, 2) = C{4};
 tri(:, 3) = C{5};
@@ -212,28 +226,49 @@ if max(isnan(tri(:))) == 1
     error('%d NaNs in the h data', sum(isnan(tri(:))))
 end
 
-% Build array of all the nodes in the nodestrings.
-C = textscan(fid, '%s %d %d %d %d %d %d %d %d %d %d', nStrings);
-allNodes = cell2mat(C(2:end))';
-allNodes(allNodes == 0) = [];
+%Read in nodestrings.
+tmp = textscan(fid, ['%s' repmat('%d', 1, 12) '%*[^\n]'], nStrings, 'delimiter', ' ', 'MultipleDelimsAsOne', 1, 'CollectOutput', 1);
+% this allows for up to 12 items on a NS line. It's normally 10, but can
+% sometimes be 11. If we hit 12, something's changed in SMS's output.
+% The second cell of the cell array returned by this should be a matrix of all the numeric
+% values. Columns that don't have values in the file will contain 0.
+mNSlines = tmp{2};
+clear tmp;
 
-% Add a new field to Mobj with all the nodestrings as a cell array.
-nodeStrings = find(allNodes < 0);
-read_obc_nodes = cell(1, length(nodeStrings));
-for nString = 1:sum(allNodes(:) < 0)
-    if nString == 1
-        read_obc_nodes{nString} = abs(allNodes(1:nodeStrings(nString)));
-    else
-        read_obc_nodes{nString} = ...
-            abs(allNodes(nodeStrings(nString - 1) + 1: ...
-            nodeStrings(nString)));
+% We'll work through the rows of this matrix and assemble the
+% nodestring(s).
+currentNSno = 1;
+currentNS = [];
+NSlengths = [];
+for r = 1:size(mNSlines,1)  %rows
+    for c = 1:size(mNSlines, 2) %columns
+        if mNSlines(r,c)==0 %we've run out of values on this line. Skip to next line.
+            break;
+        elseif mNSlines(r,c) < 0
+            %end of nodestring, marked by a negative node number.
+            %Append positive value to the NS, do end-of-NS stuff, then ignore 
+            %rest of line.
+            currentNS = [currentNS abs(mNSlines(r,c))];
+            read_obc_nodes{currentNSno} = currentNS;
+            NSlengths = [NSlengths length(currentNS)];
+            currentNSno = currentNSno + 1;
+            currentNS = [];
+            break;
+        else
+            % append value to nodestring. If this is in a column higher
+            % than 10, raise a warning, as SMS doesn't usually do this.
+            currentNS = [currentNS mNSlines(r,c)];
+            if c > 10
+                warning('Longer lines than expected when parsing nodestrings; SMS output may not be as expected. Run with ftbverbose=true and check that the number and length of nodestrings found is as expected.');
+            end
+        end
     end
-    % Check for closed nodestrings (which we don't really want).
-    if read_obc_nodes{nString}(1) == read_obc_nodes{nString}(end)
-        % Drop the end one.
-        warning('Closed node string found. Opening it.')
-        read_obc_nodes{nString} = read_obc_nodes{nString}(1:end - 1);
-    end
+end
+
+if ftbverbose
+    a = sprintf('%d ', NSlengths);
+    fprintf('%i complete nodestrings found, of lengths %s. \n', currentNSno - 1, a);
+    clear a
 end
 
 if nStrings > 0
@@ -268,38 +303,41 @@ fclose(fid);
 
 bath_range = max(h) - min(h);
 if have_bath
-    if bath_range == 0
-        fid = fopen(sms_bath, 'rt');
-        if fid < 0
-            error('file: %s does not exist', sms_bath);
-        else
-            if ftbverbose; fprintf('reading sms bathymetry from: %s\n', sms_bath); end
-        end
-        lin = fgetl(fid);
-        lin = fgetl(fid);
-        lin = fgetl(fid);
-        C = textscan(fid, '%s %d', 1);
-        nVerts_tmp = C{2};
-        C = textscan(fid, '%s %d', 1);
-        nElems_tmp = C{2};
-        if (nVerts - nVerts_tmp) * (nElems - nElems_tmp) ~= 0
-            fprintf('dimensions of bathymetry file do not match 2dm file\n')
-            fprintf('bathymetry nVerts: %d\n',nVerts_tmp)
-            fprintf('bathymetry nElems: %d\n',nElems_tmp)
-            error('stopping...')
-        end
-        lin = fgetl(fid);
-        lin = fgetl(fid);
-        lin = fgetl(fid);
-        lin = fgetl(fid); % extra one for the new format from SMS 10.1, I think
-        C2 = textscan(fid, '%f', nVerts);
-        h = C2{1};
-        have_bath = true;
-
-        clear C2
-
-        fclose(fid);
+    if bath_range ~= 0
+        warning(['Bathymetry is present in the .2dm file, but a bathymetry .dat file was also provided. '...
+            'The .dat file will be used, and the depth info in the .2dm will be ignored.']);
     end
+    fid = fopen(sms_bath, 'rt');
+    if fid < 0
+        error('file: %s does not exist', sms_bath);
+    else
+        if ftbverbose; fprintf('reading sms bathymetry from: %s\n', sms_bath); end
+    end
+    lin = fgetl(fid);
+    lin = fgetl(fid);
+    lin = fgetl(fid);
+    C = textscan(fid, '%s %d', 1);
+    nVerts_tmp = C{2};
+    C = textscan(fid, '%s %d', 1);
+    nElems_tmp = C{2};
+    if (nVerts - nVerts_tmp) * (nElems - nElems_tmp) ~= 0
+        fprintf('dimensions of bathymetry file do not match 2dm file\n')
+        fprintf('bathymetry nVerts: %d\n',nVerts_tmp)
+        fprintf('bathymetry nElems: %d\n',nElems_tmp)
+        error('stopping...')
+    end
+    lin = fgetl(fid);
+    lin = fgetl(fid);
+    lin = fgetl(fid);
+    lin = fgetl(fid); % extra one for the new format from SMS 10.1, I think
+    C2 = textscan(fid, '%f', nVerts);
+    h = C2{1};
+    have_bath = true;
+    
+    clear C2
+    
+    fclose(fid);
+    
 elseif bath_range ~= 0
     have_bath = true;
 end
@@ -342,8 +380,10 @@ if have_lonlat
     Mobj.have_lonlat    = have_lonlat;
     Mobj.lon            = lon;
     Mobj.lat            = lat;
-    Mobj.x              = zeros(size(lon));
-    Mobj.y              = zeros(size(lat));
+    if ~have_xy
+        Mobj.x              = zeros(size(lon));
+        Mobj.y              = zeros(size(lat));
+    end
     % Add element spherical coordinates too.
     Mobj.lonc = nodes2elems(lon, Mobj);
     Mobj.latc = nodes2elems(lat, Mobj);
@@ -352,8 +392,10 @@ if have_xy
     Mobj.have_xy        = have_xy;
     Mobj.x              = x;
     Mobj.y              = y;
-    Mobj.lon            = zeros(size(x));
-    Mobj.lat            = zeros(size(y));
+    if ~have_lonlat
+        Mobj.lon            = zeros(size(x));
+        Mobj.lat            = zeros(size(y));
+    end
     % Add element cartesian coordinates too.
     Mobj.xc = nodes2elems(x, Mobj);
     Mobj.yc = nodes2elems(y, Mobj);
@@ -375,6 +417,10 @@ assert(isfield(Mobj, 'x'), 'No coordinate data provided. Check your inputs and t
 
 % Make a depth array for the element centres.
 Mobj.hc = nodes2elems(h, Mobj);
+
+% Add element spherical coordinates too.
+Mobj.lonc = nodes2elems(lon, Mobj);
+Mobj.latc = nodes2elems(lat, Mobj);
 
 %--------------------------------------------------------------------------
 % Add the Coriolis values

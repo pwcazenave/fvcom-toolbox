@@ -1,26 +1,27 @@
 function RX1matrix=ComputeMatrixRx1_nodes(Z_w, Mobj)
-% Computes rx1 matrix as in ComputeMatrixRx1_V2.m downloaded from 
+% Computes rx1 matrix as in ComputeMatrixRx1_V2.m downloaded from
 % https://github.com/dcherian/tools
-% 
-% function [RX1matrix] = ComputeMatrixRx1_nodes(Z_w,Mobj)
+%
+% function [RX1matrix] = ComputeMatrixRx1_nodes(Z_w, Mobj)
 %
 % DESCRIPTION:
-%    Calculates the hydrostatic consistency condition 
+%    Calculates the hydrostatic consistency condition:
 %      r = abs(Sigma/H deltaxH/deltaSigma)
-%    this reflects the errors associated with horizontal pressure gradients calculations
-%    that are associated with steep bathyemtry and low vertical resolution. 
+%    this reflects the errors associated with horizontal pressure gradients
+%    calculations that are associated with steep bathyemtry and low
+%    vertical resolution.
 %
-% INPUT 
-%   Mobj   = needs triangulation and mesh information
-%            table. read_sms_mesh provides everything it needs. 
+% INPUT
 %   Z_w    = This is the sigmal layer vertical distribution in Z coordinates
-%   
+%   Mobj   = needs triangulation and mesh information
+%            table. read_sms_mesh provides everything it needs.
+%
 %
 % OUTPUT:
 %    RX1matrix = node based field with values of max(rx1)
 %
 % EXAMPLE USAGE
-%    [RX1matrix] = ComputeMatrixRx1_nodes(Z_w,Mobj)
+%    [RX1matrix] = ComputeMatrixRx1_nodes(Z_w, Mobj)
 %
 % Author(s):
 %    Ricardo Torres (Plymouth Marine Laboratory) based on ComputeMatrixRx1_V2

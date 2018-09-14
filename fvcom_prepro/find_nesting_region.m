@@ -111,7 +111,12 @@ function Nested = find_nesting_region(conf, Mobj)
 
 [~, subname] = fileparts(mfilename('fullpath'));
 
+assert(isscalar(conf.power), 'conf.power should be scalar, applying to all open boundaries');
+
 global ftbverbose
+if isempty(ftbverbose)
+    ftbverbose=false;
+end
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
@@ -130,13 +135,13 @@ if any(conf.Nested_type == 3)
     Nested.weight_node = cell(0);
 end
 
-if ftbverbose
-    figure(1)
-    clf
-    triplot(Nested.tri, Nested.x, Nested.y)
-    axis('equal', 'tight')
-    hold on
-end
+% if ftbverbose
+%     figure(1)
+%     clf
+%     triplot(Nested.tri, Nested.x, Nested.y)
+%     axis('equal', 'tight')
+%     hold on
+% end
 
 % Indices for the output cell arrays which are incremented for each nest
 % level and each open boundary.
@@ -238,9 +243,11 @@ for obc_idx = 1:Mobj.nObs
     % setdiff
     if ~isempty(truecandidate)
         for dd=1:length(truecandidate)
-    Nested.read_obc_elems{end} = cat(2,Nested.read_obc_elems{end},truecandidate(dd));
-    Nested.weight_cell{end} = cat(2,Nested.weight_cell{end},Nested.weight_cell{end}(end));
-    end
+            Nested.read_obc_elems{end} = cat(2,Nested.read_obc_elems{end},truecandidate(dd));
+            if conf.Nested_type(obc_idx) ~= 1
+                Nested.weight_cell{end} = cat(2,Nested.weight_cell{end},Nested.weight_cell{end}(end));
+            end
+        end
     end
     if ftbverbose
         fprintf('\n')

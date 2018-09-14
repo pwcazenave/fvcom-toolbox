@@ -36,7 +36,7 @@ function [Mobj]  = add_sponge_nodes_list(Mobj,SpongeList,SpongeName,SpongeRadius
 
 global ftbverbose
 if ftbverbose
-    fprintf('\nbegin : %s\m', subname)
+    fprintf('\nbegin : %s\n', subname)
 end
 
 % Do we want a figure showing how we're getting along?

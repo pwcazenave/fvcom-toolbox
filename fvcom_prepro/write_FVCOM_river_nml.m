@@ -26,23 +26,26 @@ function write_FVCOM_river_nml(Mobj, nml_file, nc_file, vString)
 %      Z2=Mobj2.siglevz(Mobj2.river_nodes(r),2:end);
 %      RivDist(r,:)=(exp(Z1/5)-exp(Z2/5));
 %   end
-
 %
 % OUTPUT:
 %   Namelist for inclusion in the main FVCOM namelist (RIVER_INFO_FILE).
 %
 % EXAMPLE USAGE:
-%   write_FVCOM_river_nml(Mobj, 'casename_river.nml', 'casename_river.nc',RivDist)
+%   write_FVCOM_river_nml(Mobj, 'casename_river.nml', 'casename_river.nc', RivDist)
 %
 % Author(s):
 %   Pierre Cazenave (Plymouth Marine Laboratory)
+%   Ricardo Torres (Plymouth Marine Laboratory)
 %
 % Revision history:
 %   2013-03-21 - First version.
 %   2013-08-16 - Add optional fourth argument of a string to supply as the
 %   RIVER_VERTICAL_DISTRIBUTION (e.g. 'uniform').
 %   2013-10-16 - Fix the handling of the optional vString argument.
-%   2018-03-28 - (RJT) Added the option of outputing float vertical distribution for river flows not just uniform for all rivers. 
+%   2018-03-28 - (RJT) Added the option of outputing float vertical
+%   distribution for river flows not just uniform for all rivers.
+%   2018-05-08 - Fixed vertical distribution handling to support both the
+%   original functionality and the new float distribution.
 %==========================================================================
 
 subname = 'write_FVCOM_river_nml';
@@ -57,17 +60,17 @@ nr = length(Mobj.river_nodes);
 f = fopen(nml_file, 'w');
 assert(f >= 0, 'Error writing to %s. Check permissions and try again.', nml_file)
 
-
 for r = 1:nr
     fprintf(f, ' &NML_RIVER\n');
     fprintf(f, '  RIVER_NAME          = ''%s'',\n', Mobj.river_names{r});
     fprintf(f, '  RIVER_FILE          = ''%s'',\n', nc_file);
     fprintf(f, '  RIVER_GRID_LOCATION = %d,\n', Mobj.river_nodes(r));
     
-    % Build the vertical distribution string. Round to 15 decimal places so the
-    % unique check works (hopefully no one needs that many vertical layers...).
+    % Build the vertical distribution string. Round to 15 decimal places so
+    % the unique check works (hopefully no one needs that many vertical
+    % layers...).
     vDist = roundn(abs(diff(Mobj.siglev)), -15);
-    if length(unique(vDist)) == 1
+    if length(unique(vDist)) == 1 || ~exist(vString, 'var')
         vString = '''uniform''';
     elseif nargin <= 3
         vString = char();
@@ -76,17 +79,16 @@ for r = 1:nr
             for ii = 1:size(vDist)
                 vString = [vString, sprintf('%f ', vDist(ii))];
             end
-            fprintf(f, '  RIVER_VERTICAL_DISTRIBUTION = %s\n', vString);
         end
-        else % we have different vDist for each river
-            vString2=char();
-            for ii = 1:size(vString,2)
-                vString2 = [vString2, sprintf('%1.5f ', vString(r,ii))];
-            end
-            
-            fprintf(f, '  RIVER_VERTICAL_DISTRIBUTION = %s\n', vString2);
+    else % we have different vDist for each river
+        vString = char();
+        for ii = 1:size(vString,2)
+            vString = [vString2, sprintf('%1.5f ', vString(r,ii))];
         end
-    
+    end
+    % Output whatever vertical distribution string we've got to the
+    % namelist file.
+    fprintf(f, '  RIVER_VERTICAL_DISTRIBUTION = %s\n', vString);
     fprintf(f, '  /\n');
 end
 
