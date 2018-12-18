@@ -1,7 +1,7 @@
-function [Mobj] = sigma_tanh(nlev,dl,du,Mobj,sigma_file)
+function Mobj = sigma_tanh(nlev,dl,du,Mobj,sigma_file)
 % Generate a tanh sigma coordinate distribution.
 %
-% Mobj = sigma_tanh(nlev, dl, du,Mobj)
+% Mobj = sigma_tanh(nlev, dl, du, Mobj)
 %
 % DESCRIPTION:
 %   Generate a tanh vertical sigma coordinate distribution.
@@ -12,22 +12,25 @@ function [Mobj] = sigma_tanh(nlev,dl,du,Mobj,sigma_file)
 %               coordinates are parallel with uniform thickness.
 %   du:         The upper depth boundary from the surface, up to which the
 %               coordinates are parallel with uniform thickness.
-%   Mobj:       [optional] mesh object file
+%   Mobj:       [optional] Mesh object file
+%   sigma_file: [optional] File to which to save the sigma distribution.
 %
 % OUTPUT:
-%   Mobj.sigma:       Tanh vertical sigma coordinate distribution.
+%   Mobj.sigma:     Hyperbolic tangent vertical sigma coordinate distribution.
 %   Mobj.sig...     All the sigma layers variables such as siglev, siglevz,
-%                   siglayz, etc...
+%                   siglayz, etc.
 %
 % EXAMPLE USAGE:
-%   Mobj = read_sigma(nlev, dl, du,Mobj)
+%   Mobj = read_sigma(nlev, dl, du, Mobj)
 %
 % Author(s):
 %   Geoff Cowles (University of Massachusetts Dartmouth)
 %   Pierre Cazenave (Plymouth Marine Laboratory)
+%   Ricardo Torres (Plymouth Marine Laboratory)
 %
 % Revision history
 %   2013-04-23 Added help on the function and reformatted the code.
+%   2018-09-14 Added option to add the sigma data to a mesh object.
 
 dist = zeros(1, nlev);
 
@@ -54,7 +57,7 @@ if nargin >= 4
     end
     % An extra level compared with layers.
     Mobj.siglevc(:, zz + 1) = nodes2elems(Mobj.siglev(:, zz + 1), Mobj);
-    
+
     % Finally, make some [depth, sigma] arrays.
     Mobj.siglevz = repmat(Mobj.h, 1, conf.nlev) .* Mobj.siglev;
     Mobj.siglayz = repmat(Mobj.h, 1, conf.nlev-1) .* Mobj.siglay;
@@ -65,16 +68,16 @@ if nargin >= 4
 else
     Mobj = dist;
 end
-% generate sigma file 
+% generate sigma file
 % Save to the given file name.
 if nargin==5
-fout = fopen(sigma_file, 'wt');
-assert(fout >= 0, 'Error opening sigma file: %s', sigma_file)
-fprintf(fout, 'NUMBER OF SIGMA LEVELS = %d\n', nlev);
-fprintf(fout, 'SIGMA COORDINATE TYPE = TANH\n');
-fprintf(fout, 'DU = %4.1f\n', du);
-fprintf(fout, 'DL = %4.1f\n', dl);
-fprintf(fout,'\n');
-fclose(fout);
+    fout = fopen(sigma_file, 'wt');
+    assert(fout >= 0, 'Error opening sigma file: %s', sigma_file)
+    fprintf(fout, 'NUMBER OF SIGMA LEVELS = %d\n', nlev);
+    fprintf(fout, 'SIGMA COORDINATE TYPE = TANH\n');
+    fprintf(fout, 'DU = %4.1f\n', du);
+    fprintf(fout, 'DL = %4.1f\n', dl);
+    fprintf(fout,'\n');
+    fclose(fout);
 end
-return
+
