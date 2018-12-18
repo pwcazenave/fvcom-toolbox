@@ -155,7 +155,7 @@ Mobj.siglevz = repmat(Mobj.h, 1, nlev) .* Mobj.siglev;
 Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* Mobj.siglay;
 Mobj.siglevzc = repmat(Mobj.hc, 1, nlev) .* Mobj.siglevc;
 Mobj.siglayzc = repmat(Mobj.hc, 1, nlev-1) .* Mobj.siglayc;
-
+Mobj.Hmin = Hmin;
 if ftbverbose
     fprintf('done.\n')
     fprintf('end   : %s\n', subname)

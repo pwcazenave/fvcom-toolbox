@@ -243,9 +243,11 @@ for obc_idx = 1:Mobj.nObs
     % setdiff
     if ~isempty(truecandidate)
         for dd=1:length(truecandidate)
-    Nested.read_obc_elems{end} = cat(2,Nested.read_obc_elems{end},truecandidate(dd));
-    Nested.weight_cell{end} = cat(2,Nested.weight_cell{end},Nested.weight_cell{end}(end));
-    end
+            Nested.read_obc_elems{end} = cat(2,Nested.read_obc_elems{end},truecandidate(dd));
+            if conf.Nested_type(obc_idx) ~= 1
+                Nested.weight_cell{end} = cat(2,Nested.weight_cell{end},Nested.weight_cell{end}(end));
+            end
+        end
     end
     if ftbverbose
         fprintf('\n')

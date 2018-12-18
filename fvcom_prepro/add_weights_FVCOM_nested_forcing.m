@@ -141,7 +141,7 @@ netcdf.endDef(nc2read);
 
 
     netcdf.putVar(nc2read, cweights_varid, nest.weight_cell);
-    netcdf.putVar(nc2read, nweights_varid, nest.weight_node');
+    netcdf.putVar(nc2read, nweights_varid, nest.weight_node);
 catch e
     fprintf(e.message)
     error('Adding variable %s failed - does the variable already exist?', 'weight_cell')

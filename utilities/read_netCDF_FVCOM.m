@@ -196,10 +196,12 @@ try
     Itime.ID=netcdf.inqVarID(nc,'Times');
     Itime.sData=ncread(file_netcdf,'Times')
     Itime.Data(1) = datenum(Itime.sData(:,1)','yyyy-mm-ddTHH:MM:SS');
-    Itime.Data(2) = datenum(Itime.sData(:,end-1)','yyyy-mm-ddTHH:MM:SS');
+%     Itime.Data(2) = datenum(Itime.sData(:,end-1)','yyyy-mm-ddTHH:MM:SS');
+    Itime.Data(2) = datenum(Itime.sData(:,end)','yyyy-mm-ddTHH:MM:SS');
     start_date= Itime.Data(1);
     end_date = Itime.Data(2);
-    var_time = datenum(Itime.sData(:,1:end-1)','yyyy-mm-ddTHH:MM:SS');
+%     var_time = datenum(Itime.sData(:,1:end-1)','yyyy-mm-ddTHH:MM:SS');
+    var_time = datenum(Itime.sData(:,1:end)','yyyy-mm-ddTHH:MM:SS');
 %     Itime.idx=find(strcmpi(vars,'Itime'));
 %     Itime.ID=netcdf.inqVarID(nc,'Itime');
 %     Itime.Data(1)  = netcdf.getVar(nc,Itime.ID,0,1,'int32');
@@ -225,7 +227,8 @@ catch me
     Itime.idx=find(strcmpi(vars,'time'));
     Itime.ID=netcdf.inqVarID(nc,'time');
     Itime.Data(1)  = netcdf.getVar(nc,Itime.ID,0,1,'double');
-    Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-1,1,'double');
+%     Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-1,1,'double');
+    Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry,1,'double');
     [start_date,end_date] = deal(Itime.Data(1)+time_offset,Itime.Data(end)+time_offset);
     DeltaT=(end_date-start_date)./last_entry;
     var_time = start_date:DeltaT:(end_date-DeltaT);
@@ -505,17 +508,20 @@ for aa=1:length(varnames)
                                 read_stride(do_time)=stride.(cc_names{do_time});
                                 eval([varnames{aa},'=netcdf.getVar(nc,varID,read_start,read_count,read_stride,''double'');'])
                             else % we are looking at stations or depth layers
-                                for cc=1:length(start.(cc_names{(do_restrict)}))
+                                for cc=1:length(start.(cc_names{find(do_restrict)}))
                                     read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
                                     read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
                                     read_stride(find(do_restrict))=stride.(cc_names{find(do_restrict)});
                                     var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,'double');
 
-                                    switch dimName(find(do_restrict))
+                                    switch dimName{find(do_restrict)}
                                         case 'node' | 'nele'
                                             eval([varnames{aa},'(cc,:,:)=var_dump;'])
                                         case 'siglay' | 'siglev'
                                             eval([varnames{aa},'(:,cc,:)=var_dump;'])
+                                        case 'time' % this only happens if we only have one timestamp
+                                            eval([varnames{aa},'=var_dump;'])
+
                                     end
                                     clear var_dump
                                 end
