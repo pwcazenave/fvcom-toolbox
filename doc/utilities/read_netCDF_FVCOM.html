@@ -339,486 +339,492 @@ This function is called by:
 0196     Itime.ID=netcdf.inqVarID(nc,<span class="string">'Times'</span>);
 0197     Itime.sData=ncread(file_netcdf,<span class="string">'Times'</span>)
 0198     Itime.Data(1) = datenum(Itime.sData(:,1)',<span class="string">'yyyy-mm-ddTHH:MM:SS'</span>);
-0199     Itime.Data(2) = datenum(Itime.sData(:,end-1)',<span class="string">'yyyy-mm-ddTHH:MM:SS'</span>);
-0200     start_date= Itime.Data(1);
-0201     end_date = Itime.Data(2);
-0202     var_time = datenum(Itime.sData(:,1:end-1)',<span class="string">'yyyy-mm-ddTHH:MM:SS'</span>);
-0203 <span class="comment">%     Itime.idx=find(strcmpi(vars,'Itime'));</span>
-0204 <span class="comment">%     Itime.ID=netcdf.inqVarID(nc,'Itime');</span>
-0205 <span class="comment">%     Itime.Data(1)  = netcdf.getVar(nc,Itime.ID,0,1,'int32');</span>
-0206 <span class="comment">%     Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-1,1,'int32');</span>
-0207 <span class="comment">%     Itime2.Data(1)  = netcdf.getVar(nc,Itime.ID+1,0,1,'int32');</span>
-0208 <span class="comment">%     Itime2.Data(2)  = netcdf.getVar(nc,Itime.ID+1,last_entry-1,1,'int32');</span>
-0209 <span class="comment">%</span>
-0210 <span class="comment">%     [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);</span>
-0211 <span class="comment">%     [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));</span>
-0212 <span class="comment">%</span>
-0213 <span class="comment">%     start_date=sum(start_d.*[1 1/(24*60*60*1000)]);     %hkj missing 1000 inserted</span>
-0214 <span class="comment">%     end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       %hkj missing 1000 inserted</span>
-0215 <span class="comment">%     var_time =  netcdf.getVar(nc,Itime.ID,[0],[min(last_entry,10)],'double')+time_offset+...</span>
-0216 <span class="comment">%         netcdf.getVar(nc,Itime.ID+1,0,min(last_entry,10),'double')./(24*600*6000) ;</span>
-0217 <span class="comment">%</span>
-0218 <span class="comment">%     DeltaT=median(diff(var_time));</span>
-0219 <span class="comment">%     var_time = start_date:DeltaT:(end_date-DeltaT);</span>
-0220 
-0221 <span class="keyword">catch</span> me
-0222     <span class="keyword">if</span> ftbverbose
-0223         warning(<span class="string">'No ''Itime'' and/or ''Itime2'' variables, using less precise ''time'' instead.\n(%s)\n'</span>, me.message)
-0224     <span class="keyword">end</span>
-0225     Itime.idx=find(strcmpi(vars,<span class="string">'time'</span>));
-0226     Itime.ID=netcdf.inqVarID(nc,<span class="string">'time'</span>);
-0227     Itime.Data(1)  = netcdf.getVar(nc,Itime.ID,0,1,<span class="string">'double'</span>);
-0228     Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-1,1,<span class="string">'double'</span>);
-0229     [start_date,end_date] = deal(Itime.Data(1)+time_offset,Itime.Data(end)+time_offset);
-0230     DeltaT=(end_date-start_date)./last_entry;
-0231     var_time = start_date:DeltaT:(end_date-DeltaT);
-0232 <span class="keyword">end</span>
-0233 <span class="comment">% toc</span>
-0234 <span class="keyword">if</span> length(all_data) == 2
-0235     req_st = datenum(all_data{1},<span class="string">'dd/mm/yy HH:MM:SS'</span>);
-0236     req_end = datenum(all_data{2},<span class="string">'dd/mm/yy HH:MM:SS'</span>);
-0237 <span class="keyword">else</span>
-0238     req_st = start_date;
-0239     req_end =end_date;
-0240 <span class="keyword">end</span>
-0241 time_idx = find(req_st &lt;= var_time &amp;   var_time &lt;= req_end );
-0242 time_idx = time_idx(1:timestrd:end);
-0243 <span class="comment">% Add correct time_idx to RestrictDims</span>
-0244 RestrictDims.idx{end}=time_idx;
-0245 <span class="keyword">if</span> ftbverbose
-0246     fprintf(<span class="string">'Start and end of file: %s - %s\n'</span>, datestr(start_date), datestr(end_date))
-0247 <span class="keyword">end</span>
-0248 
-0249 <span class="comment">%--------------------------------------------------------------------------</span>
-0250 <span class="comment">% Return information about file to the screen</span>
-0251 <span class="comment">%--------------------------------------------------------------------------</span>
-0252 
-0253 <span class="keyword">if</span> ftbverbose
-0254     fprintf(<span class="string">'Possible variables to extract are:\n'</span>)
-0255 <span class="keyword">end</span>
-0256 <span class="keyword">for</span> ii = 1:length(vars)
-0257     <span class="keyword">if</span> ftbverbose
-0258         fprintf(<span class="string">' %s\n'</span>, vars{ii})
-0259     <span class="keyword">end</span>
-0260 <span class="keyword">end</span>
-0261 <span class="keyword">if</span> isempty(varnames)
-0262     data = 0;
-0263     netcdf.close(nc)
-0264     error(<span class="string">'Stopping. Choose a variable from the list above.'</span>)
-0265 <span class="keyword">end</span>
-0266 
-0267 <span class="comment">%--------------------------------------------------------------------------</span>
-0268 <span class="comment">% Re-organise RestrictDims to follow order of dimensions in nc file from</span>
-0269 <span class="comment">% FVCOM</span>
+0199 <span class="comment">%     Itime.Data(2) = datenum(Itime.sData(:,end-1)','yyyy-mm-ddTHH:MM:SS');</span>
+0200     Itime.Data(2) = datenum(Itime.sData(:,end)',<span class="string">'yyyy-mm-ddTHH:MM:SS'</span>);
+0201     start_date= Itime.Data(1);
+0202     end_date = Itime.Data(2);
+0203 <span class="comment">%     var_time = datenum(Itime.sData(:,1:end-1)','yyyy-mm-ddTHH:MM:SS');</span>
+0204     var_time = datenum(Itime.sData(:,1:end)',<span class="string">'yyyy-mm-ddTHH:MM:SS'</span>);
+0205 <span class="comment">%     Itime.idx=find(strcmpi(vars,'Itime'));</span>
+0206 <span class="comment">%     Itime.ID=netcdf.inqVarID(nc,'Itime');</span>
+0207 <span class="comment">%     Itime.Data(1)  = netcdf.getVar(nc,Itime.ID,0,1,'int32');</span>
+0208 <span class="comment">%     Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-1,1,'int32');</span>
+0209 <span class="comment">%     Itime2.Data(1)  = netcdf.getVar(nc,Itime.ID+1,0,1,'int32');</span>
+0210 <span class="comment">%     Itime2.Data(2)  = netcdf.getVar(nc,Itime.ID+1,last_entry-1,1,'int32');</span>
+0211 <span class="comment">%</span>
+0212 <span class="comment">%     [start_d(1),end_d(1)] = deal(double(Itime.Data(1))+time_offset,double(Itime.Data(end))+time_offset);</span>
+0213 <span class="comment">%     [start_d(2),end_d(2)] = deal(double(Itime2.Data(1)),double(Itime2.Data(end)));</span>
+0214 <span class="comment">%</span>
+0215 <span class="comment">%     start_date=sum(start_d.*[1 1/(24*60*60*1000)]);     %hkj missing 1000 inserted</span>
+0216 <span class="comment">%     end_date = sum(end_d.*[1 1/(24*60*60*1000)]);       %hkj missing 1000 inserted</span>
+0217 <span class="comment">%     var_time =  netcdf.getVar(nc,Itime.ID,[0],[min(last_entry,10)],'double')+time_offset+...</span>
+0218 <span class="comment">%         netcdf.getVar(nc,Itime.ID+1,0,min(last_entry,10),'double')./(24*600*6000) ;</span>
+0219 <span class="comment">%</span>
+0220 <span class="comment">%     DeltaT=median(diff(var_time));</span>
+0221 <span class="comment">%     var_time = start_date:DeltaT:(end_date-DeltaT);</span>
+0222 
+0223 <span class="keyword">catch</span> me
+0224     <span class="keyword">if</span> ftbverbose
+0225         warning(<span class="string">'No ''Itime'' and/or ''Itime2'' variables, using less precise ''time'' instead.\n(%s)\n'</span>, me.message)
+0226     <span class="keyword">end</span>
+0227     Itime.idx=find(strcmpi(vars,<span class="string">'time'</span>));
+0228     Itime.ID=netcdf.inqVarID(nc,<span class="string">'time'</span>);
+0229     Itime.Data(1)  = netcdf.getVar(nc,Itime.ID,0,1,<span class="string">'double'</span>);
+0230 <span class="comment">%     Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry-1,1,'double');</span>
+0231     Itime.Data(2)  = netcdf.getVar(nc,Itime.ID,last_entry,1,<span class="string">'double'</span>);
+0232     [start_date,end_date] = deal(Itime.Data(1)+time_offset,Itime.Data(end)+time_offset);
+0233     DeltaT=(end_date-start_date)./last_entry;
+0234     var_time = start_date:DeltaT:(end_date-DeltaT);
+0235 <span class="keyword">end</span>
+0236 <span class="comment">% toc</span>
+0237 <span class="keyword">if</span> length(all_data) == 2
+0238     req_st = datenum(all_data{1},<span class="string">'dd/mm/yy HH:MM:SS'</span>);
+0239     req_end = datenum(all_data{2},<span class="string">'dd/mm/yy HH:MM:SS'</span>);
+0240 <span class="keyword">else</span>
+0241     req_st = start_date;
+0242     req_end =end_date;
+0243 <span class="keyword">end</span>
+0244 time_idx = find(req_st &lt;= var_time &amp;   var_time &lt;= req_end );
+0245 time_idx = time_idx(1:timestrd:end);
+0246 <span class="comment">% Add correct time_idx to RestrictDims</span>
+0247 RestrictDims.idx{end}=time_idx;
+0248 <span class="keyword">if</span> ftbverbose
+0249     fprintf(<span class="string">'Start and end of file: %s - %s\n'</span>, datestr(start_date), datestr(end_date))
+0250 <span class="keyword">end</span>
+0251 
+0252 <span class="comment">%--------------------------------------------------------------------------</span>
+0253 <span class="comment">% Return information about file to the screen</span>
+0254 <span class="comment">%--------------------------------------------------------------------------</span>
+0255 
+0256 <span class="keyword">if</span> ftbverbose
+0257     fprintf(<span class="string">'Possible variables to extract are:\n'</span>)
+0258 <span class="keyword">end</span>
+0259 <span class="keyword">for</span> ii = 1:length(vars)
+0260     <span class="keyword">if</span> ftbverbose
+0261         fprintf(<span class="string">' %s\n'</span>, vars{ii})
+0262     <span class="keyword">end</span>
+0263 <span class="keyword">end</span>
+0264 <span class="keyword">if</span> isempty(varnames)
+0265     data = 0;
+0266     netcdf.close(nc)
+0267     error(<span class="string">'Stopping. Choose a variable from the list above.'</span>)
+0268 <span class="keyword">end</span>
+0269 
 0270 <span class="comment">%--------------------------------------------------------------------------</span>
-0271 cc=1;
-0272 <span class="keyword">for</span> dd=1:length(DimsAll)
-0273     idx=find(strcmpi(RestrictDims.Name,DimsAll(dd).Name));
-0274     <span class="keyword">if</span> ~isempty(idx)
-0275         TEMP{cc}=RestrictDims.Name{idx};
-0276         TEMPidx{cc}=RestrictDims.idx{idx};
-0277         cc=cc+1;
-0278     <span class="keyword">end</span>
-0279 <span class="keyword">end</span>
-0280 RestrictDims.Name = TEMP;
-0281 RestrictDims.idx = TEMPidx;
-0282 clear TEMP TEMPidx
-0283 
-0284 <span class="comment">%--------------------------------------------------------------------------</span>
-0285 <span class="comment">% Start Processing extraction of data from NC file</span>
-0286 <span class="comment">%--------------------------------------------------------------------------</span>
-0287 selection=[];
-0288 <span class="keyword">for</span> aa=1:length(varnames)
-0289     selection.(varnames{aa}).start=-1;
-0290     selection.(varnames{aa}).count=-1;
-0291     <span class="comment">%----------------------------------------------------------------------</span>
-0292     <span class="comment">% Extract number of dimensions, lengths and names of all variables</span>
-0293     <span class="comment">%----------------------------------------------------------------------</span>
-0294 <span class="comment">% tic</span>
-0295     <span class="keyword">if</span> ftbverbose
-0296         fprintf(<span class="string">'Processing variable %s: '</span>, varnames{aa})
-0297     <span class="keyword">end</span>
-0298     <span class="comment">% Tidy up the previous iteration's variables so we don't get confused.</span>
-0299     clear dimName dimLength
-0300 
-0301     TF = strcmpi(varnames{aa},vars);
-0302     <span class="keyword">if</span> ~isempty(find(TF));
-0303         varidx(aa) = find(TF);
-0304         TF = sum(TF);
-0305         dimens=ndims(aa);
-0306     <span class="keyword">else</span>
-0307         netcdf.close(nc)
-0308         varargout{1} = 0;
-0309         <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'\n'</span>); <span class="keyword">end</span>
-0310         error(<span class="string">'Variable %s NOT found in file. Stopping. Check input variable names.'</span>, varnames{aa})
-0311     <span class="keyword">end</span>
-0312     varID=netcdf.inqVarID(nc,vars{varidx(aa)});
-0313 
-0314     [name,xtype,dimids,natts] = netcdf.inqVar(nc,varID);
-0315     dimens=length(dimids);
+0271 <span class="comment">% Re-organise RestrictDims to follow order of dimensions in nc file from</span>
+0272 <span class="comment">% FVCOM</span>
+0273 <span class="comment">%--------------------------------------------------------------------------</span>
+0274 cc=1;
+0275 <span class="keyword">for</span> dd=1:length(DimsAll)
+0276     idx=find(strcmpi(RestrictDims.Name,DimsAll(dd).Name));
+0277     <span class="keyword">if</span> ~isempty(idx)
+0278         TEMP{cc}=RestrictDims.Name{idx};
+0279         TEMPidx{cc}=RestrictDims.idx{idx};
+0280         cc=cc+1;
+0281     <span class="keyword">end</span>
+0282 <span class="keyword">end</span>
+0283 RestrictDims.Name = TEMP;
+0284 RestrictDims.idx = TEMPidx;
+0285 clear TEMP TEMPidx
+0286 
+0287 <span class="comment">%--------------------------------------------------------------------------</span>
+0288 <span class="comment">% Start Processing extraction of data from NC file</span>
+0289 <span class="comment">%--------------------------------------------------------------------------</span>
+0290 selection=[];
+0291 <span class="keyword">for</span> aa=1:length(varnames)
+0292     selection.(varnames{aa}).start=-1;
+0293     selection.(varnames{aa}).count=-1;
+0294     <span class="comment">%----------------------------------------------------------------------</span>
+0295     <span class="comment">% Extract number of dimensions, lengths and names of all variables</span>
+0296     <span class="comment">%----------------------------------------------------------------------</span>
+0297 <span class="comment">% tic</span>
+0298     <span class="keyword">if</span> ftbverbose
+0299         fprintf(<span class="string">'Processing variable %s: '</span>, varnames{aa})
+0300     <span class="keyword">end</span>
+0301     <span class="comment">% Tidy up the previous iteration's variables so we don't get confused.</span>
+0302     clear dimName dimLength
+0303 
+0304     TF = strcmpi(varnames{aa},vars);
+0305     <span class="keyword">if</span> ~isempty(find(TF));
+0306         varidx(aa) = find(TF);
+0307         TF = sum(TF);
+0308         dimens=ndims(aa);
+0309     <span class="keyword">else</span>
+0310         netcdf.close(nc)
+0311         varargout{1} = 0;
+0312         <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'\n'</span>); <span class="keyword">end</span>
+0313         error(<span class="string">'Variable %s NOT found in file. Stopping. Check input variable names.'</span>, varnames{aa})
+0314     <span class="keyword">end</span>
+0315     varID=netcdf.inqVarID(nc,vars{varidx(aa)});
 0316 
-0317     <span class="keyword">for</span> dd=1:length(dimids)
-0318         [dimName{dd}, dimLength(dd)] = netcdf.inqDim(nc,dimids(dd));
-0319         <span class="keyword">if</span> ftbverbose
-0320             <span class="keyword">if</span> dd == 1
-0321                 <span class="keyword">if</span> length(dimids) == 1
-0322                     <span class="keyword">if</span> ftbverbose
-0323                         fprintf(<span class="string">'%i dimension: %s '</span>, dimens, dimName{dd})
-0324                     <span class="keyword">end</span>
-0325                 <span class="keyword">else</span>
-0326                     <span class="keyword">if</span> ftbverbose
-0327                         fprintf(<span class="string">'%i dimensions: %s '</span>, dimens, dimName{dd})
-0328                     <span class="keyword">end</span>
-0329                 <span class="keyword">end</span>
-0330             <span class="keyword">else</span>
-0331                 <span class="keyword">if</span> ftbverbose
-0332                     fprintf(<span class="string">'%s '</span>, dimName{dd})
-0333                 <span class="keyword">end</span>
-0334             <span class="keyword">end</span>
-0335         <span class="keyword">end</span>
-0336     <span class="keyword">end</span>
-0337     <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'\n'</span>); <span class="keyword">end</span>
-0338 
-0339     <span class="comment">%----------------------------------------------------------------------</span>
-0340     <span class="comment">% Get the data!</span>
-0341     <span class="comment">%----------------------------------------------------------------------</span>
-0342 
-0343     <span class="keyword">switch</span> dimens
-0344         <span class="keyword">case</span> 1
-0345             <span class="comment">% only one dimension present in variable</span>
-0346             <span class="keyword">switch</span> dimName{1}
-0347                 <span class="keyword">case</span> <span class="string">'time'</span>
-0348                     <span class="keyword">if</span> time_idx&gt;=0
-0349                         <span class="comment">% Only restrict data on access if dimension is TIME</span>
-0350 
-0351                         <span class="comment">% hkj it appears the first value in matlab netcdf</span>
-0352                         <span class="comment">% interface is 0.</span>
-0353                         <span class="comment">% hkj time_idx(1) CORRECTED TO time_idx(1)-1.</span>
-0354                         eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,time_idx(1)-1,length(time_idx),timestrd,''double'');'</span>])
-0355                     <span class="keyword">end</span>
-0356                 <span class="keyword">case</span> <span class="string">'nele'</span>
-0357                     eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,''double'');'</span>])
-0358                     <span class="keyword">if</span> nele_idx&gt;=0
-0359                         eval([varnames{aa},<span class="string">' = '</span>,varnames{aa},<span class="string">'(nele_idx);'</span>])
-0360                     <span class="keyword">end</span>
-0361                 <span class="keyword">case</span> <span class="string">'node'</span>
-0362                     eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,''double'');'</span>])
-0363                     <span class="keyword">if</span> node_idx&gt;=0
-0364                         eval([varnames{aa},<span class="string">' = '</span>,varnames{aa},<span class="string">'(node_idx);'</span>])
-0365                     <span class="keyword">end</span>
-0366                 <span class="keyword">otherwise</span>
-0367                     <span class="keyword">if</span> ftbverbose
-0368                         fprintf(<span class="string">'Unkown dimension for variable %s. Skipping to next one in function call.\n'</span>, name);
-0369                     <span class="keyword">end</span>
-0370             <span class="keyword">end</span>
-0371         <span class="keyword">otherwise</span>
-0372             <span class="comment">% identified dimensions to restrict</span>
-0373             do_restrict=zeros(size(dimName));
-0374             dimidx=nan(size(dimName));
-0375             clear start count stride
-0376             <span class="keyword">for</span> dd=1:length(dimName)
-0377                 start.(dimName{dd})=[];
-0378                 count.(dimName{dd})=[];
-0379                 stride.(dimName{dd})=[];
-0380                 test=find(strcmpi(RestrictDims.Name,dimName{dd}));
-0381                 <span class="keyword">if</span> ~isempty(test); dimidx(dd)=test; <span class="keyword">end</span>
-0382             <span class="keyword">end</span>
-0383             <span class="comment">% create start index for dimensions of the variable to</span>
-0384             <span class="comment">% access</span>
-0385             <span class="keyword">if</span> any(isfinite(dimidx))
-0386                 <span class="comment">% we have at least two valid dimension indices, proceed</span>
-0387                 <span class="keyword">for</span> dd=1:length(dimidx)
-0388                     <span class="comment">% restrict time as range but node and nele dims are</span>
-0389                     <span class="comment">% considered as stations rather than ranges.</span>
-0390                     <span class="comment">% if restriction is not -1 then select specified</span>
-0391                     <span class="comment">% indices otherwise read all</span>
-0392                     <span class="keyword">if</span> ~isnan(dimidx(dd)) &amp;&amp; RestrictDims.idx{dimidx(dd)}(1)&gt;=0
-0393                         <span class="keyword">if</span> (strcmpi(dimName(dd),<span class="string">'time'</span>))
-0394                             start.(dimName{dd})=RestrictDims.idx{dimidx(dd)}(1)-1;
-0395                             count.(dimName{dd})=length(RestrictDims.idx{dimidx(dd)});
-0396                             stride.(dimName{dd})=timestrd;
-0397 
-0398                         <span class="keyword">else</span>
-0399                             <span class="keyword">for</span> ss=1:length(RestrictDims.idx{dimidx(dd)})
-0400                                 start.(dimName{dd})(ss)=RestrictDims.idx{dimidx(dd)}(ss)-1;
-0401                                 count.(dimName{dd})(ss)=1;
-0402                                 stride.(dimName{dd})=1;
-0403                             <span class="keyword">end</span>
-0404                         <span class="keyword">end</span>
-0405                         do_restrict(dd)=1;
-0406                     <span class="keyword">else</span>
-0407                         start.(dimName{dd})=0;
-0408                         count.(dimName{dd})=dimLength(dd);
-0409                         stride.(dimName{dd})=1;
-0410                     <span class="keyword">end</span>
-0411                 <span class="keyword">end</span>
-0412             <span class="keyword">else</span>
-0413                 <span class="keyword">if</span> ftbverbose
-0414                     fprintf(<span class="string">'Wrong selection of dimensions to extract.\nExtracting all values in current variable.\n'</span>);
-0415                 <span class="keyword">end</span>
-0416             <span class="keyword">end</span>
-0417             <span class="comment">%</span>
-0418             <span class="comment">%             eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count,''double'');'])</span>
-0419             cc_names=fieldnames(count);
-0420             clear read_start read_count read_stride
-0421             <span class="keyword">switch</span> sum(do_restrict) <span class="comment">% there are dimensions to restrict</span>
-0422                 <span class="keyword">case</span> 1 <span class="comment">% only one dimension to restrict</span>
-0423                     <span class="keyword">switch</span> find(do_restrict) <span class="comment">% find position of restrictive variable</span>
-0424                         <span class="keyword">case</span> 1 <span class="comment">% restrict the first variable</span>
-0425                             <span class="comment">% but the variable can have more than 2 dimensions</span>
-0426                             <span class="keyword">switch</span> dimens
-0427                                 <span class="comment">% initialise variable</span>
-0428                                 <span class="keyword">case</span> 2
-0429                                     rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))];
-0430                                 <span class="keyword">case</span> 3
-0431                                     rr=[min(sum(count.(cc_names{1})),dimLength(1)),<span class="keyword">...</span>
-0432                                         min(sum(count.(cc_names{2})),dimLength(2)),<span class="keyword">...</span>
-0433                                         min(sum(count.(cc_names{3})),dimLength(3))];
-0434                             <span class="keyword">end</span>
-0435 
-0436                             eval([varnames{aa},<span class="string">'=nan(rr);'</span>])
-0437                             <span class="comment">% reorganize start and count arrays</span>
-0438                             read_start(find(~do_restrict))=start.(cc_names{find(~do_restrict)});
-0439                             read_count(find(~do_restrict))=count.(cc_names{find(~do_restrict)});
-0440                             read_stride(find(~do_restrict))=stride.(cc_names{find(~do_restrict)});
-0441 
-0442                             <span class="keyword">for</span> cc=1:length(start.(cc_names{find(do_restrict)}))
-0443                                 read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
-0444                                 read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
-0445                                 read_stride(find(do_restrict))=stride.(cc_names{find(do_restrict)});
-0446 
-0447                                 var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,<span class="string">'double'</span>);
-0448 
-0449                                 eval([varnames{aa},<span class="string">'(cc,:)=var_dump;'</span>])
-0450                                 clear var_dump
-0451                             <span class="keyword">end</span>
-0452                         <span class="keyword">case</span> 2 <span class="comment">% restrict the second variable (ie depth)</span>
-0453                             <span class="comment">% but the variable can have more than 2 dimensions</span>
-0454                             <span class="keyword">switch</span> dimens
-0455                                 <span class="comment">% initialise variable</span>
-0456                                 <span class="keyword">case</span> 2
-0457                                     rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))];
-0458                                 <span class="keyword">case</span> 3
-0459                                     rr=[min(sum(count.(cc_names{1})),dimLength(1)),<span class="keyword">...</span>
-0460                                         min(sum(count.(cc_names{2})),dimLength(2)),<span class="keyword">...</span>
-0461                                         min(sum(count.(cc_names{3})),dimLength(3))];
-0462                             <span class="keyword">end</span>
-0463 
-0464                             eval([varnames{aa},<span class="string">'=nan(rr);'</span>])
-0465                             <span class="comment">% reorganize start and count arrays</span>
-0466                             read_start(find(~do_restrict))=start.(cc_names{find(~do_restrict)});
-0467                             read_count(find(~do_restrict))=count.(cc_names{find(~do_restrict)});
-0468                             read_stride(find(~do_restrict))=stride.(cc_names{find(~do_restrict)});
-0469 
-0470                             <span class="keyword">for</span> cc=1:length(start.(cc_names{logical(do_restrict)}))
-0471                                 read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
-0472                                 read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
-0473                                 read_stride(find(do_restrict))=stride.(cc_names{find(do_restrict)});
-0474                                 var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,<span class="string">'double'</span>);
-0475                                 <span class="keyword">try</span>
-0476                                     eval([varnames{aa},<span class="string">'(:,cc)=var_dump;'</span>])
-0477                                 <span class="keyword">catch</span>
-0478                                     eval([varnames{aa},<span class="string">'(:,:,cc)=var_dump;'</span>])
-0479 
-0480                                 <span class="keyword">end</span>
-0481                                 clear var_dump
-0482                             <span class="keyword">end</span>
-0483                         <span class="keyword">case</span> 3 <span class="comment">% restrict the second variable (ie depth)</span>
-0484                             <span class="comment">% but the variable needs to have at least 3 dimensions</span>
-0485                             rr=[min(sum(count.(cc_names{1})),dimLength(1)),<span class="keyword">...</span>
-0486                                 min(sum(count.(cc_names{2})),dimLength(2)),<span class="keyword">...</span>
-0487                                 min(sum(count.(cc_names{3})),dimLength(3))];
-0488 
-0489                             eval([varnames{aa},<span class="string">'=nan(rr);'</span>])
-0490                             <span class="comment">% reorganize start and count arrays</span>
-0491                             <span class="comment">% There are now 2 unrestricted dimensions</span>
-0492                             <span class="keyword">for</span> tt=find(~do_restrict)
-0493                                 read_start(tt)=start.(cc_names{tt});
-0494                                 read_count(tt)=count.(cc_names{tt});
-0495                                 read_stride(tt)=stride.(cc_names{tt});
-0496 
-0497                             <span class="keyword">end</span>
-0498 
-0499                             <span class="comment">% check if time is one of them</span>
-0500                             <span class="keyword">if</span> ~isempty(find(dimidx==5))
-0501                                 do_time = find(dimidx==5); <span class="comment">% 5 is the index for time</span>
-0502                                 <span class="comment">% reorganize start and count arrays</span>
-0503                                 read_start(do_time)=start.(cc_names{do_time});
-0504                                 read_count(do_time)=count.(cc_names{do_time});
-0505                                 read_stride(do_time)=stride.(cc_names{do_time});
-0506                                 eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,read_start,read_count,read_stride,''double'');'</span>])
-0507                             <span class="keyword">else</span> <span class="comment">% we are looking at stations or depth layers</span>
-0508                                 <span class="keyword">for</span> cc=1:length(start.(cc_names{(do_restrict)}))
-0509                                     read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
-0510                                     read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
-0511                                     read_stride(find(do_restrict))=stride.(cc_names{find(do_restrict)});
-0512                                     var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,<span class="string">'double'</span>);
-0513 
-0514                                     <span class="keyword">switch</span> dimName(find(do_restrict))
-0515                                         <span class="keyword">case</span> <span class="string">'node'</span> | <span class="string">'nele'</span>
-0516                                             eval([varnames{aa},<span class="string">'(cc,:,:)=var_dump;'</span>])
-0517                                         <span class="keyword">case</span> <span class="string">'siglay'</span> | <span class="string">'siglev'</span>
-0518                                             eval([varnames{aa},<span class="string">'(:,cc,:)=var_dump;'</span>])
-0519                                     <span class="keyword">end</span>
-0520                                     clear var_dump
-0521                                 <span class="keyword">end</span>
-0522 
-0523                             <span class="keyword">end</span>
-0524                     <span class="keyword">end</span>
-0525                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.start=start;'</span>])
-0526                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.count=count;'</span>])
-0527 
-0528                 <span class="keyword">case</span> 2 <span class="comment">% Two dimension to restrict!</span>
-0529                     <span class="comment">% but the variable can have more than 2 dimensions</span>
-0530                     <span class="keyword">switch</span> dimens
-0531                         <span class="comment">% initialise variable</span>
-0532                         <span class="keyword">case</span> 2
-0533                             rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))];
-0534                         <span class="keyword">case</span> 3
-0535                             rr=[min(sum(count.(cc_names{1})),dimLength(1)),<span class="keyword">...</span>
-0536                                 min(sum(count.(cc_names{2})),dimLength(2)),<span class="keyword">...</span>
-0537                                 min(sum(count.(cc_names{3})),dimLength(3))];
-0538                     <span class="keyword">end</span>
-0539 
-0540                     eval([varnames{aa},<span class="string">'=nan(rr);'</span>])
-0541                     <span class="comment">% check if time is one of them</span>
-0542                     <span class="keyword">if</span> ~isempty(find(dimidx==5))
-0543                         do_time = find(dimidx==5); <span class="comment">% 5 is the index for time</span>
-0544                         <span class="comment">% reorganize start and count arrays</span>
-0545                         read_start(do_time)=start.(cc_names{do_time});
-0546                         read_count(do_time)=count.(cc_names{do_time});
-0547                         read_stride(do_time)=stride.(cc_names{do_time});
-0548                         <span class="comment">% search for the non_restrictive variable</span>
-0549                         <span class="comment">%                         cc=1</span>
-0550                         <span class="comment">%                         while ~(length( start.(cc_names{cc}))==1);cc=cc+1;end</span>
-0551                         <span class="comment">% esto esta mal.... tengo que incluir otra opcion por si tenemos una</span>
-0552                         <span class="comment">% variable de dos dimensiones donde los dos son restrictivas....</span>
-0553                         cc=find(~do_restrict);
-0554                         <span class="keyword">if</span> isempty(cc);cc=length(cc_names);<span class="keyword">end</span>
-0555                         read_start(cc)=start.(cc_names{cc});
-0556                         read_count(cc)=count.(cc_names{cc});
-0557                         read_stride(cc)=stride.(cc_names{cc});
-0558                         do_other = setdiff(dimidx,[dimidx(cc),5]) ; <span class="comment">% one of these is also restrictive...</span>
-0559                         do_other=find(dimidx==do_other);
-0560 
-0561                         <span class="keyword">for</span> cc=1:length(start.(cc_names{do_other}))
-0562                             read_start(do_other)=start.(cc_names{do_other})(cc);
-0563                             read_count(do_other)=count.(cc_names{do_other})(cc);
-0564                             read_stride(do_other)=stride.(cc_names{do_other});
-0565                             var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,<span class="string">'double'</span>);
-0566                             <span class="keyword">switch</span> do_other
-0567                                 <span class="keyword">case</span> 1
-0568                                     eval([varnames{aa},<span class="string">'(cc,:,:)=var_dump;'</span>])
-0569                                 <span class="keyword">case</span> 2
-0570                                     eval([varnames{aa},<span class="string">'(:,cc,:)=var_dump;'</span>])
-0571                                 <span class="keyword">case</span> 3
-0572                                     eval([varnames{aa},<span class="string">'(:,:,cc)=var_dump;'</span>])
-0573                             <span class="keyword">end</span>
-0574                             clear var_dump
-0575                         <span class="keyword">end</span>
-0576                     <span class="keyword">else</span> <span class="comment">% time is not one of them so we need to restrict both variables...</span>
-0577                         <span class="comment">% in this case it doesn't really matter</span>
-0578                         <span class="comment">% which one we restrict firts...</span>
-0579 
-0580                         <span class="keyword">for</span> kk=1:length(start.(cc_names{1}))
-0581                             <span class="comment">% reorganize start and count arrays</span>
-0582                             read_start(1)=start.(cc_names{1})(kk);
-0583                             read_count(1)=count.(cc_names{1})(kk);
-0584                             read_stride(1)=stride.(cc_names{1});
-0585                             <span class="keyword">for</span> cc=1:length(start.(cc_names{2}))
-0586                                 read_start(2)=start.(cc_names{2})(cc);
-0587                                 read_count(2)=count.(cc_names{2})(cc);
-0588                                 read_stride(2)=stride.(cc_names{2});
-0589                                 var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,<span class="string">'double'</span>);
-0590 
-0591                                 eval([varnames{aa},<span class="string">'(kk,cc)=var_dump;'</span>])
-0592                                 clear var_dump
-0593                             <span class="keyword">end</span>
-0594 
-0595                         <span class="keyword">end</span>
+0317     [name,xtype,dimids,natts] = netcdf.inqVar(nc,varID);
+0318     dimens=length(dimids);
+0319 
+0320     <span class="keyword">for</span> dd=1:length(dimids)
+0321         [dimName{dd}, dimLength(dd)] = netcdf.inqDim(nc,dimids(dd));
+0322         <span class="keyword">if</span> ftbverbose
+0323             <span class="keyword">if</span> dd == 1
+0324                 <span class="keyword">if</span> length(dimids) == 1
+0325                     <span class="keyword">if</span> ftbverbose
+0326                         fprintf(<span class="string">'%i dimension: %s '</span>, dimens, dimName{dd})
+0327                     <span class="keyword">end</span>
+0328                 <span class="keyword">else</span>
+0329                     <span class="keyword">if</span> ftbverbose
+0330                         fprintf(<span class="string">'%i dimensions: %s '</span>, dimens, dimName{dd})
+0331                     <span class="keyword">end</span>
+0332                 <span class="keyword">end</span>
+0333             <span class="keyword">else</span>
+0334                 <span class="keyword">if</span> ftbverbose
+0335                     fprintf(<span class="string">'%s '</span>, dimName{dd})
+0336                 <span class="keyword">end</span>
+0337             <span class="keyword">end</span>
+0338         <span class="keyword">end</span>
+0339     <span class="keyword">end</span>
+0340     <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'\n'</span>); <span class="keyword">end</span>
+0341 
+0342     <span class="comment">%----------------------------------------------------------------------</span>
+0343     <span class="comment">% Get the data!</span>
+0344     <span class="comment">%----------------------------------------------------------------------</span>
+0345 
+0346     <span class="keyword">switch</span> dimens
+0347         <span class="keyword">case</span> 1
+0348             <span class="comment">% only one dimension present in variable</span>
+0349             <span class="keyword">switch</span> dimName{1}
+0350                 <span class="keyword">case</span> <span class="string">'time'</span>
+0351                     <span class="keyword">if</span> time_idx&gt;=0
+0352                         <span class="comment">% Only restrict data on access if dimension is TIME</span>
+0353 
+0354                         <span class="comment">% hkj it appears the first value in matlab netcdf</span>
+0355                         <span class="comment">% interface is 0.</span>
+0356                         <span class="comment">% hkj time_idx(1) CORRECTED TO time_idx(1)-1.</span>
+0357                         eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,time_idx(1)-1,length(time_idx),timestrd,''double'');'</span>])
+0358                     <span class="keyword">end</span>
+0359                 <span class="keyword">case</span> <span class="string">'nele'</span>
+0360                     eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,''double'');'</span>])
+0361                     <span class="keyword">if</span> nele_idx&gt;=0
+0362                         eval([varnames{aa},<span class="string">' = '</span>,varnames{aa},<span class="string">'(nele_idx);'</span>])
+0363                     <span class="keyword">end</span>
+0364                 <span class="keyword">case</span> <span class="string">'node'</span>
+0365                     eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,''double'');'</span>])
+0366                     <span class="keyword">if</span> node_idx&gt;=0
+0367                         eval([varnames{aa},<span class="string">' = '</span>,varnames{aa},<span class="string">'(node_idx);'</span>])
+0368                     <span class="keyword">end</span>
+0369                 <span class="keyword">otherwise</span>
+0370                     <span class="keyword">if</span> ftbverbose
+0371                         fprintf(<span class="string">'Unkown dimension for variable %s. Skipping to next one in function call.\n'</span>, name);
+0372                     <span class="keyword">end</span>
+0373             <span class="keyword">end</span>
+0374         <span class="keyword">otherwise</span>
+0375             <span class="comment">% identified dimensions to restrict</span>
+0376             do_restrict=zeros(size(dimName));
+0377             dimidx=nan(size(dimName));
+0378             clear start count stride
+0379             <span class="keyword">for</span> dd=1:length(dimName)
+0380                 start.(dimName{dd})=[];
+0381                 count.(dimName{dd})=[];
+0382                 stride.(dimName{dd})=[];
+0383                 test=find(strcmpi(RestrictDims.Name,dimName{dd}));
+0384                 <span class="keyword">if</span> ~isempty(test); dimidx(dd)=test; <span class="keyword">end</span>
+0385             <span class="keyword">end</span>
+0386             <span class="comment">% create start index for dimensions of the variable to</span>
+0387             <span class="comment">% access</span>
+0388             <span class="keyword">if</span> any(isfinite(dimidx))
+0389                 <span class="comment">% we have at least two valid dimension indices, proceed</span>
+0390                 <span class="keyword">for</span> dd=1:length(dimidx)
+0391                     <span class="comment">% restrict time as range but node and nele dims are</span>
+0392                     <span class="comment">% considered as stations rather than ranges.</span>
+0393                     <span class="comment">% if restriction is not -1 then select specified</span>
+0394                     <span class="comment">% indices otherwise read all</span>
+0395                     <span class="keyword">if</span> ~isnan(dimidx(dd)) &amp;&amp; RestrictDims.idx{dimidx(dd)}(1)&gt;=0
+0396                         <span class="keyword">if</span> (strcmpi(dimName(dd),<span class="string">'time'</span>))
+0397                             start.(dimName{dd})=RestrictDims.idx{dimidx(dd)}(1)-1;
+0398                             count.(dimName{dd})=length(RestrictDims.idx{dimidx(dd)});
+0399                             stride.(dimName{dd})=timestrd;
+0400 
+0401                         <span class="keyword">else</span>
+0402                             <span class="keyword">for</span> ss=1:length(RestrictDims.idx{dimidx(dd)})
+0403                                 start.(dimName{dd})(ss)=RestrictDims.idx{dimidx(dd)}(ss)-1;
+0404                                 count.(dimName{dd})(ss)=1;
+0405                                 stride.(dimName{dd})=1;
+0406                             <span class="keyword">end</span>
+0407                         <span class="keyword">end</span>
+0408                         do_restrict(dd)=1;
+0409                     <span class="keyword">else</span>
+0410                         start.(dimName{dd})=0;
+0411                         count.(dimName{dd})=dimLength(dd);
+0412                         stride.(dimName{dd})=1;
+0413                     <span class="keyword">end</span>
+0414                 <span class="keyword">end</span>
+0415             <span class="keyword">else</span>
+0416                 <span class="keyword">if</span> ftbverbose
+0417                     fprintf(<span class="string">'Wrong selection of dimensions to extract.\nExtracting all values in current variable.\n'</span>);
+0418                 <span class="keyword">end</span>
+0419             <span class="keyword">end</span>
+0420             <span class="comment">%</span>
+0421             <span class="comment">%             eval([varnames{aa},'=netcdf.getVar(nc,varID,start,count,''double'');'])</span>
+0422             cc_names=fieldnames(count);
+0423             clear read_start read_count read_stride
+0424             <span class="keyword">switch</span> sum(do_restrict) <span class="comment">% there are dimensions to restrict</span>
+0425                 <span class="keyword">case</span> 1 <span class="comment">% only one dimension to restrict</span>
+0426                     <span class="keyword">switch</span> find(do_restrict) <span class="comment">% find position of restrictive variable</span>
+0427                         <span class="keyword">case</span> 1 <span class="comment">% restrict the first variable</span>
+0428                             <span class="comment">% but the variable can have more than 2 dimensions</span>
+0429                             <span class="keyword">switch</span> dimens
+0430                                 <span class="comment">% initialise variable</span>
+0431                                 <span class="keyword">case</span> 2
+0432                                     rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))];
+0433                                 <span class="keyword">case</span> 3
+0434                                     rr=[min(sum(count.(cc_names{1})),dimLength(1)),<span class="keyword">...</span>
+0435                                         min(sum(count.(cc_names{2})),dimLength(2)),<span class="keyword">...</span>
+0436                                         min(sum(count.(cc_names{3})),dimLength(3))];
+0437                             <span class="keyword">end</span>
+0438 
+0439                             eval([varnames{aa},<span class="string">'=nan(rr);'</span>])
+0440                             <span class="comment">% reorganize start and count arrays</span>
+0441                             read_start(find(~do_restrict))=start.(cc_names{find(~do_restrict)});
+0442                             read_count(find(~do_restrict))=count.(cc_names{find(~do_restrict)});
+0443                             read_stride(find(~do_restrict))=stride.(cc_names{find(~do_restrict)});
+0444 
+0445                             <span class="keyword">for</span> cc=1:length(start.(cc_names{find(do_restrict)}))
+0446                                 read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
+0447                                 read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
+0448                                 read_stride(find(do_restrict))=stride.(cc_names{find(do_restrict)});
+0449 
+0450                                 var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,<span class="string">'double'</span>);
+0451 
+0452                                 eval([varnames{aa},<span class="string">'(cc,:)=var_dump;'</span>])
+0453                                 clear var_dump
+0454                             <span class="keyword">end</span>
+0455                         <span class="keyword">case</span> 2 <span class="comment">% restrict the second variable (ie depth)</span>
+0456                             <span class="comment">% but the variable can have more than 2 dimensions</span>
+0457                             <span class="keyword">switch</span> dimens
+0458                                 <span class="comment">% initialise variable</span>
+0459                                 <span class="keyword">case</span> 2
+0460                                     rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))];
+0461                                 <span class="keyword">case</span> 3
+0462                                     rr=[min(sum(count.(cc_names{1})),dimLength(1)),<span class="keyword">...</span>
+0463                                         min(sum(count.(cc_names{2})),dimLength(2)),<span class="keyword">...</span>
+0464                                         min(sum(count.(cc_names{3})),dimLength(3))];
+0465                             <span class="keyword">end</span>
+0466 
+0467                             eval([varnames{aa},<span class="string">'=nan(rr);'</span>])
+0468                             <span class="comment">% reorganize start and count arrays</span>
+0469                             read_start(find(~do_restrict))=start.(cc_names{find(~do_restrict)});
+0470                             read_count(find(~do_restrict))=count.(cc_names{find(~do_restrict)});
+0471                             read_stride(find(~do_restrict))=stride.(cc_names{find(~do_restrict)});
+0472 
+0473                             <span class="keyword">for</span> cc=1:length(start.(cc_names{logical(do_restrict)}))
+0474                                 read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
+0475                                 read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
+0476                                 read_stride(find(do_restrict))=stride.(cc_names{find(do_restrict)});
+0477                                 var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,<span class="string">'double'</span>);
+0478                                 <span class="keyword">try</span>
+0479                                     eval([varnames{aa},<span class="string">'(:,cc)=var_dump;'</span>])
+0480                                 <span class="keyword">catch</span>
+0481                                     eval([varnames{aa},<span class="string">'(:,:,cc)=var_dump;'</span>])
+0482 
+0483                                 <span class="keyword">end</span>
+0484                                 clear var_dump
+0485                             <span class="keyword">end</span>
+0486                         <span class="keyword">case</span> 3 <span class="comment">% restrict the second variable (ie depth)</span>
+0487                             <span class="comment">% but the variable needs to have at least 3 dimensions</span>
+0488                             rr=[min(sum(count.(cc_names{1})),dimLength(1)),<span class="keyword">...</span>
+0489                                 min(sum(count.(cc_names{2})),dimLength(2)),<span class="keyword">...</span>
+0490                                 min(sum(count.(cc_names{3})),dimLength(3))];
+0491 
+0492                             eval([varnames{aa},<span class="string">'=nan(rr);'</span>])
+0493                             <span class="comment">% reorganize start and count arrays</span>
+0494                             <span class="comment">% There are now 2 unrestricted dimensions</span>
+0495                             <span class="keyword">for</span> tt=find(~do_restrict)
+0496                                 read_start(tt)=start.(cc_names{tt});
+0497                                 read_count(tt)=count.(cc_names{tt});
+0498                                 read_stride(tt)=stride.(cc_names{tt});
+0499 
+0500                             <span class="keyword">end</span>
+0501 
+0502                             <span class="comment">% check if time is one of them</span>
+0503                             <span class="keyword">if</span> ~isempty(find(dimidx==5))
+0504                                 do_time = find(dimidx==5); <span class="comment">% 5 is the index for time</span>
+0505                                 <span class="comment">% reorganize start and count arrays</span>
+0506                                 read_start(do_time)=start.(cc_names{do_time});
+0507                                 read_count(do_time)=count.(cc_names{do_time});
+0508                                 read_stride(do_time)=stride.(cc_names{do_time});
+0509                                 eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,read_start,read_count,read_stride,''double'');'</span>])
+0510                             <span class="keyword">else</span> <span class="comment">% we are looking at stations or depth layers</span>
+0511                                 <span class="keyword">for</span> cc=1:length(start.(cc_names{find(do_restrict)}))
+0512                                     read_start(find(do_restrict))=start.(cc_names{find(do_restrict)})(cc);
+0513                                     read_count(find(do_restrict))=count.(cc_names{find(do_restrict)})(cc);
+0514                                     read_stride(find(do_restrict))=stride.(cc_names{find(do_restrict)});
+0515                                     var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,<span class="string">'double'</span>);
+0516 
+0517                                     <span class="keyword">switch</span> dimName{find(do_restrict)}
+0518                                         <span class="keyword">case</span> <span class="string">'node'</span> | <span class="string">'nele'</span>
+0519                                             eval([varnames{aa},<span class="string">'(cc,:,:)=var_dump;'</span>])
+0520                                         <span class="keyword">case</span> <span class="string">'siglay'</span> | <span class="string">'siglev'</span>
+0521                                             eval([varnames{aa},<span class="string">'(:,cc,:)=var_dump;'</span>])
+0522                                         <span class="keyword">case</span> <span class="string">'time'</span> <span class="comment">% this only happens if we only have one timestamp</span>
+0523                                             eval([varnames{aa},<span class="string">'=var_dump;'</span>])
+0524 
+0525                                     <span class="keyword">end</span>
+0526                                     clear var_dump
+0527                                 <span class="keyword">end</span>
+0528 
+0529                             <span class="keyword">end</span>
+0530                     <span class="keyword">end</span>
+0531                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.start=start;'</span>])
+0532                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.count=count;'</span>])
+0533 
+0534                 <span class="keyword">case</span> 2 <span class="comment">% Two dimension to restrict!</span>
+0535                     <span class="comment">% but the variable can have more than 2 dimensions</span>
+0536                     <span class="keyword">switch</span> dimens
+0537                         <span class="comment">% initialise variable</span>
+0538                         <span class="keyword">case</span> 2
+0539                             rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))];
+0540                         <span class="keyword">case</span> 3
+0541                             rr=[min(sum(count.(cc_names{1})),dimLength(1)),<span class="keyword">...</span>
+0542                                 min(sum(count.(cc_names{2})),dimLength(2)),<span class="keyword">...</span>
+0543                                 min(sum(count.(cc_names{3})),dimLength(3))];
+0544                     <span class="keyword">end</span>
+0545 
+0546                     eval([varnames{aa},<span class="string">'=nan(rr);'</span>])
+0547                     <span class="comment">% check if time is one of them</span>
+0548                     <span class="keyword">if</span> ~isempty(find(dimidx==5))
+0549                         do_time = find(dimidx==5); <span class="comment">% 5 is the index for time</span>
+0550                         <span class="comment">% reorganize start and count arrays</span>
+0551                         read_start(do_time)=start.(cc_names{do_time});
+0552                         read_count(do_time)=count.(cc_names{do_time});
+0553                         read_stride(do_time)=stride.(cc_names{do_time});
+0554                         <span class="comment">% search for the non_restrictive variable</span>
+0555                         <span class="comment">%                         cc=1</span>
+0556                         <span class="comment">%                         while ~(length( start.(cc_names{cc}))==1);cc=cc+1;end</span>
+0557                         <span class="comment">% esto esta mal.... tengo que incluir otra opcion por si tenemos una</span>
+0558                         <span class="comment">% variable de dos dimensiones donde los dos son restrictivas....</span>
+0559                         cc=find(~do_restrict);
+0560                         <span class="keyword">if</span> isempty(cc);cc=length(cc_names);<span class="keyword">end</span>
+0561                         read_start(cc)=start.(cc_names{cc});
+0562                         read_count(cc)=count.(cc_names{cc});
+0563                         read_stride(cc)=stride.(cc_names{cc});
+0564                         do_other = setdiff(dimidx,[dimidx(cc),5]) ; <span class="comment">% one of these is also restrictive...</span>
+0565                         do_other=find(dimidx==do_other);
+0566 
+0567                         <span class="keyword">for</span> cc=1:length(start.(cc_names{do_other}))
+0568                             read_start(do_other)=start.(cc_names{do_other})(cc);
+0569                             read_count(do_other)=count.(cc_names{do_other})(cc);
+0570                             read_stride(do_other)=stride.(cc_names{do_other});
+0571                             var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,<span class="string">'double'</span>);
+0572                             <span class="keyword">switch</span> do_other
+0573                                 <span class="keyword">case</span> 1
+0574                                     eval([varnames{aa},<span class="string">'(cc,:,:)=var_dump;'</span>])
+0575                                 <span class="keyword">case</span> 2
+0576                                     eval([varnames{aa},<span class="string">'(:,cc,:)=var_dump;'</span>])
+0577                                 <span class="keyword">case</span> 3
+0578                                     eval([varnames{aa},<span class="string">'(:,:,cc)=var_dump;'</span>])
+0579                             <span class="keyword">end</span>
+0580                             clear var_dump
+0581                         <span class="keyword">end</span>
+0582                     <span class="keyword">else</span> <span class="comment">% time is not one of them so we need to restrict both variables...</span>
+0583                         <span class="comment">% in this case it doesn't really matter</span>
+0584                         <span class="comment">% which one we restrict firts...</span>
+0585 
+0586                         <span class="keyword">for</span> kk=1:length(start.(cc_names{1}))
+0587                             <span class="comment">% reorganize start and count arrays</span>
+0588                             read_start(1)=start.(cc_names{1})(kk);
+0589                             read_count(1)=count.(cc_names{1})(kk);
+0590                             read_stride(1)=stride.(cc_names{1});
+0591                             <span class="keyword">for</span> cc=1:length(start.(cc_names{2}))
+0592                                 read_start(2)=start.(cc_names{2})(cc);
+0593                                 read_count(2)=count.(cc_names{2})(cc);
+0594                                 read_stride(2)=stride.(cc_names{2});
+0595                                 var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,<span class="string">'double'</span>);
 0596 
-0597                     <span class="keyword">end</span>
-0598 
-0599                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.start=start;'</span>])
-0600                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.count=count;'</span>])
-0601 
-0602                 <span class="keyword">case</span> 3 <span class="comment">% three dimension to restrict!</span>
-0603                     <span class="comment">% but the variable can have more than 2 dimensions</span>
-0604                     <span class="keyword">switch</span> dimens
-0605                         <span class="comment">% initialise variable</span>
-0606                         <span class="keyword">case</span> 2
-0607                             rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))];
-0608                         <span class="keyword">case</span> 3
-0609                             rr=[min(sum(count.(cc_names{1})),dimLength(1)),<span class="keyword">...</span>
-0610                                 min(sum(count.(cc_names{2})),dimLength(2)),<span class="keyword">...</span>
-0611                                 min(sum(count.(cc_names{3})),dimLength(3))];
-0612                     <span class="keyword">end</span>
-0613 
-0614                     eval([varnames{aa},<span class="string">'=nan(rr);'</span>])
-0615                     <span class="comment">% check if time is one of them</span>
-0616                     <span class="keyword">if</span> isempty(find(dimidx==5));disp(<span class="string">'This won''t work, try again'</span>);<span class="keyword">return</span>;<span class="keyword">end</span>
-0617                     do_time = find(dimidx==5); <span class="comment">% 5 is the index for time</span>
-0618                     <span class="comment">% reorganize start and count arrays</span>
-0619                     read_start(do_time)=start.(cc_names{do_time});
-0620                     read_count(do_time)=count.(cc_names{do_time});
-0621                     read_stride(do_time)=stride.(cc_names{do_time});
-0622 
-0623                     <span class="comment">% search for the non_restrictive variable</span>
-0624                     <span class="comment">%                         cc=1</span>
-0625                     <span class="comment">%                         while ~(length( start.(cc_names{cc}))==1);cc=cc+1;end</span>
-0626                     <span class="comment">% esto esta mal.... tengo que incluir otra opcion por si tenemos una</span>
-0627                     <span class="comment">% variable de dos dimensiones donde los dos son restrictivas....</span>
-0628                     [~,do_other] = setdiff(dimidx,[dimidx(do_time)]) ; <span class="comment">% these are also restrictive and are not time...</span>
-0629                     <span class="keyword">if</span> length(count.(cc_names{do_other(1)})) &lt;length(count.(cc_names{do_other(2)}))
-0630                         do_one=do_other(1);do_two=do_other(2);
-0631                     <span class="keyword">else</span>
-0632                         do_one=do_other(2);do_two=do_other(1);
-0633                     <span class="keyword">end</span>
-0634 
-0635                     <span class="keyword">for</span> cc=1:length(start.(cc_names{do_one}))
-0636                         read_start(do_one)=start.(cc_names{do_one})(cc);
-0637                         read_count(do_one)=count.(cc_names{do_one})(cc);
-0638                         read_stride(do_one)=stride.(cc_names{do_one});
-0639 
-0640                         <span class="keyword">for</span> pp=1:length(start.(cc_names{do_two}))
-0641                             read_start(do_two)=start.(cc_names{do_two})(pp);
-0642                             read_count(do_two)=count.(cc_names{do_two})(pp);
-0643                             read_stride(do_two)=stride.(cc_names{do_two});
-0644 
-0645                             var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,<span class="string">'double'</span>);
-0646                             eval([varnames{aa},<span class="string">'(pp,cc,:)=var_dump;'</span>])
-0647                         <span class="keyword">end</span>
-0648                         clear var_dump
-0649                     <span class="keyword">end</span>
-0650                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.start=start;'</span>])
-0651                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.count=count;'</span>])
-0652                 <span class="keyword">case</span> 0 <span class="comment">% there are NO dimensions to restrict and 3 dimensions haven't been coded yet!!</span>
-0653 
-0654                     <span class="keyword">for</span> nn=1:length(cc_names)
-0655                         read_start(nn)=start.(cc_names{nn});
-0656                         read_count(nn)=count.(cc_names{nn});
-0657                          read_stride(nn)=stride.(cc_names{nn});
-0658                     <span class="keyword">end</span>
-0659                     eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,read_start,read_count,read_stride,''double'');'</span>])
-0660                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.start=start;'</span>])
-0661                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.count=count;'</span>])
-0662 
-0663             <span class="keyword">end</span>
-0664     <span class="keyword">end</span>
-0665     eval([<span class="string">'data.(varnames{aa}) = '</span>,varnames{aa},<span class="string">';'</span>])
-0666     eval([<span class="string">'clear '</span>,varnames{aa}])
-0667 <span class="comment">%     toc</span>
-0668 <span class="keyword">end</span>
-0669 
-0670 <span class="comment">%--------------------------------------------------------------------------</span>
-0671 <span class="comment">% Tidy up, finish and return data</span>
-0672 <span class="comment">%--------------------------------------------------------------------------</span>
-0673 
-0674 netcdf.close(nc)
+0597                                 eval([varnames{aa},<span class="string">'(kk,cc)=var_dump;'</span>])
+0598                                 clear var_dump
+0599                             <span class="keyword">end</span>
+0600 
+0601                         <span class="keyword">end</span>
+0602 
+0603                     <span class="keyword">end</span>
+0604 
+0605                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.start=start;'</span>])
+0606                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.count=count;'</span>])
+0607 
+0608                 <span class="keyword">case</span> 3 <span class="comment">% three dimension to restrict!</span>
+0609                     <span class="comment">% but the variable can have more than 2 dimensions</span>
+0610                     <span class="keyword">switch</span> dimens
+0611                         <span class="comment">% initialise variable</span>
+0612                         <span class="keyword">case</span> 2
+0613                             rr=[min(sum(count.(cc_names{1})),dimLength(1)) min(sum(count.(cc_names{2})),dimLength(2))];
+0614                         <span class="keyword">case</span> 3
+0615                             rr=[min(sum(count.(cc_names{1})),dimLength(1)),<span class="keyword">...</span>
+0616                                 min(sum(count.(cc_names{2})),dimLength(2)),<span class="keyword">...</span>
+0617                                 min(sum(count.(cc_names{3})),dimLength(3))];
+0618                     <span class="keyword">end</span>
+0619 
+0620                     eval([varnames{aa},<span class="string">'=nan(rr);'</span>])
+0621                     <span class="comment">% check if time is one of them</span>
+0622                     <span class="keyword">if</span> isempty(find(dimidx==5));disp(<span class="string">'This won''t work, try again'</span>);<span class="keyword">return</span>;<span class="keyword">end</span>
+0623                     do_time = find(dimidx==5); <span class="comment">% 5 is the index for time</span>
+0624                     <span class="comment">% reorganize start and count arrays</span>
+0625                     read_start(do_time)=start.(cc_names{do_time});
+0626                     read_count(do_time)=count.(cc_names{do_time});
+0627                     read_stride(do_time)=stride.(cc_names{do_time});
+0628 
+0629                     <span class="comment">% search for the non_restrictive variable</span>
+0630                     <span class="comment">%                         cc=1</span>
+0631                     <span class="comment">%                         while ~(length( start.(cc_names{cc}))==1);cc=cc+1;end</span>
+0632                     <span class="comment">% esto esta mal.... tengo que incluir otra opcion por si tenemos una</span>
+0633                     <span class="comment">% variable de dos dimensiones donde los dos son restrictivas....</span>
+0634                     [~,do_other] = setdiff(dimidx,[dimidx(do_time)]) ; <span class="comment">% these are also restrictive and are not time...</span>
+0635                     <span class="keyword">if</span> length(count.(cc_names{do_other(1)})) &lt;length(count.(cc_names{do_other(2)}))
+0636                         do_one=do_other(1);do_two=do_other(2);
+0637                     <span class="keyword">else</span>
+0638                         do_one=do_other(2);do_two=do_other(1);
+0639                     <span class="keyword">end</span>
+0640 
+0641                     <span class="keyword">for</span> cc=1:length(start.(cc_names{do_one}))
+0642                         read_start(do_one)=start.(cc_names{do_one})(cc);
+0643                         read_count(do_one)=count.(cc_names{do_one})(cc);
+0644                         read_stride(do_one)=stride.(cc_names{do_one});
+0645 
+0646                         <span class="keyword">for</span> pp=1:length(start.(cc_names{do_two}))
+0647                             read_start(do_two)=start.(cc_names{do_two})(pp);
+0648                             read_count(do_two)=count.(cc_names{do_two})(pp);
+0649                             read_stride(do_two)=stride.(cc_names{do_two});
+0650 
+0651                             var_dump=netcdf.getVar(nc,varID,read_start,read_count,read_stride,<span class="string">'double'</span>);
+0652                             eval([varnames{aa},<span class="string">'(pp,cc,:)=var_dump;'</span>])
+0653                         <span class="keyword">end</span>
+0654                         clear var_dump
+0655                     <span class="keyword">end</span>
+0656                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.start=start;'</span>])
+0657                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.count=count;'</span>])
+0658                 <span class="keyword">case</span> 0 <span class="comment">% there are NO dimensions to restrict and 3 dimensions haven't been coded yet!!</span>
+0659 
+0660                     <span class="keyword">for</span> nn=1:length(cc_names)
+0661                         read_start(nn)=start.(cc_names{nn});
+0662                         read_count(nn)=count.(cc_names{nn});
+0663                          read_stride(nn)=stride.(cc_names{nn});
+0664                     <span class="keyword">end</span>
+0665                     eval([varnames{aa},<span class="string">'=netcdf.getVar(nc,varID,read_start,read_count,read_stride,''double'');'</span>])
+0666                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.start=start;'</span>])
+0667                     eval([<span class="string">'selection.'</span>,varnames{aa},<span class="string">'.count=count;'</span>])
+0668 
+0669             <span class="keyword">end</span>
+0670     <span class="keyword">end</span>
+0671     eval([<span class="string">'data.(varnames{aa}) = '</span>,varnames{aa},<span class="string">';'</span>])
+0672     eval([<span class="string">'clear '</span>,varnames{aa}])
+0673 <span class="comment">%     toc</span>
+0674 <span class="keyword">end</span>
 0675 
-0676 <span class="keyword">if</span> ftbverbose
-0677     fprintf(<span class="string">'end   : %s \n'</span>, subname)
-0678 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0676 <span class="comment">%--------------------------------------------------------------------------</span>
+0677 <span class="comment">% Tidy up, finish and return data</span>
+0678 <span class="comment">%--------------------------------------------------------------------------</span>
+0679 
+0680 netcdf.close(nc)
+0681 
+0682 <span class="keyword">if</span> ftbverbose
+0683     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0684 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

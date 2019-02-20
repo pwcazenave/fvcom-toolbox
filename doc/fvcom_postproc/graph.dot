@@ -16,4 +16,5 @@ digraph m2html {
   do_vector_plot_MatlabMap [URL="do_vector_plot_MatlabMap.html"];
   do_vector_plot_MatlabMapC [URL="do_vector_plot_MatlabMapC.html"];
   example_surface_plot [URL="example_surface_plot.html"];
+  show_max_CFL [URL="show_max_CFL.html"];
 }

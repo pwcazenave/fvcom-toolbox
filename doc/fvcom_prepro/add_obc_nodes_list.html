@@ -149,7 +149,7 @@ This function is called by:
 0062 [~, Nidx] = unique(Nodelist);
 0063 Nodelist = Nodelist(sort(Nidx));
 0064 
-0065 assert(max(Nodelist) &lt; Mobj.nVerts, <span class="string">'Your open boundary node number exceed the total number of nodes in the domain\n'</span>)
+0065 assert(max(Nodelist) &lt;= Mobj.nVerts, <span class="string">'Your open boundary node number (%d) exceeds the total number of nodes in the domain (%d)'</span>, max(Nodelist), Mobj.nVerts)
 0066 
 0067 <span class="comment">%--------------------------------------------------------------------------</span>
 0068 <span class="comment">% Plot the mesh</span>
@@ -189,6 +189,6 @@ This function is called by:
 0102     fprintf(<span class="string">'\nend   : %s\n'</span>, subname)
 0103 <span class="keyword">end</span>
 0104</pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

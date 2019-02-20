@@ -24,12 +24,12 @@
 <div class="box"><strong>Generate a tanh sigma coordinate distribution.</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function dist = sigma_tanh(nlev,dl,du) </strong></div>
+<div class="box"><strong>function Mobj = sigma_tanh(nlev,dl,du,Mobj,sigma_file) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Generate a tanh sigma coordinate distribution.
 
- Mobj = sigma_tanh(nlev, dl, du)
+ Mobj = sigma_tanh(nlev, dl, du, Mobj)
 
  DESCRIPTION:
    Generate a tanh vertical sigma coordinate distribution.
@@ -40,19 +40,25 @@
                coordinates are parallel with uniform thickness.
    du:         The upper depth boundary from the surface, up to which the
                coordinates are parallel with uniform thickness.
+   Mobj:       [optional] Mesh object file
+   sigma_file: [optional] File to which to save the sigma distribution.
 
  OUTPUT:
-   dist:       Tanh vertical sigma coordinate distribution.
+   Mobj.sigma:     Hyperbolic tangent vertical sigma coordinate distribution.
+   Mobj.sig...     All the sigma layers variables such as siglev, siglevz,
+                   siglayz, etc.
 
  EXAMPLE USAGE:
-   Mobj = read_sigma(nlev, dl, du)
+   Mobj = read_sigma(nlev, dl, du, Mobj)
 
  Author(s):
    Geoff Cowles (University of Massachusetts Dartmouth)
    Pierre Cazenave (Plymouth Marine Laboratory)
+   Ricardo Torres (Plymouth Marine Laboratory)
 
  Revision history
-   2013-04-23 Added help on the function and reformatted the code.</pre></div>
+   2013-04-23 Added help on the function and reformatted the code.
+   2018-09-14 Added option to add the sigma data to a mesh object.</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -67,10 +73,10 @@ This function is called by:
 
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function dist = sigma_tanh(nlev,dl,du)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function Mobj = sigma_tanh(nlev,dl,du,Mobj,sigma_file)</a>
 0002 <span class="comment">% Generate a tanh sigma coordinate distribution.</span>
 0003 <span class="comment">%</span>
-0004 <span class="comment">% Mobj = sigma_tanh(nlev, dl, du)</span>
+0004 <span class="comment">% Mobj = sigma_tanh(nlev, dl, du, Mobj)</span>
 0005 <span class="comment">%</span>
 0006 <span class="comment">% DESCRIPTION:</span>
 0007 <span class="comment">%   Generate a tanh vertical sigma coordinate distribution.</span>
@@ -81,31 +87,75 @@ This function is called by:
 0012 <span class="comment">%               coordinates are parallel with uniform thickness.</span>
 0013 <span class="comment">%   du:         The upper depth boundary from the surface, up to which the</span>
 0014 <span class="comment">%               coordinates are parallel with uniform thickness.</span>
-0015 <span class="comment">%</span>
-0016 <span class="comment">% OUTPUT:</span>
-0017 <span class="comment">%   dist:       Tanh vertical sigma coordinate distribution.</span>
-0018 <span class="comment">%</span>
-0019 <span class="comment">% EXAMPLE USAGE:</span>
-0020 <span class="comment">%   Mobj = read_sigma(nlev, dl, du)</span>
-0021 <span class="comment">%</span>
-0022 <span class="comment">% Author(s):</span>
-0023 <span class="comment">%   Geoff Cowles (University of Massachusetts Dartmouth)</span>
-0024 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0015 <span class="comment">%   Mobj:       [optional] Mesh object file</span>
+0016 <span class="comment">%   sigma_file: [optional] File to which to save the sigma distribution.</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% OUTPUT:</span>
+0019 <span class="comment">%   Mobj.sigma:     Hyperbolic tangent vertical sigma coordinate distribution.</span>
+0020 <span class="comment">%   Mobj.sig...     All the sigma layers variables such as siglev, siglevz,</span>
+0021 <span class="comment">%                   siglayz, etc.</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% EXAMPLE USAGE:</span>
+0024 <span class="comment">%   Mobj = read_sigma(nlev, dl, du, Mobj)</span>
 0025 <span class="comment">%</span>
-0026 <span class="comment">% Revision history</span>
-0027 <span class="comment">%   2013-04-23 Added help on the function and reformatted the code.</span>
-0028 
-0029 dist = zeros(1, nlev);
-0030 
-0031 <span class="keyword">for</span> k = 1:nlev-1
-0032     x1 = dl+du;
-0033     x1 = x1*(nlev-1-k)/(nlev-1);
-0034     x1 = x1-dl;
-0035     x1 = tanh(x1);
-0036     x2 = tanh(dl);
-0037     x3 = x2+tanh(du);
-0038     dist(k+1) = (x1+x2)/x3-1.0;
-0039 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0026 <span class="comment">% Author(s):</span>
+0027 <span class="comment">%   Geoff Cowles (University of Massachusetts Dartmouth)</span>
+0028 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0029 <span class="comment">%   Ricardo Torres (Plymouth Marine Laboratory)</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Revision history</span>
+0032 <span class="comment">%   2013-04-23 Added help on the function and reformatted the code.</span>
+0033 <span class="comment">%   2018-09-14 Added option to add the sigma data to a mesh object.</span>
+0034 
+0035 dist = zeros(1, nlev);
+0036 
+0037 <span class="keyword">for</span> k = 1:nlev-1
+0038     x1 = dl+du;
+0039     x1 = x1*(nlev-1-k)/(nlev-1);
+0040     x1 = x1-dl;
+0041     x1 = tanh(x1);
+0042     x2 = tanh(dl);
+0043     x3 = x2+tanh(du);
+0044     dist(k+1) = (x1+x2)/x3-1.0;
+0045 <span class="keyword">end</span>
+0046 <span class="keyword">if</span> nargin &gt;= 4
+0047     conf.nlev = nlev;
+0048     Mobj.sigma = dist;
+0049     Mobj.siglev = zeros(Mobj.nVerts,conf.nlev);
+0050     Mobj.siglevc = zeros(Mobj.nElems,conf.nlev);
+0051     Mobj.siglayc = zeros(Mobj.nElems,conf.nlev-1);
+0052     Mobj.siglev = repmat(Mobj.sigma,Mobj.nVerts,1);
+0053     Mobj.siglay = Mobj.siglev(:,1:end-1) + (diff(Mobj.siglev,1,2)/2);
+0054     <span class="keyword">for</span> zz = 1:conf.nlev-1
+0055         Mobj.siglevc(:, zz) = nodes2elems(Mobj.siglev(:, zz), Mobj);
+0056         Mobj.siglayc(:, zz) = nodes2elems(Mobj.siglay(:, zz), Mobj);
+0057     <span class="keyword">end</span>
+0058     <span class="comment">% An extra level compared with layers.</span>
+0059     Mobj.siglevc(:, zz + 1) = nodes2elems(Mobj.siglev(:, zz + 1), Mobj);
+0060 
+0061     <span class="comment">% Finally, make some [depth, sigma] arrays.</span>
+0062     Mobj.siglevz = repmat(Mobj.h, 1, conf.nlev) .* Mobj.siglev;
+0063     Mobj.siglayz = repmat(Mobj.h, 1, conf.nlev-1) .* Mobj.siglay;
+0064     <span class="keyword">if</span> isfield(Mobj, <span class="string">'hc'</span>)
+0065         Mobj.siglevzc = repmat(Mobj.hc, 1, conf.nlev) .* Mobj.siglevc;
+0066         Mobj.siglayzc= repmat(Mobj.hc, 1, conf.nlev-1) .* Mobj.siglayc;
+0067     <span class="keyword">end</span>
+0068 <span class="keyword">else</span>
+0069     Mobj = dist;
+0070 <span class="keyword">end</span>
+0071 <span class="comment">% generate sigma file</span>
+0072 <span class="comment">% Save to the given file name.</span>
+0073 <span class="keyword">if</span> nargin==5
+0074     fout = fopen(sigma_file, <span class="string">'wt'</span>);
+0075     assert(fout &gt;= 0, <span class="string">'Error opening sigma file: %s'</span>, sigma_file)
+0076     fprintf(fout, <span class="string">'NUMBER OF SIGMA LEVELS = %d\n'</span>, nlev);
+0077     fprintf(fout, <span class="string">'SIGMA COORDINATE TYPE = TANH\n'</span>);
+0078     fprintf(fout, <span class="string">'DU = %4.1f\n'</span>, du);
+0079     fprintf(fout, <span class="string">'DL = %4.1f\n'</span>, dl);
+0080     fprintf(fout,<span class="string">'\n'</span>);
+0081     fclose(fout);
+0082 <span class="keyword">end</span>
+0083</pre></div>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

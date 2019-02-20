@@ -24,7 +24,7 @@
 <div class="box"><strong>Generate the required fields within Mobj for time series elevation</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [Mobj TMD_ConList] = set_elevtide_tmd(Mobj, dates_MJD) </strong></div>
+<div class="box"><strong>function [Mobj TMD_ConList] = set_elevtide_tmd(Mobj, dates_MJD, path_to_tmd) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Generate the required fields within Mobj for time series elevation
@@ -56,7 +56,7 @@ This function is called by:
 0006 <span class="comment">%</span>
 0007 <span class="comment">% Rory O'Hara Murray, 2013-07-01</span>
 0008 <span class="comment">%</span>
-0009 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj TMD_ConList] = set_elevtide_tmd(Mobj, dates_MJD)</a>
+0009 <a name="_sub0" href="#_subfunctions" class="code">function [Mobj TMD_ConList] = set_elevtide_tmd(Mobj, dates_MJD, path_to_tmd)</a>
 0010 
 0011 <span class="comment">%MyTitle = 'Julian FVCOM time series for open boundary from TPXO model using TMD';</span>
 0012 
@@ -86,34 +86,31 @@ This function is called by:
 0036 time_MJD = time - datenum(<span class="string">'1858-11-17 00:00:00'</span>);
 0037 model_file = <span class="string">'DATA\Model_ES2008'</span>;
 0038 current_dir = pwd;
-0039 <span class="comment">%tmp = which('tmd_tide_pred_2.m');</span>
-0040 <span class="comment">%a = strfind(tmp, 'tmd_tide_pred_2.m');</span>
-0041 <span class="comment">%cd(tmp(1:a-1))</span>
-0042 cd([getenv(<span class="string">'Hydro'</span>) <span class="string">'\Software\Matlab\TMD2.03\'</span>])
-0043 [eta, TMD_ConList] = tmd_tide_pred_2(model_file, time, lat, lon, <span class="string">'z'</span>);
-0044 cd(current_dir);
-0045 
-0046 <span class="comment">%%</span>
-0047 figure(<span class="string">'position'</span>, [360   502   879   420])
-0048 <span class="comment">%plot(NCOF_time, NCOF_eta(:,10), '-o', OTPS_time, OTPS_eta(:,10), OTPS_time, NCOF_eta2(:,10), '-')</span>
-0049 t0 = time(1);
-0050 plot(time-t0, eta)
-0051 legend(gca, <span class="string">'TMD (OTIS)'</span>, 4)
-0052 set(gca, <span class="string">'yaxislocation'</span>, <span class="string">'right'</span>)
-0053 xlabel(<span class="string">'Days'</span>)
-0054 ylabel(<span class="string">'Elevation (m)'</span>)
-0055 <span class="comment">%title('September 2011')</span>
+0039 cd(path_to_tmd);
+0040 [eta, TMD_ConList] = tmd_tide_pred_2(model_file, time, lat, lon, <span class="string">'z'</span>);
+0041 cd(current_dir);
+0042 
+0043 <span class="comment">%%</span>
+0044 figure(<span class="string">'position'</span>, [360   502   879   420])
+0045 <span class="comment">%plot(NCOF_time, NCOF_eta(:,10), '-o', OTPS_time, OTPS_eta(:,10), OTPS_time, NCOF_eta2(:,10), '-')</span>
+0046 t0 = time(1);
+0047 plot(time-t0, eta)
+0048 legend(gca, <span class="string">'TMD (OTIS)'</span>, 4)
+0049 set(gca, <span class="string">'yaxislocation'</span>, <span class="string">'right'</span>)
+0050 xlabel(<span class="string">'Days'</span>)
+0051 ylabel(<span class="string">'Elevation (m)'</span>)
+0052 <span class="comment">%title('September 2011')</span>
+0053 
+0054 <span class="comment">%% save file in FVCOM 3 format (netCDF)</span>
+0055 <span class="comment">%write_FVCOM_julian(BNid,time,eta,filename_out_netCDF,MyTitle, 'timeformat', 'SDN')</span>
 0056 
-0057 <span class="comment">%% save file in FVCOM 3 format (netCDF)</span>
-0058 <span class="comment">%write_FVCOM_julian(BNid,time,eta,filename_out_netCDF,MyTitle, 'timeformat', 'SDN')</span>
-0059 
-0060 <span class="comment">%% save time series to the Mobj structure</span>
-0061 Mobj.surfaceElevation = eta';       <span class="comment">% Makes surfaceElevation array with size (boundary nodes, time sereis)</span>
-0062 Mobj.el_time = time_MJD;
-0063 
-0064 <span class="keyword">return</span>
-0065 
-0066</pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0057 <span class="comment">%% save time series to the Mobj structure</span>
+0058 Mobj.surfaceElevation = eta';       <span class="comment">% Makes surfaceElevation array with size (boundary nodes, time sereis)</span>
+0059 Mobj.el_time = time_MJD;
+0060 
+0061 <span class="keyword">return</span>
+0062 
+0063</pre></div>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

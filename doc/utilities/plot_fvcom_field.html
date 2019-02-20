@@ -47,9 +47,38 @@
    [optional] axi          = the axis - specify axis range
    [optional] pll          = the axis
    [optional] grd          = add gridlines - specify colour
+   [optional] tit          = add title - specify text
+   [optional] leg          = add legend - specify text as a cell array
+   [optional] qui          = add quiver vectors - specify a structure with the quiver information in (see examples)
+
 
  EXAMPLE USAGE
-    plot_fvcom_field(Mobj, Mobj.zeta, 'fid', 1, 'cli', [0 100], 'gif', 'animation.gif', 'axi', [60000 70000 40000 50000])
+   plot_fvcom_field(Mobj, Mobj.zeta, 'fid', 1, 'cli', [0 100], 'gif', 'animation.gif', 'axi', [60000 70000 40000 50000])
+   
+   Quiver vecotor example 1 (plot every other depth average velocity vector on unstructured grid):
+   Q.X = PFOW.lonc(1:15:end);
+   Q.Y = PFOW.latc(1:15:end);
+   Q.U = PFOW.ua(1:15:end,:);
+   Q.V = PFOW.va(1:15:end,:);
+   plot_fvcom_field(PFOW, PFOW.ua(:,1:13), 'pll', 'qui', Q)
+
+   Quiver vecotor example 2 (include vecotrs on an interpolated regular grid):
+ Q.x = -4:0.01:-2;
+ Q.y = 58:0.01:59;
+ 
+ [Q.X1, Q.Y1] = meshgrid(Q.x, Q.y);
+ Q.X = Q.X1(:); Q.Y = Q.Y1(:);
+ 
+ Only use data from within the region of interpolation
+ I = PFOW.lonc&gt;Q.x(1) &amp; PFOW.lonc&lt;Q.x(end) &amp; PFOW.latc&gt;Q.y(1) &amp; PFOW.latc&lt;Q.y(end);
+  
+ for tt=1:13
+     Fx = scatteredInterpolant(double(PFOW.lonc(I)), double(PFOW.latc(I)), double(PFOW.ua(I,tt)));
+     Fy = scatteredInterpolant(double(PFOW.lonc(I)), double(PFOW.latc(I)), double(PFOW.va(I,tt)));
+     Q.U(:,tt)  = Fx(Q.X, Q.Y);
+     Q.V(:,tt)  = Fy(Q.X, Q.Y);
+ end
+ plot_fvcom_field(PFOW, PFOW.ua(:,1:13), 'pll', 'qui', Q)
 
  Author(s)
    Rory O'Hara Murray (Marine Scotland Science)
@@ -91,152 +120,199 @@ This function is called by:
 0018 <span class="comment">%   [optional] axi          = the axis - specify axis range</span>
 0019 <span class="comment">%   [optional] pll          = the axis</span>
 0020 <span class="comment">%   [optional] grd          = add gridlines - specify colour</span>
-0021 <span class="comment">%</span>
-0022 <span class="comment">% EXAMPLE USAGE</span>
-0023 <span class="comment">%    plot_fvcom_field(Mobj, Mobj.zeta, 'fid', 1, 'cli', [0 100], 'gif', 'animation.gif', 'axi', [60000 70000 40000 50000])</span>
+0021 <span class="comment">%   [optional] tit          = add title - specify text</span>
+0022 <span class="comment">%   [optional] leg          = add legend - specify text as a cell array</span>
+0023 <span class="comment">%   [optional] qui          = add quiver vectors - specify a structure with the quiver information in (see examples)</span>
 0024 <span class="comment">%</span>
-0025 <span class="comment">% Author(s)</span>
-0026 <span class="comment">%   Rory O'Hara Murray (Marine Scotland Science)</span>
-0027 <span class="comment">%</span>
-0028 <span class="comment">% Developments:</span>
-0029 <span class="comment">% 2014-05-22: Changed the way fig id is checked, not using 'exist' anymore.</span>
-0030 <span class="comment">% 2014-08-15: Added the axis command in</span>
-0031 <span class="comment">%</span>
-0032 <a name="_sub0" href="#_subfunctions" class="code">function [a] = plot_fvcom_field(M, plot_field, varargin)</a>
-0033 MJD_datenum = datenum(<span class="string">'1858-11-17 00:00:00'</span>);
-0034 
-0035 <span class="comment">% check to see if nv or tri should be used.</span>
-0036 <span class="keyword">if</span> isfield(M, <span class="string">'nv'</span>)
-0037     nv = M.nv;
-0038 <span class="keyword">elseif</span> isfield(M, <span class="string">'tri'</span>)
-0039     nv = M.tri;
-0040 <span class="keyword">end</span>
-0041 
-0042 <span class="comment">% check to see if a time variable is there or not</span>
-0043 <span class="keyword">if</span> isfield(M, <span class="string">'time'</span>) <span class="comment">%&amp; size(M.time,1)&gt;1</span>
-0044     time_flag = true;
-0045 <span class="keyword">else</span>
-0046     time_flag = false;
-0047 <span class="keyword">end</span>
-0048 
-0049 <span class="comment">% defaults</span>
-0050 clims = [min(plot_field(:)) max(plot_field(:))];
-0051 <span class="keyword">if</span> clims(1)==clims(2)
-0052     clims(1)=clims(1)-0.1;
-0053     clims(2)=clims(2)+0.1;
-0054 <span class="keyword">end</span>
-0055 gif = false;
-0056 grd = false;
-0057 plot_ll = false;
-0058 fig_flag = false;
-0059 axis_flag = false;
-0060 title_flag = false;
-0061 legend_text_flag = false;
-0062 quiver_flag = false;
+0025 <span class="comment">%</span>
+0026 <span class="comment">% EXAMPLE USAGE</span>
+0027 <span class="comment">%   plot_fvcom_field(Mobj, Mobj.zeta, 'fid', 1, 'cli', [0 100], 'gif', 'animation.gif', 'axi', [60000 70000 40000 50000])</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">%   Quiver vecotor example 1 (plot every other depth average velocity vector on unstructured grid):</span>
+0030 <span class="comment">%   Q.X = PFOW.lonc(1:15:end);</span>
+0031 <span class="comment">%   Q.Y = PFOW.latc(1:15:end);</span>
+0032 <span class="comment">%   Q.U = PFOW.ua(1:15:end,:);</span>
+0033 <span class="comment">%   Q.V = PFOW.va(1:15:end,:);</span>
+0034 <span class="comment">%   plot_fvcom_field(PFOW, PFOW.ua(:,1:13), 'pll', 'qui', Q)</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">%   Quiver vecotor example 2 (include vecotrs on an interpolated regular grid):</span>
+0037 <span class="comment">% Q.x = -4:0.01:-2;</span>
+0038 <span class="comment">% Q.y = 58:0.01:59;</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% [Q.X1, Q.Y1] = meshgrid(Q.x, Q.y);</span>
+0041 <span class="comment">% Q.X = Q.X1(:); Q.Y = Q.Y1(:);</span>
+0042 <span class="comment">%</span>
+0043 <span class="comment">% Only use data from within the region of interpolation</span>
+0044 <span class="comment">% I = PFOW.lonc&gt;Q.x(1) &amp; PFOW.lonc&lt;Q.x(end) &amp; PFOW.latc&gt;Q.y(1) &amp; PFOW.latc&lt;Q.y(end);</span>
+0045 <span class="comment">%</span>
+0046 <span class="comment">% for tt=1:13</span>
+0047 <span class="comment">%     Fx = scatteredInterpolant(double(PFOW.lonc(I)), double(PFOW.latc(I)), double(PFOW.ua(I,tt)));</span>
+0048 <span class="comment">%     Fy = scatteredInterpolant(double(PFOW.lonc(I)), double(PFOW.latc(I)), double(PFOW.va(I,tt)));</span>
+0049 <span class="comment">%     Q.U(:,tt)  = Fx(Q.X, Q.Y);</span>
+0050 <span class="comment">%     Q.V(:,tt)  = Fy(Q.X, Q.Y);</span>
+0051 <span class="comment">% end</span>
+0052 <span class="comment">% plot_fvcom_field(PFOW, PFOW.ua(:,1:13), 'pll', 'qui', Q)</span>
+0053 <span class="comment">%</span>
+0054 <span class="comment">% Author(s)</span>
+0055 <span class="comment">%   Rory O'Hara Murray (Marine Scotland Science)</span>
+0056 <span class="comment">%</span>
+0057 <span class="comment">% Developments:</span>
+0058 <span class="comment">% 2014-05-22: Changed the way fig id is checked, not using 'exist' anymore.</span>
+0059 <span class="comment">% 2014-08-15: Added the axis command in</span>
+0060 <span class="comment">%</span>
+0061 <a name="_sub0" href="#_subfunctions" class="code">function [a] = plot_fvcom_field(M, plot_field, varargin)</a>
+0062 MJD_datenum = datenum(<span class="string">'1858-11-17 00:00:00'</span>);
 0063 
-0064 <span class="keyword">for</span> ii=1:1:length(varargin)
-0065     keyword  = lower(varargin{ii});
-0066     <span class="keyword">if</span> length(keyword)~=3
-0067         <span class="keyword">continue</span>
-0068     <span class="keyword">end</span>
-0069     <span class="keyword">switch</span> keyword
-0070         <span class="keyword">case</span> <span class="string">'fid'</span> <span class="comment">% id of a figure</span>
-0071             fig = varargin{ii+1};
-0072             fig_flag = true;
-0073         <span class="keyword">case</span> <span class="string">'cli'</span> <span class="comment">% colour limits</span>
-0074             clims = varargin{ii+1};
-0075         <span class="keyword">case</span> <span class="string">'gif'</span> <span class="comment">% make an animated gif</span>
-0076             gif = true;
-0077             gif_filename = varargin{ii+1};
-0078         <span class="keyword">case</span> <span class="string">'axi'</span> <span class="comment">% axis</span>
-0079             axis_flag = true;
-0080             axi = varargin{ii+1};
-0081         <span class="keyword">case</span> <span class="string">'grd'</span> <span class="comment">% grid lines</span>
-0082             grd = true;
-0083             edgecolor = varargin{ii+1};
-0084         <span class="keyword">case</span> <span class="string">'pll'</span>
-0085             plot_ll = true;
-0086         <span class="keyword">case</span> <span class="string">'tit'</span>
-0087             title_flag = true;
-0088             fig_title = varargin{ii+1};
-0089         <span class="keyword">case</span> <span class="string">'leg'</span>
-0090             legend_text_flag = true;
-0091             legend_text = varargin{ii+1};
-0092         <span class="keyword">case</span> <span class="string">'qui'</span>
-0093             quiver_flag = true;
-0094             quiverData = varargin{ii+1};
-0095     <span class="keyword">end</span>
-0096 <span class="keyword">end</span>
-0097 
-0098 <span class="keyword">if</span> plot_ll
-0099     x = M.lon;
-0100     y = M.lat;
-0101 <span class="keyword">else</span>
-0102     x = M.x;
-0103     y = M.y;
-0104 <span class="keyword">end</span>
-0105 
-0106 <span class="keyword">if</span> not(axis_flag)
-0107     axi = [min(x) max(x) min(y) max(y)];
-0108 <span class="keyword">end</span>
-0109 
-0110 xE = x(nv)';
-0111 yE = y(nv)';
-0112 plot_field = squeeze(plot_field);
-0113 
-0114 <span class="keyword">if</span> size(plot_field,1)==size(nv,1) <span class="comment">% plot on elements</span>
-0115     <span class="keyword">if</span> grd
-0116         patch_func = @(dummy) patch(xE, yE, dummy', <span class="string">'edgecolor'</span>, edgecolor);
-0117     <span class="keyword">else</span>
-0118         patch_func = @(dummy) patch(xE, yE, dummy', <span class="string">'linestyle'</span>, <span class="string">'none'</span>);
-0119     <span class="keyword">end</span>
-0120 <span class="keyword">elseif</span> size(plot_field,1)==size(x,1) <span class="comment">% plot on nodes</span>
-0121     <span class="keyword">if</span> grd
-0122         patch_func = @(dummy) patch(<span class="string">'Vertices'</span>,[x, y], <span class="string">'Faces'</span>,nv, <span class="string">'Cdata'</span>,dummy,<span class="string">'edgecolor'</span>, edgecolor,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
-0123     <span class="keyword">else</span>
-0124         patch_func = @(dummy) patch(<span class="string">'Vertices'</span>,[x, y], <span class="string">'Faces'</span>,nv, <span class="string">'Cdata'</span>,dummy,<span class="string">'linestyle'</span>,<span class="string">'none'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
-0125     <span class="keyword">end</span>
-0126 <span class="keyword">end</span>
-0127 
-0128 <span class="keyword">if</span> not(fig_flag)
-0129     fig = figure;
-0130 <span class="keyword">end</span>
-0131 
-0132 <span class="keyword">for</span> ii=1:size(plot_field,2)
-0133     <span class="keyword">if</span> ishandle(fig)==0 <span class="keyword">break</span>; <span class="keyword">end</span>
-0134     a = patch_func(plot_field(:,ii));
-0135     c = colorbar;
-0136     <span class="keyword">if</span> legend_text_flag set(get(c, <span class="string">'ylabel'</span>), <span class="string">'string'</span>, legend_text); <span class="keyword">end</span>
-0137     set(gca, <span class="string">'clim'</span>, clims);
-0138     axis(axi)
-0139     <span class="keyword">if</span> title_flag
-0140         title(fig_title)
-0141     <span class="keyword">elseif</span> time_flag
-0142         title([<span class="string">'time = '</span> datestr(double(M.time(ii))+MJD_datenum, <span class="string">'HH:MM dd/mm/yyyy'</span>)])
-0143     <span class="keyword">end</span>
-0144     <span class="keyword">if</span> quiver_flag
-0145         hold on
-0146         quiver(quiverData.X, quiverData.Y, quiverData.U(:,:,ii), quiverData.V(:,:,ii), <span class="string">'k'</span>);
-0147         hold off
-0148     <span class="keyword">end</span>
-0149 
-0150     <span class="keyword">if</span> gif
-0151         axis off
-0152         set(gcf, <span class="string">'color'</span>, <span class="string">'w'</span>)
-0153         frame = getframe(1);
-0154         im = frame2im(frame);
-0155         [imind,cm] = rgb2ind(im,256);
-0156         <span class="keyword">if</span> ii == 1;
-0157             imwrite(imind,cm,gif_filename,<span class="string">'gif'</span>, <span class="string">'Loopcount'</span>,inf);
-0158         <span class="keyword">else</span>
-0159             imwrite(imind,cm,gif_filename,<span class="string">'gif'</span>,<span class="string">'WriteMode'</span>,<span class="string">'append'</span>);
-0160         <span class="keyword">end</span>
-0161     <span class="keyword">else</span>
-0162         pause(0.01);
-0163     <span class="keyword">end</span>
-0164 <span class="keyword">end</span>
-0165 
-0166 <span class="keyword">return</span></pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0064 <span class="comment">% check to see if nv or tri should be used.</span>
+0065 <span class="keyword">if</span> isfield(M, <span class="string">'nv'</span>)
+0066     nv = M.nv;
+0067 <span class="keyword">elseif</span> isfield(M, <span class="string">'tri'</span>)
+0068     nv = M.tri;
+0069 <span class="keyword">end</span>
+0070 
+0071 <span class="comment">% check to see if a time variable is there or not</span>
+0072 <span class="keyword">if</span> isfield(M, <span class="string">'time'</span>) <span class="comment">%&amp; size(M.time,1)&gt;1</span>
+0073     time_flag = true;
+0074 <span class="keyword">else</span>
+0075     time_flag = false;
+0076 <span class="keyword">end</span>
+0077 
+0078 <span class="comment">% defaults</span>
+0079 clims = [min(plot_field(:)) max(plot_field(:))];
+0080 <span class="keyword">if</span> clims(1)==clims(2)
+0081     clims(1)=clims(1)-0.1;
+0082     clims(2)=clims(2)+0.1;
+0083 <span class="keyword">end</span>
+0084 gif = false;
+0085 grd = false;
+0086 plot_ll = false;
+0087 fig_flag = false;
+0088 axis_flag = false;
+0089 title_flag = false;
+0090 legend_text_flag = false;
+0091 quiver_flag = false;
+0092 quiver2_flag = false;
+0093 
+0094 <span class="keyword">for</span> ii=1:1:length(varargin)
+0095     keyword  = lower(varargin{ii});
+0096     <span class="keyword">if</span> length(keyword)~=3
+0097         <span class="keyword">continue</span>
+0098     <span class="keyword">end</span>
+0099     <span class="keyword">switch</span> keyword
+0100         <span class="keyword">case</span> <span class="string">'fid'</span> <span class="comment">% id of a figure</span>
+0101             fig = varargin{ii+1};
+0102             fig_flag = true;
+0103         <span class="keyword">case</span> <span class="string">'cli'</span> <span class="comment">% colour limits</span>
+0104             clims = varargin{ii+1};
+0105         <span class="keyword">case</span> <span class="string">'gif'</span> <span class="comment">% make an animated gif</span>
+0106             gif = true;
+0107             gif_filename = varargin{ii+1};
+0108         <span class="keyword">case</span> <span class="string">'axi'</span> <span class="comment">% axis</span>
+0109             axis_flag = true;
+0110             axi = varargin{ii+1};
+0111         <span class="keyword">case</span> <span class="string">'grd'</span> <span class="comment">% grid lines</span>
+0112             grd = true;
+0113             edgecolor = varargin{ii+1};
+0114         <span class="keyword">case</span> <span class="string">'pll'</span>
+0115             plot_ll = true;
+0116         <span class="keyword">case</span> <span class="string">'tit'</span>
+0117             title_flag = true;
+0118             fig_title = varargin{ii+1};
+0119         <span class="keyword">case</span> <span class="string">'leg'</span>
+0120             legend_text_flag = true;
+0121             legend_text = varargin{ii+1};
+0122         <span class="keyword">case</span> <span class="string">'qui'</span>
+0123             quiver_flag = true;
+0124             quiverData = varargin{ii+1};
+0125             <span class="keyword">if</span> isfield(quiverData,<span class="string">'scale'</span>)==0 quiverData.scale = 1; <span class="keyword">end</span>
+0126             <span class="keyword">if</span> isfield(quiverData,<span class="string">'colour'</span>)==0 quiverData.colour =0.99*[1 1 1]; <span class="keyword">end</span>
+0127 <span class="comment">%         case 'qu2'</span>
+0128 <span class="comment">%             quiver2_flag = true;</span>
+0129 <span class="comment">%             quiverData = varargin{ii+1};</span>
+0130     <span class="keyword">end</span>
+0131 <span class="keyword">end</span>
+0132 
+0133 <span class="keyword">if</span> plot_ll
+0134     x = M.lon;
+0135     y = M.lat;
+0136 <span class="keyword">else</span>
+0137     x = M.x;
+0138     y = M.y;
+0139 <span class="keyword">end</span>
+0140 
+0141 <span class="keyword">if</span> not(axis_flag)
+0142     axi = [min(x) max(x) min(y) max(y)];
+0143 <span class="keyword">end</span>
+0144 
+0145 xE = x(nv)';
+0146 yE = y(nv)';
+0147 plot_field = squeeze(plot_field);
+0148 
+0149 <span class="keyword">if</span> size(plot_field,1)==size(nv,1) <span class="comment">% plot on elements</span>
+0150     <span class="keyword">if</span> grd
+0151         patch_func = @(dummy) patch(xE, yE, dummy', <span class="string">'edgecolor'</span>, edgecolor);
+0152     <span class="keyword">else</span>
+0153         patch_func = @(dummy) patch(xE, yE, dummy', <span class="string">'linestyle'</span>, <span class="string">'none'</span>);
+0154     <span class="keyword">end</span>
+0155 <span class="keyword">elseif</span> size(plot_field,1)==size(x,1) <span class="comment">% plot on nodes</span>
+0156     <span class="keyword">if</span> grd
+0157         patch_func = @(dummy) patch(<span class="string">'Vertices'</span>,[x, y], <span class="string">'Faces'</span>,nv, <span class="string">'Cdata'</span>,dummy,<span class="string">'edgecolor'</span>, edgecolor,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0158     <span class="keyword">else</span>
+0159         patch_func = @(dummy) patch(<span class="string">'Vertices'</span>,[x, y], <span class="string">'Faces'</span>,nv, <span class="string">'Cdata'</span>,dummy,<span class="string">'linestyle'</span>,<span class="string">'none'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0160     <span class="keyword">end</span>
+0161 <span class="keyword">end</span>
+0162 
+0163 <span class="keyword">if</span> fig_flag
+0164     <span class="keyword">if</span> fig.Type(1)==<span class="string">'f'</span>
+0165         the_axes = axes;
+0166     <span class="keyword">elseif</span> fig.Type(1)==<span class="string">'a'</span>
+0167         the_axes = fig;
+0168     <span class="keyword">end</span>
+0169 <span class="keyword">else</span>
+0170     fig = figure;
+0171     the_axes = axes;
+0172 <span class="keyword">end</span>
+0173 axes(the_axes);
+0174 
+0175 <span class="keyword">for</span> ii=1:size(plot_field,2)
+0176     <span class="keyword">if</span> ishandle(fig)==0 <span class="keyword">break</span>; <span class="keyword">end</span>
+0177     a = patch_func(plot_field(:,ii));
+0178     c = colorbar;
+0179     <span class="keyword">if</span> legend_text_flag set(get(c, <span class="string">'ylabel'</span>), <span class="string">'string'</span>, legend_text); <span class="keyword">end</span>
+0180     set(gca, <span class="string">'clim'</span>, clims);
+0181     axis(axi)
+0182     <span class="keyword">if</span> title_flag
+0183         title(fig_title)
+0184     <span class="keyword">elseif</span> time_flag
+0185         title([<span class="string">'time = '</span> datestr(double(M.time(ii))+MJD_datenum, <span class="string">'HH:MM dd/mm/yyyy'</span>)])
+0186     <span class="keyword">end</span>
+0187     <span class="keyword">if</span> quiver_flag
+0188 <span class="comment">%         hold on</span>
+0189 <span class="comment">%         quiver(quiverData.X, quiverData.Y, quiverData.U(:,:,ii), quiverData.V(:,:,ii), 'w');</span>
+0190 <span class="comment">%         hold off</span>
+0191 <span class="comment">%     elseif quiver2_flag</span>
+0192         hold on
+0193         quiver(quiverData.X, quiverData.Y, quiverData.U(:,ii), quiverData.V(:,ii), quiverData.scale, <span class="string">'color'</span>, quiverData.colour)
+0194         hold off
+0195     <span class="keyword">end</span>
+0196 
+0197     <span class="keyword">if</span> gif
+0198         axis off
+0199         set(gcf, <span class="string">'color'</span>, <span class="string">'w'</span>)
+0200         frame = getframe(1);
+0201         im = frame2im(frame);
+0202         [imind,cm] = rgb2ind(im,256);
+0203         <span class="keyword">if</span> ii == 1;
+0204             imwrite(imind,cm,gif_filename,<span class="string">'gif'</span>, <span class="string">'Loopcount'</span>,inf);
+0205         <span class="keyword">else</span>
+0206             imwrite(imind,cm,gif_filename,<span class="string">'gif'</span>,<span class="string">'WriteMode'</span>,<span class="string">'append'</span>);
+0207         <span class="keyword">end</span>
+0208     <span class="keyword">else</span>
+0209         pause(0.01);
+0210     <span class="keyword">end</span>
+0211 <span class="keyword">end</span>
+0212 
+0213 <span class="keyword">return</span></pre></div>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

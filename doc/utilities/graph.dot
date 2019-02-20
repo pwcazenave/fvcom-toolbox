@@ -45,6 +45,7 @@ digraph m2html {
   show_sigma -> sigma_gen;
   transect_nodes_screen -> ginput2;
 
+  ComputeMatrixRx1_nodes [URL="ComputeMatrixRx1_nodes.html"];
   ST_Dstar [URL="ST_Dstar.html"];
   ST_d2phi [URL="ST_d2phi.html"];
   ST_erate [URL="ST_erate.html"];
@@ -57,12 +58,14 @@ digraph m2html {
   SW_Density [URL="SW_Density.html"];
   SW_Kviscosity [URL="SW_Kviscosity.html"];
   SW_Viscosity [URL="SW_Viscosity.html"];
+  Times2Datetime [URL="Times2Datetime.html"];
   Times2Matlab [URL="Times2Matlab.html"];
   calc_rad [URL="calc_rad.html"];
   calc_scoord [URL="calc_scoord.html"];
   catstruct [URL="catstruct.html"];
   centroid [URL="centroid.html"];
   check_wset [URL="check_wset.html"];
+  concat_by_struct [URL="concat_by_struct.html"];
   connectivity [URL="connectivity.html"];
   deg2utm [URL="deg2utm.html"];
   densatp [URL="densatp.html"];
@@ -110,6 +113,7 @@ digraph m2html {
   pressure2depth [URL="pressure2depth.html"];
   qair2rh [URL="qair2rh.html"];
   quiverwcolorbar [URL="quiverwcolorbar.html"];
+  read_FVCOM_river_file [URL="read_FVCOM_river_file.html"];
   read_fvcom_mesh [URL="read_fvcom_mesh.html"];
   read_kml [URL="read_kml.html"];
   read_netCDF_FVCOM [URL="read_netCDF_FVCOM.html"];
@@ -119,6 +123,7 @@ digraph m2html {
   read_scoord_params [URL="read_scoord_params.html"];
   readdir [URL="readdir.html"];
   readzetUBVB [URL="readzetUBVB.html"];
+  restrict_spatial_indices [URL="restrict_spatial_indices.html"];
   runmean [URL="runmean.html"];
   show_sigma [URL="show_sigma.html"];
   sigma_gen [URL="sigma_gen.html"];

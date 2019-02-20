@@ -217,12 +217,12 @@ This function is called by:
 0109 <span class="comment">% Add the thicknesses with a loop.</span>
 0110 fprintf(fout, <span class="string">'ZKU = '</span>);
 0111 <span class="keyword">for</span> ii = 1:length(ZKU)
-0112     fprintf(fout, <span class="string">'%4.1f'</span>, ZKU(ii));
+0112     fprintf(fout, <span class="string">'%4.1f '</span>, ZKU(ii));
 0113 <span class="keyword">end</span>
 0114 fprintf(fout, <span class="string">'\n'</span>);
 0115 fprintf(fout, <span class="string">'ZKL = '</span>);
 0116 <span class="keyword">for</span> ii = 1:length(ZKL)
-0117     fprintf(fout, <span class="string">'%4.1f'</span>, ZKL(ii));
+0117     fprintf(fout, <span class="string">'%4.1f '</span>, ZKL(ii));
 0118 <span class="keyword">end</span>
 0119 fprintf(fout,<span class="string">'\n'</span>);
 0120 fclose(fout);
@@ -263,7 +263,7 @@ This function is called by:
 0155 Mobj.siglayz = repmat(Mobj.h, 1, nlev-1) .* Mobj.siglay;
 0156 Mobj.siglevzc = repmat(Mobj.hc, 1, nlev) .* Mobj.siglevc;
 0157 Mobj.siglayzc = repmat(Mobj.hc, 1, nlev-1) .* Mobj.siglayc;
-0158 
+0158 Mobj.Hmin = Hmin;
 0159 <span class="keyword">if</span> ftbverbose
 0160     fprintf(<span class="string">'done.\n'</span>)
 0161     fprintf(<span class="string">'end   : %s\n'</span>, subname)
@@ -377,6 +377,6 @@ This function is called by:
 0269 plot(y,ones(size(y)).*-Hmin)
 0270 fprintf(<span class="string">'Calculated minimum depth: %.2f\n'</span>, Hmin)
 0271</pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
