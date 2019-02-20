@@ -77,7 +77,7 @@ global ftbverbose
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
-NNuts=length(ERSEMdata)
+NNuts=length(ERSEMdata);
 % Default to string times as FVCOM looks for these first.
 strtime = true;
 inttime = false;
