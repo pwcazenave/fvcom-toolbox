@@ -93,7 +93,7 @@ quiver2_flag = false;
 
 for ii=1:1:length(varargin)
     keyword  = lower(varargin{ii});
-    if length(keyword)~=3
+    if length(keyword)~=3 || not(isstr(keyword))
         continue
     end
     switch keyword
