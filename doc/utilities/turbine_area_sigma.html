@@ -24,22 +24,27 @@
 <div class="box"><strong>Calculate the fraction of the rotor swept area is occupying each sigma layer</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig) </strong></div>
+<div class="box"><strong>function sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig, subplot_info) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Calculate the fraction of the rotor swept area is occupying each sigma layer
 
  Example Usage:
 
- sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig)
+ sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig, subplot_info)
 
  Input Parameters:     H  - mean sea level (m)
                        Ht - height of turbine hub above seabed (m)
                        r  - turbine rotor radius (m)
                        sigLay - number of sigma layers (not levels) in the model
-                       plot_fig - flag to plot a figure (optional)
+                       plot_fig - optional; flag to plot a figure
+                       subplot_info - optional; if present should be an
+                       array containing the three parameters to subplot
+                       that should be used to put the figure into a
+                       subplot.
 
- Rory O'Hara Murray, 19-Nov-2014</pre></div>
+ Rory O'Hara Murray, 19-Nov-2014
+ Simon Waldman, 2016.</pre></div>
 
 <!-- crossreference -->
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -58,120 +63,130 @@ This function is called by:
 0002 <span class="comment">%</span>
 0003 <span class="comment">% Example Usage:</span>
 0004 <span class="comment">%</span>
-0005 <span class="comment">% sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig)</span>
+0005 <span class="comment">% sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig, subplot_info)</span>
 0006 <span class="comment">%</span>
 0007 <span class="comment">% Input Parameters:     H  - mean sea level (m)</span>
 0008 <span class="comment">%                       Ht - height of turbine hub above seabed (m)</span>
 0009 <span class="comment">%                       r  - turbine rotor radius (m)</span>
 0010 <span class="comment">%                       sigLay - number of sigma layers (not levels) in the model</span>
-0011 <span class="comment">%                       plot_fig - flag to plot a figure (optional)</span>
-0012 <span class="comment">%</span>
-0013 <span class="comment">% Rory O'Hara Murray, 19-Nov-2014</span>
-0014 <span class="comment">%</span>
-0015 <a name="_sub0" href="#_subfunctions" class="code">function sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig)</a>
-0016 
-0017 assert(nargin &gt;= 4, <span class="string">'Not enough arguments.'</span>);
-0018 assert(isnumeric(sigLay) &amp;&amp; sigLay - fix(sigLay) &lt; eps, <span class="string">'sigLay (4th parameter) must be an integer number of sigma layers.'</span>);
-0019 
-0020 <span class="keyword">if</span> nargin&lt;5
-0021     plot_fig = false;
-0022 <span class="keyword">end</span>
-0023 
-0024 <span class="comment">% Turbine and sigma layer parameters</span>
-0025 elev  = 0; <span class="comment">% water elevation above/below MSL - change this to see how the sigma layer occupation fraction changes with the tide</span>
-0026 depth = H + elev;
-0027 
-0028 dT = depth - Ht; <span class="comment">% turbine hub depth</span>
-0029 
-0030 assert(dT&gt;r, <span class="string">'Turbine will stick out of water'</span>);
-0031 
-0032 dLay = depth./sigLay;
-0033 zLev = [0:-dLay:-depth]';
-0034 
-0035 <span class="comment">% what sigma layer is the hub in?</span>
-0036 drsl = zLev+dT; <span class="comment">% depth of hub relative to each sigma level</span>
-0037 hub_sigma = sum(drsl&gt;=0);
-0038 
-0039 <span class="comment">%% draw sigma levels / layers</span>
-0040 <span class="keyword">if</span> plot_fig
-0041     figure
-0042     plot([-r r], zLev*[1 1])
-0043     xlabel(<span class="string">'Distance (m)'</span>)
-0044     ylabel(<span class="string">'Depth (m)'</span>)
-0045     title([num2str(depth, <span class="string">'%2.0f'</span>) <span class="string">' m water depth'</span>])
-0046     
-0047     <span class="comment">% draw rotor area</span>
-0048     a=0;
-0049     b=-dT;
-0050     ang = 0:pi/20:2*pi;
-0051     x=r*cos(ang);
-0052     y=r*sin(ang);
-0053     hold on
-0054     plot(a+x,b+y, a, b, <span class="string">'o'</span>)
-0055 <span class="keyword">end</span>
-0056 <span class="comment">%% what fraction of the rotor area is in each sigma layer?</span>
-0057 
-0058 <span class="comment">% loop trough all segments below the hub</span>
-0059 dBot=-drsl(-drsl&gt;=0);<span class="comment">% the minimum of this array is hub height above a sigma level</span>
-0060 numBot=sum(dBot&lt;=r);
-0061 segmentsBotCum = [];
-0062 <span class="keyword">for</span> ii=1:numBot
-0063     phi = acos(dBot(ii)/r);
-0064     sector = phi*r*r;
-0065     triBot(ii) = r*sin(phi)*dBot(ii);
-0066     segmentsBotCum(ii) = sector-triBot(ii);
-0067 <span class="keyword">end</span>
-0068 
-0069 <span class="comment">% loop through all the segments above the hub</span>
-0070 dTop=flip(drsl(drsl&gt;=0));
-0071 numTop=sum(dTop&lt;=r);
-0072 segmentsTopCum = [];
-0073 <span class="keyword">for</span> ii=1:numTop
-0074     phi = acos(dTop(ii)/r);
-0075     sector = phi*r*r;
-0076     triTop(ii) = r*sin(phi)*dTop(ii);
-0077     segmentsTopCum(ii) = sector-triTop(ii);
-0078 <span class="keyword">end</span>
-0079 
-0080 
-0081 segmentsTopCum2 = flip(segmentsTopCum);
-0082 segmentsTop = segmentsTopCum2-[0 segmentsTopCum2(1:end-1)];
-0083 segmentsBot = segmentsBotCum-[segmentsBotCum(2:end) 0];
-0084 
-0085 <span class="comment">% check that there are segments below/above hub, i.e. whether the rotors</span>
-0086 <span class="comment">% actually span multiple sigma layers</span>
-0087 <span class="comment">% sig_cent is area of the rotors in the layer the hub is in</span>
-0088 <span class="keyword">if</span> numTop&gt;0 &amp; numBot&gt;0
-0089     sigCent = pi*r*r-segmentsTopCum(1)-segmentsBotCum(1);   
-0090 <span class="keyword">elseif</span> numTop==0 &amp; numBot&gt;0
-0091     sigCent = pi*r*r-segmentsBotCum(1);
-0092 <span class="keyword">elseif</span> numTop&gt;0 &amp; numBot==0
-0093     sigCent = pi*r*r-segmentsTopCum(1);
-0094 <span class="keyword">elseif</span> numTop==0 &amp; numBot==0 <span class="comment">% entire rotor is confined to one sigma layer</span>
-0095     sigCent = pi*r*r;   
-0096 <span class="keyword">end</span>
-0097     
-0098 <span class="comment">% if sigCent is zero then the hub must exactely co-inside with a sigma</span>
-0099 <span class="comment">% level (unusual...) check it's larger than a very small area (or zero)</span>
-0100 <span class="keyword">if</span> sigCent&gt;0
-0101     <span class="comment">% if hub co-insides exactely with a sigma level</span>
-0102     segments = [segmentsTop sigCent segmentsBot];
-0103     segments_frac = segments./(pi*r*r);
-0104     sig_span = hub_sigma + [-length(segmentsTop) length(segmentsBot)];
-0105     numSigma = numTop+numBot+1; <span class="comment">% total number of occupied sigma layers</span>
-0106 <span class="keyword">else</span>
-0107     segments = [segmentsTop segmentsBot];
-0108     segments_frac = segments./(pi*r*r);
-0109     sig_span = hub_sigma + [-length(segmentsTop) length(segmentsBot)-1];
-0110     numSigma = numTop+numBot; <span class="comment">% total number of occupied sigma layers</span>
-0111 <span class="keyword">end</span>
-0112 
-0113 <span class="comment">% work out the fraction of the turbine area in each sigma layer</span>
-0114 sigma_frac = zeros(1,sigLay);
-0115 sigma_frac(sig_span(1):sig_span(2)) = segments_frac;
-0116 
-0117 total_frac = sum(sigma_frac);
-0118</pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0011 <span class="comment">%                       plot_fig - optional; flag to plot a figure</span>
+0012 <span class="comment">%                       subplot_info - optional; if present should be an</span>
+0013 <span class="comment">%                       array containing the three parameters to subplot</span>
+0014 <span class="comment">%                       that should be used to put the figure into a</span>
+0015 <span class="comment">%                       subplot.</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% Rory O'Hara Murray, 19-Nov-2014</span>
+0018 <span class="comment">% Simon Waldman, 2016.</span>
+0019 <span class="comment">%</span>
+0020 <a name="_sub0" href="#_subfunctions" class="code">function sigma_frac = turbine_area_sigma(H, Ht, r, sigLay, plot_fig, subplot_info)</a>
+0021 
+0022 assert(nargin &gt;= 4, <span class="string">'Not enough arguments.'</span>);
+0023 assert(isnumeric(sigLay) &amp;&amp; sigLay - fix(sigLay) &lt; eps, <span class="string">'sigLay (4th parameter) must be an integer number of sigma layers.'</span>);
+0024 
+0025 <span class="keyword">if</span> nargin&lt;5
+0026     plot_fig = false;
+0027 <span class="keyword">end</span>
+0028 <span class="keyword">if</span> nargin&lt;6
+0029     splot = false;
+0030 <span class="keyword">else</span>
+0031     splot = true;
+0032 <span class="keyword">end</span>
+0033 
+0034 dT = H - Ht; <span class="comment">% turbine hub depth</span>
+0035 
+0036 assert(dT&gt;r, <span class="string">'Turbine will stick out of water'</span>);
+0037 
+0038 dLay = H./sigLay;
+0039 zLev = [0:-dLay:-H]';
+0040 
+0041 <span class="comment">% what sigma layer is the hub in?</span>
+0042 drsl = zLev+dT; <span class="comment">% depth of hub relative to each sigma level</span>
+0043 hub_sigma = sum(drsl&gt;=0);
+0044 
+0045 <span class="comment">%% draw sigma levels / layers</span>
+0046 <span class="keyword">if</span> plot_fig
+0047     <span class="keyword">if</span> splot
+0048         subplot( subplot_info(1), subplot_info(2), subplot_info(3) )
+0049     <span class="keyword">else</span>
+0050         figure
+0051     <span class="keyword">end</span>
+0052     plot([-r r], zLev*[1 1])
+0053     xlabel(<span class="string">'Distance (m)'</span>)
+0054     ylabel(<span class="string">'Depth (m)'</span>)
+0055     title([num2str(H, <span class="string">'%2.0f'</span>) <span class="string">' m water depth'</span>])
+0056     
+0057     <span class="comment">% draw rotor area</span>
+0058     a=0;
+0059     b=-dT;
+0060     ang = 0:pi/20:2*pi;
+0061     x=r*cos(ang);
+0062     y=r*sin(ang);
+0063     hold on
+0064     plot(a+x,b+y, a, b, <span class="string">'o'</span>)
+0065 <span class="keyword">end</span>
+0066 <span class="comment">%% what fraction of the rotor area is in each sigma layer?</span>
+0067 
+0068 <span class="comment">% loop trough all segments below the hub</span>
+0069 dBot=-drsl(-drsl&gt;=0);<span class="comment">% the minimum of this array is hub height above a sigma level</span>
+0070 numBot=sum(dBot&lt;=r);
+0071 segmentsBotCum = [];
+0072 <span class="keyword">for</span> ii=1:numBot
+0073     phi = acos(dBot(ii)/r);
+0074     sector = phi*r*r;
+0075     triBot(ii) = r*sin(phi)*dBot(ii);
+0076     segmentsBotCum(ii) = sector-triBot(ii);
+0077 <span class="keyword">end</span>
+0078 
+0079 <span class="comment">% loop through all the segments above the hub</span>
+0080 dTop=flip(drsl(drsl&gt;=0));
+0081 numTop=sum(dTop&lt;=r);
+0082 segmentsTopCum = [];
+0083 <span class="keyword">for</span> ii=1:numTop
+0084     phi = acos(dTop(ii)/r);
+0085     sector = phi*r*r;
+0086     triTop(ii) = r*sin(phi)*dTop(ii);
+0087     segmentsTopCum(ii) = sector-triTop(ii);
+0088 <span class="keyword">end</span>
+0089 
+0090 
+0091 segmentsTopCum2 = flip(segmentsTopCum);
+0092 segmentsTop = segmentsTopCum2-[0 segmentsTopCum2(1:end-1)];
+0093 segmentsBot = segmentsBotCum-[segmentsBotCum(2:end) 0];
+0094 
+0095 <span class="comment">% check that there are segments below/above hub, i.e. whether the rotors</span>
+0096 <span class="comment">% actually span multiple sigma layers</span>
+0097 <span class="comment">% sig_cent is area of the rotors in the layer the hub is in</span>
+0098 <span class="keyword">if</span> numTop&gt;0 &amp; numBot&gt;0
+0099     sigCent = pi*r*r-segmentsTopCum(1)-segmentsBotCum(1);   
+0100 <span class="keyword">elseif</span> numTop==0 &amp; numBot&gt;0
+0101     sigCent = pi*r*r-segmentsBotCum(1);
+0102 <span class="keyword">elseif</span> numTop&gt;0 &amp; numBot==0
+0103     sigCent = pi*r*r-segmentsTopCum(1);
+0104 <span class="keyword">elseif</span> numTop==0 &amp; numBot==0 <span class="comment">% entire rotor is confined to one sigma layer</span>
+0105     sigCent = pi*r*r;   
+0106 <span class="keyword">end</span>
+0107     
+0108 <span class="comment">% if sigCent is zero then the hub must exactely co-inside with a sigma</span>
+0109 <span class="comment">% level (unusual...) check it's larger than a very small area (or zero)</span>
+0110 <span class="keyword">if</span> sigCent&gt;0
+0111     <span class="comment">% if hub co-insides exactely with a sigma level</span>
+0112     segments = [segmentsTop sigCent segmentsBot];
+0113     segments_frac = segments./(pi*r*r);
+0114     sig_span = hub_sigma + [-length(segmentsTop) length(segmentsBot)];
+0115     numSigma = numTop+numBot+1; <span class="comment">% total number of occupied sigma layers</span>
+0116 <span class="keyword">else</span>
+0117     segments = [segmentsTop segmentsBot];
+0118     segments_frac = segments./(pi*r*r);
+0119     sig_span = hub_sigma + [-length(segmentsTop) length(segmentsBot)-1];
+0120     numSigma = numTop+numBot; <span class="comment">% total number of occupied sigma layers</span>
+0121 <span class="keyword">end</span>
+0122 
+0123 <span class="comment">% work out the fraction of the turbine area in each sigma layer</span>
+0124 sigma_frac = zeros(1,sigLay);
+0125 sigma_frac(sig_span(1):sig_span(2)) = segments_frac;
+0126 
+0127 total_frac = sum(sigma_frac);
+0128</pre></div>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

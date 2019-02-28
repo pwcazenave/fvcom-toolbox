@@ -1,5 +1,79 @@
 Pierre Cazenave <pica@pml.ac.uk> fvcom-toolbox ChangeLog
 
+20190220
+--------
+
+Minor update.
+
+Thanks to Ricardo Torres and Simon Waldman for their contributions.
+
+README.md
+    Updated with the current release details.
+
+doc:
+    Updated for the latest release.
+
+fvcom_postproc:
+    do_surface_plotMatlabMap
+        * Cosmetic changes to the plot.
+    show_max_CFL
+        * New function to compute the CFL number for a given grid.
+
+fvcom_prepro:
+    add_obc_node_list
+        * Fix checks for invalid open boundaries.
+    add_sponge_nodes_list
+        * Code cleanup.
+    add_weights_FVCOM_nested_forcing
+        * Fix shape of the weights for the nodes.
+    change_shallow_bathy
+        * New function to adjust bathymetry in the grid.
+    find_nesting_region
+        * Code cleanup.
+    hybrid_coordinate
+        * Fix output format for the sigma file.
+    interp_POLCOMS2FVCOM
+        * Merge the v1 version of this and remove the duplicate.
+    make_default_nml
+        * Tweak the default number format for bed roughness.
+    read_fabm_variables
+        * Code cleanup.
+    read_sigma
+        * Add complete support for generalised and hyperbolic tangent sigma distributions.
+    read_sms_mesh
+        * Allow a given depth file to override values in the .2dm.
+    set_elevtide_tmd
+        * Add argument for the location of the TMD data.
+    write_FVCOM_river_nml
+        * Add argument to supply a vertical distribution as fractional depths (0-1).
+    write_FVCOM_tsobcERSEM
+        * Code cleanup.
+
+utilities:
+    ComputeMatricRx1_nodes
+        * New function to calculate the hydrostatic consistency condition.
+    Times2Datetime
+        * New function to convert FVCOM 'Times' to MATLAB datetime objects.
+    concat_by_struct
+        * New function to concatenate data contained within a structure.
+    mjul2str
+        * Make the input always be a double.
+    plot_fvcom_field
+        * Add quiver plotting option.
+    read_FVCOM_river_file
+        * New function to read in FVCOM river files.
+    read_netCDF_FVCOM
+        * Fix loading data with only a single time stamp.
+    restrict_spatial_indices
+        * New function to eliminate nodes and elements for some given mask.
+    sigma_gen
+        * Add comment about potential bug (not yet fully investigated).
+    sigma_tanh
+        * Add option to return the sigma data into the supplied mesh object.
+    tubine_area_sigma
+        * Add option to plot into subplots.
+
+
 20180201
 --------
 

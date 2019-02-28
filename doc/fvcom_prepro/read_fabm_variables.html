@@ -121,7 +121,7 @@ This function is called by:
 0046 <span class="comment">% read ersem variables in donor restart file</span>
 0047 info_donor=ncinfo(conf.restart_file);
 0048 <span class="keyword">else</span>
-0049     warning([<span class="string">'File '</span>,conf.restart_file,<span class="string">' Not found. Returning'</span>])
+0049     warning(<span class="string">'File %s not found. Returning'</span>, conf.restart_file)
 0050     <span class="keyword">return</span>
 0051 <span class="keyword">end</span>
 0052 <span class="comment">% Generally the last fvcom variable although this could change with a</span>
@@ -145,6 +145,6 @@ This function is called by:
 0070 <span class="keyword">end</span>
 0071 
 0072 <span class="keyword">return</span></pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

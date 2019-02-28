@@ -150,90 +150,89 @@ This function is called by:
 0076     <span class="keyword">if</span> isfield (plotOPTS,<span class="string">'PlotoutS'</span>) &amp;&amp; ~isempty(plotOPTS.PlotoutS(plotOPTS.figure).handles)
 0077     <span class="keyword">else</span>
 0078 <span class="comment">%     coast=load(plotOPTS.coastline_file);</span>
-0079     geoshow(plotOPTS.coastline_file,<span class="string">'Color'</span>,<span class="string">'black'</span>)
-0080         
-0081     <span class="keyword">end</span>
-0082 
-0083 <span class="keyword">end</span>
-0084 <span class="comment">%------------------------------------------------------------------------------</span>
-0085 <span class="comment">% Generate maps at a give level</span>
-0086 <span class="comment">%------------------------------------------------------------------------------</span>
-0087     mstruct = gcm;
+0079 geoshow(plotOPTS.coastline_file,<span class="string">'Facecolor'</span>,[0.7 .7 .7])        
+0080     <span class="keyword">end</span>
+0081 
+0082 <span class="keyword">end</span>
+0083 <span class="comment">%------------------------------------------------------------------------------</span>
+0084 <span class="comment">% Generate maps at a give level</span>
+0085 <span class="comment">%------------------------------------------------------------------------------</span>
+0086     mstruct = gcm;
+0087 
 0088 
-0089 
-0090 [X, Y] = mfwdtran(mstruct,plotOPTS.mesh.lat, plotOPTS.mesh.lon);
-0091 
-0092  aa=plotOPTS.Time_record;
-0093     fprintf(<span class="string">'Time step %i of %i\n'</span>,aa,length(FVCOM.Time_record));
-0094     <span class="comment">%plot map</span>
-0095     hold on
-0096     ND=ndims(FVCOM.(plotOPTS.var_plot))
-0097     <span class="keyword">switch</span> ND
-0098         <span class="keyword">case</span> 2
-0099                 Plots(plotOPTS.figure).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
-0100         <span class="string">'Cdata'</span>,squeeze(FVCOM.(plotOPTS.var_plot)(:,aa)),<span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
-0101 
-0102         <span class="keyword">case</span> 3
-0103     Plots(plotOPTS.figure).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
-0104         <span class="string">'Cdata'</span>,squeeze(FVCOM.(plotOPTS.var_plot)(:,plotOPTS.nz_plot,aa)),<span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
-0105     <span class="keyword">end</span>
-0106     caxis(plotOPTS.clims)
-0107     colorbar h
-0108     <span class="comment">% check if mesh elements are required</span>
-0109     <span class="keyword">if</span> plotOPTS.do_mesh
-0110         <span class="comment">%plot vertices</span>
-0111         Plots(plotOPTS.figure).mesh=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
-0112             <span class="string">'EdgeColor'</span>,[0.6 0.6 0.6],<span class="string">'FaceColor'</span>,<span class="string">'none'</span>);hold on
-0113 
-0114     <span class="keyword">end</span>
-0115 <span class="comment">%      setm(gca,'MapLatLimit',plotOPTS.range_lat,'MapLonLimit',[plotOPTS.range_lon])</span>
-0116      tightmap
-0117     <span class="comment">%-----------------------------------------------------------------------</span>
-0118     <span class="comment">% Only in my case it needs adding 6 because proj automatically determines a</span>
-0119     <span class="comment">% reference long in strides of 6deg while m_map doesn't</span>
-0120     <span class="comment">%------------------------------------------------------------------------</span>
-0121     pause(plotOPTS.pause)
-0122 <span class="comment">%     if aa~=length(plotOPTS.Time_record)</span>
-0123 <span class="comment">%         delete(Plots(plotOPTS.figure).handles(:))</span>
-0124 <span class="comment">%     end</span>
-0125 
-0126 <span class="comment">%  end</span>
-0127 
+0089 [X, Y] = mfwdtran(mstruct,plotOPTS.mesh.lat, plotOPTS.mesh.lon);
+0090 
+0091  aa=plotOPTS.Time_record;
+0092     fprintf(<span class="string">'Time step %i of %i\n'</span>,aa,length(FVCOM.Time_record));
+0093     <span class="comment">%plot map</span>
+0094     hold on
+0095     ND=ndims(FVCOM.(plotOPTS.var_plot))
+0096     <span class="keyword">switch</span> ND
+0097         <span class="keyword">case</span> 2
+0098                 Plots(plotOPTS.figure).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0099         <span class="string">'Cdata'</span>,squeeze(FVCOM.(plotOPTS.var_plot)(:,aa)),<span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0100 
+0101         <span class="keyword">case</span> 3
+0102     Plots(plotOPTS.figure).handles=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0103         <span class="string">'Cdata'</span>,squeeze(FVCOM.(plotOPTS.var_plot)(:,plotOPTS.nz_plot,aa)),<span class="string">'edgecolor'</span>,<span class="string">'interp'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
+0104     <span class="keyword">end</span>
+0105     caxis(plotOPTS.clims)
+0106     colorbar(<span class="string">'peer'</span>,gca,<span class="string">'EastOutside'</span>)
+0107     <span class="comment">% check if mesh elements are required</span>
+0108     <span class="keyword">if</span> plotOPTS.do_mesh
+0109         <span class="comment">%plot vertices</span>
+0110         Plots(plotOPTS.figure).mesh=patch(<span class="string">'Vertices'</span>,[X,Y],<span class="string">'Faces'</span>,plotOPTS.mesh.tri,<span class="keyword">...</span>
+0111             <span class="string">'EdgeColor'</span>,[0.6 0.6 0.6],<span class="string">'FaceColor'</span>,<span class="string">'none'</span>);hold on
+0112 
+0113     <span class="keyword">end</span>
+0114 <span class="comment">%      setm(gca,'MapLatLimit',plotOPTS.range_lat,'MapLonLimit',[plotOPTS.range_lon])</span>
+0115      tightmap
+0116     <span class="comment">%-----------------------------------------------------------------------</span>
+0117     <span class="comment">% Only in my case it needs adding 6 because proj automatically determines a</span>
+0118     <span class="comment">% reference long in strides of 6deg while m_map doesn't</span>
+0119     <span class="comment">%------------------------------------------------------------------------</span>
+0120     pause(plotOPTS.pause)
+0121 <span class="comment">%     if aa~=length(plotOPTS.Time_record)</span>
+0122 <span class="comment">%         delete(Plots(plotOPTS.figure).handles(:))</span>
+0123 <span class="comment">%     end</span>
+0124 
+0125 <span class="comment">%  end</span>
+0126 
+0127  
 0128  
 0129  
 0130  
 0131  
 0132  
-0133  
-0134 <span class="comment">%  fprintf('Time step %i of %i\n',aa,length(plotOPTS.Time_record));</span>
-0135 <span class="comment">%     %plot map</span>
-0136 <span class="comment">%     hold on</span>
-0137 <span class="comment">%     Plots(plotOPTS.figure).handles=patch('Vertices',[lat,lon],'Faces',plotOPTS.mesh.tri,...</span>
-0138 <span class="comment">%         'Cdata',squeeze(FVCOM.(plotOPTS.var_plot)(:,plotOPTS.nz_plot,aa)),'edgecolor','interp','facecolor','interp');</span>
-0139 <span class="comment">%</span>
-0140 <span class="comment">%     caxis(plotOPTS.clims)</span>
-0141 <span class="comment">%     colorbar</span>
-0142 <span class="comment">%     % check if mesh elements are required</span>
-0143 <span class="comment">%     if plotOPTS.do_mesh</span>
-0144 <span class="comment">%         %plot vertices</span>
-0145 <span class="comment">%         Plots(plotOPTS.figure).mesh=patch('Vertices',[lon,lat],'Faces',plotOPTS.mesh.tri,...</span>
-0146 <span class="comment">%             'EdgeColor',[0.6 0.6 0.6],'FaceColor','none');hold on</span>
-0147 <span class="comment">%</span>
-0148 <span class="comment">%     end</span>
-0149 <span class="comment">%     setm(gca,'MapLatLimit',plotOPTS.range_lat,'MapLonLimit',[plotOPTS.range_lon])</span>
-0150 <span class="comment">%     %-----------------------------------------------------------------------</span>
-0151 <span class="comment">%     % Only in my case it needs adding 6 because proj automatically determines a</span>
-0152 <span class="comment">%     % reference long in strides of 6deg while m_map doesn't</span>
-0153 <span class="comment">%     %------------------------------------------------------------------------</span>
-0154 <span class="comment">%     pause(.2)</span>
-0155 <span class="comment">%     if aa~=length(plotOPTS.Time_record)</span>
-0156 <span class="comment">%         delete(Plots(plotOPTS.figure).handles(:))</span>
-0157 <span class="comment">%     end</span>
-0158 <span class="comment">%</span>
-0159 <span class="comment">% end</span>
-0160 <span class="comment">%</span>
-0161 <span class="keyword">return</span>
-0162</pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0133 <span class="comment">%  fprintf('Time step %i of %i\n',aa,length(plotOPTS.Time_record));</span>
+0134 <span class="comment">%     %plot map</span>
+0135 <span class="comment">%     hold on</span>
+0136 <span class="comment">%     Plots(plotOPTS.figure).handles=patch('Vertices',[lat,lon],'Faces',plotOPTS.mesh.tri,...</span>
+0137 <span class="comment">%         'Cdata',squeeze(FVCOM.(plotOPTS.var_plot)(:,plotOPTS.nz_plot,aa)),'edgecolor','interp','facecolor','interp');</span>
+0138 <span class="comment">%</span>
+0139 <span class="comment">%     caxis(plotOPTS.clims)</span>
+0140 <span class="comment">%     colorbar</span>
+0141 <span class="comment">%     % check if mesh elements are required</span>
+0142 <span class="comment">%     if plotOPTS.do_mesh</span>
+0143 <span class="comment">%         %plot vertices</span>
+0144 <span class="comment">%         Plots(plotOPTS.figure).mesh=patch('Vertices',[lon,lat],'Faces',plotOPTS.mesh.tri,...</span>
+0145 <span class="comment">%             'EdgeColor',[0.6 0.6 0.6],'FaceColor','none');hold on</span>
+0146 <span class="comment">%</span>
+0147 <span class="comment">%     end</span>
+0148 <span class="comment">%     setm(gca,'MapLatLimit',plotOPTS.range_lat,'MapLonLimit',[plotOPTS.range_lon])</span>
+0149 <span class="comment">%     %-----------------------------------------------------------------------</span>
+0150 <span class="comment">%     % Only in my case it needs adding 6 because proj automatically determines a</span>
+0151 <span class="comment">%     % reference long in strides of 6deg while m_map doesn't</span>
+0152 <span class="comment">%     %------------------------------------------------------------------------</span>
+0153 <span class="comment">%     pause(.2)</span>
+0154 <span class="comment">%     if aa~=length(plotOPTS.Time_record)</span>
+0155 <span class="comment">%         delete(Plots(plotOPTS.figure).handles(:))</span>
+0156 <span class="comment">%     end</span>
+0157 <span class="comment">%</span>
+0158 <span class="comment">% end</span>
+0159 <span class="comment">%</span>
+0160 <span class="keyword">return</span>
+0161</pre></div>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

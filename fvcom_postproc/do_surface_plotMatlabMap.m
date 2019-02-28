@@ -103,7 +103,7 @@ end
         'Cdata',squeeze(FVCOM.(plotOPTS.var_plot)(:,plotOPTS.nz_plot,aa)),'edgecolor','interp','facecolor','interp');
     end
     caxis(plotOPTS.clims)
-    colorbar h
+    colorbar('peer',gca,'EastOutside')
     % check if mesh elements are required
     if plotOPTS.do_mesh
         %plot vertices

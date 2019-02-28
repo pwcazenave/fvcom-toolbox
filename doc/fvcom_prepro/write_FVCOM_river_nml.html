@@ -29,13 +29,13 @@
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> Write a namelist for the river nodes.
 
- write_FVCOM_river_nml(Mobj, nml_file, nc_file)
+ write_FVCOM_river_nml(Mobj, nml_file, nc_file, vString))
 
  DESCRIPTION:
    Using the output of get_POLCOMS_rivers in Mobj, output the river name,
    input file, grid node and vertical distribution into a namelist (.nml
    file).
- 
+
    NOTE: if the vertical distribution is uniform, the string 'uniform'
    will be output. If a non-uniform distribution is detected, then the
    name list will need to be edited to reflect the distribution specified
@@ -48,22 +48,32 @@
    vString - optional, pass a string (e.g. 'uniform') to write as the
    RIVER_VERTICAL_DISTRIBUTION in the namelist, bypassing the automated
    string generation.
- 
+   Alternative vString can be an array of fractional distribution (one per depth)
+   for r = 1:length(Mobj2.river_nodes)
+      Z1=Mobj2.siglevz(Mobj2.river_nodes(r),1:end-1);
+      Z2=Mobj2.siglevz(Mobj2.river_nodes(r),2:end);
+      RivDist(r,:)=(exp(Z1/5)-exp(Z2/5));
+   end
+
  OUTPUT:
    Namelist for inclusion in the main FVCOM namelist (RIVER_INFO_FILE).
- 
+
  EXAMPLE USAGE:
-   write_FVCOM_river_nml(Mobj, 'casename_river.nml', 'casename_river.nc')
+   write_FVCOM_river_nml(Mobj, 'casename_river.nml', 'casename_river.nc', RivDist)
 
  Author(s):
    Pierre Cazenave (Plymouth Marine Laboratory)
+   Ricardo Torres (Plymouth Marine Laboratory)
 
  Revision history:
    2013-03-21 - First version.
    2013-08-16 - Add optional fourth argument of a string to supply as the
    RIVER_VERTICAL_DISTRIBUTION (e.g. 'uniform').
    2013-10-16 - Fix the handling of the optional vString argument.
-
+   2018-03-28 - (RJT) Added the option of outputing float vertical
+   distribution for river flows not just uniform for all rivers.
+   2018-05-08 - Fixed vertical distribution handling to support both the
+   original functionality and the new float distribution.
 ==========================================================================</pre></div>
 
 <!-- crossreference -->
@@ -82,7 +92,7 @@ This function is called by:
 <div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function write_FVCOM_river_nml(Mobj, nml_file, nc_file, vString)</a>
 0002 <span class="comment">% Write a namelist for the river nodes.</span>
 0003 <span class="comment">%</span>
-0004 <span class="comment">% write_FVCOM_river_nml(Mobj, nml_file, nc_file)</span>
+0004 <span class="comment">% write_FVCOM_river_nml(Mobj, nml_file, nc_file, vString))</span>
 0005 <span class="comment">%</span>
 0006 <span class="comment">% DESCRIPTION:</span>
 0007 <span class="comment">%   Using the output of get_POLCOMS_rivers in Mobj, output the river name,</span>
@@ -101,62 +111,83 @@ This function is called by:
 0020 <span class="comment">%   vString - optional, pass a string (e.g. 'uniform') to write as the</span>
 0021 <span class="comment">%   RIVER_VERTICAL_DISTRIBUTION in the namelist, bypassing the automated</span>
 0022 <span class="comment">%   string generation.</span>
-0023 <span class="comment">%</span>
-0024 <span class="comment">% OUTPUT:</span>
-0025 <span class="comment">%   Namelist for inclusion in the main FVCOM namelist (RIVER_INFO_FILE).</span>
-0026 <span class="comment">%</span>
-0027 <span class="comment">% EXAMPLE USAGE:</span>
-0028 <span class="comment">%   write_FVCOM_river_nml(Mobj, 'casename_river.nml', 'casename_river.nc')</span>
+0023 <span class="comment">%   Alternative vString can be an array of fractional distribution (one per depth)</span>
+0024 <span class="comment">%   for r = 1:length(Mobj2.river_nodes)</span>
+0025 <span class="comment">%      Z1=Mobj2.siglevz(Mobj2.river_nodes(r),1:end-1);</span>
+0026 <span class="comment">%      Z2=Mobj2.siglevz(Mobj2.river_nodes(r),2:end);</span>
+0027 <span class="comment">%      RivDist(r,:)=(exp(Z1/5)-exp(Z2/5));</span>
+0028 <span class="comment">%   end</span>
 0029 <span class="comment">%</span>
-0030 <span class="comment">% Author(s):</span>
-0031 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0030 <span class="comment">% OUTPUT:</span>
+0031 <span class="comment">%   Namelist for inclusion in the main FVCOM namelist (RIVER_INFO_FILE).</span>
 0032 <span class="comment">%</span>
-0033 <span class="comment">% Revision history:</span>
-0034 <span class="comment">%   2013-03-21 - First version.</span>
-0035 <span class="comment">%   2013-08-16 - Add optional fourth argument of a string to supply as the</span>
-0036 <span class="comment">%   RIVER_VERTICAL_DISTRIBUTION (e.g. 'uniform').</span>
-0037 <span class="comment">%   2013-10-16 - Fix the handling of the optional vString argument.</span>
-0038 <span class="comment">%</span>
-0039 <span class="comment">%==========================================================================</span>
-0040 
-0041 subname = <span class="string">'write_FVCOM_river_nml'</span>;
-0042 
-0043 <span class="keyword">global</span> ftbverbose;
-0044 <span class="keyword">if</span> ftbverbose
-0045     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
-0046 <span class="keyword">end</span>
-0047 
-0048 nr = length(Mobj.river_nodes);
-0049 
-0050 f = fopen(nml_file, <span class="string">'w'</span>);
-0051 assert(f &gt;= 0, <span class="string">'Error writing to %s. Check permissions and try again.'</span>, nml_file)
+0033 <span class="comment">% EXAMPLE USAGE:</span>
+0034 <span class="comment">%   write_FVCOM_river_nml(Mobj, 'casename_river.nml', 'casename_river.nc', RivDist)</span>
+0035 <span class="comment">%</span>
+0036 <span class="comment">% Author(s):</span>
+0037 <span class="comment">%   Pierre Cazenave (Plymouth Marine Laboratory)</span>
+0038 <span class="comment">%   Ricardo Torres (Plymouth Marine Laboratory)</span>
+0039 <span class="comment">%</span>
+0040 <span class="comment">% Revision history:</span>
+0041 <span class="comment">%   2013-03-21 - First version.</span>
+0042 <span class="comment">%   2013-08-16 - Add optional fourth argument of a string to supply as the</span>
+0043 <span class="comment">%   RIVER_VERTICAL_DISTRIBUTION (e.g. 'uniform').</span>
+0044 <span class="comment">%   2013-10-16 - Fix the handling of the optional vString argument.</span>
+0045 <span class="comment">%   2018-03-28 - (RJT) Added the option of outputing float vertical</span>
+0046 <span class="comment">%   distribution for river flows not just uniform for all rivers.</span>
+0047 <span class="comment">%   2018-05-08 - Fixed vertical distribution handling to support both the</span>
+0048 <span class="comment">%   original functionality and the new float distribution.</span>
+0049 <span class="comment">%==========================================================================</span>
+0050 
+0051 subname = <span class="string">'write_FVCOM_river_nml'</span>;
 0052 
-0053 <span class="comment">% Build the vertical distribution string. Round to 15 decimal places so the</span>
-0054 <span class="comment">% unique check works (hopefully no one needs that many vertical layers...).</span>
-0055 vDist = roundn(abs(diff(Mobj.siglev)), -15);
-0056 <span class="keyword">if</span> length(unique(vDist)) == 1
-0057     vString = <span class="string">'''uniform'''</span>;
-0058 <span class="keyword">elseif</span> nargin &lt;= 3
-0059     vString = char();
-0060     <span class="keyword">for</span> ii = 1:length(vDist)
-0061         vString = [vString, sprintf(<span class="string">'%f '</span>, vDist(ii))];
-0062     <span class="keyword">end</span>
-0063 <span class="keyword">end</span>
-0064 
-0065 <span class="keyword">for</span> r = 1:nr
-0066     fprintf(f, <span class="string">' &amp;NML_RIVER\n'</span>);
-0067     fprintf(f, <span class="string">'  RIVER_NAME          = ''%s'',\n'</span>, Mobj.river_names{r});
-0068     fprintf(f, <span class="string">'  RIVER_FILE          = ''%s'',\n'</span>, nc_file);
-0069     fprintf(f, <span class="string">'  RIVER_GRID_LOCATION = %d,\n'</span>, Mobj.river_nodes(r));
-0070     fprintf(f, <span class="string">'  RIVER_VERTICAL_DISTRIBUTION = %s\n'</span>, vString);
-0071     fprintf(f, <span class="string">'  /\n'</span>);
-0072 <span class="keyword">end</span>
-0073 
-0074 fclose(f);
-0075 
-0076 <span class="keyword">if</span> ftbverbose
-0077     fprintf(<span class="string">'end   : %s\n'</span>, subname)
-0078 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0053 <span class="keyword">global</span> ftbverbose;
+0054 <span class="keyword">if</span> ftbverbose
+0055     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0056 <span class="keyword">end</span>
+0057 
+0058 nr = length(Mobj.river_nodes);
+0059 
+0060 f = fopen(nml_file, <span class="string">'w'</span>);
+0061 assert(f &gt;= 0, <span class="string">'Error writing to %s. Check permissions and try again.'</span>, nml_file)
+0062 
+0063 <span class="keyword">for</span> r = 1:nr
+0064     fprintf(f, <span class="string">' &amp;NML_RIVER\n'</span>);
+0065     fprintf(f, <span class="string">'  RIVER_NAME          = ''%s'',\n'</span>, Mobj.river_names{r});
+0066     fprintf(f, <span class="string">'  RIVER_FILE          = ''%s'',\n'</span>, nc_file);
+0067     fprintf(f, <span class="string">'  RIVER_GRID_LOCATION = %d,\n'</span>, Mobj.river_nodes(r));
+0068     
+0069     <span class="comment">% Build the vertical distribution string. Round to 15 decimal places so</span>
+0070     <span class="comment">% the unique check works (hopefully no one needs that many vertical</span>
+0071     <span class="comment">% layers...).</span>
+0072     vDist = roundn(abs(diff(Mobj.siglev)), -15);
+0073     <span class="keyword">if</span> length(unique(vDist)) == 1 || ~exist(vString, <span class="string">'var'</span>)
+0074         vString = <span class="string">'''uniform'''</span>;
+0075     <span class="keyword">elseif</span> nargin &lt;= 3
+0076         vString = char();
+0077         <span class="comment">% loop through each river as they can have different distributions</span>
+0078         <span class="keyword">if</span> ndim(vDist)==1 <span class="comment">% only one fixed distribution</span>
+0079             <span class="keyword">for</span> ii = 1:size(vDist)
+0080                 vString = [vString, sprintf(<span class="string">'%f '</span>, vDist(ii))];
+0081             <span class="keyword">end</span>
+0082         <span class="keyword">end</span>
+0083     <span class="keyword">else</span> <span class="comment">% we have different vDist for each river</span>
+0084         vString = char();
+0085         <span class="keyword">for</span> ii = 1:size(vString,2)
+0086             vString = [vString2, sprintf(<span class="string">'%1.5f '</span>, vString(r,ii))];
+0087         <span class="keyword">end</span>
+0088     <span class="keyword">end</span>
+0089     <span class="comment">% Output whatever vertical distribution string we've got to the</span>
+0090     <span class="comment">% namelist file.</span>
+0091     fprintf(f, <span class="string">'  RIVER_VERTICAL_DISTRIBUTION = %s\n'</span>, vString);
+0092     fprintf(f, <span class="string">'  /\n'</span>);
+0093 <span class="keyword">end</span>
+0094 
+0095 fclose(f);
+0096 
+0097 <span class="keyword">if</span> ftbverbose
+0098     fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0099 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

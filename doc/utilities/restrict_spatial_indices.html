@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of restrict_spatial_indices</title>
+  <meta name="keywords" content="restrict_spatial_indices">
+  <meta name="description" content="Eliminates the FVCOM nodes and elements in the lists mask_nodes and">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; restrict_spatial_indices.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>restrict_spatial_indices
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Eliminates the FVCOM nodes and elements in the lists mask_nodes and</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function FVCOM = restrict_spatial_indices(FVCOM,mask_nodes,mask_elems); </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Eliminates the FVCOM nodes and elements in the lists mask_nodes and
+ mask_elems.
+
+ function FVCOM = restrict_spatial_indices(FVCOM,mask_nodes,mask_elems);
+
+ DESCRIPTION:
+   Loops through all variables in FVCOM and restricts spatial dimensions
+
+
+ INPUT:
+   FVCOM        = Structure variable with FVCOM output data
+   mask_nodes = list of node indices to remove
+   mask_elems = list of elements indices to remove
+
+ OUTPUT:
+   FVCOM with fewer nodes and elements!
+
+ EXAMPLE USAGE:
+   FVCOM.temp = temperature field (node,levels,times)
+   FVCOM.u = velocity field (elements,levels,times)
+   mask_nodes = (1:300) can be the boundary/nesting nodes 
+   mask_elems = (1:400) can be the boundary/nesting elements
+    FVCOM = restrict_spatial_indices(FVCOM,mask_nodes,mask_elems);
+
+ Author(s):
+   Ricardo Torres (Plymouth Marine Laboratory)</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function FVCOM = restrict_spatial_indices(FVCOM,mask_nodes,mask_elems);</a>
+0002 
+0003 <span class="comment">% Eliminates the FVCOM nodes and elements in the lists mask_nodes and</span>
+0004 <span class="comment">% mask_elems.</span>
+0005 <span class="comment">%</span>
+0006 <span class="comment">% function FVCOM = restrict_spatial_indices(FVCOM,mask_nodes,mask_elems);</span>
+0007 <span class="comment">%</span>
+0008 <span class="comment">% DESCRIPTION:</span>
+0009 <span class="comment">%   Loops through all variables in FVCOM and restricts spatial dimensions</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% INPUT:</span>
+0013 <span class="comment">%   FVCOM        = Structure variable with FVCOM output data</span>
+0014 <span class="comment">%   mask_nodes = list of node indices to remove</span>
+0015 <span class="comment">%   mask_elems = list of elements indices to remove</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% OUTPUT:</span>
+0018 <span class="comment">%   FVCOM with fewer nodes and elements!</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% EXAMPLE USAGE:</span>
+0021 <span class="comment">%   FVCOM.temp = temperature field (node,levels,times)</span>
+0022 <span class="comment">%   FVCOM.u = velocity field (elements,levels,times)</span>
+0023 <span class="comment">%   mask_nodes = (1:300) can be the boundary/nesting nodes</span>
+0024 <span class="comment">%   mask_elems = (1:400) can be the boundary/nesting elements</span>
+0025 <span class="comment">%    FVCOM = restrict_spatial_indices(FVCOM,mask_nodes,mask_elems);</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% Author(s):</span>
+0028 <span class="comment">%   Ricardo Torres (Plymouth Marine Laboratory)</span>
+0029 
+0030 <span class="comment">%</span>
+0031 <span class="comment">% Revision history:</span>
+0032 <span class="comment">%   2018-09-17 First version</span>
+0033 <span class="comment">%</span>
+0034 <span class="comment">%==========================================================================</span>
+0035 
+0036 
+0037 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0038 
+0039 <span class="keyword">global</span> ftbverbose
+0040 <span class="keyword">if</span> ftbverbose
+0041     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0042 <span class="keyword">end</span>
+0043 
+0044 vnames = fields (FVCOM);
+0045 
+0046 <span class="keyword">if</span> isfield(FVCOM,<span class="string">'x'</span>);
+0047 nodes = length(FVCOM.x);
+0048 <span class="keyword">elseif</span> isfield(FVCOM,<span class="string">'lon'</span>)
+0049     nodes = length(FVCOM.lon);
+0050 <span class="keyword">else</span>
+0051     warning(<span class="string">'No easily identifiable variable with node dimensions positions... e.g. x/y or lon/lat and I will continue'</span>)
+0052 <span class="keyword">end</span>
+0053 
+0054 <span class="keyword">if</span> isfield(FVCOM,<span class="string">'xc'</span>);
+0055 elems = length(FVCOM.xc);
+0056 <span class="keyword">elseif</span> isfield(FVCOM,<span class="string">'lonc'</span>)
+0057     elems = length(FVCOM.lonc);
+0058 <span class="keyword">else</span>
+0059     warning(<span class="string">'No easily identifiable variable with element dimensions positions... e.g. xc/yc or lonc/latc and I cannot continue'</span>)
+0060 <span class="keyword">end</span>
+0061 
+0062 <span class="keyword">if</span> exist(<span class="string">'nodes'</span>,<span class="string">'var'</span>)
+0063 <span class="keyword">else</span> 
+0064     nodes=0;
+0065 <span class="keyword">end</span>
+0066 <span class="keyword">if</span> exist(<span class="string">'elems'</span>,<span class="string">'var'</span>)
+0067 <span class="keyword">else</span> 
+0068     elems=0;
+0069 <span class="keyword">end</span>
+0070 
+0071 <span class="keyword">for</span> vv=vnames'
+0072     <span class="keyword">switch</span> size(FVCOM.(vv{1}),1) <span class="comment">% In FVCOM variable structure, the first dimension is always the spatial dimension if it is present</span>
+0073         <span class="keyword">case</span> nodes
+0074             disp([<span class="string">'Clipping variable  FVCOM.'</span>,vv{1}])
+0075             <span class="keyword">switch</span> ndims(FVCOM.(vv{1}))
+0076                 <span class="keyword">case</span> 1
+0077                     FVCOM.(vv{1})(mask_nodes)=[];
+0078                 <span class="keyword">case</span> 2
+0079                     FVCOM.(vv{1})(mask_nodes,:)=[];
+0080                 <span class="keyword">case</span> 3
+0081                     FVCOM.(vv{1})(mask_nodes,:,:)=[];
+0082             <span class="keyword">end</span>
+0083         <span class="keyword">case</span> elems
+0084              disp([<span class="string">'Clipping variable  FVCOM.'</span>,vv{1}])
+0085              <span class="keyword">switch</span> ndims(FVCOM.(vv{1}))
+0086                 <span class="keyword">case</span> 1
+0087                     FVCOM.(vv{1})(mask_elems)=[];
+0088                 <span class="keyword">case</span> 2
+0089                     FVCOM.(vv{1})(mask_elems,:)=[];
+0090                 <span class="keyword">case</span> 3
+0091                     FVCOM.(vv{1})(mask_elems,:,:)=[];
+0092             <span class="keyword">end</span>
+0093     <span class="keyword">end</span>
+0094 <span class="keyword">end</span>
+0095 
+0096             
+0097</pre></div>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

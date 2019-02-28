@@ -46,7 +46,7 @@ if exist(conf.restart_file,'file')
 % read ersem variables in donor restart file
 info_donor=ncinfo(conf.restart_file);
 else
-    warning(['File ',conf.restart_file,' Not found. Returning'])
+    warning('File %s not found. Returning', conf.restart_file)
     return
 end
 % Generally the last fvcom variable although this could change with a 

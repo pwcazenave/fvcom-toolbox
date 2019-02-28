@@ -141,7 +141,7 @@ This function is called by:
 0077 <span class="keyword">if</span> ftbverbose
 0078     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
 0079 <span class="keyword">end</span>
-0080 NNuts=length(ERSEMdata)
+0080 NNuts=length(ERSEMdata);
 0081 <span class="comment">% Default to string times as FVCOM looks for these first.</span>
 0082 strtime = true;
 0083 inttime = false;
@@ -166,7 +166,7 @@ This function is called by:
 0102 nObc = length(obc_nodes);
 0103 nSiglev = nSiglay + 1;
 0104 
-0105 <span class="keyword">if</span>(ftbverbose); fprintf(<span class="string">'obc reading complete\n'</span>);<span class="keyword">end</span>;
+0105 <span class="keyword">if</span> ftbverbose; fprintf(<span class="string">'obc reading complete\n'</span>); <span class="keyword">end</span>
 0106 
 0107 <span class="comment">%--------------------------------------------------------------------------</span>
 0108 <span class="comment">% Generate the requisite data</span>
@@ -204,18 +204,18 @@ This function is called by:
 0140         dimidname=netcdf.inqDim(nc,dimids(dd));
 0141         <span class="keyword">switch</span> dimidname
 0142             <span class="keyword">case</span>{<span class="string">'node'</span>}
-0143                 
+0143 
 0144                 nobc_dimid=netcdf.inqDimID(nc,dimidname);
 0145             <span class="keyword">case</span>{<span class="string">'DateStrLen'</span>}
 0146                 datestrlen_dimid=netcdf.inqDimID(nc,dimidname);
 0147             <span class="keyword">case</span>{<span class="string">'time'</span>}
-0148                 
+0148 
 0149                 time_dimid=netcdf.inqDimID(nc,dimidname);
 0150                 <span class="comment">% read time in case is different from data in file</span>
 0151                 file_times = netcdf.getVar(nc,netcdf.inqVarID(nc,<span class="string">'Times'</span>))';
 0152                 file_timem = datenum(file_times,<span class="string">'yyyy-mm-dd HH:MM:SS.FFF'</span>);
 0153             <span class="keyword">case</span>{<span class="string">'siglay'</span>}
-0154                 
+0154 
 0155                 siglay_dimid=netcdf.inqDimID(nc,dimidname);
 0156             <span class="keyword">case</span>{<span class="string">'siglev'</span>}
 0157                 siglev_dimid=netcdf.inqDimID(nc,dimidname);
@@ -225,59 +225,59 @@ This function is called by:
 0161 <span class="keyword">else</span>
 0162     <span class="comment">% open boundary forcing</span>
 0163     nc = netcdf.create(tsOBCFile, <span class="string">'clobber'</span>);
-0164     
+0164 
 0165     <span class="comment">% define global attributes</span>
 0166     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'title'</span>,<span class="string">'Open boundary ERSEM nudging'</span>)
 0167     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'type'</span>,<span class="string">'FVCOM TIME SERIES OBC FABM FILE'</span>)
 0168     netcdf.putAtt(nc,netcdf.getConstant(<span class="string">'NC_GLOBAL'</span>),<span class="string">'history'</span>, sprintf(<span class="string">'File created with %s from the MATLAB fvcom-toolbox'</span>, subname))
-0169     
-0170     
+0169 
+0170 
 0171     <span class="comment">% define dimensions</span>
 0172     nobc_dimid=netcdf.defDim(nc,<span class="string">'nobc'</span>,nObc);
 0173     datestrlen_dimid=netcdf.defDim(nc,<span class="string">'DateStrLen'</span>,26);
 0174     time_dimid=netcdf.defDim(nc,<span class="string">'time'</span>,netcdf.getConstant(<span class="string">'NC_UNLIMITED'</span>));
 0175     siglay_dimid=netcdf.defDim(nc,<span class="string">'siglay'</span>,nSiglay);
 0176     siglev_dimid=netcdf.defDim(nc,<span class="string">'siglev'</span>,nSiglev);
-0177     
+0177 
 0178     <span class="comment">% variables</span>
 0179     <span class="keyword">if</span> strtime
 0180         Times_varid=netcdf.defVar(nc,<span class="string">'Times'</span>,<span class="string">'NC_CHAR'</span>,[datestrlen_dimid, time_dimid]);
 0181         netcdf.putAtt(nc,Times_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
 0182     <span class="keyword">end</span>
-0183     
+0183 
 0184     <span class="keyword">if</span> floattime
 0185         time_varid=netcdf.defVar(nc,<span class="string">'time'</span>,<span class="string">'NC_FLOAT'</span>,time_dimid);
 0186         netcdf.putAtt(nc,time_varid,<span class="string">'long_name'</span>,<span class="string">'time'</span>);
 0187         netcdf.putAtt(nc,time_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
 0188         netcdf.putAtt(nc,time_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
 0189     <span class="keyword">end</span>
-0190     
+0190 
 0191     <span class="keyword">if</span> inttime
 0192         itime_varid=netcdf.defVar(nc,<span class="string">'Itime'</span>,<span class="string">'NC_INT'</span>,time_dimid);
 0193         netcdf.putAtt(nc,itime_varid,<span class="string">'units'</span>,<span class="string">'days since 1858-11-17 00:00:00'</span>);
 0194         netcdf.putAtt(nc,itime_varid,<span class="string">'format'</span>,<span class="string">'modified julian day (MJD)'</span>);
 0195         netcdf.putAtt(nc,itime_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
-0196         
+0196 
 0197         itime2_varid=netcdf.defVar(nc,<span class="string">'Itime2'</span>,<span class="string">'NC_INT'</span>,time_dimid);
 0198         netcdf.putAtt(nc,itime2_varid,<span class="string">'units'</span>,<span class="string">'msec since 00:00:00'</span>);
 0199         netcdf.putAtt(nc,itime2_varid,<span class="string">'time_zone'</span>,<span class="string">'UTC'</span>);
 0200     <span class="keyword">end</span>
-0201     
+0201 
 0202     nobc_varid=netcdf.defVar(nc,<span class="string">'obc_nodes'</span>,<span class="string">'NC_INT'</span>,nobc_dimid);
 0203     netcdf.putAtt(nc,nobc_varid,<span class="string">'long_name'</span>,<span class="string">'Open Boundary Node Number'</span>);
 0204     netcdf.putAtt(nc,nobc_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
 0205     netcdf.putAtt(nc,nobc_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
-0206     
+0206 
 0207     obc_h_varid=netcdf.defVar(nc,<span class="string">'obc_h'</span>,<span class="string">'NC_FLOAT'</span>,nobc_dimid);
 0208     netcdf.putAtt(nc,obc_h_varid,<span class="string">'long_name'</span>,<span class="string">'Open Boundary Depth'</span>);
 0209     netcdf.putAtt(nc,obc_h_varid,<span class="string">'units'</span>,<span class="string">'m'</span>);
 0210     netcdf.putAtt(nc,obc_h_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
 0211     netcdf.putAtt(nc,obc_h_varid,<span class="string">'type'</span>,<span class="string">'data'</span>);
-0212     
+0212 
 0213     obc_siglev_varid=netcdf.defVar(nc,<span class="string">'siglev'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid,siglev_dimid]);
 0214     netcdf.putAtt(nc,obc_siglev_varid,<span class="string">'long_name'</span>,<span class="string">'ocean_sigma/general_coordinate'</span>);
 0215     netcdf.putAtt(nc,obc_siglev_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
-0216     
+0216 
 0217     obc_siglay_varid=netcdf.defVar(nc,<span class="string">'siglay'</span>,<span class="string">'NC_FLOAT'</span>,[nobc_dimid,siglay_dimid]);
 0218     netcdf.putAtt(nc,obc_siglay_varid,<span class="string">'long_name'</span>,<span class="string">'ocean_sigma/general_coordinate'</span>);
 0219     netcdf.putAtt(nc,obc_siglay_varid,<span class="string">'grid'</span>,<span class="string">'obc_grid'</span>);
@@ -337,7 +337,7 @@ This function is called by:
 0273         eval([<span class="string">'netcdf.putVar(nc,'</span>,varidN{nuts},<span class="string">',Mobj.(ERSEMdata(nuts).name));'</span>])
 0274             disp([<span class="string">'Finished with variable, '</span>,ERSEMdata(nuts).name])
 0275      <span class="keyword">end</span>
-0276     
+0276 
 0277 <span class="keyword">else</span> <span class="comment">% file exist and time could be different... check and interpolate if necessary</span>
 0278     <span class="keyword">if</span> length(time) &lt; length(file_timem)
 0279         <span class="keyword">for</span> nuts=1:NNuts
@@ -361,7 +361,7 @@ This function is called by:
 0297             disp([<span class="string">'We have reversed the Z dimension of variable , '</span>,ERSEMdata(nuts).name])
 0298             disp([<span class="string">'Finished with variable, '</span>,ERSEMdata(nuts).name])
 0299          <span class="keyword">end</span>
-0300         
+0300 
 0301     <span class="keyword">end</span>
 0302 <span class="keyword">end</span>
 0303 <span class="comment">% close file</span>
@@ -370,6 +370,6 @@ This function is called by:
 0306 <span class="keyword">if</span> ftbverbose
 0307     fprintf(<span class="string">'end   : %s\n'</span>, subname)
 0308 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

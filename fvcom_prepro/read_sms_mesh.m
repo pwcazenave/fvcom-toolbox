@@ -249,7 +249,8 @@ for r = 1:size(mNSlines,1)  %rows
             %Append positive value to the NS, do end-of-NS stuff, then ignore 
             %rest of line.
             currentNS = [currentNS abs(mNSlines(r,c))];
-            read_obc_nodes{currentNSno} = currentNS;
+            % Remove duplicate nodestring IDs in case we have them.
+            read_obc_nodes{currentNSno} = unique(currentNS, 'stable');
             NSlengths = [NSlengths length(currentNS)];
             currentNSno = currentNSno + 1;
             currentNS = [];

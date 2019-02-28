@@ -58,11 +58,11 @@ if plotFig == 1
     end
 
     figure
-    patch('Vertices',[x,y],'Faces',Mobj.tri,...
-            'Cdata',Mobj.h,'edgecolor','k','facecolor','interp');
-    hold on;
-    plot(x(SpongeList),y(SpongeList),'wx')
-    axis('equal','tight')
+    patch('Vertices', [x, y], 'Faces', Mobj.tri, ...
+          'Cdata', Mobj.h, 'edgecolor', 'k', 'facecolor', 'interp');
+    hold on
+    plot(x(SpongeList), y(SpongeList), 'wx')
+    axis('equal', 'tight')
 end
 
 npts = length(SpongeList);
@@ -87,7 +87,7 @@ Mobj.sponge_fac(Mobj.nSponge) = SpongeCoeff;
 if numel(unique(SpongeRadius)) == 1   % if you have a constant sponge radius
     Mobj.sponge_rad(Mobj.nSponge) = SpongeRadius;
 else    % if you have a variable sponge radius
-    Mobj.sponge_rad(Mobj.nSponge,1:npts) = SpongeRadius;
+    Mobj.sponge_rad(Mobj.nSponge, 1:npts) = SpongeRadius;
 end
 
 if ftbverbose

@@ -243,154 +243,161 @@ This function is called by:
 0111 
 0112 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
 0113 
-0114 <span class="keyword">global</span> ftbverbose
-0115 <span class="keyword">if</span> ftbverbose
-0116     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
-0117 <span class="keyword">end</span>
-0118 
-0119 TR = triangulation(Mobj.tri, [Mobj.x, Mobj.y]);
-0120 
-0121 Nested = Mobj;
-0122 Nested.nObs = 0; <span class="comment">% number of nodal levels is incremented for each level.</span>
+0114 assert(isscalar(conf.power), <span class="string">'conf.power should be scalar, applying to all open boundaries'</span>);
+0115 
+0116 <span class="keyword">global</span> ftbverbose
+0117 <span class="keyword">if</span> isempty(ftbverbose)
+0118     ftbverbose=false;
+0119 <span class="keyword">end</span>
+0120 <span class="keyword">if</span> ftbverbose
+0121     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
+0122 <span class="keyword">end</span>
 0123 
-0124 <span class="comment">% Make cell arrays to store the element IDs for each nested level as well</span>
-0125 <span class="comment">% as for the weights on the nodes and elements.</span>
-0126 Nested.read_obc_nodes = cell(0);
-0127 Nested.read_obc_elems = cell(0);
-0128 <span class="keyword">if</span> any(conf.Nested_type == 3)
-0129     Nested.weight_cell = cell(0);
-0130     Nested.weight_node = cell(0);
-0131 <span class="keyword">end</span>
-0132 
-0133 <span class="comment">% if ftbverbose</span>
-0134 <span class="comment">%     figure(1)</span>
-0135 <span class="comment">%     clf</span>
-0136 <span class="comment">%     triplot(Nested.tri, Nested.x, Nested.y)</span>
-0137 <span class="comment">%     axis('equal', 'tight')</span>
-0138 <span class="comment">%     hold on</span>
-0139 <span class="comment">% end</span>
-0140 
-0141 <span class="comment">% Indices for the output cell arrays which are incremented for each nest</span>
-0142 <span class="comment">% level and each open boundary.</span>
-0143 cumulative_node_idx = 1;
-0144 cumulative_elem_idx = 1;
-0145 <span class="keyword">for</span> obc_idx = 1:Mobj.nObs
-0146     <span class="comment">% Generate the weights for the elements and nodes.</span>
-0147     <span class="keyword">if</span> conf.Nested_type(obc_idx) == 3
-0148         <span class="keyword">if</span> conf.power == 0
-0149             weights_nodes = fliplr((1:conf.levels(obc_idx) + 1)./(conf.levels(obc_idx) + 1));
-0150         <span class="keyword">else</span>
-0151             weights_nodes = 1:conf.levels(obc_idx) + 1;
-0152             weights_nodes = 1./weights_nodes.^conf.power;
-0153         <span class="keyword">end</span>
-0154         <span class="comment">% Use the same weights as the nodes, but drop the last level</span>
-0155         <span class="comment">% (elements is always 1 smaller).</span>
-0156         weights_elems = weights_nodes(1:end - 1);
-0157     <span class="keyword">end</span>
-0158 
-0159     <span class="comment">% Save the original open boundary nodes into the nested struct (Nested).</span>
-0160     Nested.read_obc_nodes{cumulative_node_idx} = Mobj.read_obc_nodes{obc_idx};
-0161 
-0162     <span class="comment">% Given the current open boundary, find the elements connected to it</span>
-0163     <span class="comment">% and give them some weights.</span>
-0164     ti = vertexAttachments(TR, double(Mobj.read_obc_nodes{obc_idx})');
-0165     Nested.read_obc_elems{cumulative_elem_idx} = unique([ti{:}]);
+0124 TR = triangulation(Mobj.tri, [Mobj.x, Mobj.y]);
+0125 
+0126 Nested = Mobj;
+0127 Nested.nObs = 0; <span class="comment">% number of nodal levels is incremented for each level.</span>
+0128 
+0129 <span class="comment">% Make cell arrays to store the element IDs for each nested level as well</span>
+0130 <span class="comment">% as for the weights on the nodes and elements.</span>
+0131 Nested.read_obc_nodes = cell(0);
+0132 Nested.read_obc_elems = cell(0);
+0133 <span class="keyword">if</span> any(conf.Nested_type == 3)
+0134     Nested.weight_cell = cell(0);
+0135     Nested.weight_node = cell(0);
+0136 <span class="keyword">end</span>
+0137 
+0138 <span class="comment">% if ftbverbose</span>
+0139 <span class="comment">%     figure(1)</span>
+0140 <span class="comment">%     clf</span>
+0141 <span class="comment">%     triplot(Nested.tri, Nested.x, Nested.y)</span>
+0142 <span class="comment">%     axis('equal', 'tight')</span>
+0143 <span class="comment">%     hold on</span>
+0144 <span class="comment">% end</span>
+0145 
+0146 <span class="comment">% Indices for the output cell arrays which are incremented for each nest</span>
+0147 <span class="comment">% level and each open boundary.</span>
+0148 cumulative_node_idx = 1;
+0149 cumulative_elem_idx = 1;
+0150 <span class="keyword">for</span> obc_idx = 1:Mobj.nObs
+0151     <span class="comment">% Generate the weights for the elements and nodes.</span>
+0152     <span class="keyword">if</span> conf.Nested_type(obc_idx) == 3
+0153         <span class="keyword">if</span> conf.power == 0
+0154             weights_nodes = fliplr((1:conf.levels(obc_idx) + 1)./(conf.levels(obc_idx) + 1));
+0155         <span class="keyword">else</span>
+0156             weights_nodes = 1:conf.levels(obc_idx) + 1;
+0157             weights_nodes = 1./weights_nodes.^conf.power;
+0158         <span class="keyword">end</span>
+0159         <span class="comment">% Use the same weights as the nodes, but drop the last level</span>
+0160         <span class="comment">% (elements is always 1 smaller).</span>
+0161         weights_elems = weights_nodes(1:end - 1);
+0162     <span class="keyword">end</span>
+0163 
+0164     <span class="comment">% Save the original open boundary nodes into the nested struct (Nested).</span>
+0165     Nested.read_obc_nodes{cumulative_node_idx} = Mobj.read_obc_nodes{obc_idx};
 0166 
-0167     <span class="comment">% Save the weights into the nested struct (Nested).</span>
-0168     <span class="keyword">if</span> conf.Nested_type(obc_idx) ~= 1
-0169         Nested.weight_node{cumulative_node_idx} = repmat(weights_nodes(1), 1, length(Nested.read_obc_nodes{cumulative_node_idx}));
-0170         Nested.weight_cell{cumulative_elem_idx} = repmat(weights_elems(1), 1, length(Nested.read_obc_elems{cumulative_elem_idx}));
-0171     <span class="keyword">end</span>
-0172 
-0173     <span class="comment">% Also save the type of open boundary we've got and update the open</span>
-0174     <span class="comment">% boundary counter and number of open boundary nodes.</span>
-0175     Nested.nObcNodes(cumulative_node_idx) = length(Nested.read_obc_nodes{cumulative_node_idx});
-0176     Nested.nObs = Nested.nObs + 1;
-0177     Nested.obc_type(cumulative_node_idx) = conf.Nested_type(obc_idx);
-0178 
-0179     <span class="keyword">if</span> ftbverbose &amp;&amp; conf.Nested_type(obc_idx) ~= 1
-0180 <span class="comment">%         figure(1)</span>
-0181 <span class="comment">%         scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')</span>
-0182 <span class="comment">%         scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')</span>
-0183         fprintf(<span class="string">'Original open boundary %d\n'</span>, obc_idx)
-0184     <span class="keyword">end</span>
-0185 
-0186     <span class="comment">% Now we have the original open boundary and the elements connected to</span>
-0187     <span class="comment">% it we can move through the levels specified in conf.levels(obc_idx)</span>
-0188     <span class="comment">% and repeat the process. Bump the cumulative counters accordingly.</span>
-0189     cumulative_node_idx = cumulative_node_idx + 1;
-0190     cumulative_elem_idx = cumulative_elem_idx + 1;
-0191 
-0192     <span class="keyword">for</span> lev = 1:conf.levels(obc_idx)
-0193         <span class="comment">% Find the nodes and elements for this level and assign their</span>
-0194         <span class="comment">% weights. Use the most recent data in Nested.read_obc_nodes as the</span>
-0195         <span class="comment">% anchor from which to work.</span>
-0196         Nested.read_obc_nodes{cumulative_node_idx} = int32(setdiff(unique(Nested.tri(Nested.read_obc_elems{cumulative_elem_idx - 1}, :)), <span class="keyword">...</span>
-0197             [Nested.read_obc_nodes{1:cumulative_node_idx - 1}]))';
-0198         ti = vertexAttachments(TR, double(Nested.read_obc_nodes{cumulative_node_idx})');
-0199         Nested.nObs = Nested.nObs + 1;
-0200         Nested.obc_type(cumulative_node_idx) = conf.Nested_type(obc_idx);
-0201         Nested.nObcNodes(cumulative_node_idx) = length(Nested.read_obc_nodes{cumulative_node_idx});
-0202 
-0203         <span class="keyword">if</span> conf.Nested_type(obc_idx) ~= 1
-0204             Nested.weight_node{cumulative_node_idx} = repmat(weights_nodes(lev + 1), 1, length(Nested.read_obc_nodes{cumulative_node_idx}));
-0205         <span class="keyword">end</span>
-0206         <span class="keyword">if</span> lev ~= conf.levels(obc_idx)
-0207             Nested.read_obc_elems{cumulative_elem_idx} = setdiff(unique([ti{:}]), [Nested.read_obc_elems{:}]);
-0208             <span class="keyword">if</span> conf.Nested_type(obc_idx) ~= 1
-0209                 Nested.weight_cell{cumulative_elem_idx} = repmat(weights_elems(lev + 1), 1, length(Nested.read_obc_elems{cumulative_elem_idx}));
-0210             <span class="keyword">end</span>
-0211         <span class="keyword">end</span>
-0212 
-0213         <span class="keyword">if</span> ftbverbose &amp;&amp; conf.Nested_type(obc_idx) ~= 1
-0214 <span class="comment">%             figure(1)</span>
-0215 <span class="comment">%             scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')</span>
-0216 <span class="comment">%             if lev ~= conf.levels(obc_idx)</span>
-0217 <span class="comment">%                 scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')</span>
-0218 <span class="comment">%             end</span>
-0219             fprintf(<span class="string">'Nested level %d\n'</span>, lev)
-0220         <span class="keyword">end</span>
-0221 
-0222         <span class="comment">% Bump the node and element cumulative counters so the next loop</span>
-0223         <span class="comment">% dumps everything into the right position in the cell arrays.</span>
-0224         cumulative_node_idx = cumulative_node_idx + 1;
-0225         <span class="keyword">if</span> lev ~= conf.levels(obc_idx)
-0226             cumulative_elem_idx = cumulative_elem_idx + 1;
-0227         <span class="keyword">end</span>
-0228     <span class="keyword">end</span>
-0229     <span class="comment">% Check if all possible elements have been correctly identified</span>
-0230     <span class="comment">% colapse all nodes into an array and extract all elements connected to</span>
-0231     <span class="comment">% those nodes</span>
-0232     <span class="comment">% find the elements that are attached to 3 nodes in the nesting region</span>
-0233     <span class="comment">%</span>
-0234     candidate= find(all(ismember(Mobj.tri,[Nested.read_obc_nodes{end}]),2));
-0235     <span class="comment">% test if it is different from existing elements</span>
-0236     [truecandidate]=setdiff(candidate,[Nested.read_obc_elems{:}]);
-0237     <span class="comment">% add to existing list. Catenate will ignore an empty result from</span>
-0238     <span class="comment">% setdiff</span>
-0239     <span class="keyword">if</span> ~isempty(truecandidate)
-0240         <span class="keyword">for</span> dd=1:length(truecandidate)
-0241     Nested.read_obc_elems{end} = cat(2,Nested.read_obc_elems{end},truecandidate(dd));
-0242     Nested.weight_cell{end} = cat(2,Nested.weight_cell{end},Nested.weight_cell{end}(end));
-0243     <span class="keyword">end</span>
-0244     <span class="keyword">end</span>
-0245     <span class="keyword">if</span> ftbverbose
-0246         fprintf(<span class="string">'\n'</span>)
-0247     <span class="keyword">end</span>
-0248 <span class="keyword">end</span>
-0249 
-0250 <span class="comment">% Update the clunky obc_nodes array with the new node IDs from</span>
-0251 <span class="comment">% Nested.read_obc_nodes.</span>
-0252 <span class="keyword">for</span> nidx = 1:length(Nested.read_obc_nodes)
-0253     Nested.obc_nodes(nidx, 1:length(Nested.read_obc_nodes{nidx})) = Nested.read_obc_nodes{nidx};
-0254 <span class="keyword">end</span>
-0255 
-0256 <span class="keyword">if</span> ftbverbose
-0257     <span class="comment">% figure(1)</span>
-0258     <span class="comment">% colorbar</span>
-0259     <span class="comment">% title('Nest weights')</span>
-0260     fprintf(<span class="string">'end   : %s \n'</span>, subname)
-0261 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0167     <span class="comment">% Given the current open boundary, find the elements connected to it</span>
+0168     <span class="comment">% and give them some weights.</span>
+0169     ti = vertexAttachments(TR, double(Mobj.read_obc_nodes{obc_idx})');
+0170     Nested.read_obc_elems{cumulative_elem_idx} = unique([ti{:}]);
+0171 
+0172     <span class="comment">% Save the weights into the nested struct (Nested).</span>
+0173     <span class="keyword">if</span> conf.Nested_type(obc_idx) ~= 1
+0174         Nested.weight_node{cumulative_node_idx} = repmat(weights_nodes(1), 1, length(Nested.read_obc_nodes{cumulative_node_idx}));
+0175         Nested.weight_cell{cumulative_elem_idx} = repmat(weights_elems(1), 1, length(Nested.read_obc_elems{cumulative_elem_idx}));
+0176     <span class="keyword">end</span>
+0177 
+0178     <span class="comment">% Also save the type of open boundary we've got and update the open</span>
+0179     <span class="comment">% boundary counter and number of open boundary nodes.</span>
+0180     Nested.nObcNodes(cumulative_node_idx) = length(Nested.read_obc_nodes{cumulative_node_idx});
+0181     Nested.nObs = Nested.nObs + 1;
+0182     Nested.obc_type(cumulative_node_idx) = conf.Nested_type(obc_idx);
+0183 
+0184     <span class="keyword">if</span> ftbverbose &amp;&amp; conf.Nested_type(obc_idx) ~= 1
+0185 <span class="comment">%         figure(1)</span>
+0186 <span class="comment">%         scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')</span>
+0187 <span class="comment">%         scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')</span>
+0188         fprintf(<span class="string">'Original open boundary %d\n'</span>, obc_idx)
+0189     <span class="keyword">end</span>
+0190 
+0191     <span class="comment">% Now we have the original open boundary and the elements connected to</span>
+0192     <span class="comment">% it we can move through the levels specified in conf.levels(obc_idx)</span>
+0193     <span class="comment">% and repeat the process. Bump the cumulative counters accordingly.</span>
+0194     cumulative_node_idx = cumulative_node_idx + 1;
+0195     cumulative_elem_idx = cumulative_elem_idx + 1;
+0196 
+0197     <span class="keyword">for</span> lev = 1:conf.levels(obc_idx)
+0198         <span class="comment">% Find the nodes and elements for this level and assign their</span>
+0199         <span class="comment">% weights. Use the most recent data in Nested.read_obc_nodes as the</span>
+0200         <span class="comment">% anchor from which to work.</span>
+0201         Nested.read_obc_nodes{cumulative_node_idx} = int32(setdiff(unique(Nested.tri(Nested.read_obc_elems{cumulative_elem_idx - 1}, :)), <span class="keyword">...</span>
+0202             [Nested.read_obc_nodes{1:cumulative_node_idx - 1}]))';
+0203         ti = vertexAttachments(TR, double(Nested.read_obc_nodes{cumulative_node_idx})');
+0204         Nested.nObs = Nested.nObs + 1;
+0205         Nested.obc_type(cumulative_node_idx) = conf.Nested_type(obc_idx);
+0206         Nested.nObcNodes(cumulative_node_idx) = length(Nested.read_obc_nodes{cumulative_node_idx});
+0207 
+0208         <span class="keyword">if</span> conf.Nested_type(obc_idx) ~= 1
+0209             Nested.weight_node{cumulative_node_idx} = repmat(weights_nodes(lev + 1), 1, length(Nested.read_obc_nodes{cumulative_node_idx}));
+0210         <span class="keyword">end</span>
+0211         <span class="keyword">if</span> lev ~= conf.levels(obc_idx)
+0212             Nested.read_obc_elems{cumulative_elem_idx} = setdiff(unique([ti{:}]), [Nested.read_obc_elems{:}]);
+0213             <span class="keyword">if</span> conf.Nested_type(obc_idx) ~= 1
+0214                 Nested.weight_cell{cumulative_elem_idx} = repmat(weights_elems(lev + 1), 1, length(Nested.read_obc_elems{cumulative_elem_idx}));
+0215             <span class="keyword">end</span>
+0216         <span class="keyword">end</span>
+0217 
+0218         <span class="keyword">if</span> ftbverbose &amp;&amp; conf.Nested_type(obc_idx) ~= 1
+0219 <span class="comment">%             figure(1)</span>
+0220 <span class="comment">%             scatter(Nested.x(Nested.read_obc_nodes{cumulative_node_idx}), Nested.y(Nested.read_obc_nodes{cumulative_node_idx}), 20, Nested.weight_node{cumulative_node_idx}, 'filled')</span>
+0221 <span class="comment">%             if lev ~= conf.levels(obc_idx)</span>
+0222 <span class="comment">%                 scatter(Nested.xc(Nested.read_obc_elems{cumulative_elem_idx}), Nested.yc(Nested.read_obc_elems{cumulative_elem_idx}), 20, Nested.weight_cell{cumulative_elem_idx}, 'filled')</span>
+0223 <span class="comment">%             end</span>
+0224             fprintf(<span class="string">'Nested level %d\n'</span>, lev)
+0225         <span class="keyword">end</span>
+0226 
+0227         <span class="comment">% Bump the node and element cumulative counters so the next loop</span>
+0228         <span class="comment">% dumps everything into the right position in the cell arrays.</span>
+0229         cumulative_node_idx = cumulative_node_idx + 1;
+0230         <span class="keyword">if</span> lev ~= conf.levels(obc_idx)
+0231             cumulative_elem_idx = cumulative_elem_idx + 1;
+0232         <span class="keyword">end</span>
+0233     <span class="keyword">end</span>
+0234     <span class="comment">% Check if all possible elements have been correctly identified</span>
+0235     <span class="comment">% colapse all nodes into an array and extract all elements connected to</span>
+0236     <span class="comment">% those nodes</span>
+0237     <span class="comment">% find the elements that are attached to 3 nodes in the nesting region</span>
+0238     <span class="comment">%</span>
+0239     candidate= find(all(ismember(Mobj.tri,[Nested.read_obc_nodes{end}]),2));
+0240     <span class="comment">% test if it is different from existing elements</span>
+0241     [truecandidate]=setdiff(candidate,[Nested.read_obc_elems{:}]);
+0242     <span class="comment">% add to existing list. Catenate will ignore an empty result from</span>
+0243     <span class="comment">% setdiff</span>
+0244     <span class="keyword">if</span> ~isempty(truecandidate)
+0245         <span class="keyword">for</span> dd=1:length(truecandidate)
+0246             Nested.read_obc_elems{end} = cat(2,Nested.read_obc_elems{end},truecandidate(dd));
+0247             <span class="keyword">if</span> conf.Nested_type(obc_idx) ~= 1
+0248                 Nested.weight_cell{end} = cat(2,Nested.weight_cell{end},Nested.weight_cell{end}(end));
+0249             <span class="keyword">end</span>
+0250         <span class="keyword">end</span>
+0251     <span class="keyword">end</span>
+0252     <span class="keyword">if</span> ftbverbose
+0253         fprintf(<span class="string">'\n'</span>)
+0254     <span class="keyword">end</span>
+0255 <span class="keyword">end</span>
+0256 
+0257 <span class="comment">% Update the clunky obc_nodes array with the new node IDs from</span>
+0258 <span class="comment">% Nested.read_obc_nodes.</span>
+0259 <span class="keyword">for</span> nidx = 1:length(Nested.read_obc_nodes)
+0260     Nested.obc_nodes(nidx, 1:length(Nested.read_obc_nodes{nidx})) = Nested.read_obc_nodes{nidx};
+0261 <span class="keyword">end</span>
+0262 
+0263 <span class="keyword">if</span> ftbverbose
+0264     <span class="comment">% figure(1)</span>
+0265     <span class="comment">% colorbar</span>
+0266     <span class="comment">% title('Nest weights')</span>
+0267     fprintf(<span class="string">'end   : %s \n'</span>, subname)
+0268 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

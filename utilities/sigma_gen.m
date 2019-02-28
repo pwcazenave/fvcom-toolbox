@@ -48,6 +48,9 @@ if h < hmin
         dist(k+1) = (x1+x2)/x3-1.0;
     end
 else
+    % I'm (Pierre Cazenave) pretty certain the code below is horribly broke in some fashion. But, I've modified the PyFVCOM version
+    % of this function to simply return sigma_geo(nlev, 1) in here and that seems to be OK. I should probably do the
+    % same here, but I can't afford the time to properly test it, so this note will have to do instead.
     %dr=(h-sum(zku)-sum(zkl))/h/double(nlev-ku-kl-1);
     dr = (h-du-dl)/h/double(nlev-ku-kl-1);
     dist(1) = 0.0;

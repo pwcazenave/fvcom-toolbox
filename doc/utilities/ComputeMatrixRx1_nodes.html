@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of ComputeMatrixRx1_nodes</title>
+  <meta name="keywords" content="ComputeMatrixRx1_nodes">
+  <meta name="description" content="Computes rx1 matrix as in ComputeMatrixRx1_V2.m downloaded from">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; ComputeMatrixRx1_nodes.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>ComputeMatrixRx1_nodes
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Computes rx1 matrix as in ComputeMatrixRx1_V2.m downloaded from</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function RX1matrix=ComputeMatrixRx1_nodes(Z_w, Mobj) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Computes rx1 matrix as in ComputeMatrixRx1_V2.m downloaded from
+ https://github.com/dcherian/tools
+
+ function [RX1matrix] = ComputeMatrixRx1_nodes(Z_w, Mobj)
+
+ DESCRIPTION:
+    Calculates the hydrostatic consistency condition:
+      r = abs(Sigma/H deltaxH/deltaSigma)
+    this reflects the errors associated with horizontal pressure gradients
+    calculations that are associated with steep bathyemtry and low
+    vertical resolution.
+
+ INPUT
+   Z_w    = This is the sigmal layer vertical distribution in Z coordinates
+   Mobj   = needs triangulation and mesh information
+            table. read_sms_mesh provides everything it needs.
+
+
+ OUTPUT:
+    RX1matrix = node based field with values of max(rx1)
+
+ EXAMPLE USAGE
+    [RX1matrix] = ComputeMatrixRx1_nodes(Z_w, Mobj)
+
+ Author(s):
+    Ricardo Torres (Plymouth Marine Laboratory) based on ComputeMatrixRx1_V2
+
+ Revision history
+
+   2018-03-22 First version.
+
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function RX1matrix=ComputeMatrixRx1_nodes(Z_w, Mobj)</a>
+0002 <span class="comment">% Computes rx1 matrix as in ComputeMatrixRx1_V2.m downloaded from</span>
+0003 <span class="comment">% https://github.com/dcherian/tools</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function [RX1matrix] = ComputeMatrixRx1_nodes(Z_w, Mobj)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Calculates the hydrostatic consistency condition:</span>
+0009 <span class="comment">%      r = abs(Sigma/H deltaxH/deltaSigma)</span>
+0010 <span class="comment">%    this reflects the errors associated with horizontal pressure gradients</span>
+0011 <span class="comment">%    calculations that are associated with steep bathyemtry and low</span>
+0012 <span class="comment">%    vertical resolution.</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% INPUT</span>
+0015 <span class="comment">%   Z_w    = This is the sigmal layer vertical distribution in Z coordinates</span>
+0016 <span class="comment">%   Mobj   = needs triangulation and mesh information</span>
+0017 <span class="comment">%            table. read_sms_mesh provides everything it needs.</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% OUTPUT:</span>
+0021 <span class="comment">%    RX1matrix = node based field with values of max(rx1)</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% EXAMPLE USAGE</span>
+0024 <span class="comment">%    [RX1matrix] = ComputeMatrixRx1_nodes(Z_w, Mobj)</span>
+0025 <span class="comment">%</span>
+0026 <span class="comment">% Author(s):</span>
+0027 <span class="comment">%    Ricardo Torres (Plymouth Marine Laboratory) based on ComputeMatrixRx1_V2</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Revision history</span>
+0030 <span class="comment">%</span>
+0031 <span class="comment">%   2018-03-22 First version.</span>
+0032 <span class="comment">%</span>
+0033 <span class="comment">%==============================================================================</span>
+0034 
+0035 subname = <span class="string">'ComputeMatrixRx1_nodes'</span>;
+0036 <span class="keyword">global</span> ftbverbose
+0037 <span class="keyword">if</span> ftbverbose
+0038     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0039 <span class="keyword">end</span>
+0040 <span class="comment">%--------------------------------------------------------------------------</span>
+0041 <span class="comment">% Estimate dimensins of mesh based on array's sizes</span>
+0042 <span class="comment">%--------------------------------------------------------------------------</span>
+0043 
+0044 N=size(Z_w,2)-1;
+0045 nNodes = size(Z_w,1);
+0046 RX1matrix=zeros(nNodes,1);
+0047 TR = triangulation(Mobj.tri, [Mobj.x, Mobj.y]);
+0048 <span class="comment">% loop through all Nodes</span>
+0049 <span class="keyword">for</span> iXi=1:nNodes
+0050     rx1=0;
+0051 <span class="comment">% Find neighbouring nodes for the node under consideration</span>
+0052     ti = cell2mat(vertexAttachments(TR,iXi));
+0053     vertices = setdiff(unique(TR.ConnectivityList(ti,:)),iXi);
+0054 <span class="comment">% calculate max rx1 values in the vertical and horizontal among all neighbouring nodes</span>
+0055     <span class="keyword">for</span> nn=1:length(vertices)
+0056         <span class="keyword">for</span> i=1:N
+0057             a1=abs(Z_w(iXi,i+1) - Z_w(vertices(nn),i+1) + <span class="keyword">...</span>
+0058                 Z_w(iXi,i) - Z_w(vertices(nn),i));
+0059             b1=abs(Z_w(iXi,i+1) + Z_w(vertices(nn),i+1) - <span class="keyword">...</span>
+0060                 Z_w(iXi,i) - Z_w(vertices(nn),i));
+0061             quot=abs(a1/b1);
+0062             rx1=max(rx1, quot);
+0063         <span class="keyword">end</span>
+0064     <span class="keyword">end</span>
+0065     RX1matrix(iXi)=rx1;
+0066 <span class="keyword">end</span>
+0067 <span class="keyword">if</span> ftbverbose
+0068   fprintf(<span class="string">'end   : %s\n'</span>, subname)
+0069 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

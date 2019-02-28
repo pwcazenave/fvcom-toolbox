@@ -111,7 +111,7 @@ This function is called by:
 0036 
 0037 <span class="keyword">global</span> ftbverbose
 0038 <span class="keyword">if</span> ftbverbose
-0039     fprintf(<span class="string">'\nbegin : %s\m'</span>, subname)
+0039     fprintf(<span class="string">'\nbegin : %s\n'</span>, subname)
 0040 <span class="keyword">end</span>
 0041 
 0042 <span class="comment">% Do we want a figure showing how we're getting along?</span>
@@ -133,11 +133,11 @@ This function is called by:
 0058     <span class="keyword">end</span>
 0059 
 0060     figure
-0061     patch(<span class="string">'Vertices'</span>,[x,y],<span class="string">'Faces'</span>,Mobj.tri,<span class="keyword">...</span>
-0062             <span class="string">'Cdata'</span>,Mobj.h,<span class="string">'edgecolor'</span>,<span class="string">'k'</span>,<span class="string">'facecolor'</span>,<span class="string">'interp'</span>);
-0063     hold on;
-0064     plot(x(SpongeList),y(SpongeList),<span class="string">'wx'</span>)
-0065     axis(<span class="string">'equal'</span>,<span class="string">'tight'</span>)
+0061     patch(<span class="string">'Vertices'</span>, [x, y], <span class="string">'Faces'</span>, Mobj.tri, <span class="keyword">...</span>
+0062           <span class="string">'Cdata'</span>, Mobj.h, <span class="string">'edgecolor'</span>, <span class="string">'k'</span>, <span class="string">'facecolor'</span>, <span class="string">'interp'</span>);
+0063     hold on
+0064     plot(x(SpongeList), y(SpongeList), <span class="string">'wx'</span>)
+0065     axis(<span class="string">'equal'</span>, <span class="string">'tight'</span>)
 0066 <span class="keyword">end</span>
 0067 
 0068 npts = length(SpongeList);
@@ -162,13 +162,13 @@ This function is called by:
 0087 <span class="keyword">if</span> numel(unique(SpongeRadius)) == 1   <span class="comment">% if you have a constant sponge radius</span>
 0088     Mobj.sponge_rad(Mobj.nSponge) = SpongeRadius;
 0089 <span class="keyword">else</span>    <span class="comment">% if you have a variable sponge radius</span>
-0090     Mobj.sponge_rad(Mobj.nSponge,1:npts) = SpongeRadius;
+0090     Mobj.sponge_rad(Mobj.nSponge, 1:npts) = SpongeRadius;
 0091 <span class="keyword">end</span>
 0092 
 0093 <span class="keyword">if</span> ftbverbose
 0094     fprintf(<span class="string">'end   : %s\n'</span>, subname)
 0095 <span class="keyword">end</span>
 0096</pre></div>
-<hr><address>Generated on Thu 01-Feb-2018 09:49:00 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

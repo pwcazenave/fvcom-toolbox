@@ -15,7 +15,6 @@ digraph m2html {
   get_POLCOMS_tsrestart_NOCL -> get_POLCOMS_sigma;
   hybrid_coordinate -> hybrid_coordinate;
   hybrid_coordinate -> nodes2elems;
-  interp_POLCOMS2FVCOM -> get_POLCOMS_netCDF;
   interp_coarse_to_obc -> nodes2elems;
   make_model_nml_generic -> make_default_nml;
   make_model_nml_generic -> write_model_nml;
@@ -45,6 +44,7 @@ digraph m2html {
   add_var_FVCOM_river [URL="add_var_FVCOM_river.html"];
   add_weights_FVCOM_nested_forcing [URL="add_weights_FVCOM_nested_forcing.html"];
   calc_sponge_radius [URL="calc_sponge_radius.html"];
+  change_shallow_bathy [URL="change_shallow_bathy.html"];
   create_nesting_nodes [URL="create_nesting_nodes.html"];
   elems2nodes [URL="elems2nodes.html"];
   estimate_ts [URL="estimate_ts.html"];
@@ -82,8 +82,8 @@ digraph m2html {
   inCell [URL="inCell.html"];
   init_lag [URL="init_lag.html"];
   interp_HYCOM2FVCOM [URL="interp_HYCOM2FVCOM.html"];
+  interp_NEMO2FVCOM [URL="interp_NEMO2FVCOM.html"];
   interp_POLCOMS2FVCOM [URL="interp_POLCOMS2FVCOM.html"];
-  interp_POLCOMS2FVCOMv1 [URL="interp_POLCOMS2FVCOMv1.html"];
   interp_coarse_to_obc [URL="interp_coarse_to_obc.html"];
   interp_sst_assimilation [URL="interp_sst_assimilation.html"];
   make_blank_mesh [URL="make_blank_mesh.html"];

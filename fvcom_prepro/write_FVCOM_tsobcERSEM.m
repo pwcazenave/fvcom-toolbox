@@ -77,7 +77,7 @@ global ftbverbose
 if ftbverbose
     fprintf('\nbegin : %s\n', subname)
 end
-NNuts=length(ERSEMdata)
+NNuts=length(ERSEMdata);
 % Default to string times as FVCOM looks for these first.
 strtime = true;
 inttime = false;
@@ -102,7 +102,7 @@ nTimes = length(time);
 nObc = length(obc_nodes);
 nSiglev = nSiglay + 1;
 
-if(ftbverbose); fprintf('obc reading complete\n');end;
+if ftbverbose; fprintf('obc reading complete\n'); end
 
 %--------------------------------------------------------------------------
 % Generate the requisite data
@@ -140,18 +140,18 @@ if FileExists
         dimidname=netcdf.inqDim(nc,dimids(dd));
         switch dimidname
             case{'node'}
-                
+
                 nobc_dimid=netcdf.inqDimID(nc,dimidname);
             case{'DateStrLen'}
                 datestrlen_dimid=netcdf.inqDimID(nc,dimidname);
             case{'time'}
-                
+
                 time_dimid=netcdf.inqDimID(nc,dimidname);
                 % read time in case is different from data in file
                 file_times = netcdf.getVar(nc,netcdf.inqVarID(nc,'Times'))';
                 file_timem = datenum(file_times,'yyyy-mm-dd HH:MM:SS.FFF');
             case{'siglay'}
-                
+
                 siglay_dimid=netcdf.inqDimID(nc,dimidname);
             case{'siglev'}
                 siglev_dimid=netcdf.inqDimID(nc,dimidname);
@@ -161,59 +161,59 @@ if FileExists
 else
     % open boundary forcing
     nc = netcdf.create(tsOBCFile, 'clobber');
-    
+
     % define global attributes
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'title','Open boundary ERSEM nudging')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'type','FVCOM TIME SERIES OBC FABM FILE')
     netcdf.putAtt(nc,netcdf.getConstant('NC_GLOBAL'),'history', sprintf('File created with %s from the MATLAB fvcom-toolbox', subname))
-    
-    
+
+
     % define dimensions
     nobc_dimid=netcdf.defDim(nc,'nobc',nObc);
     datestrlen_dimid=netcdf.defDim(nc,'DateStrLen',26);
     time_dimid=netcdf.defDim(nc,'time',netcdf.getConstant('NC_UNLIMITED'));
     siglay_dimid=netcdf.defDim(nc,'siglay',nSiglay);
     siglev_dimid=netcdf.defDim(nc,'siglev',nSiglev);
-    
+
     % variables
     if strtime
         Times_varid=netcdf.defVar(nc,'Times','NC_CHAR',[datestrlen_dimid, time_dimid]);
         netcdf.putAtt(nc,Times_varid,'time_zone','UTC');
     end
-    
+
     if floattime
         time_varid=netcdf.defVar(nc,'time','NC_FLOAT',time_dimid);
         netcdf.putAtt(nc,time_varid,'long_name','time');
         netcdf.putAtt(nc,time_varid,'units','days since 1858-11-17 00:00:00');
         netcdf.putAtt(nc,time_varid,'time_zone','UTC');
     end
-    
+
     if inttime
         itime_varid=netcdf.defVar(nc,'Itime','NC_INT',time_dimid);
         netcdf.putAtt(nc,itime_varid,'units','days since 1858-11-17 00:00:00');
         netcdf.putAtt(nc,itime_varid,'format','modified julian day (MJD)');
         netcdf.putAtt(nc,itime_varid,'time_zone','UTC');
-        
+
         itime2_varid=netcdf.defVar(nc,'Itime2','NC_INT',time_dimid);
         netcdf.putAtt(nc,itime2_varid,'units','msec since 00:00:00');
         netcdf.putAtt(nc,itime2_varid,'time_zone','UTC');
     end
-    
+
     nobc_varid=netcdf.defVar(nc,'obc_nodes','NC_INT',nobc_dimid);
     netcdf.putAtt(nc,nobc_varid,'long_name','Open Boundary Node Number');
     netcdf.putAtt(nc,nobc_varid,'grid','obc_grid');
     netcdf.putAtt(nc,nobc_varid,'type','data');
-    
+
     obc_h_varid=netcdf.defVar(nc,'obc_h','NC_FLOAT',nobc_dimid);
     netcdf.putAtt(nc,obc_h_varid,'long_name','Open Boundary Depth');
     netcdf.putAtt(nc,obc_h_varid,'units','m');
     netcdf.putAtt(nc,obc_h_varid,'grid','obc_grid');
     netcdf.putAtt(nc,obc_h_varid,'type','data');
-    
+
     obc_siglev_varid=netcdf.defVar(nc,'siglev','NC_FLOAT',[nobc_dimid,siglev_dimid]);
     netcdf.putAtt(nc,obc_siglev_varid,'long_name','ocean_sigma/general_coordinate');
     netcdf.putAtt(nc,obc_siglev_varid,'grid','obc_grid');
-    
+
     obc_siglay_varid=netcdf.defVar(nc,'siglay','NC_FLOAT',[nobc_dimid,siglay_dimid]);
     netcdf.putAtt(nc,obc_siglay_varid,'long_name','ocean_sigma/general_coordinate');
     netcdf.putAtt(nc,obc_siglay_varid,'grid','obc_grid');
@@ -273,7 +273,7 @@ if ~FileExists
         eval(['netcdf.putVar(nc,',varidN{nuts},',Mobj.(ERSEMdata(nuts).name));'])
             disp(['Finished with variable, ',ERSEMdata(nuts).name])
      end
-    
+
 else % file exist and time could be different... check and interpolate if necessary
     if length(time) < length(file_timem)
         for nuts=1:NNuts
@@ -297,7 +297,7 @@ else % file exist and time could be different... check and interpolate if necess
             disp(['We have reversed the Z dimension of variable , ',ERSEMdata(nuts).name])
             disp(['Finished with variable, ',ERSEMdata(nuts).name])
          end
-        
+
     end
 end
 % close file

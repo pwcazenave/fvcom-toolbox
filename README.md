@@ -22,6 +22,7 @@ Notes:
 
 The PML version of the toolbox includes tagged releases, which can be downloaded as standalone (and thus relatively stable) versions. See the PML_ChangeLog.txt for details. Links to the direct downloads are:
 
+- v20190220: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20190120
 - v20180201: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20180201
 - v20160811: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20160811
 - v20160218: https://github.com/pwcazenave/fvcom-toolbox/releases/tag/20160218

@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of read_FVCOM_river_file</title>
+  <meta name="keywords" content="read_FVCOM_river_file">
+  <meta name="description" content="function [Riv]=read_river_file(river_root,Mobj)">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">utilities</a> &gt; read_FVCOM_river_file.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for utilities&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>read_FVCOM_river_file
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Riv]=read_river_file(river_root,Mobj)</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [Riv]=read_FVCOM_river_file(river_root,Mobj) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> function [Riv]=read_river_file(river_root,Mobj)
+ Reads FVCOM river files 
+
+ function [Riv]=read_river_file(river_root,Mobj)
+
+ DESCRIPTION:
+    Reads both *.nc and *nml files associated with FVCOM river input files
+
+ INPUT
+   river_root = full address of river filename without extension 
+   Mobj       = needs bathymetry, nodes, elements and triangulation table. 
+
+ OUTPUT:
+    Riv       = structure variable with all variables in the file 
+
+ EXAMPLE USAGE
+    [Riv]=read_river_file('~/tapas_v0_riv_new',Mobj)
+
+ Author(s):
+    Ricardo Torres (Plymouth Marine Laboratory) 
+
+ Revision history
+
+   2018-07-22 First version.
+
+==============================================================================</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Riv]=read_FVCOM_river_file(river_root,Mobj)</a>
+0002 <span class="comment">% function [Riv]=read_river_file(river_root,Mobj)</span>
+0003 <span class="comment">% Reads FVCOM river files</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% function [Riv]=read_river_file(river_root,Mobj)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% DESCRIPTION:</span>
+0008 <span class="comment">%    Reads both *.nc and *nml files associated with FVCOM river input files</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% INPUT</span>
+0011 <span class="comment">%   river_root = full address of river filename without extension</span>
+0012 <span class="comment">%   Mobj       = needs bathymetry, nodes, elements and triangulation table.</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">% OUTPUT:</span>
+0015 <span class="comment">%    Riv       = structure variable with all variables in the file</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% EXAMPLE USAGE</span>
+0018 <span class="comment">%    [Riv]=read_river_file('~/tapas_v0_riv_new',Mobj)</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Author(s):</span>
+0021 <span class="comment">%    Ricardo Torres (Plymouth Marine Laboratory)</span>
+0022 <span class="comment">%</span>
+0023 <span class="comment">% Revision history</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">%   2018-07-22 First version.</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">%==============================================================================</span>
+0028 [~, subname] = fileparts(mfilename(<span class="string">'fullpath'</span>));
+0029 <span class="keyword">global</span> ftbverbose
+0030 <span class="keyword">if</span> ftbverbose
+0031     fprintf(<span class="string">'\nbegin : %s \n'</span>, subname)
+0032 <span class="keyword">end</span>
+0033 
+0034 <span class="comment">% Check if they are in the same order... (a couple of manual test suggest</span>
+0035 ncRivers = [river_root <span class="string">'.nc'</span>];
+0036 fidnml = fopen ([river_root <span class="string">'.nml'</span>]);
+0037 <span class="comment">% get variables from netcdf file</span>
+0038 info = ncinfo(ncRivers);
+0039 <span class="comment">% extract all variables</span>
+0040 varnames={};
+0041 <span class="keyword">for</span> nn =1:length(info.Variables)
+0042     varnames{nn}=info.Variables(nn).Name;
+0043 <span class="keyword">end</span>
+0044 Riv=[];nn=1;
+0045 <span class="keyword">for</span> vv=varnames
+0046 Riv.(vv{1}).data = ncread(ncRivers,vv{1});
+0047 <span class="keyword">if</span> isfloat(Riv.(vv{1}).data)
+0048     Riv.(vv{1}).data =double(Riv.(vv{1}).data);
+0049     <span class="comment">% extract units</span>
+0050     <span class="keyword">for</span> rr = 1:length(info.Variables(nn).Attributes)
+0051     <span class="keyword">if</span> startsWith(info.Variables(nn).Attributes(rr).Name ,<span class="string">'units'</span>)
+0052     Riv.(vv{1}).units =     info.Variables(nn).Attributes(rr).Value
+0053     <span class="keyword">end</span> 
+0054     <span class="keyword">end</span>
+0055 <span class="keyword">end</span>
+0056 nn=nn+1;
+0057 <span class="keyword">end</span>
+0058 pos =0;
+0059 
+0060 <span class="keyword">while</span> ~feof(fidnml)
+0061     pos = pos+1;
+0062     lines=cell(3,1);
+0063     <span class="keyword">for</span> dd=1:3
+0064         lines{dd} = fgetl(fidnml);
+0065         <span class="comment">%     fprintf(fout,'%s\n',line)</span>
+0066     <span class="keyword">end</span>
+0067     <span class="comment">% keep name</span>
+0068     [river_name]= extractAfter(lines{2},<span class="string">'= '</span>);
+0069     Riv.river_name(pos,1)={river_name(1:end-1)};
+0070     <span class="comment">% read grid location</span>
+0071     line = fgetl(fidnml);
+0072     <span class="comment">% extract grid location</span>
+0073     t =strfind(line,<span class="string">'='</span>);
+0074     
+0075     Riv.IDX(pos,1) = str2double(line(t+1:end));
+0076     <span class="comment">% check if IDX is in the list to remove</span>
+0077         line1 = fgetl(fidnml);
+0078         line2 = fgetl(fidnml);
+0079 <span class="keyword">end</span>
+0080 fclose (fidnml);
+0081 <span class="comment">% extract river positions</span>
+0082 <span class="keyword">for</span> rr=1:length(Riv.IDX)
+0083 Riv.lon.data(rr) = Mobj.lon(Riv.IDX(rr,1));
+0084 Riv.lat.data(rr) = Mobj.lat(Riv.IDX(rr,1));
+0085 Riv.x.data(rr) = Mobj.x(Riv.IDX(rr,1));
+0086 Riv.y.data(rr) = Mobj.y(Riv.IDX(rr,1));
+0087 <span class="keyword">end</span>
+0088 
+0089 <span class="comment">% %% for each river estimate the annual cycle mean and river</span>
+0090 <span class="comment">% % flow/concentration relationship</span>
+0091 <span class="comment">% % rnut = Riv2.N1_p;</span>
+0092 <span class="comment">% % read tamar nutrient observations.</span>
+0093 <span class="comment">% ncfile = fullfile('/data/euryale4/backup/mbe/Experiments/Rosa_rivers/Analysis/tamar_nutrient_nc','gunnislake_dayavg_%s.nc')</span>
+0094 <span class="comment">% vars = {'si','amm','phs','nitrate','o2'}</span>
+0095 <span class="comment">% varsR = {'N5_s','N4_n','N1_p','N3_n','O2_o'}</span>
+0096 <span class="comment">% tamar.time = ncread(sprintf(ncfile,vars{1}),'time');</span>
+0097 <span class="comment">% for nn=1:length(vars)</span>
+0098 <span class="comment">% tamar.([varsR{nn},'T']) = ncread(sprintf(ncfile,vars{nn}),'time');</span>
+0099 <span class="comment">%  tamar.(varsR{nn}) = ncread(sprintf(ncfile,vars{nn}),vars{nn});</span>
+0100 <span class="comment">% end</span>
+0101 <span class="comment">%%</span>
+0102 Riv.mtime.data = (Riv.time.data+ 678942);
+0103 <span class="comment">% rr=10;</span></pre></div>
+<hr><address>Generated on Wed 20-Feb-2019 16:06:01 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
