@@ -63,7 +63,9 @@ function [Mobj] = read_sms_mesh(varargin)
 %   (SW)
 %   2018-05-16 If we have bathymetry in the .2dm file *and* a separate
 %   bathymetry file provided, use the bathymetry in the file (with a
-%   warning) rather than ignoring it.
+%   warning) rather than ignoring it. (SW)
+%   2019-05-02 Bug fix: If somebody puts "'project', 'false'" in the input,
+%   it now respects this. (SW)
 %
 %==============================================================================
 
@@ -118,11 +120,7 @@ for i = 1:2:length(varargin) - 1
             end
         case 'project'
             val = varargin{i + 1};
-            if val
-                userproject = true;
-            else
-                userproject = false;
-            end
+            userproject = strcmpi( val, 'true' );
         case 'addcoriolis'
             val = varargin{i + 1};
             if val
