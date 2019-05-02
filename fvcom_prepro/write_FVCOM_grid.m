@@ -66,7 +66,7 @@ fid = fopen(filename,'w');
 assert(fid > 0, 'Error opening output file %s', filename)
 fprintf(fid, 'Node Number = %d\n', Mobj.nVerts);
 fprintf(fid, 'Cell Number = %d\n', Mobj.nElems);
-fprintf(fid, '%d %d %d %d %d\n', [(1:Mobj.nElems)', Mobj.tri, (1:Mobj.nElems)']');
+fprintf(fid, '%d %d %d %d\n', [(1:Mobj.nElems)', Mobj.tri]');
 fprintf(fid, '%d %f %f %f\n', [(1:Mobj.nVerts)', x, y, Mobj.h]');
 fclose(fid);
 
