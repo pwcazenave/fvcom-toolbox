@@ -67,7 +67,7 @@ assert(fid > 0, 'Error opening output file %s', filename)
 fprintf(fid, 'Node Number = %d\n', Mobj.nVerts);
 fprintf(fid, 'Cell Number = %d\n', Mobj.nElems);
 fprintf(fid, '%d %d %d %d %d\n', [(1:Mobj.nElems)', Mobj.tri, (1:Mobj.nElems)']');
-fprintf(fid, '%d %f %f %f\n', [(1:Mobj.nVerts)', x, y, Mobj.h]');
+fprintf(fid, '%d %f %f %f\n', [double(1:Mobj.nVerts)', double(x), double(y), double(Mobj.h)]');
 fclose(fid);
 
 if ftbverbose
