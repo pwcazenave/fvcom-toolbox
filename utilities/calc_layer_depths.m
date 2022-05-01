@@ -1,11 +1,14 @@
-function LayerDepthsFromMSL = calc_layer_depths( M, ncFile, els )
+function LayerDepthsFromMSL = calc_layer_depths( M, ncFile, els, nodeorel )
 %CALC_LAYER_DEPTHS Find depths of layer centres, including changes over
 %time. Output is relative to MSL. 
 %FIXME ideally this would be configurable: direction of +ive, and relative
 %   to MSL or to seabed.
 %   Inputs: M: mesh object. Must contain x,y,tri,h (populated).
 %           ncFile: Char or string. Name of FVCOM netCDF output file containing siglay_center field
-%           els: vector. Element numbers of interest.
+%           els: vector. Node or element numbers of interest.
+%           nodeorel: Optional. If set to 'node', "els" will be interpreted
+%           as nodes of interest instead of elements. If set to 'element'
+%           or not set, it will be elements.
 %   
 %   Output: LayerDepths: Double matrix of dimensions layer x timestep x
 %                           element
@@ -29,6 +32,12 @@ assert( exist(ncFile, 'file') == 2, 'Can''t find ncFile %s.', ncFile );
 assert( max( M.h ) > 0, 'M.h appears to contain all zeroes. Possibly you need to import bathymetry.' );
 assert( isvector(els), 'els should be a vector.');
 NumEls = length(els);
+if nargin > 3
+    assert( strcmp(nodeorel, 'node') || strcmp(nodeorel, 'element'), '4th parameter, if supplied, should be ''node'' or ''element''.' );
+    returnnodes = strcmp(nodeorel, 'node');
+else
+    returnnodes = false;
+end
 
 % load the layer distribution. This gives the depth of each layer in each
 % element as a proportion of the total depth at that location. Dims are
@@ -36,14 +45,18 @@ NumEls = length(els);
 siglayc = ncread(ncFile, 'siglay_center');
 NumLayers = size(siglayc, 2);
 
-%if the M object already has a hc field, use it. If not, calculate it.
-if ~isfield( M, 'hc' ) || max( M.hc ) == 0
-    if ftbverbose
-        disp('Calculating hc from h. NB If x and y are actually lon and lat, this will be inaccurate.');
+if returnnodes
+    assert( all(els <= M.nVerts), 'One or more requested node numbers is higher than the number of nodes in the mesh');
+else
+    %if the M object already has a hc field, use it. If not, calculate it.
+    if ~isfield( M, 'hc' ) || max( M.hc ) == 0
+        if ftbverbose
+            disp('Calculating hc from h. NB If x and y are actually lon and lat, this will be inaccurate.');
+        end
+        M.hc = mean( M.h( M.tri ),2 );
     end
-    M.hc = mean( M.h( M.tri ),2 );
+    assert( all(els <= M.nElems), 'One or more requested element numbers is higher than the number of elements in the mesh.');
 end
-assert( all(els <= M.nElems), 'One or more requested element numbers is higher than the number of elements in the mesh.');
 
 if ftbverbose
     disp('Loading free surface elevations from ncFile...');
@@ -59,11 +72,20 @@ NumTS = size( zeta, 2 );
 LayerDepthsFromMSL = nan( NumLayers, NumTS, NumEls );
 for e = 1:NumEls
     el = els(e);
-    el_zeta = mean( zeta(M.tri(el,:),:), 1 );
-    TotalDepths = el_zeta + repmat( M.hc(el), 1, NumTS ); %1xNumTS vector of depths
+    if returnnodes
+        TotalDepths = zeta(el,:) + repmat( M.h(el), 1, NumTS );
+    else
+        el_zeta = mean( zeta(M.tri(el,:),:), 1 );
+        TotalDepths = el_zeta + repmat( M.hc(el), 1, NumTS ); %1xNumTS vector of depths
+    end
+
     LayerDepths = repmat( TotalDepths, NumLayers, 1 ) .* repmat( siglayc(el,:)', 1, NumTS ) * -1;
     % the -1 is needed because siglayc is negative.
-    LayerDepthsFromMSL(:,:,e) = LayerDepths - repmat( el_zeta, 10, 1 );
+    if returnnodes
+        LayerDepthsFromMSL(:,:,e) = LayerDepths - repmat( zeta(el, :), NumLayers, 1 );
+    else
+        LayerDepthsFromMSL(:,:,e) = LayerDepths - repmat( el_zeta, NumLayers, 1 );
+    end
 end
 
 end
